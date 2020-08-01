@@ -7,6 +7,7 @@ function Core_Lighting::onCreate(%this)
    exec("./scripts/advancedLighting_Shaders.cs");
    exec("./scripts/deferredShading.cs");
    exec("./scripts/advancedLighting_Init.cs");
+   exec("./scripts/giVolume.cs");
    
    //Basic/Forward
    exec("./scripts/basicLighting_shadowFilter.cs");
