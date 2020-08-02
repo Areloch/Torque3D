@@ -75,7 +75,7 @@ ConsoleDocClass(GIVolume,
 
 GFX_ImplementTextureProfile(LPVProfile,
    GFXTextureProfile::DiffuseMap,
-   GFXTextureProfile::PreserveSize | GFXTextureProfile::KeepBitmap | GFXTextureProfile::Dynamic,
+   GFXTextureProfile::PreserveSize | GFXTextureProfile::KeepBitmap | GFXTextureProfile::Dynamic | GFXTextureProfile::NoMipmap,
    GFXTextureProfile::NONE);
 
 //-----------------------------------------------------------------------------
@@ -2051,7 +2051,7 @@ void GIVolume::_renderReflect(const SceneRenderState* state)
 
    GFX->pushActiveRenderTarget();
    GFX->setActiveRenderTarget(mRenderTarget);
-   //GFX->setVertexBuffer(vb);
+   GFX->setVertexBuffer(vb);
    GFX->setStateBlockByDesc(desc);
    GFX->setShader(mReflectShader);
    GFX->setShaderConstBuffer(mReflectShaderConsts);
@@ -2062,8 +2062,8 @@ void GIVolume::_renderReflect(const SceneRenderState* state)
    GFX->setTexture(2, matInfoTexObject);
 
    // Draw fullscreen tri.
-   //GFX->drawPrimitive(GFXTriangleStrip, 0, 2);
-   GFX->drawPrimitive(GFXTriangleList, 0, 1);
+   GFX->drawPrimitive(GFXTriangleStrip, 0, 2);
+   //GFX->drawPrimitive(GFXTriangleList, 0, 1);
 
    // Clean Up
    mRenderTarget->resolve();
