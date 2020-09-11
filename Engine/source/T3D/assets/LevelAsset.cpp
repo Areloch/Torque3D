@@ -368,6 +368,12 @@ DefineEngineMethod(LevelAsset, getLevelFile, const char*, (),,
    return object->getLevelPath();
 }
 
+DefineEngineMethod(LevelAsset, getPreviewImagePath, const char*, (), ,
+   "@return Returns the full path to the level's preview image, if defined.")
+{
+   return object->getImagePath();
+}
+
 DefineEngineMethod(LevelAsset, loadDependencies, void, (), ,
    "Initiates the loading of asset dependencies for this level.")
 {
