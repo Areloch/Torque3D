@@ -45,7 +45,7 @@ uniform float4 albedo;
 
 #endif // !TORQUE_SHADERGEN
 
-#define MAX_PROBES 50
+#define MAX_PROBES 8
 #define MAX_FORWARD_PROBES 4
 
 #define MAX_FORWARD_LIGHT 4

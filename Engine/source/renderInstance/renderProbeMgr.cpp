@@ -303,33 +303,12 @@ void RenderProbeMgr::initPersistFields()
    Parent::initPersistFields();
 }
 
-void RenderProbeMgr::addElement(RenderInst *inst)
-{
-   // If this instance is translucent handle it in RenderTranslucentMgr
-   //if (inst->translucentSort)
-      return;
-
-   //AssertFatal(inst->defaultKey != 0, "RenderMeshMgr::addElement() - Got null sort key... did you forget to set it?");
-
-   /*internalAddElement(inst);
-
-   ProbeRenderInst* probeInst = static_cast<ProbeRenderInst*>(inst);
-
-   if (probeInst->mIsSkylight)
-   {
-      addSkylightProbe(probeInst);
-   }
-   else
-   {
-      if (probeInst->mProbeShapeType == ProbeInfo::Sphere)
-         addSphereReflectionProbe(probeInst);
-      else
-         addConvexReflectionProbe(probeInst);
-   }*/
-}
-
 ProbeRenderInst* RenderProbeMgr::registerProbe()
 {
+   //Can't have over the probe limit
+   if (mRegisteredProbes.size() + 1 >= PROBE_MAX_COUNT)
+      return nullptr;
+
    mRegisteredProbes.increment();
    ProbeRenderInst* newProbe = &mRegisteredProbes.last();
 
@@ -425,10 +404,17 @@ void RenderProbeMgr::updateProbes()
 	mProbesDirty = true;
 }
 
-void RenderProbeMgr::_setupStaticParameters()
+void RenderProbeMgr::_setupStaticParameters(SceneRenderState* state)
 {
+   if (mRegisteredProbes.size() != 0)
+      mEffectiveProbeCount = 1;
+
+   //mProbeData = ProbeDataSet(PROBE_MAX_FRAME);
+
+   //getBestProbes(state->getCameraPosition(), &mProbeData);
+
    //Array rendering
-   U32 probeCount = mRegisteredProbes.size();
+   /*U32 probeCount = mRegisteredProbes.size();
 
    mEffectiveProbeCount = 0;
    mMipCount = 1;
@@ -489,7 +475,7 @@ void RenderProbeMgr::_setupStaticParameters()
          curEntry.mCubemapIndex);
 
       mEffectiveProbeCount++;
-   }
+   }*/
 
    mProbesDirty = false;
 }
@@ -532,6 +518,10 @@ void RenderProbeMgr::reloadTextures()
 void RenderProbeMgr::_setupPerFrameParameters(const SceneRenderState *state)
 {
    PROFILE_SCOPE(RenderProbeMgr_SetupPerFrameParameters);
+
+   mProbeData = ProbeDataSet(PROBE_MAX_FRAME);
+
+   getBestProbes(state->getCameraPosition(), &mProbeData);
 }
 
 ProbeShaderConstants* RenderProbeMgr::getProbeShaderConstants(GFXShaderConstBuffer* buffer)
@@ -564,14 +554,6 @@ ProbeShaderConstants* RenderProbeMgr::getProbeShaderConstants(GFXShaderConstBuff
       mLastShader = shader;
    }
 
-   /*if (mLastConstants == nullptr)
-   {
-      ProbeShaderConstants* psc = new ProbeShaderConstants();
-      mConstantLookup[shader] = psc;
-
-      mLastConstants = psc;
-   }*/
-
    // Make sure that our current lighting constants are initialized
    if (mLastConstants && !mLastConstants->mInit)
       mLastConstants->init(shader);
@@ -594,11 +576,11 @@ void RenderProbeMgr::_update4ProbeConsts(const SceneData &sgData,
       PROFILE_SCOPE(ProbeManager_Update4ProbeConsts_setProbes);
 
       const U32 MAX_FORWARD_PROBES = 4;
-      ProbeDataSet probeSet(MAX_FORWARD_PROBES);
+      PackedProbeDataSet probeSet(MAX_FORWARD_PROBES);
 
       matSet.restoreSceneViewProjection();
 
-      getBestProbes(sgData.objTrans->getPosition(), &probeSet);
+      //getBestProbes(sgData.objTrans->getPosition(), &probeSet);
 
       shaderConsts->setSafe(probeShaderConsts->mProbeCountSC, (S32)probeSet.effectiveProbeCount);
 
@@ -647,13 +629,15 @@ void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* pro
          {
             F32 dist = Point3F(objPosition - curEntry.getPosition()).len();
 
-            if (dist > curEntry.mRadius || dist > curEntry.mExtents.len())
-               continue;
+            //do rest of scoring logic here
+
+            //if (dist > curEntry.mRadius || dist > curEntry.mExtents.len())
+            //   continue;
 
             S32 bestPickIndex = -1;
             for (U32 p = 0; p < bestPickProbes.size(); p++)
             {
-               if (p > probeDataSet->MAX_PROBE_COUNT)
+               if (p > probeDataSet->maxProbeCount)
                   break;
 
                if (bestPickProbes[p] == -1 || (Point3F(objPosition - mRegisteredProbes[bestPickProbes[p]].mPosition).len() > dist))
@@ -662,9 +646,11 @@ void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* pro
 
             //Can't have over our max count. Otherwise, if we haven't found a good slot for our best pick, insert it
             //if we have a best pick slot, update it
-            if (bestPickIndex == -1 || bestPickProbes.size() >= probeDataSet->MAX_PROBE_COUNT)
+            if (bestPickIndex == -1 && bestPickProbes.size() < probeDataSet->maxProbeCount)
                bestPickProbes.push_back(i);
-            else
+            else if(bestPickProbes.size() < probeDataSet->maxProbeCount)
+               bestPickProbes.push_back(i);
+            else if(bestPickIndex != -1 && bestPickProbes.size() >= probeDataSet->maxProbeCount) //if we've already filled our open slots, try and replace the best pick index
                bestPickProbes[bestPickIndex] = i;
          }
          else
@@ -750,7 +736,7 @@ void RenderProbeMgr::render( SceneRenderState *state )
       return;
 
    if (mProbesDirty)
-	   _setupStaticParameters();
+	   _setupStaticParameters(state);
 
    // Early out if nothing to draw.
    if (!RenderProbeMgr::smRenderReflectionProbes || (!state->isDiffusePass() && !state->isReflectPass()) || (mEffectiveProbeCount == 0 && mSkylightCubemapIdx == -1))
@@ -765,7 +751,7 @@ void RenderProbeMgr::render( SceneRenderState *state )
 
    // Initialize and set the per-frame parameters after getting
    // the vector light material as we use lazy creation.
-   //_setupPerFrameParameters(state);
+   _setupPerFrameParameters(state);
 
    //Visualization
    String useDebugAtten = Con::getVariable("$Probes::showAttenuation", "0");
@@ -780,7 +766,7 @@ void RenderProbeMgr::render( SceneRenderState *state )
    String useDebugContrib = Con::getVariable("$Probes::showProbeContrib", "0");
    mProbeArrayEffect->setShaderMacro("DEBUGVIZ_CONTRIB", useDebugContrib);
 
-   if(mSkylightCubemapIdx != -1 && mEffectiveProbeCount == 0)
+   if(mProbeData.skyLightIdx != -1 && mProbeData.effectiveProbeCount == 0)
       mProbeArrayEffect->setShaderMacro("SKYLIGHT_ONLY", "1");
    else
       mProbeArrayEffect->setShaderMacro("SKYLIGHT_ONLY", "0");
@@ -807,24 +793,24 @@ void RenderProbeMgr::render( SceneRenderState *state )
    mProbeArrayEffect->setCubemapArrayTexture(4, mPrefilterArray);
    mProbeArrayEffect->setCubemapArrayTexture(5, mIrradianceArray);
 
-   mProbeArrayEffect->setShaderConst("$numProbes", (S32)mEffectiveProbeCount);
-   mProbeArrayEffect->setShaderConst("$skylightCubemapIdx", (S32)mSkylightCubemapIdx);
+   mProbeArrayEffect->setShaderConst("$numProbes", (S32)mProbeData.effectiveProbeCount);
+   mProbeArrayEffect->setShaderConst("$skylightCubemapIdx", (S32)mProbeData.skyLightIdx);
 
    mProbeArrayEffect->setShaderConst("$cubeMips", (float)mMipCount);
 
    //also set up some colors
    Vector<Point4F> contribColors;
 
-   contribColors.setSize(MAXPROBECOUNT);
+   contribColors.setSize(mProbeData.effectiveProbeCount);
 
-   if (mEffectiveProbeCount != 0)
+   if (mProbeData.effectiveProbeCount != 0)
    {
       if (useDebugContrib == String("1"))
       {
          MRandomLCG RandomGen;
-         RandomGen.setSeed(mEffectiveProbeCount);
+         RandomGen.setSeed(mProbeData.effectiveProbeCount);
 
-         for (U32 i = 0; i < mEffectiveProbeCount; i++)
+         for (U32 i = 0; i < mProbeData.effectiveProbeCount; i++)
          {
             //we're going to cheat here a little for consistent debugging behavior. The first 3 probes will always have R G and then B for their colors, every other will be random
             if (i == 0)
@@ -841,12 +827,12 @@ void RenderProbeMgr::render( SceneRenderState *state )
 
    mProbeArrayEffect->setShaderConst("$probeContribColors", contribColors);
 
-   mProbeArrayEffect->setShaderConst("$inProbePosArray", probePositionsData);
-   mProbeArrayEffect->setShaderConst("$inRefPosArray", probeRefPositionsData);
-   mProbeArrayEffect->setShaderConst("$worldToObjArray", probeWorldToObjData);
-   mProbeArrayEffect->setShaderConst("$refBoxMinArray", refBoxMinData);
-   mProbeArrayEffect->setShaderConst("$refBoxMaxArray", refBoxMaxData);
-   mProbeArrayEffect->setShaderConst("$probeConfigData", probeConfigData);
+   mProbeArrayEffect->setShaderConst("$inProbePosArray", mProbeData.probePositionArray);
+   mProbeArrayEffect->setShaderConst("$inRefPosArray", mProbeData.probeRefPositionArray);
+   mProbeArrayEffect->setShaderConst("$worldToObjArray", mProbeData.probeWorldToObjArray);
+   mProbeArrayEffect->setShaderConst("$refBoxMinArray", mProbeData.refBoxMinArray);
+   mProbeArrayEffect->setShaderConst("$refBoxMaxArray", mProbeData.refBoxMaxArray);
+   mProbeArrayEffect->setShaderConst("$probeConfigData", mProbeData.probeConfigArray);
 
    // Make sure the effect is gonna render.
    getProbeArrayEffect()->setSkip(false);

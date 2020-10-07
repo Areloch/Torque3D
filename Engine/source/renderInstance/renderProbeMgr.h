@@ -167,6 +167,53 @@ typedef Map<GFXShader*, ProbeShaderConstants*> ProbeConstantMap;
 
 struct ProbeDataSet
 {
+   Vector<Point4F> probePositionArray;
+   Vector<Point4F> refBoxMinArray;
+   Vector<Point4F> refBoxMaxArray;
+   Vector<Point4F> probeRefPositionArray;
+   Vector<Point4F> probeConfigArray;
+
+   Vector<MatrixF> probeWorldToObjArray;
+
+   S32 skyLightIdx;
+
+   U32 effectiveProbeCount;
+   U32 maxProbeCount;
+
+   ProbeDataSet()
+   {
+      probePositionArray.setSize(0);
+      refBoxMinArray.setSize(0);
+      refBoxMaxArray.setSize(0);
+      probeRefPositionArray.setSize(0);
+      probeConfigArray.setSize(0);
+
+      probeWorldToObjArray.setSize(0);
+
+      skyLightIdx = -1;
+      effectiveProbeCount = 0;
+      maxProbeCount = 0;
+   }
+
+   ProbeDataSet(U32 _maxProbeCount)
+   {
+      maxProbeCount = _maxProbeCount;
+
+      probePositionArray.setSize(maxProbeCount);
+      refBoxMinArray.setSize(maxProbeCount);
+      refBoxMaxArray.setSize(maxProbeCount);
+      probeRefPositionArray.setSize(maxProbeCount);
+      probeConfigArray.setSize(maxProbeCount);
+
+      probeWorldToObjArray.setSize(maxProbeCount);
+
+      skyLightIdx = -1;
+      effectiveProbeCount = 0;
+   }
+};
+
+struct PackedProbeDataSet
+{
    AlignedArray<Point4F> probePositionArray;
    AlignedArray<Point4F> refBoxMinArray;
    AlignedArray<Point4F> refBoxMaxArray;
@@ -181,7 +228,7 @@ struct ProbeDataSet
 
    U32 MAX_PROBE_COUNT;
 
-   ProbeDataSet(U32 maxProbeCount)
+   PackedProbeDataSet(U32 maxProbeCount)
    {
       MAX_PROBE_COUNT = maxProbeCount;
 
@@ -282,6 +329,8 @@ private:
 
    GFXTextureTargetRef mBakeRenderTarget;
 
+   ProbeDataSet mProbeData;
+
 public:
    RenderProbeMgr();
    RenderProbeMgr(RenderInstType riType, F32 renderOrder, F32 processAddOrder);
@@ -304,9 +353,9 @@ protected:
       ProbeShaderConstants *probeShaderConsts,
       GFXShaderConstBuffer *shaderConsts);
 
-   void _setupStaticParameters();
+   void _setupStaticParameters(SceneRenderState* state);
    void _setupPerFrameParameters(const SceneRenderState *state);
-   virtual void addElement(RenderInst *inst);
+   virtual void addElement(RenderInst* inst) {};
    virtual void render(SceneRenderState * state);
 
    ProbeShaderConstants* getProbeShaderConstants(GFXShaderConstBuffer* buffer);

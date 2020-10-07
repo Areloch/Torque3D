@@ -96,6 +96,9 @@
             <Group name="Empty Terrain.mis">
                 <Setting name="cameraSpeed">25</Setting>
             </Group>
+            <Group name="Outpost.mis">
+                <Setting name="cameraSpeed">25</Setting>
+            </Group>
             <Group name="PbrMatTest.mis">
                 <Setting name="cameraSpeed">5</Setting>
             </Group>
