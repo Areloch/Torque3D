@@ -76,7 +76,6 @@ ConsoleDocClass(BoxEnvironmentProbe,
 //-----------------------------------------------------------------------------
 BoxEnvironmentProbe::BoxEnvironmentProbe() : ReflectionProbe()
 {
-   mCaptureMask = REFLECTION_PROBE_CAPTURE_TYPEMASK;
    mProbeShapeType = ProbeRenderInst::Box;
    mAtten = 0.0;
 }
@@ -101,8 +100,6 @@ void BoxEnvironmentProbe::initPersistFields()
 void BoxEnvironmentProbe::inspectPostApply()
 {
    Parent::inspectPostApply();
-
-   mDirty = true;
 
    // Flag the network mask to send the updates
    // to the client object
@@ -158,11 +155,8 @@ void BoxEnvironmentProbe::unpackUpdate(NetConnection *conn, BitStream *stream)
 
 void BoxEnvironmentProbe::updateProbeParams()
 {
-   if (!mProbeInfo)
-      return;
-
    mProbeShapeType = ProbeRenderInst::Box;
-   mProbeInfo->mAtten = mAtten;
+   mProbeInfo.mAtten = mAtten;
 
    Parent::updateProbeParams();
 }

@@ -77,7 +77,6 @@ ConsoleDocClass(Skylight,
 //-----------------------------------------------------------------------------
 Skylight::Skylight() : ReflectionProbe()
 {
-   mCaptureMask = SKYLIGHT_CAPTURE_TYPEMASK;
 }
 
 Skylight::~Skylight()
@@ -102,8 +101,6 @@ void Skylight::initPersistFields()
 void Skylight::inspectPostApply()
 {
    Parent::inspectPostApply();
-
-   mDirty = true;
 
    // Flag the network mask to send the updates
    // to the client object
@@ -135,6 +132,11 @@ void Skylight::unpackUpdate(NetConnection *conn, BitStream *stream)
 {
    // Let the Parent read any info it sent
    Parent::unpackUpdate(conn, stream);
+
+   if (mDirty)
+   {
+      updateProbeParams();
+   }
 }
 
 //-----------------------------------------------------------------------------
@@ -143,9 +145,6 @@ void Skylight::unpackUpdate(NetConnection *conn, BitStream *stream)
 
 void Skylight::updateProbeParams()
 {
-   if (!mProbeInfo)
-      return;
-
    mProbeShapeType = ProbeRenderInst::Skylight;
    Parent::updateProbeParams();
 }
@@ -157,25 +156,20 @@ void Skylight::prepRenderImage(SceneRenderState *state)
 
    //special hook-in for skylights
    Point3F camPos = state->getCameraPosition();
-   mProbeInfo->mBounds.setCenter(camPos);
+   mProbeInfo.mBounds.setCenter(camPos);
 
-   mProbeInfo->setPosition(camPos);
+   mProbeInfo.setPosition(camPos);
 
-   if (mReflectionModeType == DynamicCubemap && mRefreshRateMS < (Platform::getRealMilliseconds() - mDynamicLastBakeMS))
+   /*if (mReflectionModeType == DynamicCubemap && mRefreshRateMS < (Platform::getRealMilliseconds() - mDynamicLastBakeMS))
    {
       //bake();
       mDynamicLastBakeMS = Platform::getRealMilliseconds();
 
       processDynamicCubemap();
-   }
+   }*/
 
-   //Submit our probe to actually do the probe action
-   // Get a handy pointer to our RenderPassmanager
-   //RenderPassManager *renderPass = state->getRenderPass();
-
-   //PROBEMGR->registerSkylight(mProbeInfo, this);
-
-   if (Skylight::smRenderPreviewProbes && gEditingMission && mEditorShapeInst && mPrefilterMap != nullptr)
+#ifdef TORQUE_TOOLS
+   if (mProbeInfo.mIsEnabled && Skylight::smRenderPreviewProbes && gEditingMission && mEditorShapeInst)
    {
       GFXTransformSaver saver;
 
@@ -235,6 +229,7 @@ void Skylight::prepRenderImage(SceneRenderState *state)
    if (isSelectedInEditor)
    {
    }
+#endif
 }
 
 void Skylight::setPreviewMatParameters(SceneRenderState* renderState, BaseMatInstance* mat)

@@ -45,6 +45,8 @@
 //For our cameraQuery setup
 #include "T3D/gameTSCtrl.h"
 
+#include "T3D/Scene.h"
+
 #define TORQUE_GFX_VISUAL_DEBUG //renderdoc debugging
 
 IMPLEMENT_CONOBJECT(RenderProbeMgr);
@@ -59,6 +61,7 @@ ConsoleDocClass( RenderProbeMgr,
 RenderProbeMgr *RenderProbeMgr::smProbeManager = NULL;
 
 bool RenderProbeMgr::smRenderReflectionProbes = true;
+F32 RenderProbeMgr::smMaxProbeDrawDistance = 100;
 
 S32 QSORT_CALLBACK AscendingReflectProbeInfluence(const void* a, const void* b)
 {
@@ -77,17 +80,13 @@ S32 QSORT_CALLBACK AscendingReflectProbeInfluence(const void* a, const void* b)
 ProbeRenderInst::ProbeRenderInst() :
    mIsEnabled(true),
    mTransform(true),
-   mDirty(false),
    mPriority(1.0f),
    mScore(0.0f),
-   mPrefilterCubemap(NULL),
-   mIrradianceCubemap(NULL),
    mRadius(1.0f),
    mProbeRefOffset(0, 0, 0),
    mProbeRefScale(1,1,1),
    mAtten(0.0),
    mCubemapIndex(0),
-   mIsSkylight(false),
    mProbeIdx(0),
    mProbeShapeType(Box)
 {
@@ -95,27 +94,119 @@ ProbeRenderInst::ProbeRenderInst() :
 
 ProbeRenderInst::~ProbeRenderInst()
 {
-   if (mPrefilterCubemap && mPrefilterCubemap.isValid())
-   {
-      mPrefilterCubemap.free();
-   }
-   if (mIrradianceCubemap && mIrradianceCubemap.isValid())
-   {
-      mIrradianceCubemap.free();
-   }
 }
 
 void ProbeRenderInst::set(const ProbeRenderInst *probeInfo)
 {
    mTransform = probeInfo->mTransform;
-   mPrefilterCubemap = probeInfo->mPrefilterCubemap;
-   mIrradianceCubemap = probeInfo->mIrradianceCubemap;
    mRadius = probeInfo->mRadius;
    mProbeShapeType = probeInfo->mProbeShapeType;
    mBounds = probeInfo->mBounds;
-   mIsSkylight = probeInfo->mIsSkylight;
    mScore = probeInfo->mScore;
    mAtten = probeInfo->mAtten;
+}
+
+bool ProbeRenderInst::setCubemaps(GFXCubemapHandle prefilter, GFXCubemapHandle irrad)
+{
+   if (prefilter->isInitialized() && irrad->isInitialized())
+   {
+      //Update the probe manager with our new texture!
+      PROBEMGR->updateProbeTexture(this, prefilter, irrad);
+
+      return true;
+   }
+   else
+   {
+      return false;
+   }
+}
+
+bool ProbeRenderInst::setCubemaps(FileName prefilPath, FileName irradPath)
+{
+   if (!Platform::isFile(prefilPath) || !Platform::isFile(irradPath))
+      return false;
+
+   CubemapData* prefilterMapData = PROBEMGR->getPrefilterMapData();
+   prefilterMapData->setCubemapFile(FileName(prefilPath));
+   prefilterMapData->updateFaces();
+
+   if (!prefilterMapData->mCubemap->isInitialized())
+   {
+      Con::errorf("ProbeRenderInst::setCubemaps() - Unable to load baked prefilter map at %s", prefilPath.c_str());
+      return false;
+   }
+
+   CubemapData* irradMapData = PROBEMGR->getIrradianceMapData();
+   irradMapData->setCubemapFile(FileName(irradPath));
+   irradMapData->updateFaces();
+
+   if (!irradMapData->mCubemap->isInitialized())
+   {
+      Con::errorf("ProbeRenderInst::setCubemaps() - Unable to load baked iraddiance map at %s", irradPath.c_str());
+      return false;
+   }
+
+   return setCubemaps(prefilterMapData->mCubemap, irradMapData->mCubemap);
+}
+
+bool ProbeRenderInst::setCubemap(StringTableEntry cubemapName)
+{
+   String path = Con::getVariable("$pref::ReflectionProbes::CurrentLevelPath", "levels/");
+
+   char prefilterFileName[256];
+   dSprintf(prefilterFileName, 256, "%s%s_Prefilter.dds", path.c_str(), cubemapName);
+
+   char irradFileName[256];
+   dSprintf(irradFileName, 256, "%s_Irradiance.dds", path.c_str(), cubemapName);
+
+   //Do some trickery here so if we're trying to load a cubemap that doesn't have the valid full names
+   if (!Platform::isFile(prefilterFileName) || !Platform::isFile(irradFileName))
+   {
+      CubemapData* staticCubemap;
+
+      //If we are missing either of the files, just re-run the bake
+      Sim::findObject(cubemapName, staticCubemap);
+
+      if (!staticCubemap)
+      {
+         Con::errorf("ProbeRenderInst::setCubemap() - unable to find static cubemap file!");
+         return false;
+      }
+
+      if (staticCubemap->mCubemap == nullptr)
+      {
+         staticCubemap->createMap();
+         staticCubemap->updateFaces();
+      }
+
+      CubemapData* prefilterMapData = PROBEMGR->getPrefilterMapData();
+      CubemapData* irradMapData = PROBEMGR->getIrradianceMapData();
+
+      if (PROBEMGR->getUseHDRCaptures())
+      {
+         prefilterMapData->mCubemap->initDynamic(PROBEMGR->getPrefilterSize(), GFXFormatR16G16B16A16F);
+         prefilterMapData->mCubemap->initDynamic(PROBEMGR->getPrefilterSize(), GFXFormatR16G16B16A16F);
+      }
+      else
+      {
+         prefilterMapData->mCubemap->initDynamic(PROBEMGR->getPrefilterSize(), GFXFormatR8G8B8A8);
+         prefilterMapData->mCubemap->initDynamic(PROBEMGR->getPrefilterSize(), GFXFormatR8G8B8A8);
+      }
+
+      GFXTextureTargetRef renderTarget = GFX->allocRenderToTextureTarget(false);
+
+      IBLUtilities::GenerateIrradianceMap(renderTarget, staticCubemap->mCubemap, irradMapData->mCubemap);
+      IBLUtilities::GeneratePrefilterMap(renderTarget, staticCubemap->mCubemap, PROBEMGR->getPrefilterMipLevels(), prefilterMapData->mCubemap);
+
+      IBLUtilities::SaveCubeMap(irradFileName, irradMapData->mCubemap);
+      IBLUtilities::SaveCubeMap(prefilterFileName, prefilterMapData->mCubemap);
+
+      return setCubemaps(prefilterMapData->mCubemap, irradMapData->mCubemap);
+   }
+   else
+   {
+      return setCubemaps(FileName(prefilterFileName), FileName(irradFileName));
+   }
 }
 
 //
@@ -200,7 +291,6 @@ RenderProbeMgr::RenderProbeMgr()
 : RenderBinManager(RenderPassManager::RIT_Probes, 1.0f, 1.0f),
    mLastShader(nullptr),
    mLastConstants(nullptr),
-	mProbesDirty(false),
    mHasSkylight(false),
    mSkylightCubemapIdx(-1),
    mCubeMapCount(0),
@@ -221,6 +311,12 @@ RenderProbeMgr::RenderProbeMgr()
    {
       mCubeMapSlots[i] = false;
    }
+
+   mPrefilterSize = 64;
+   mPrefilterMipLevels = mLog2(F32(mPrefilterSize)) + 1;
+
+   mPrefilterMapData = nullptr;
+   mIrradianceMapData = nullptr;
 }
 
 RenderProbeMgr::RenderProbeMgr(RenderInstType riType, F32 renderOrder, F32 processAddOrder)
@@ -235,7 +331,14 @@ RenderProbeMgr::RenderProbeMgr(RenderInstType riType, F32 renderOrder, F32 proce
    mSkylightCubemapIdx = -1;
    mLastConstants = nullptr;
    mMipCount = 0;
-   mProbesDirty = false;
+
+   mUseHDRCaptures = true;
+
+   mPrefilterSize = 64;
+   mPrefilterMipLevels = mLog2(F32(mPrefilterSize)) + 1;
+
+   mPrefilterMapData = nullptr;
+   mIrradianceMapData = nullptr;
 }
 
 RenderProbeMgr::~RenderProbeMgr()
@@ -256,6 +359,14 @@ bool RenderProbeMgr::onAdd()
    if (!Parent::onAdd())
       return false;
 
+   mPrefilterMapData = new CubemapData();
+   mPrefilterMapData->registerObject();
+   mPrefilterMapData->createMap();
+
+   mIrradianceMapData = new CubemapData();
+   mIrradianceMapData->registerObject();
+   mIrradianceMapData->createMap();
+
    mIrradianceArray = GFXCubemapArrayHandle(GFX->createCubemapArray());
    mPrefilterArray = GFXCubemapArrayHandle(GFX->createCubemapArray());
 
@@ -269,7 +380,8 @@ bool RenderProbeMgr::onAdd()
    mDefaultSkyLight->mProbeShapeType = ProbeRenderInst::Skylight;
    mDefaultSkyLight->mIsEnabled = false;
 
-   String defaultIrradMapPath = GFXTextureManager::getDefaultIrradianceCubemapPath();
+   //TODO: fix up the default skylight
+   /*String defaultIrradMapPath = GFXTextureManager::getDefaultIrradianceCubemapPath();
    if (!mDefaultSkyLight->mIrradianceCubemap.set(defaultIrradMapPath))
    {
       Con::errorf("RenderProbeMgr::onAdd: Failed to load default irradiance cubemap");
@@ -281,7 +393,7 @@ bool RenderProbeMgr::onAdd()
    {
       Con::errorf("RenderProbeMgr::onAdd: Failed to load default prefilter cubemap");
       return false;
-   }
+   }*/
 
    String brdfTexturePath = GFXTextureManager::getBRDFTexturePath();
    if (!mBRDFTexture.set(brdfTexturePath, &GFXTexturePersistentSRGBProfile, "BRDFTexture"))
@@ -295,6 +407,12 @@ bool RenderProbeMgr::onAdd()
 
 void RenderProbeMgr::onRemove()
 {
+   mPrefilterMapData->deleteObject();
+   mIrradianceMapData->deleteObject();
+
+   if(mCubeReflector.isEnabled())
+      mCubeReflector.unregisterReflector();
+
    Parent::onRemove();
 }
 
@@ -303,14 +421,21 @@ void RenderProbeMgr::initPersistFields()
    Parent::initPersistFields();
 }
 
-ProbeRenderInst* RenderProbeMgr::registerProbe()
+void RenderProbeMgr::consoleInit()
+{
+   Parent::consoleInit();
+
+   // Vars for debug rendering while the RoadEditor is open, only used if smEditorOpen is true.
+   Con::addVariable("$pref::maxProbeDrawDistance", TypeF32, &RenderProbeMgr::smMaxProbeDrawDistance, "Max distance for reflection probes to render.\n");
+}
+
+void RenderProbeMgr::registerProbe(ProbeRenderInst* newProbe)
 {
    //Can't have over the probe limit
    if (mRegisteredProbes.size() + 1 >= PROBE_MAX_COUNT)
-      return nullptr;
+      return;
 
-   mRegisteredProbes.increment();
-   ProbeRenderInst* newProbe = &mRegisteredProbes.last();
+   mRegisteredProbes.push_back(newProbe);
 
    newProbe->mProbeIdx = mRegisteredProbes.size() - 1;
 
@@ -318,7 +443,7 @@ ProbeRenderInst* RenderProbeMgr::registerProbe()
    if (cubeIndex == INVALID_CUBE_SLOT)
    {
       Con::warnf("RenderProbeMgr::addProbe: Invalid cubemap slot.");
-      return nullptr;
+      return;
    }
 
    //check if we need to resize the cubemap array
@@ -342,6 +467,7 @@ ProbeRenderInst* RenderProbeMgr::registerProbe()
    }
 
    newProbe->mCubemapIndex = cubeIndex;
+
    //mark cubemap slot as taken
    mCubeMapSlots[cubeIndex] = true;
    mCubeMapCount++;
@@ -349,10 +475,6 @@ ProbeRenderInst* RenderProbeMgr::registerProbe()
 #ifdef TORQUE_DEBUG
    Con::warnf("RenderProbeMgr::registerProbe: Registered probe %u to cubeIndex %u", newProbe->mProbeIdx, cubeIndex);
 #endif
-
-   mProbesDirty = true;
-
-   return newProbe;
 }
 
 void RenderProbeMgr::unregisterProbe(U32 probeIdx)
@@ -361,11 +483,11 @@ void RenderProbeMgr::unregisterProbe(U32 probeIdx)
    if (probeIdx >= mRegisteredProbes.size())
       return;
 
-   if (mRegisteredProbes[probeIdx].mCubemapIndex == INVALID_CUBE_SLOT)
+   if (mRegisteredProbes[probeIdx]->mCubemapIndex == INVALID_CUBE_SLOT)
       return;
 
    //mark cubemap slot as available now
-   mCubeMapSlots[mRegisteredProbes[probeIdx].mCubemapIndex] = false;
+   mCubeMapSlots[mRegisteredProbes[probeIdx]->mCubemapIndex] = false;
    mCubeMapCount--;
 
    mRegisteredProbes.erase(probeIdx);
@@ -373,11 +495,8 @@ void RenderProbeMgr::unregisterProbe(U32 probeIdx)
    //recalculate all the probe's indicies just to be sure
    for (U32 i = 0; i < mRegisteredProbes.size(); i++)
    {
-      mRegisteredProbes[i].mProbeIdx = i;
+      mRegisteredProbes[i]->mProbeIdx = i;
    }
-
-   //rebuild our probe data
-   mProbesDirty = true;
 }
 
 //
@@ -394,125 +513,40 @@ PostEffect* RenderProbeMgr::getProbeArrayEffect()
    return mProbeArrayEffect;
 }
 
-//remove
-//Con::setIntVariable("lightMetrics::activeReflectionProbes", mReflectProbeBin.size());
-//Con::setIntVariable("lightMetrics::culledReflectProbes", 0/*mNumLightsCulled*/);
-//
-
-void RenderProbeMgr::updateProbes()
+void RenderProbeMgr::updateProbeTexture(ProbeRenderInst* probeInfo, GFXCubemapHandle prefilterCubemap, GFXCubemapHandle irradianceCubemap)
 {
-	mProbesDirty = true;
-}
-
-void RenderProbeMgr::_setupStaticParameters(SceneRenderState* state)
-{
-   if (mRegisteredProbes.size() != 0)
-      mEffectiveProbeCount = 1;
-
-   //mProbeData = ProbeDataSet(PROBE_MAX_FRAME);
-
-   //getBestProbes(state->getCameraPosition(), &mProbeData);
-
-   //Array rendering
-   /*U32 probeCount = mRegisteredProbes.size();
-
-   mEffectiveProbeCount = 0;
-   mMipCount = 1;
-
-   mHasSkylight = false;
-   mSkylightCubemapIdx = -1;
-
-   if (probePositionsData.size() != MAXPROBECOUNT)
-   {
-      probePositionsData.setSize(MAXPROBECOUNT);
-      probeRefPositionsData.setSize(MAXPROBECOUNT);
-      probeWorldToObjData.setSize(MAXPROBECOUNT);
-      refBoxMinData.setSize(MAXPROBECOUNT);
-      refBoxMaxData.setSize(MAXPROBECOUNT);
-      probeConfigData.setSize(MAXPROBECOUNT);
-   }
-
-   probePositionsData.fill(Point4F::Zero);
-   probeRefPositionsData.fill(Point4F::Zero);
-   probeWorldToObjData.fill(MatrixF::Identity);
-   refBoxMinData.fill(Point4F::Zero);
-   refBoxMaxData.fill(Point4F::Zero);
-   probeConfigData.fill(Point4F(-1,0,0,0));
-
-   for (U32 i = 0; i < probeCount; i++)
-   {
-      if (mEffectiveProbeCount >= MAXPROBECOUNT)
-         break;
-
-      const ProbeRenderInst& curEntry = mRegisteredProbes[i];
-      if (!curEntry.mIsEnabled)
-         continue;
-
-      U32 mips = mRegisteredProbes[i].mPrefilterCubemap.getPointer()->getMipMapLevels();
-      mMipCount = (mips != 0 && mips >= mMipCount) ? mips : 0;
-
-      if (curEntry.mIsSkylight)
-      {
-         mSkylightCubemapIdx = curEntry.mCubemapIndex;
-         continue;
-      }
-
-      //Setup
-      Point3F probePos = curEntry.getPosition();
-      Point3F refPos = curEntry.getPosition() +curEntry.mProbeRefOffset;
-      probePositionsData[mEffectiveProbeCount] = Point4F(probePos.x, probePos.y, probePos.z,0);
-      probeRefPositionsData[mEffectiveProbeCount] = Point4F(refPos.x, refPos.y, refPos.z, 0);
-
-      probeWorldToObjData[mEffectiveProbeCount] = curEntry.getTransform();
-      Point3F bbMin = refPos - curEntry.mProbeRefScale/2 * curEntry.getTransform().getScale();
-      Point3F bbMax = refPos + curEntry.mProbeRefScale/2 * curEntry.getTransform().getScale();
-      refBoxMinData[mEffectiveProbeCount] = Point4F(bbMin.x, bbMin.y, bbMin.z, 0);
-      refBoxMaxData[mEffectiveProbeCount] = Point4F(bbMax.x, bbMax.y, bbMax.z, 0);
-
-      probeConfigData[mEffectiveProbeCount] = Point4F(curEntry.mProbeShapeType, 
-         curEntry.mRadius,
-         curEntry.mAtten,
-         curEntry.mCubemapIndex);
-
-      mEffectiveProbeCount++;
-   }*/
-
-   mProbesDirty = false;
-}
-
-void RenderProbeMgr::updateProbeTexture(ProbeRenderInst* probeInfo)
-{
-   if (probeInfo->mIrradianceCubemap.isNull() || !probeInfo->mIrradianceCubemap->isInitialized())
+   if (irradianceCubemap.isNull() || !irradianceCubemap->isInitialized())
    {
       Con::errorf("RenderProbeMgr::updateProbeTexture() - tried to update a probe's texture with an invalid or uninitialized irradiance map!");
       return;
    }
 
-   if (probeInfo->mPrefilterCubemap.isNull() || !probeInfo->mPrefilterCubemap->isInitialized())
+   if (prefilterCubemap.isNull() || !prefilterCubemap->isInitialized())
    {
       Con::errorf("RenderProbeMgr::updateProbeTexture() - tried to update a probe's texture with an invalid or uninitialized specular map!");
       return;
    }
 
    const U32 cubeIndex = probeInfo->mCubemapIndex;
-   mIrradianceArray->updateTexture(probeInfo->mIrradianceCubemap, cubeIndex);
-   mPrefilterArray->updateTexture(probeInfo->mPrefilterCubemap, cubeIndex);
+   mIrradianceArray->updateTexture(irradianceCubemap, cubeIndex);
+   mPrefilterArray->updateTexture(prefilterCubemap, cubeIndex);
 
 #ifdef TORQUE_DEBUG
    Con::warnf("UpdatedProbeTexture - probeIdx: %u on cubeIndex %u, Irrad validity: %d, Prefilter validity: %d", probeInfo->mProbeIdx, cubeIndex,
-      probeInfo->mIrradianceCubemap->isInitialized(), probeInfo->mPrefilterCubemap->isInitialized());
+      irradianceCubemap->isInitialized(), prefilterCubemap->isInitialized());
 #endif
 }
 
 void RenderProbeMgr::reloadTextures()
 {
-   U32 probeCount = mRegisteredProbes.size();
+   //TODO Fix up probe reloading
+   /*U32 probeCount = mRegisteredProbes.size();
    for (U32 i = 0; i < probeCount; i++)
    {
       updateProbeTexture(&mRegisteredProbes[i]);
    }
 
-   mProbesDirty = true;
+   mProbesDirty = true;*/
 }
 
 void RenderProbeMgr::_setupPerFrameParameters(const SceneRenderState *state)
@@ -568,31 +602,44 @@ void RenderProbeMgr::_update4ProbeConsts(const SceneData &sgData,
 {
    PROFILE_SCOPE(ProbeManager_Update4ProbeConsts);
 
-   return;
-
    // Skip over gathering lights if we don't have to!
-   //if (probeShaderConsts->isValid())
+   if (probeShaderConsts->isValid())
    {
       PROFILE_SCOPE(ProbeManager_Update4ProbeConsts_setProbes);
 
       const U32 MAX_FORWARD_PROBES = 4;
-      PackedProbeDataSet probeSet(MAX_FORWARD_PROBES);
+      ProbeDataSet probeSet(MAX_FORWARD_PROBES);
 
       matSet.restoreSceneViewProjection();
 
-      //getBestProbes(sgData.objTrans->getPosition(), &probeSet);
+      getBestProbes(sgData.objTrans->getPosition(), &probeSet);
+
+      static AlignedArray<Point4F> probePositionAlignedArray(probeSet.maxProbeCount, sizeof(Point4F));
+      static AlignedArray<Point4F> refBoxMinAlignedArray(probeSet.maxProbeCount, sizeof(Point4F));
+      static AlignedArray<Point4F> refBoxMaxAlignedArray(probeSet.maxProbeCount, sizeof(Point4F));
+      static AlignedArray<Point4F> probeRefPositionAlignedArray(probeSet.maxProbeCount, sizeof(Point4F));
+      static AlignedArray<Point4F> probeConfigAlignedArray(probeSet.maxProbeCount, sizeof(Point4F));
+
+      for (U32 i = 0; i < probeSet.maxProbeCount; i++)
+      {
+         probePositionAlignedArray[i] = probeSet.probePositionArray[i];
+         probeRefPositionAlignedArray[i] = probeSet.probeRefPositionArray[i];
+         refBoxMinAlignedArray[i] = probeSet.refBoxMinArray[i];
+         refBoxMaxAlignedArray[i] = probeSet.refBoxMaxArray[i];
+         probeConfigAlignedArray[i] = probeSet.probeConfigArray[i];
+      }
 
       shaderConsts->setSafe(probeShaderConsts->mProbeCountSC, (S32)probeSet.effectiveProbeCount);
 
-      shaderConsts->setSafe(probeShaderConsts->mProbePositionSC, probeSet.probePositionArray);
-      shaderConsts->setSafe(probeShaderConsts->mProbeRefPosSC, probeSet.probeRefPositionArray);
+      shaderConsts->setSafe(probeShaderConsts->mProbePositionSC, probePositionAlignedArray);
+      shaderConsts->setSafe(probeShaderConsts->mProbeRefPosSC, probeRefPositionAlignedArray);
 
       if(probeShaderConsts->isValid())
          shaderConsts->set(probeShaderConsts->mWorldToObjArraySC, probeSet.probeWorldToObjArray.address(), probeSet.effectiveProbeCount, GFXSCT_Float4x4);
 
-      shaderConsts->setSafe(probeShaderConsts->mRefBoxMinSC, probeSet.refBoxMinArray);
-      shaderConsts->setSafe(probeShaderConsts->mRefBoxMaxSC, probeSet.refBoxMaxArray);
-      shaderConsts->setSafe(probeShaderConsts->mProbeConfigDataSC, probeSet.probeConfigArray);
+      shaderConsts->setSafe(probeShaderConsts->mRefBoxMinSC, refBoxMinAlignedArray);
+      shaderConsts->setSafe(probeShaderConsts->mRefBoxMaxSC, refBoxMaxAlignedArray);
+      shaderConsts->setSafe(probeShaderConsts->mProbeConfigDataSC, probeConfigAlignedArray);
 
       shaderConsts->setSafe(probeShaderConsts->mSkylightCubemapIdxSC, (float)probeSet.skyLightIdx);
 
@@ -610,80 +657,76 @@ void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* pro
 {
    PROFILE_SCOPE(ProbeManager_getBestProbes);
 
-   // Skip over gathering lights if we don't have to!
-   //if (probeShaderConsts->isValid())
+   //Array rendering
+   U32 probeCount = mRegisteredProbes.size();
+
+   Vector<S8> bestPickProbes;
+
+   probeDataSet->effectiveProbeCount = 0;
+   for (U32 i = 0; i < probeCount; i++)
    {
-      //Array rendering
-      U32 probeCount = mRegisteredProbes.size();
+      ProbeRenderInst* curEntry = mRegisteredProbes[i];
+      if (!curEntry->mIsEnabled)
+         continue;
 
-      Vector<S8> bestPickProbes;
-
-      probeDataSet->effectiveProbeCount = 0;
-      for (U32 i = 0; i < probeCount; i++)
+      if (curEntry->mProbeShapeType != ProbeRenderInst::Skylight)
       {
-         const ProbeRenderInst& curEntry = mRegisteredProbes[i];
-         if (!curEntry.mIsEnabled)
-            continue;
+         F32 dist = Point3F(curEntry->getPosition() - objPosition).len();
 
-         if (!curEntry.mIsSkylight)
+         //do rest of scoring logic here
+
+         S32 bestPickIndex = -1;
+         for (U32 p = 0; p < bestPickProbes.size(); p++)
          {
-            F32 dist = Point3F(objPosition - curEntry.getPosition()).len();
+            if (p > probeDataSet->maxProbeCount)
+               break;
 
-            //do rest of scoring logic here
+            F32 bestDist = Point3F(mRegisteredProbes[bestPickProbes[p]]->getPosition() - objPosition).len();
 
-            //if (dist > curEntry.mRadius || dist > curEntry.mExtents.len())
-            //   continue;
-
-            S32 bestPickIndex = -1;
-            for (U32 p = 0; p < bestPickProbes.size(); p++)
-            {
-               if (p > probeDataSet->maxProbeCount)
-                  break;
-
-               if (bestPickProbes[p] == -1 || (Point3F(objPosition - mRegisteredProbes[bestPickProbes[p]].mPosition).len() > dist))
-                  bestPickIndex = p;
-            }
-
-            //Can't have over our max count. Otherwise, if we haven't found a good slot for our best pick, insert it
-            //if we have a best pick slot, update it
-            if (bestPickIndex == -1 && bestPickProbes.size() < probeDataSet->maxProbeCount)
-               bestPickProbes.push_back(i);
-            else if(bestPickProbes.size() < probeDataSet->maxProbeCount)
-               bestPickProbes.push_back(i);
-            else if(bestPickIndex != -1 && bestPickProbes.size() >= probeDataSet->maxProbeCount) //if we've already filled our open slots, try and replace the best pick index
-               bestPickProbes[bestPickIndex] = i;
+            if (bestPickProbes[p] == -1 || bestDist > dist)
+               bestPickIndex = p;
          }
-         else
-         {
-            probeDataSet->skyLightIdx = curEntry.mCubemapIndex;
-         }
+
+         //Can't have over our max count. Otherwise, if we haven't found a good slot for our best pick, insert it
+         //if we have a best pick slot, update it
+         if (bestPickIndex == -1 && bestPickProbes.size() < probeDataSet->maxProbeCount)
+            bestPickProbes.push_back(i);
+         else if(bestPickProbes.size() < probeDataSet->maxProbeCount)
+            bestPickProbes.push_back(i);
+         else if(bestPickIndex != -1 && bestPickProbes.size() >= probeDataSet->maxProbeCount) //if we've already filled our open slots, try and replace the best pick index
+            bestPickProbes[bestPickIndex] = i;
       }
-
-      //Grab our best probe picks
-      for (U32 i = 0; i < bestPickProbes.size(); i++)
+      else
       {
-         if (bestPickProbes[i] == -1)
-            continue;
-
-         const ProbeRenderInst& curEntry = mRegisteredProbes[bestPickProbes[i]];
-
-         probeDataSet->probePositionArray[probeDataSet->effectiveProbeCount] = curEntry.getPosition();
-         probeDataSet->probeRefPositionArray[probeDataSet->effectiveProbeCount] = curEntry.mProbeRefOffset;
-         probeDataSet->probeWorldToObjArray[probeDataSet->effectiveProbeCount] = curEntry.getTransform();
-
-         Point3F refPos = curEntry.getPosition() + curEntry.mProbeRefOffset;
-         Point3F refBoxMin = refPos - curEntry.mProbeRefScale * curEntry.getTransform().getScale();
-         Point3F refBoxMax = refPos + curEntry.mProbeRefScale * curEntry.getTransform().getScale();
-
-         probeDataSet->refBoxMinArray[probeDataSet->effectiveProbeCount] = Point4F(refBoxMin.x, refBoxMin.y, refBoxMin.z, 0);
-         probeDataSet->refBoxMaxArray[probeDataSet->effectiveProbeCount] = Point4F(refBoxMax.x, refBoxMax.y, refBoxMax.z, 0);
-         probeDataSet->probeConfigArray[probeDataSet->effectiveProbeCount] = Point4F(curEntry.mProbeShapeType,
-            curEntry.mRadius,
-            curEntry.mAtten,
-            curEntry.mCubemapIndex);
-
-         probeDataSet->effectiveProbeCount++;
+         probeDataSet->skyLightIdx = curEntry->mCubemapIndex;
       }
+   }
+
+   //Grab our best probe picks
+   for (U32 i = 0; i < bestPickProbes.size(); i++)
+   {
+      if (bestPickProbes[i] == -1)
+         continue;
+
+      ProbeRenderInst* curEntry = mRegisteredProbes[bestPickProbes[i]];
+
+      Point3F refPos = curEntry->getPosition() + curEntry->mProbeRefOffset;
+      Point3F refBoxMin = refPos - curEntry->mProbeRefScale * curEntry->getTransform().getScale();
+      Point3F refBoxMax = refPos + curEntry->mProbeRefScale * curEntry->getTransform().getScale();
+
+      probeDataSet->probeWorldToObjArray[probeDataSet->effectiveProbeCount] = curEntry->getTransform();
+
+      probeDataSet->probePositionArray[probeDataSet->effectiveProbeCount] = curEntry->getPosition();
+      probeDataSet->probeRefPositionArray[probeDataSet->effectiveProbeCount] = curEntry->mProbeRefOffset;
+
+      probeDataSet->refBoxMinArray[probeDataSet->effectiveProbeCount] = Point4F(refBoxMin.x, refBoxMin.y, refBoxMin.z, 0);
+      probeDataSet->refBoxMaxArray[probeDataSet->effectiveProbeCount] = Point4F(refBoxMax.x, refBoxMax.y, refBoxMax.z, 0);
+      probeDataSet->probeConfigArray[probeDataSet->effectiveProbeCount] = Point4F(curEntry->mProbeShapeType,
+         curEntry->mRadius,
+         curEntry->mAtten,
+         curEntry->mCubemapIndex);
+
+      probeDataSet->effectiveProbeCount++;
    }
 }
 
@@ -705,9 +748,6 @@ void RenderProbeMgr::setProbeInfo(ProcessedMaterial *pmat,
    // Skip this if we're rendering from the deferred bin.
    if (sgData.binType == SceneData::DeferredBin)
       return;
-
-   // if (mRegisteredProbes.empty())
-   //    return;
 
    PROFILE_SCOPE(ProbeManager_setProbeInfo);
 
@@ -735,23 +775,19 @@ void RenderProbeMgr::render( SceneRenderState *state )
    if (getProbeArrayEffect() == nullptr)
       return;
 
-   if (mProbesDirty)
-	   _setupStaticParameters(state);
+   GFXDEBUGEVENT_SCOPE(RenderProbeMgr_render, ColorI::WHITE);
+
+   // Initialize and set the per-frame data
+   _setupPerFrameParameters(state);
 
    // Early out if nothing to draw.
-   if (!RenderProbeMgr::smRenderReflectionProbes || (!state->isDiffusePass() && !state->isReflectPass()) || (mEffectiveProbeCount == 0 && mSkylightCubemapIdx == -1))
+   if (!RenderProbeMgr::smRenderReflectionProbes || (!state->isDiffusePass() && !state->isReflectPass()) || (mProbeData.effectiveProbeCount == 0 && mSkylightCubemapIdx == -1))
    {
       getProbeArrayEffect()->setSkip(true);
       return;
    }
 
    GFXTransformSaver saver;
-
-   GFXDEBUGEVENT_SCOPE(RenderProbeMgr_render, ColorI::WHITE);
-
-   // Initialize and set the per-frame parameters after getting
-   // the vector light material as we use lazy creation.
-   _setupPerFrameParameters(state);
 
    //Visualization
    String useDebugAtten = Con::getVariable("$Probes::showAttenuation", "0");
@@ -781,7 +817,6 @@ void RenderProbeMgr::render( SceneRenderState *state )
       {
          mProbeArrayEffect->setShaderMacro("USE_SSAO_MASK");
          mProbeArrayEffect->setTexture(6, pTexObj);
-         
       }
    }
    else
@@ -836,8 +871,6 @@ void RenderProbeMgr::render( SceneRenderState *state )
 
    // Make sure the effect is gonna render.
    getProbeArrayEffect()->setSkip(false);
-
-   //PROFILE_END();
 }
 
 void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
@@ -887,10 +920,10 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
    reflDesc.texSize = resolution;
    reflDesc.farDist = farPlane;
    reflDesc.detailAdjust = 1;
-   reflDesc.objectTypeMask = probe->mCaptureMask;
+   reflDesc.objectTypeMask = probe->mProbeShapeType == ProbeRenderInst::ProbeShapeType::Skylight ? SKYLIGHT_CAPTURE_TYPEMASK : REFLECTION_PROBE_CAPTURE_TYPEMASK;
 
-   CubeReflector cubeRefl;
-   cubeRefl.registerReflector(probe, &reflDesc);
+   if(!mCubeReflector.isEnabled())
+      mCubeReflector.registerReflector(probe, &reflDesc);
 
    ReflectParams reflParams;
 
@@ -925,32 +958,31 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
 
    GFXFormat reflectFormat;
 
-   if (clientProbe->mUseHDRCaptures)
+   if (mUseHDRCaptures)
       reflectFormat = GFXFormatR16G16B16A16F;
    else
       reflectFormat = GFXFormatR8G8B8A8;
    const GFXFormat oldRefFmt = REFLECTMGR->getReflectFormat();
    REFLECTMGR->setReflectFormat(reflectFormat);
-   cubeRefl.updateReflection(reflParams);
+   mCubeReflector.updateReflection(reflParams);
 
    //Now, save out the maps
-   //create irridiance cubemap
-   if (cubeRefl.getCubemap())
+   if (mCubeReflector.getCubemap())
    {
-      //Just to ensure we're prepped for the generation
-      clientProbe->createClientResources();
+      CubemapData* prefilterMapData = getPrefilterMapData();
+      CubemapData* irradMapData = getPrefilterMapData();
 
       //Prep it with whatever resolution we've dictated for our bake
-      clientProbe->mIrridianceMap->mCubemap->initDynamic(resolution, reflectFormat);
-      clientProbe->mPrefilterMap->mCubemap->initDynamic(resolution, reflectFormat);
+      irradMapData->mCubemap->initDynamic(resolution, reflectFormat);
+      prefilterMapData->mCubemap->initDynamic(resolution, reflectFormat);
 
       if (mBakeRenderTarget == nullptr)
          mBakeRenderTarget = GFX->allocRenderToTextureTarget(false);
       else
          mBakeRenderTarget->resurrect();
 
-      IBLUtilities::GenerateIrradianceMap(mBakeRenderTarget, cubeRefl.getCubemap(), clientProbe->mIrridianceMap->mCubemap);
-      IBLUtilities::GeneratePrefilterMap(mBakeRenderTarget, cubeRefl.getCubemap(), prefilterMipLevels, clientProbe->mPrefilterMap->mCubemap);
+      IBLUtilities::GenerateIrradianceMap(mBakeRenderTarget, mCubeReflector.getCubemap(), irradMapData->mCubemap);
+      IBLUtilities::GeneratePrefilterMap(mBakeRenderTarget, mCubeReflector.getCubemap(), prefilterMipLevels, prefilterMapData->mCubemap);
 
       U32 endMSTime = Platform::getRealMilliseconds();
       F32 diffTime = F32(endMSTime - startMSTime);
@@ -960,11 +992,13 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
       {
          Con::warnf("RenderProbeMgr::bake() - Beginning save now!");
 
-         IBLUtilities::SaveCubeMap(clientProbe->getIrradianceMapPath(), clientProbe->mIrridianceMap->mCubemap);
-         IBLUtilities::SaveCubeMap(clientProbe->getPrefilterMapPath(), clientProbe->mPrefilterMap->mCubemap);
+         IBLUtilities::SaveCubeMap(clientProbe->getIrradianceMapPath(), irradMapData->mCubemap);
+         IBLUtilities::SaveCubeMap(clientProbe->getPrefilterMapPath(), prefilterMapData->mCubemap);
       }
 
       mBakeRenderTarget->zombify();
+
+      probe->mCubemapDirty = true;
    }
    else
    {
@@ -974,8 +1008,6 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
 
    if (!renderWithProbes)
       RenderProbeMgr::smRenderReflectionProbes = probeRenderState;
-
-   cubeRefl.unregisterReflector();
 
    U32 endMSTime = Platform::getRealMilliseconds();
    F32 diffTime = F32(endMSTime - startMSTime);
@@ -988,12 +1020,27 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
 
 void RenderProbeMgr::bakeProbes()
 {
-   //TODO: make this just find every probe in the current missionGroup and run the bake on it automagically
+   Vector<ReflectionProbe*> probes;
+
+   Scene::getRootScene()->findObjectByType<ReflectionProbe>(probes);
+
+   for (U32 i = 0; i < probes.size(); i++)
+   {
+      if (probes[i]->isClientObject())
+         continue;
+
+      bakeProbe(probes[i], true);
+   }
 }
 
 DefineEngineMethod(RenderProbeMgr, bakeProbe, void, (ReflectionProbe* probe), (nullAsType< ReflectionProbe*>()),
-   "@brief returns true if control object is inside the fog\n\n.")
+   "@brief Bakes the cubemaps for a reflection probe\n\n.")
 {
    if(probe != nullptr)
       object->bakeProbe(probe);
+}
+
+DefineEngineMethod(RenderProbeMgr, bakeProbes, void, (),, "@brief Iterates over all reflection probes in the scene and bakes their cubemaps\n\n.")
+{
+   object->bakeProbes();
 }

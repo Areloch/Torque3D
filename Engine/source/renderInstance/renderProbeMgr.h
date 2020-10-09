@@ -65,17 +65,12 @@ struct ProbeRenderInst
 
    F32 mRadius;
 
-   bool mDirty;
-
    Box3F mBounds;
    Point3F mExtents;
    Point3F mPosition;
    Point3F mProbeRefOffset;
    Point3F mProbeRefScale;
    F32 mAtten;
-
-   GFXCubemapHandle mPrefilterCubemap;
-   GFXCubemapHandle mIrradianceCubemap;
 
    /// The priority of this light used for
    /// light and shadow scoring.
@@ -84,8 +79,6 @@ struct ProbeRenderInst
    /// A temporary which holds the score used
    /// when prioritizing lights for rendering.
    F32 mScore;
-
-   bool mIsSkylight;
 
    enum ProbeShapeType
    {
@@ -115,16 +108,15 @@ public:
    Point3F getPosition() const { return mPosition; }
    void setPosition(const Point3F &pos) { mPosition = pos; }
 
-   VectorF getDirection() const { return mTransform.getForwardVector(); }
-   void setDirection(const VectorF &val);
-
    void setPriority(F32 priority) { mPriority = priority; }
    F32 getPriority() const { return mPriority; }
 
    void setScore(F32 score) { mScore = score; }
    F32 getScore() const { return mScore; }
 
-   void clear();
+   bool setCubemaps(GFXCubemapHandle prefilter, GFXCubemapHandle irrad);
+   bool setCubemaps(FileName prefilPath, FileName irradPath);
+   bool setCubemap(StringTableEntry cubemapName);
 
    inline bool operator ==(const ProbeRenderInst& b) const
    {
@@ -212,46 +204,6 @@ struct ProbeDataSet
    }
 };
 
-struct PackedProbeDataSet
-{
-   AlignedArray<Point4F> probePositionArray;
-   AlignedArray<Point4F> refBoxMinArray;
-   AlignedArray<Point4F> refBoxMaxArray;
-   AlignedArray<Point4F> probeRefPositionArray;
-   AlignedArray<Point4F> probeConfigArray;
-
-   Vector<MatrixF> probeWorldToObjArray;
-
-   S32 skyLightIdx;
-
-   U32 effectiveProbeCount;
-
-   U32 MAX_PROBE_COUNT;
-
-   PackedProbeDataSet(U32 maxProbeCount)
-   {
-      MAX_PROBE_COUNT = maxProbeCount;
-
-      probePositionArray = AlignedArray<Point4F>(maxProbeCount, sizeof(Point4F));
-      refBoxMinArray = AlignedArray<Point4F>(maxProbeCount, sizeof(Point4F));
-      refBoxMaxArray = AlignedArray<Point4F>(maxProbeCount, sizeof(Point4F));
-      probeRefPositionArray = AlignedArray<Point4F>(maxProbeCount, sizeof(Point4F));
-      probeConfigArray = AlignedArray<Point4F>(maxProbeCount, sizeof(Point4F));
-
-      probeWorldToObjArray.setSize(maxProbeCount);
-
-      // Need to clear the buffers so that we don't leak
-      // lights from previous passes or have NaNs.
-      dMemset(probePositionArray.getBuffer(), 0, probePositionArray.getBufferSize());
-      dMemset(refBoxMinArray.getBuffer(), 0, refBoxMinArray.getBufferSize());
-      dMemset(refBoxMaxArray.getBuffer(), 0, refBoxMaxArray.getBufferSize());
-      dMemset(probeRefPositionArray.getBuffer(), 0, probeRefPositionArray.getBufferSize());
-      dMemset(probeConfigArray.getBuffer(), 0, probeConfigArray.getBufferSize());
-      skyLightIdx = -1;
-      effectiveProbeCount = 0;
-   }
-};
-
 struct ProbeTextureArrayData
 {
    GFXTexHandle BRDFTexture;
@@ -266,9 +218,7 @@ class RenderProbeMgr : public RenderBinManager
 {
    typedef RenderBinManager Parent;
 
-   Vector<ProbeRenderInst> mRegisteredProbes;
-
-   bool mProbesDirty;
+   Vector<ProbeRenderInst*> mRegisteredProbes;
 
 public:
    //maximum number of allowed probes
@@ -283,26 +233,15 @@ public:
    static const GFXFormat PROBE_FORMAT = GFXFormatR16G16B16A16F;// GFXFormatR8G8B8A8;// when hdr fixed GFXFormatR16G16B16A16F; look into bc6h compression
    static const U32 INVALID_CUBE_SLOT = U32_MAX;
 
+   static F32 smMaxProbeDrawDistance;
+
 private:
    //Array rendering
    U32 mEffectiveProbeCount;
    S32 mMipCount;
-   Vector<Point4F> probePositionsData;
-   Vector<Point4F> probeRefPositionsData;
-   Vector<MatrixF> probeWorldToObjData;
-   Vector<Point4F> refBoxMinData;
-   Vector<Point4F> refBoxMaxData;
-   Vector<Point4F> probeConfigData;
 
    bool            mHasSkylight;
    S32             mSkylightCubemapIdx;
-
-   AlignedArray<Point4F> mProbePositions;
-   AlignedArray<Point4F> mRefBoxMin;
-   AlignedArray<Point4F> mRefBoxMax;
-   AlignedArray<float> mProbeUseSphereMode;
-   AlignedArray<float> mProbeRadius;
-   AlignedArray<float> mProbeAttenuation;
 
    //number of cubemaps
    U32 mCubeMapCount;
@@ -331,6 +270,16 @@ private:
 
    ProbeDataSet mProbeData;
 
+   ///Prevents us from saving out the cubemaps(for now) but allows us the full HDR range on the in-memory cubemap captures
+   bool mUseHDRCaptures;
+
+   U32 mPrefilterMipLevels;
+   U32 mPrefilterSize;
+
+   CubeReflector mCubeReflector;
+   CubemapData* mPrefilterMapData;
+   CubemapData* mIrradianceMapData;
+
 public:
    RenderProbeMgr();
    RenderProbeMgr(RenderInstType riType, F32 renderOrder, F32 processAddOrder);
@@ -340,6 +289,8 @@ public:
 
    // ConsoleObject
    static void initPersistFields();
+   static void consoleInit();
+
    DECLARE_CONOBJECT(RenderProbeMgr);
 
 protected:
@@ -353,7 +304,6 @@ protected:
       ProbeShaderConstants *probeShaderConsts,
       GFXShaderConstBuffer *shaderConsts);
 
-   void _setupStaticParameters(SceneRenderState* state);
    void _setupPerFrameParameters(const SceneRenderState *state);
    virtual void addElement(RenderInst* inst) {};
    virtual void render(SceneRenderState * state);
@@ -374,13 +324,10 @@ protected:
    }
 
 public:
-   // RenderBinMgr
-   void updateProbes();
-
    /// Returns the active LM.
    static inline RenderProbeMgr* getProbeManager();
 
-   ProbeRenderInst* registerProbe();
+   void registerProbe(ProbeRenderInst* newProbe);
    void unregisterProbe(U32 probeIdx);
 
    virtual void setProbeInfo(ProcessedMaterial *pmat,
@@ -390,7 +337,7 @@ public:
 	   U32 pass,
 	   GFXShaderConstBuffer *shaderConsts);
 
-   void updateProbeTexture(ProbeRenderInst* probeInfo);
+   void updateProbeTexture(ProbeRenderInst* probeInfo, GFXCubemapHandle prefilterCubemap, GFXCubemapHandle irradianceCubemap);
 
    void reloadTextures();
 
@@ -404,6 +351,13 @@ public:
    S32 getSkylightIndex() { return mSkylightCubemapIdx; }
    //accumulates the best fit of probes given the object position
    void getBestProbes(const Point3F& objPosition, ProbeDataSet* probeDataSet);
+
+   U32 getPrefilterSize() { return mPrefilterSize; }
+   U32 getPrefilterMipLevels() { return mPrefilterMipLevels; }
+   bool getUseHDRCaptures() { return mUseHDRCaptures; }
+
+   CubemapData* getPrefilterMapData() { return mPrefilterMapData; }
+   CubemapData* getIrradianceMapData() { return mIrradianceMapData; }
 };
 
 RenderProbeMgr* RenderProbeMgr::getProbeManager()

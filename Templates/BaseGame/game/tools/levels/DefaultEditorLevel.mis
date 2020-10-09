@@ -105,7 +105,7 @@ new Scene(EditorTemplateLevel) {
       ReflectionMode = "Baked Cubemap";
       DynamicReflectionRefreshMS = "500";
       dirtyGameObject = "0";
-      position = "1.37009 -5.23561 46.5817";
+      position = "0 0 46.5817";
       rotation = "1 0 0 0";
       canSave = "1";
       canSaveDynamicFields = "1";
@@ -951,6 +951,38 @@ new Scene(EditorTemplateLevel) {
       canSaveDynamicFields = "1";
       persistentId = "4804229b-08ac-11eb-8cef-ce954e7393cd";
       attenuation = "0";
+   };
+   new ConvexShape() {
+      Material = "Grid_512_Orange_Lines";
+      dirtyGameObject = "0";
+      position = "0.0849699 -5.15225 4.21071";
+      rotation = "1 0 0 0";
+      scale = "1 1 1";
+      canSave = "1";
+      canSaveDynamicFields = "1";
+
+      surface = "0 0 0 1 0 0 0.5 0 0 0 1 1 0 1 1";
+      surface = "0 1 0 0 0 0 -0.5 0 0 0 1 1 0 1 1";
+      surface = "0.707107 0 0 0.707106 0 0.5 0 0 0 0 1 1 0 1 1";
+      surface = "0 0.707107 -0.707107 0 0 -0.5 -2.84217e-14 0 0 0 1 1 0 1 1";
+      surface = "0.5 0.5 -0.5 0.5 -0.5 0 -9.93411e-08 0 0 0 1 1 0 1 1";
+      surface = "0.5 -0.5 0.5 0.5 0.5 0 -9.93411e-08 0 0 0 1 1 0 1 1";
+   };
+   new ConvexShape() {
+      Material = "Grid_512_Orange";
+      dirtyGameObject = "0";
+      position = "33.9102 17.5263 18.1771";
+      rotation = "0 -0 -1 0.29074";
+      scale = "1 1 1";
+      canSave = "1";
+      canSaveDynamicFields = "1";
+
+      surface = "-0 0 -0 1 5.76562 -4.6753 0.418061 0 0 0 1 1 0 0 0";
+      surface = "0 1 0 -0 5.76562 -4.6753 -0.418061 0 0 0 1 1 0 0 0";
+      surface = "0.707107 8.04117e-09 -8.04117e-09 0.707107 5.76562 17.2381 0 0 0 0 1 1 0 0 0";
+      surface = "-8.04117e-09 0.707107 -0.707107 -8.04117e-09 5.76562 -26.5887 0 0 0 0 1 1 0 0 0";
+      surface = "0.5 0.5 -0.5 0.5 -36.1655 -4.67529 0 0 0 0 1 1 0 0 0";
+      surface = "0.5 -0.5 0.5 0.5 47.6967 -4.67529 0 0 0 0 1 1 0 0 0";
    };
 };
 //--- OBJECT WRITE END ---
