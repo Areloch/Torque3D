@@ -89,11 +89,7 @@ ImplementEnumType(ReflectionModeEnum,
 //-----------------------------------------------------------------------------
 // Object setup and teardown
 //-----------------------------------------------------------------------------
-ReflectionProbe::ReflectionProbe() :
-   cubeDescId(0),
-   reflectorDesc(nullptr),
-   mSphereVertCount(0),
-   mSpherePrimitiveCount(0)
+ReflectionProbe::ReflectionProbe()
 {
    // Flag this object so that it will always
    // be sent across the network to clients
@@ -106,25 +102,22 @@ ReflectionProbe::ReflectionProbe() :
    mReflectionModeType = BakedCubemap;
 
    mEnabled = true;
-   mBake = false;
-   mDirty = false;
+   mBakeReflections = false;
    mCubemapDirty = false;
+   mDirty = false;
 
    mRadius = 10;
    mObjScale = Point3F::One * 10;
    mProbeRefScale = Point3F::One*10;
 
-   mStaticCubemap = NULL;
    mPersistentId = nullptr;
    mProbeUniqueID = "";
 
    mEditorShapeInst = NULL;
    mEditorShape = NULL;
 
-   mRefreshRateMS = 500;
-   mDynamicLastBakeMS = 0;
-
-   mMaxDrawDistance = 75;
+   //mRefreshRateMS = 500;
+   //mDynamicLastBakeMS = 0;
 
    mProbeRefOffset = Point3F::Zero;
    mEditPosOffset = false;
@@ -134,9 +127,6 @@ ReflectionProbe::~ReflectionProbe()
 {
    if (mEditorShapeInst)
       SAFE_DELETE(mEditorShapeInst);
-
-   if (mReflectionModeType == StaticCubemap && mStaticCubemap)
-      mStaticCubemap->deleteObject();
 }
 
 //-----------------------------------------------------------------------------
@@ -164,10 +154,10 @@ void ReflectionProbe::initPersistFields()
 
       addField("StaticCubemap", TypeCubemapName, Offset(mCubemapName, ReflectionProbe), "Cubemap used instead of reflection texture if fullReflect is off.");
 
-      addField("DynamicReflectionRefreshMS", TypeS32, Offset(mRefreshRateMS, ReflectionProbe), "How often the dynamic cubemap is refreshed in milliseconds. Only works when the ReflectionMode is set to DynamicCubemap.");
+      //addField("DynamicReflectionRefreshMS", TypeS32, Offset(mRefreshRateMS, ReflectionProbe), "How often the dynamic cubemap is refreshed in milliseconds. Only works when the ReflectionMode is set to DynamicCubemap.");
 
-      addProtectedField("Bake", TypeBool, Offset(mBake, ReflectionProbe),
-         &_doBake, &defaultProtectedGetFn, "Regenerate Voxel Grid", AbstractClassRep::FieldFlags::FIELD_ComponentInspectors);
+      addProtectedField("Bake", TypeBool, Offset(mBakeReflections, ReflectionProbe),
+         &_doBake, &defaultProtectedGetFn, "Bake Probe Reflections", AbstractClassRep::FieldFlags::FIELD_ComponentInspectors);
    endGroup("Reflection");
 
    Con::addVariable("$Light::renderReflectionProbes", TypeBool, &RenderProbeMgr::smRenderReflectionProbes,
@@ -187,8 +177,6 @@ void ReflectionProbe::initPersistFields()
 void ReflectionProbe::inspectPostApply()
 {
    Parent::inspectPostApply();
-
-   mDirty = true;
 
    bool liveUpdates = Con::getBoolVariable("$Probes::liveUpdates", false);
    if (liveUpdates)
@@ -292,8 +280,10 @@ bool ReflectionProbe::onAdd()
    // Refresh this object's material (if any)
    if (isClientObject())
    {
-      if (!createClientResources())
-         return false;
+      PROBEMGR->registerProbe(&mProbeInfo);
+
+      mProbeInfo.mIsEnabled = false;
+      mCubemapDirty = true;
 
       updateProbeParams();
    }
@@ -352,8 +342,6 @@ void ReflectionProbe::setTransform(const MatrixF & mat)
       mProbeRefOffset = mat.getPosition();
       setMaskBits(StaticDataMask);
    }
-
-   mDirty = true;
 }
 
 const MatrixF& ReflectionProbe::getTransform() const 
@@ -381,8 +369,6 @@ void ReflectionProbe::setScale(const VectorF &scale)
       mProbeRefScale = scale;
       setMaskBits(StaticDataMask);
    }
-
-   mDirty = true;
 }
 
 const VectorF& ReflectionProbe::getScale() const
@@ -423,7 +409,8 @@ U32 ReflectionProbe::packUpdate(NetConnection *conn, U32 mask, BitStream *stream
       stream->write(mProbeUniqueID);
       stream->write((U32)mReflectionModeType);
       stream->write(mCubemapName);
-      stream->write(mRefreshRateMS);
+      //stream->write(mRefreshRateMS);
+      stream->writeFlag(mCubemapDirty);
    }
 
    if (stream->writeFlag(mask & EnabledMask))
@@ -450,7 +437,7 @@ void ReflectionProbe::unpackUpdate(NetConnection *conn, BitStream *stream)
       resetWorldBox();
 
       mathRead(*stream, &mProbeRefOffset);
-      mathRead(*stream, &mProbeRefScale);      
+      mathRead(*stream, &mProbeRefScale);
 
       mDirty = true;
    }
@@ -474,10 +461,11 @@ void ReflectionProbe::unpackUpdate(NetConnection *conn, BitStream *stream)
       String oldCubemapName = mCubemapName;
       stream->read(&mCubemapName);
 
-      if(oldReflectModeType != mReflectionModeType || oldCubemapName != mCubemapName)
-         mCubemapDirty = true;
+      //stream->read(&mRefreshRateMS);
 
-      stream->read(&mRefreshRateMS);
+      mCubemapDirty = stream->readFlag();
+      //if(oldReflectModeType != mReflectionModeType || oldCubemapName != mCubemapName)
+      //   mCubemapDirty = true;
 
       mDirty = true;
    }
@@ -487,11 +475,6 @@ void ReflectionProbe::unpackUpdate(NetConnection *conn, BitStream *stream)
       mEnabled = stream->readFlag();
 
       mDirty = true;
-   }
-
-   if (mDirty)
-   {
-      updateProbeParams();
    }
 }
 
@@ -514,8 +497,6 @@ void ReflectionProbe::updateProbeParams()
       mProbeInfo.mPosition = Point3F::Zero;
       mProbeInfo.mTransform = MatrixF::Identity;
 
-      mProbeInfo.mIsSkylight = true;
-
       F32 visDist = gClientSceneGraph->getVisibleDistance();
       Box3F skylightBounds = Box3F(visDist * 2);
 
@@ -535,11 +516,9 @@ void ReflectionProbe::updateProbeParams()
       transform.scale(getScale());
       mProbeInfo.mTransform = transform.inverse();
 
-      mProbeInfo.mIsSkylight = false;
-
       bounds = mWorldBox;
 
-      mProbeInfo.mScore = mMaxDrawDistance;
+      mProbeInfo.mScore = 1;
    }
 
    // Skip our transform... it just dirties mask bits.
@@ -554,8 +533,6 @@ void ReflectionProbe::updateProbeParams()
    mProbeInfo.mProbeRefOffset = mProbeRefOffset;
    mProbeInfo.mProbeRefScale = mProbeRefScale;
 
-   mProbeInfo.mDirty = true;
-
    if (mCubemapDirty)
    {
       if (mReflectionModeType == StaticCubemap)
@@ -565,10 +542,10 @@ void ReflectionProbe::updateProbeParams()
       else
          processDynamicCubemap();
 
-      //mCubemapDirty = false;
+      mCubemapDirty = false;
    }
 
-   PROBEMGR->updateProbes();
+   mDirty = false;
 }
 
 void ReflectionProbe::processDynamicCubemap()
@@ -676,25 +653,20 @@ void ReflectionProbe::processBakedCubemap()
    if ((mReflectionModeType != BakedCubemap) || mProbeUniqueID.isEmpty())
       return;
 
-   mProbeInfo.setCubemaps(FileName(getPrefilterMapPath()), FileName(getIrradianceMapPath()));
+   bool success = mProbeInfo.setCubemaps(FileName(getPrefilterMapPath()), FileName(getIrradianceMapPath()));
+
+   if (mEnabled)
+      mProbeInfo.mIsEnabled = success;
 }
 
 void ReflectionProbe::processStaticCubemap()
 {
    mProbeInfo.mIsEnabled = false;
 
-   mProbeInfo.setCubemap(StringTable->insert(mCubemapName.c_str()));
-}
+   bool success = mProbeInfo.setCubemap(StringTable->insert(mCubemapName.c_str()));
 
-bool ReflectionProbe::createClientResources()
-{
-   PROBEMGR->registerProbe(&mProbeInfo);
-
-   mProbeInfo.mIsEnabled = false;
-
-   mCubemapDirty = true;
-
-   return true;
+   if (mEnabled)
+      mProbeInfo.mIsEnabled = success;
 }
 
 String ReflectionProbe::getPrefilterMapPath()
@@ -744,8 +716,9 @@ void ReflectionProbe::bake()
 //-----------------------------------------------------------------------------
 //Rendering of editing/debug stuff
 //-----------------------------------------------------------------------------
-void ReflectionProbe::createGeometry()
+void ReflectionProbe::createEditorResources()
 {
+#ifdef TORQUE_TOOLS
    // Clean up our previous shape
    if (mEditorShapeInst)
       SAFE_DELETE(mEditorShapeInst);
@@ -760,34 +733,30 @@ void ReflectionProbe::createGeometry()
    {
       mEditorShapeInst = new TSShapeInstance(mEditorShape, isClientObject());
    }
+
+   mEditorCubemapData = new CubemapData();
+   mEditorCubemapData->registerObject();
+   mEditorCubemapData->createMap();
+   mEditorCubemapData->setCubemapFile(getPrefilterMapPath());
+   mEditorCubemapData->updateFaces();
+#endif
 }
 
 void ReflectionProbe::prepRenderImage(SceneRenderState *state)
 {
-   //if (!mEnabled || !RenderProbeMgr::smRenderReflectionProbes)
+   if (!mEnabled || !RenderProbeMgr::smRenderReflectionProbes)
       return;
 
    Point3F distVec = getRenderPosition() - state->getCameraPosition();
    F32 dist = distVec.len();
 
-   //Culling distance. Can be adjusted for performance options considerations via the scalar
-   if (dist > mMaxDrawDistance * Con::getFloatVariable("$pref::GI::ProbeDrawDistScale", 1.0))
-   {
-      mProbeInfo.mScore = mMaxDrawDistance;
-      return;
-   }
-
-   if (mReflectionModeType == DynamicCubemap && mRefreshRateMS < (Platform::getRealMilliseconds() - mDynamicLastBakeMS))
+   /*if (mReflectionModeType == DynamicCubemap && mRefreshRateMS < (Platform::getRealMilliseconds() - mDynamicLastBakeMS))
    {
       //bake();
       mDynamicLastBakeMS = Platform::getRealMilliseconds();
 
       processDynamicCubemap();
-   }
-
-   //Submit our probe to actually do the probe action
-   // Get a handy pointer to our RenderPassmanager
-   //RenderPassManager *renderPass = state->getRenderPass();
+   }*/
 
    //Update our score based on our radius, distance
    mProbeInfo.mScore = mProbeInfo.mRadius/mMax(dist,1.0f);
@@ -797,13 +766,11 @@ void ReflectionProbe::prepRenderImage(SceneRenderState *state)
 
    mProbeInfo.mScore *= mMax(mAbs(mDot(vect, state->getCameraTransform().getForwardVector())),0.001f);
 
-   //Register
-   //PROBEMGR->registerProbe(mProbeInfoIdx);
-
-   if (false && ReflectionProbe::smRenderPreviewProbes && gEditingMission/* && mPrefilterMap != nullptr*/)
+#ifdef TORQUE_TOOLS
+   if (mProbeInfo.mIsEnabled && ReflectionProbe::smRenderPreviewProbes && gEditingMission)
    {
       if(!mEditorShapeInst)
-         createGeometry();
+         createEditorResources();
 
       GFXTransformSaver saver;
 
@@ -837,10 +804,8 @@ void ReflectionProbe::prepRenderImage(SceneRenderState *state)
       rdata.setSceneState(state);
       rdata.setFadeOverride(1.0f);
 
-      /*if(mReflectionModeType != DynamicCubemap)
-         rdata.setCubemap(mPrefilterMap->mCubemap);
-      else
-         rdata.setCubemap(mDynamicCubemap);*/
+      if (mReflectionModeType != DynamicCubemap)
+         rdata.setCubemap(mEditorCubemapData->mCubemap);
 
       // We might have some forward lit materials
       // so pass down a query to gather lights.
@@ -861,7 +826,7 @@ void ReflectionProbe::prepRenderImage(SceneRenderState *state)
       saver.restore();
    }
 
-   // If the light is selected or light visualization
+   // If the probe is selected or probe visualization
    // is enabled then register the callback.
    const bool isSelectedInEditor = (gEditingMission && isSelected());
    if (isSelectedInEditor)
@@ -871,6 +836,7 @@ void ReflectionProbe::prepRenderImage(SceneRenderState *state)
       ri->type = RenderPassManager::RIT_Editor;
       state->getRenderPass()->addInst(ri);
    }
+#endif
 }
 
 void ReflectionProbe::_onRenderViz(ObjectRenderInst *ri,

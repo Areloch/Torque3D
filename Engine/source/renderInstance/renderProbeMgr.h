@@ -65,8 +65,6 @@ struct ProbeRenderInst
 
    F32 mRadius;
 
-   bool mDirty;
-
    Box3F mBounds;
    Point3F mExtents;
    Point3F mPosition;
@@ -81,8 +79,6 @@ struct ProbeRenderInst
    /// A temporary which holds the score used
    /// when prioritizing lights for rendering.
    F32 mScore;
-
-   bool mIsSkylight;
 
    enum ProbeShapeType
    {
@@ -112,16 +108,11 @@ public:
    Point3F getPosition() const { return mPosition; }
    void setPosition(const Point3F &pos) { mPosition = pos; }
 
-   VectorF getDirection() const { return mTransform.getForwardVector(); }
-   void setDirection(const VectorF &val);
-
    void setPriority(F32 priority) { mPriority = priority; }
    F32 getPriority() const { return mPriority; }
 
    void setScore(F32 score) { mScore = score; }
    F32 getScore() const { return mScore; }
-
-   void clear();
 
    bool setCubemaps(GFXCubemapHandle prefilter, GFXCubemapHandle irrad);
    bool setCubemaps(FileName prefilPath, FileName irradPath);
@@ -229,8 +220,6 @@ class RenderProbeMgr : public RenderBinManager
 
    Vector<ProbeRenderInst*> mRegisteredProbes;
 
-   bool mProbesDirty;
-
 public:
    //maximum number of allowed probes
    static const U32 PROBE_MAX_COUNT = 250;
@@ -244,26 +233,15 @@ public:
    static const GFXFormat PROBE_FORMAT = GFXFormatR16G16B16A16F;// GFXFormatR8G8B8A8;// when hdr fixed GFXFormatR16G16B16A16F; look into bc6h compression
    static const U32 INVALID_CUBE_SLOT = U32_MAX;
 
+   static F32 smMaxProbeDrawDistance;
+
 private:
    //Array rendering
    U32 mEffectiveProbeCount;
    S32 mMipCount;
-   /*Vector<Point4F> probePositionsData;
-   Vector<Point4F> probeRefPositionsData;
-   Vector<MatrixF> probeWorldToObjData;
-   Vector<Point4F> refBoxMinData;
-   Vector<Point4F> refBoxMaxData;
-   Vector<Point4F> probeConfigData;*/
 
    bool            mHasSkylight;
    S32             mSkylightCubemapIdx;
-
-   /*AlignedArray<Point4F> mProbePositions;
-   AlignedArray<Point4F> mRefBoxMin;
-   AlignedArray<Point4F> mRefBoxMax;
-   AlignedArray<float> mProbeUseSphereMode;
-   AlignedArray<float> mProbeRadius;
-   AlignedArray<float> mProbeAttenuation;*/
 
    //number of cubemaps
    U32 mCubeMapCount;
@@ -311,6 +289,8 @@ public:
 
    // ConsoleObject
    static void initPersistFields();
+   static void consoleInit();
+
    DECLARE_CONOBJECT(RenderProbeMgr);
 
 protected:
@@ -324,7 +304,6 @@ protected:
       ProbeShaderConstants *probeShaderConsts,
       GFXShaderConstBuffer *shaderConsts);
 
-   void _setupStaticParameters(SceneRenderState* state);
    void _setupPerFrameParameters(const SceneRenderState *state);
    virtual void addElement(RenderInst* inst) {};
    virtual void render(SceneRenderState * state);
@@ -345,9 +324,6 @@ protected:
    }
 
 public:
-   // RenderBinMgr
-   void updateProbes();
-
    /// Returns the active LM.
    static inline RenderProbeMgr* getProbeManager();
 
@@ -382,9 +358,6 @@ public:
 
    CubemapData* getPrefilterMapData() { return mPrefilterMapData; }
    CubemapData* getIrradianceMapData() { return mIrradianceMapData; }
-
-   void sanityCheck();
-
 };
 
 RenderProbeMgr* RenderProbeMgr::getProbeManager()

@@ -101,8 +101,6 @@ void BoxEnvironmentProbe::inspectPostApply()
 {
    Parent::inspectPostApply();
 
-   mDirty = true;
-
    // Flag the network mask to send the updates
    // to the client object
    setMaskBits(-1);

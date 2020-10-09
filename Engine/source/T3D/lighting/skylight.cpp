@@ -102,8 +102,6 @@ void Skylight::inspectPostApply()
 {
    Parent::inspectPostApply();
 
-   mDirty = true;
-
    // Flag the network mask to send the updates
    // to the client object
    setMaskBits(-1);
@@ -134,6 +132,11 @@ void Skylight::unpackUpdate(NetConnection *conn, BitStream *stream)
 {
    // Let the Parent read any info it sent
    Parent::unpackUpdate(conn, stream);
+
+   if (mDirty)
+   {
+      updateProbeParams();
+   }
 }
 
 //-----------------------------------------------------------------------------
@@ -148,7 +151,7 @@ void Skylight::updateProbeParams()
 
 void Skylight::prepRenderImage(SceneRenderState *state)
 {
-   //if (!mEnabled || !Skylight::smRenderSkylights)
+   if (!mEnabled || !Skylight::smRenderSkylights)
       return;
 
    //special hook-in for skylights
@@ -157,21 +160,16 @@ void Skylight::prepRenderImage(SceneRenderState *state)
 
    mProbeInfo.setPosition(camPos);
 
-   if (mReflectionModeType == DynamicCubemap && mRefreshRateMS < (Platform::getRealMilliseconds() - mDynamicLastBakeMS))
+   /*if (mReflectionModeType == DynamicCubemap && mRefreshRateMS < (Platform::getRealMilliseconds() - mDynamicLastBakeMS))
    {
       //bake();
       mDynamicLastBakeMS = Platform::getRealMilliseconds();
 
       processDynamicCubemap();
-   }
+   }*/
 
-   //Submit our probe to actually do the probe action
-   // Get a handy pointer to our RenderPassmanager
-   //RenderPassManager *renderPass = state->getRenderPass();
-
-   //PROBEMGR->registerSkylight(mProbeInfo, this);
-
-   if (Skylight::smRenderPreviewProbes && gEditingMission && mEditorShapeInst/* && mPrefilterMap != nullptr*/)
+#ifdef TORQUE_TOOLS
+   if (mProbeInfo.mIsEnabled && Skylight::smRenderPreviewProbes && gEditingMission && mEditorShapeInst)
    {
       GFXTransformSaver saver;
 
@@ -231,6 +229,7 @@ void Skylight::prepRenderImage(SceneRenderState *state)
    if (isSelectedInEditor)
    {
    }
+#endif
 }
 
 void Skylight::setPreviewMatParameters(SceneRenderState* renderState, BaseMatInstance* mat)
