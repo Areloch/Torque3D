@@ -406,6 +406,9 @@ void RenderProbeMgr::onRemove()
    mPrefilterMapData->deleteObject();
    mIrradianceMapData->deleteObject();
 
+   if(mCubeReflector.isEnabled())
+      mCubeReflector.unregisterReflector();
+
    Parent::onRemove();
 }
 
@@ -685,31 +688,44 @@ void RenderProbeMgr::_update4ProbeConsts(const SceneData &sgData,
 {
    PROFILE_SCOPE(ProbeManager_Update4ProbeConsts);
 
-   return;
-
    // Skip over gathering lights if we don't have to!
-   //if (probeShaderConsts->isValid())
+   if (probeShaderConsts->isValid())
    {
       PROFILE_SCOPE(ProbeManager_Update4ProbeConsts_setProbes);
 
       const U32 MAX_FORWARD_PROBES = 4;
-      ProbeDataSet probeSet(MAX_FORWARD_PROBES, ProbeDataSet::AlignedArrayData);
+      ProbeDataSet probeSet(MAX_FORWARD_PROBES);
 
       matSet.restoreSceneViewProjection();
 
       getBestProbes(sgData.objTrans->getPosition(), &probeSet);
 
+      static AlignedArray<Point4F> probePositionAlignedArray(probeSet.maxProbeCount, sizeof(Point4F));
+      static AlignedArray<Point4F> refBoxMinAlignedArray(probeSet.maxProbeCount, sizeof(Point4F));
+      static AlignedArray<Point4F> refBoxMaxAlignedArray(probeSet.maxProbeCount, sizeof(Point4F));
+      static AlignedArray<Point4F> probeRefPositionAlignedArray(probeSet.maxProbeCount, sizeof(Point4F));
+      static AlignedArray<Point4F> probeConfigAlignedArray(probeSet.maxProbeCount, sizeof(Point4F));
+
+      for (U32 i = 0; i < probeSet.maxProbeCount; i++)
+      {
+         probePositionAlignedArray[i] = probeSet.probePositionArray[i];
+         probeRefPositionAlignedArray[i] = probeSet.probeRefPositionArray[i];
+         refBoxMinAlignedArray[i] = probeSet.refBoxMinArray[i];
+         refBoxMaxAlignedArray[i] = probeSet.refBoxMaxArray[i];
+         probeConfigAlignedArray[i] = probeSet.probeConfigArray[i];
+      }
+
       shaderConsts->setSafe(probeShaderConsts->mProbeCountSC, (S32)probeSet.effectiveProbeCount);
 
-      shaderConsts->setSafe(probeShaderConsts->mProbePositionSC, probeSet.probePositionAlignedArray);
-      shaderConsts->setSafe(probeShaderConsts->mProbeRefPosSC, probeSet.probeRefPositionAlignedArray);
+      shaderConsts->setSafe(probeShaderConsts->mProbePositionSC, probePositionAlignedArray);
+      shaderConsts->setSafe(probeShaderConsts->mProbeRefPosSC, probeRefPositionAlignedArray);
 
       if(probeShaderConsts->isValid())
          shaderConsts->set(probeShaderConsts->mWorldToObjArraySC, probeSet.probeWorldToObjArray.address(), probeSet.effectiveProbeCount, GFXSCT_Float4x4);
 
-      shaderConsts->setSafe(probeShaderConsts->mRefBoxMinSC, probeSet.refBoxMinAlignedArray);
-      shaderConsts->setSafe(probeShaderConsts->mRefBoxMaxSC, probeSet.refBoxMaxAlignedArray);
-      shaderConsts->setSafe(probeShaderConsts->mProbeConfigDataSC, probeSet.probeConfigAlignedArray);
+      shaderConsts->setSafe(probeShaderConsts->mRefBoxMinSC, refBoxMinAlignedArray);
+      shaderConsts->setSafe(probeShaderConsts->mRefBoxMaxSC, refBoxMaxAlignedArray);
+      shaderConsts->setSafe(probeShaderConsts->mProbeConfigDataSC, probeConfigAlignedArray);
 
       shaderConsts->setSafe(probeShaderConsts->mSkylightCubemapIdxSC, (float)probeSet.skyLightIdx);
 
@@ -720,7 +736,11 @@ void RenderProbeMgr::_update4ProbeConsts(const SceneData &sgData,
          GFX->setCubeArrayTexture(probeShaderConsts->mProbeSpecularCubemapSC->getSamplerRegister(), mPrefilterArray);
       if(probeShaderConsts->mProbeIrradianceCubemapSC->getSamplerRegister() != -1)
          GFX->setCubeArrayTexture(probeShaderConsts->mProbeIrradianceCubemapSC->getSamplerRegister(), mIrradianceArray);
+
+      bool asdfadsfdgh = true;
    }
+
+   bool asdfadsfdgh = true;
 }
 
 void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* probeDataSet)
@@ -792,30 +812,15 @@ void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* pro
 
          probeDataSet->probeWorldToObjArray[probeDataSet->effectiveProbeCount] = curEntry->getTransform();
 
-         if (probeDataSet->renderMode == ProbeDataSet::VectorArrayData)
-         {
-            probeDataSet->probePositionArray[probeDataSet->effectiveProbeCount] = curEntry->getPosition();
-            probeDataSet->probeRefPositionArray[probeDataSet->effectiveProbeCount] = curEntry->mProbeRefOffset;
+         probeDataSet->probePositionArray[probeDataSet->effectiveProbeCount] = curEntry->getPosition();
+         probeDataSet->probeRefPositionArray[probeDataSet->effectiveProbeCount] = curEntry->mProbeRefOffset;
 
-            probeDataSet->refBoxMinArray[probeDataSet->effectiveProbeCount] = Point4F(refBoxMin.x, refBoxMin.y, refBoxMin.z, 0);
-            probeDataSet->refBoxMaxArray[probeDataSet->effectiveProbeCount] = Point4F(refBoxMax.x, refBoxMax.y, refBoxMax.z, 0);
-            probeDataSet->probeConfigArray[probeDataSet->effectiveProbeCount] = Point4F(curEntry->mProbeShapeType,
-               curEntry->mRadius,
-               curEntry->mAtten,
-               curEntry->mCubemapIndex);
-         }
-         else
-         {
-            probeDataSet->probePositionAlignedArray[probeDataSet->effectiveProbeCount] = curEntry->getPosition();
-            probeDataSet->probeRefPositionAlignedArray[probeDataSet->effectiveProbeCount] = curEntry->mProbeRefOffset;
-
-            probeDataSet->refBoxMinAlignedArray[probeDataSet->effectiveProbeCount] = Point4F(refBoxMin.x, refBoxMin.y, refBoxMin.z, 0);
-            probeDataSet->refBoxMaxAlignedArray[probeDataSet->effectiveProbeCount] = Point4F(refBoxMax.x, refBoxMax.y, refBoxMax.z, 0);
-            probeDataSet->probeConfigAlignedArray[probeDataSet->effectiveProbeCount] = Point4F(curEntry->mProbeShapeType,
-               curEntry->mRadius,
-               curEntry->mAtten,
-               curEntry->mCubemapIndex);
-         }
+         probeDataSet->refBoxMinArray[probeDataSet->effectiveProbeCount] = Point4F(refBoxMin.x, refBoxMin.y, refBoxMin.z, 0);
+         probeDataSet->refBoxMaxArray[probeDataSet->effectiveProbeCount] = Point4F(refBoxMax.x, refBoxMax.y, refBoxMax.z, 0);
+         probeDataSet->probeConfigArray[probeDataSet->effectiveProbeCount] = Point4F(curEntry->mProbeShapeType,
+            curEntry->mRadius,
+            curEntry->mAtten,
+            curEntry->mCubemapIndex);
 
          probeDataSet->effectiveProbeCount++;
       }
@@ -1068,12 +1073,8 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
    mCubeReflector.updateReflection(reflParams);
 
    //Now, save out the maps
-   //create irridiance cubemap
    if (mCubeReflector.getCubemap())
    {
-      //Just to ensure we're prepped for the generation
-      //clientProbe->createClientResources();
-
       //Prep it with whatever resolution we've dictated for our bake
       getIrradianceMapData()->mCubemap->initDynamic(resolution, reflectFormat);
       getPrefilterMapData()->mCubemap->initDynamic(resolution, reflectFormat);
@@ -1099,8 +1100,6 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
       }
 
       mBakeRenderTarget->zombify();
-
-      //clientProbe->mCubemapDirty = true;
    }
    else
    {

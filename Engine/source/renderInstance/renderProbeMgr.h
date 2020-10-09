@@ -168,27 +168,11 @@ typedef Map<GFXShader*, ProbeShaderConstants*> ProbeConstantMap;
 
 struct ProbeDataSet
 {
-   enum RenderMode
-   {
-      VectorArrayData,
-      AlignedArrayData,
-   };
-
-   RenderMode renderMode;
-
-   //Vector Arrays
    Vector<Point4F> probePositionArray;
    Vector<Point4F> refBoxMinArray;
    Vector<Point4F> refBoxMaxArray;
    Vector<Point4F> probeRefPositionArray;
    Vector<Point4F> probeConfigArray;
-
-   //AlignedArrays
-   AlignedArray<Point4F> probePositionAlignedArray;
-   AlignedArray<Point4F> refBoxMinAlignedArray;
-   AlignedArray<Point4F> refBoxMaxAlignedArray;
-   AlignedArray<Point4F> probeRefPositionAlignedArray;
-   AlignedArray<Point4F> probeConfigAlignedArray;
 
    Vector<MatrixF> probeWorldToObjArray;
 
@@ -199,8 +183,6 @@ struct ProbeDataSet
 
    ProbeDataSet()
    {
-      renderMode = VectorArrayData;
-
       probePositionArray.setSize(0);
       refBoxMinArray.setSize(0);
       refBoxMaxArray.setSize(0);
@@ -214,36 +196,15 @@ struct ProbeDataSet
       maxProbeCount = 0;
    }
 
-   ProbeDataSet(U32 _maxProbeCount, RenderMode _renderMode = VectorArrayData)
+   ProbeDataSet(U32 _maxProbeCount)
    {
-      renderMode = _renderMode;
-
       maxProbeCount = _maxProbeCount;
 
-      if (renderMode == VectorArrayData)
-      {
-         probePositionArray.setSize(maxProbeCount);
-         refBoxMinArray.setSize(maxProbeCount);
-         refBoxMaxArray.setSize(maxProbeCount);
-         probeRefPositionArray.setSize(maxProbeCount);
-         probeConfigArray.setSize(maxProbeCount);
-      }
-      else
-      {
-         probePositionAlignedArray = AlignedArray<Point4F>(maxProbeCount, sizeof(Point4F));
-         refBoxMinAlignedArray = AlignedArray<Point4F>(maxProbeCount, sizeof(Point4F));
-         refBoxMaxAlignedArray = AlignedArray<Point4F>(maxProbeCount, sizeof(Point4F));
-         probeRefPositionAlignedArray = AlignedArray<Point4F>(maxProbeCount, sizeof(Point4F));
-         probeConfigAlignedArray = AlignedArray<Point4F>(maxProbeCount, sizeof(Point4F));
-
-         // Need to clear the buffers so that we don't leak
-         // lights from previous passes or have NaNs.
-         dMemset(probePositionAlignedArray.getBuffer(), 0, probePositionAlignedArray.getBufferSize());
-         dMemset(refBoxMinAlignedArray.getBuffer(), 0, refBoxMinAlignedArray.getBufferSize());
-         dMemset(refBoxMaxAlignedArray.getBuffer(), 0, refBoxMaxAlignedArray.getBufferSize());
-         dMemset(probeRefPositionAlignedArray.getBuffer(), 0, probeRefPositionAlignedArray.getBufferSize());
-         dMemset(probeConfigAlignedArray.getBuffer(), 0, probeConfigAlignedArray.getBufferSize());
-      }
+      probePositionArray.setSize(maxProbeCount);
+      refBoxMinArray.setSize(maxProbeCount);
+      refBoxMaxArray.setSize(maxProbeCount);
+      probeRefPositionArray.setSize(maxProbeCount);
+      probeConfigArray.setSize(maxProbeCount);
 
       probeWorldToObjArray.setSize(maxProbeCount);
 

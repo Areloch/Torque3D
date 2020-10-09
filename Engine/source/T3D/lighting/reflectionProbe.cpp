@@ -83,7 +83,7 @@ ImplementEnumType(ReflectionModeEnum,
 { ReflectionProbe::NoReflection, "No Reflections", "This probe does not provide any local reflection data"},
 { ReflectionProbe::StaticCubemap, "Static Cubemap", "Uses a static CubemapData" },
 { ReflectionProbe::BakedCubemap, "Baked Cubemap", "Uses a cubemap baked from the probe's current position" },
-{ ReflectionProbe::DynamicCubemap, "Dynamic Cubemap", "Uses a cubemap baked from the probe's current position, updated at a set rate" },
+//{ ReflectionProbe::DynamicCubemap, "Dynamic Cubemap", "Uses a cubemap baked from the probe's current position, updated at a set rate" },
    EndImplementEnumType;
 
 //-----------------------------------------------------------------------------
@@ -115,6 +115,7 @@ ReflectionProbe::ReflectionProbe() :
    mProbeRefScale = Point3F::One*10;
 
    mStaticCubemap = NULL;
+   mPersistentId = nullptr;
    mProbeUniqueID = "";
 
    mEditorShapeInst = NULL;
@@ -284,15 +285,6 @@ bool ReflectionProbe::onAdd()
    {
       if (!mPersistentId)
          mPersistentId = getOrCreatePersistentId();
-      else
-      {
-         //validate our persistID is unique
-         if (mPersistentId->getRefCount() > 1)
-         {
-            mPersistentId = nullptr;
-            mPersistentId = getOrCreatePersistentId();
-         }
-      }
 
       mProbeUniqueID = String::ToString(mPersistentId->getUUID().getHash());
    }
