@@ -100,7 +100,7 @@ protected:
    //--------------------------------------------------------------------------
    ProbeRenderInst::ProbeShapeType mProbeShapeType;
 
-   ProbeRenderInst* mProbeInfo;
+   ProbeRenderInst mProbeInfo;
 
    //Reflection Contribution stuff
    ReflectionModeType mReflectionModeType;
@@ -122,17 +122,6 @@ protected:
    //Utilized in dynamic reflections
    //CubeReflector mCubeReflector;
 
-   ///Prevents us from saving out the cubemaps(for now) but allows us the full HDR range on the in-memory cubemap captures
-   bool mUseHDRCaptures;
-
-   //irridiance resources
-   CubemapData *mIrridianceMap;
-
-   //prefilter resources
-   CubemapData *mPrefilterMap;
-   U32 mPrefilterMipLevels;
-   U32 mPrefilterSize;
-
    String mProbeUniqueID;
 
    // Define our vertex format here so we don't have to
@@ -153,9 +142,6 @@ protected:
    U32 mRefreshRateMS;
 
    F32 mMaxDrawDistance;
-
-   bool mResourcesCreated;
-   U32 mCaptureMask;
 
 public:
    ReflectionProbe();

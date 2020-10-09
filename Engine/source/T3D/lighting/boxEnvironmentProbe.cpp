@@ -76,7 +76,6 @@ ConsoleDocClass(BoxEnvironmentProbe,
 //-----------------------------------------------------------------------------
 BoxEnvironmentProbe::BoxEnvironmentProbe() : ReflectionProbe()
 {
-   mCaptureMask = REFLECTION_PROBE_CAPTURE_TYPEMASK;
    mProbeShapeType = ProbeRenderInst::Box;
    mAtten = 0.0;
 }
@@ -158,11 +157,8 @@ void BoxEnvironmentProbe::unpackUpdate(NetConnection *conn, BitStream *stream)
 
 void BoxEnvironmentProbe::updateProbeParams()
 {
-   if (!mProbeInfo)
-      return;
-
    mProbeShapeType = ProbeRenderInst::Box;
-   mProbeInfo->mAtten = mAtten;
+   mProbeInfo.mAtten = mAtten;
 
    Parent::updateProbeParams();
 }

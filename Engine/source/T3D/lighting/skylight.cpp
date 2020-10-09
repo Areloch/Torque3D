@@ -77,7 +77,6 @@ ConsoleDocClass(Skylight,
 //-----------------------------------------------------------------------------
 Skylight::Skylight() : ReflectionProbe()
 {
-   mCaptureMask = SKYLIGHT_CAPTURE_TYPEMASK;
 }
 
 Skylight::~Skylight()
@@ -143,23 +142,20 @@ void Skylight::unpackUpdate(NetConnection *conn, BitStream *stream)
 
 void Skylight::updateProbeParams()
 {
-   if (!mProbeInfo)
-      return;
-
    mProbeShapeType = ProbeRenderInst::Skylight;
    Parent::updateProbeParams();
 }
 
 void Skylight::prepRenderImage(SceneRenderState *state)
 {
-   if (!mEnabled || !Skylight::smRenderSkylights)
+   //if (!mEnabled || !Skylight::smRenderSkylights)
       return;
 
    //special hook-in for skylights
    Point3F camPos = state->getCameraPosition();
-   mProbeInfo->mBounds.setCenter(camPos);
+   mProbeInfo.mBounds.setCenter(camPos);
 
-   mProbeInfo->setPosition(camPos);
+   mProbeInfo.setPosition(camPos);
 
    if (mReflectionModeType == DynamicCubemap && mRefreshRateMS < (Platform::getRealMilliseconds() - mDynamicLastBakeMS))
    {
@@ -175,7 +171,7 @@ void Skylight::prepRenderImage(SceneRenderState *state)
 
    //PROBEMGR->registerSkylight(mProbeInfo, this);
 
-   if (Skylight::smRenderPreviewProbes && gEditingMission && mEditorShapeInst && mPrefilterMap != nullptr)
+   if (Skylight::smRenderPreviewProbes && gEditingMission && mEditorShapeInst/* && mPrefilterMap != nullptr*/)
    {
       GFXTransformSaver saver;
 
