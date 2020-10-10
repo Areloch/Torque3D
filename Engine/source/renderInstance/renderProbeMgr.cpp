@@ -499,6 +499,11 @@ void RenderProbeMgr::unregisterProbe(U32 probeIdx)
    }
 }
 
+void RenderProbeMgr::submitProbe(const ProbeRenderInst& newProbe)
+{
+   mActiveProbes.push_back(newProbe);
+}
+
 //
 //
 PostEffect* RenderProbeMgr::getProbeArrayEffect()
@@ -595,6 +600,12 @@ ProbeShaderConstants* RenderProbeMgr::getProbeShaderConstants(GFXShaderConstBuff
    return mLastConstants;
 }
 
+void RenderProbeMgr::setupSGData(SceneData& data, const SceneRenderState* state, LightInfo* light)
+{
+   //ensure they're sorted for forward rendering
+   mActiveProbes.sort(_probeScoreCmp);
+}
+
 void RenderProbeMgr::_update4ProbeConsts(const SceneData &sgData,
    MatrixSet &matSet,
    ProbeShaderConstants *probeShaderConsts,
@@ -653,52 +664,41 @@ void RenderProbeMgr::_update4ProbeConsts(const SceneData &sgData,
    }
 }
 
+S32 QSORT_CALLBACK RenderProbeMgr::_probeScoreCmp(const ProbeRenderInst* a, const  ProbeRenderInst* b)
+{
+   F32 diff = a->getScore() - b->getScore();
+   return diff < 0 ? 1 : diff > 0 ? -1 : 0;
+}
+
 void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* probeDataSet)
 {
    PROFILE_SCOPE(ProbeManager_getBestProbes);
 
    //Array rendering
-   U32 probeCount = mRegisteredProbes.size();
+   U32 probeCount = mActiveProbes.size();
 
    Vector<S8> bestPickProbes;
+   bestPickProbes.setSize(probeDataSet->maxProbeCount);
+   bestPickProbes.fill(-1);
 
    probeDataSet->effectiveProbeCount = 0;
    for (U32 i = 0; i < probeCount; i++)
    {
-      ProbeRenderInst* curEntry = mRegisteredProbes[i];
-      if (!curEntry->mIsEnabled)
+      if (probeDataSet->effectiveProbeCount >= probeDataSet->maxProbeCount)
+         break;
+
+      const ProbeRenderInst& curEntry = mActiveProbes[i];
+      if (!curEntry.mIsEnabled)
          continue;
 
-      if (curEntry->mProbeShapeType != ProbeRenderInst::Skylight)
+      if (curEntry.mProbeShapeType != ProbeRenderInst::Skylight)
       {
-         F32 dist = Point3F(curEntry->getPosition() - objPosition).len();
-
-         //do rest of scoring logic here
-
-         S32 bestPickIndex = -1;
-         for (U32 p = 0; p < bestPickProbes.size(); p++)
-         {
-            if (p > probeDataSet->maxProbeCount)
-               break;
-
-            F32 bestDist = Point3F(mRegisteredProbes[bestPickProbes[p]]->getPosition() - objPosition).len();
-
-            if (bestPickProbes[p] == -1 || bestDist > dist)
-               bestPickIndex = p;
-         }
-
-         //Can't have over our max count. Otherwise, if we haven't found a good slot for our best pick, insert it
-         //if we have a best pick slot, update it
-         if (bestPickIndex == -1 && bestPickProbes.size() < probeDataSet->maxProbeCount)
-            bestPickProbes.push_back(i);
-         else if(bestPickProbes.size() < probeDataSet->maxProbeCount)
-            bestPickProbes.push_back(i);
-         else if(bestPickIndex != -1 && bestPickProbes.size() >= probeDataSet->maxProbeCount) //if we've already filled our open slots, try and replace the best pick index
-            bestPickProbes[bestPickIndex] = i;
+         bestPickProbes[probeDataSet->effectiveProbeCount] = i;
+         probeDataSet->effectiveProbeCount++;
       }
       else
       {
-         probeDataSet->skyLightIdx = curEntry->mCubemapIndex;
+         probeDataSet->skyLightIdx = curEntry.mCubemapIndex;
       }
    }
 
@@ -708,25 +708,23 @@ void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* pro
       if (bestPickProbes[i] == -1)
          continue;
 
-      ProbeRenderInst* curEntry = mRegisteredProbes[bestPickProbes[i]];
+      const ProbeRenderInst& curEntry = mActiveProbes[bestPickProbes[i]];
 
-      Point3F refPos = curEntry->getPosition() + curEntry->mProbeRefOffset;
-      Point3F refBoxMin = refPos - curEntry->mProbeRefScale * curEntry->getTransform().getScale();
-      Point3F refBoxMax = refPos + curEntry->mProbeRefScale * curEntry->getTransform().getScale();
+      Point3F refPos = curEntry.getPosition() + curEntry.mProbeRefOffset;
+      Point3F refBoxMin = refPos - curEntry.mProbeRefScale * curEntry.getTransform().getScale();
+      Point3F refBoxMax = refPos + curEntry.mProbeRefScale * curEntry.getTransform().getScale();
 
-      probeDataSet->probeWorldToObjArray[probeDataSet->effectiveProbeCount] = curEntry->getTransform();
+      probeDataSet->probeWorldToObjArray[i] = curEntry.getTransform();
 
-      probeDataSet->probePositionArray[probeDataSet->effectiveProbeCount] = curEntry->getPosition();
-      probeDataSet->probeRefPositionArray[probeDataSet->effectiveProbeCount] = curEntry->mProbeRefOffset;
+      probeDataSet->probePositionArray[i] = curEntry.getPosition();
+      probeDataSet->probeRefPositionArray[i] = curEntry.mProbeRefOffset;
 
-      probeDataSet->refBoxMinArray[probeDataSet->effectiveProbeCount] = Point4F(refBoxMin.x, refBoxMin.y, refBoxMin.z, 0);
-      probeDataSet->refBoxMaxArray[probeDataSet->effectiveProbeCount] = Point4F(refBoxMax.x, refBoxMax.y, refBoxMax.z, 0);
-      probeDataSet->probeConfigArray[probeDataSet->effectiveProbeCount] = Point4F(curEntry->mProbeShapeType,
-         curEntry->mRadius,
-         curEntry->mAtten,
-         curEntry->mCubemapIndex);
-
-      probeDataSet->effectiveProbeCount++;
+      probeDataSet->refBoxMinArray[i] = Point4F(refBoxMin.x, refBoxMin.y, refBoxMin.z, 0);
+      probeDataSet->refBoxMaxArray[i] = Point4F(refBoxMax.x, refBoxMax.y, refBoxMax.z, 0);
+      probeDataSet->probeConfigArray[i] = Point4F(curEntry.mProbeShapeType,
+         curEntry.mRadius,
+         curEntry.mAtten,
+         curEntry.mCubemapIndex);
    }
 }
 
@@ -776,6 +774,9 @@ void RenderProbeMgr::render( SceneRenderState *state )
       return;
 
    GFXDEBUGEVENT_SCOPE(RenderProbeMgr_render, ColorI::WHITE);
+
+   //Sort the active probes
+   mActiveProbes.sort(_probeScoreCmp);
 
    // Initialize and set the per-frame data
    _setupPerFrameParameters(state);
@@ -871,6 +872,8 @@ void RenderProbeMgr::render( SceneRenderState *state )
 
    // Make sure the effect is gonna render.
    getProbeArrayEffect()->setSkip(false);
+
+   mActiveProbes.clear();
 }
 
 void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)

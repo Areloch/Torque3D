@@ -766,6 +766,8 @@ void ReflectionProbe::prepRenderImage(SceneRenderState *state)
 
    mProbeInfo.mScore *= mMax(mAbs(mDot(vect, state->getCameraTransform().getForwardVector())),0.001f);
 
+   PROBEMGR->submitProbe(mProbeInfo);
+
 #ifdef TORQUE_TOOLS
    if (mProbeInfo.mIsEnabled && ReflectionProbe::smRenderPreviewProbes && gEditingMission)
    {
