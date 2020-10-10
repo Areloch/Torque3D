@@ -220,6 +220,7 @@ class RenderProbeMgr : public RenderBinManager
 
    Vector<ProbeRenderInst*> mRegisteredProbes;
 
+   Vector<ProbeRenderInst>  mActiveProbes;
 public:
    //maximum number of allowed probes
    static const U32 PROBE_MAX_COUNT = 250;
@@ -329,6 +330,9 @@ public:
 
    void registerProbe(ProbeRenderInst* newProbe);
    void unregisterProbe(U32 probeIdx);
+   void submitProbe(const ProbeRenderInst& newProbe);
+
+   static S32 QSORT_CALLBACK _probeScoreCmp(const ProbeRenderInst* a, const  ProbeRenderInst* b);
 
    virtual void setProbeInfo(ProcessedMaterial *pmat,
 	   const Material *mat,
@@ -336,6 +340,8 @@ public:
 	   const SceneRenderState *state,
 	   U32 pass,
 	   GFXShaderConstBuffer *shaderConsts);
+
+   void setupSGData(SceneData& data, const SceneRenderState* state, LightInfo* light);
 
    void updateProbeTexture(ProbeRenderInst* probeInfo, GFXCubemapHandle prefilterCubemap, GFXCubemapHandle irradianceCubemap);
 
