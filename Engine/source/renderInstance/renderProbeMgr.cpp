@@ -667,7 +667,7 @@ void RenderProbeMgr::_update4ProbeConsts(const SceneData &sgData,
 S32 QSORT_CALLBACK RenderProbeMgr::_probeScoreCmp(const ProbeRenderInst* a, const  ProbeRenderInst* b)
 {
    F32 diff = a->getScore() - b->getScore();
-   return diff < 0 ? 1 : diff > 0 ? -1 : 0;
+   return diff > 0 ? 1 : diff < 0 ? -1 : 0;
 }
 
 void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* probeDataSet)
@@ -684,7 +684,7 @@ void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* pro
    probeDataSet->effectiveProbeCount = 0;
    for (U32 i = 0; i < probeCount; i++)
    {
-      if (probeDataSet->effectiveProbeCount >= probeDataSet->maxProbeCount)
+      if (probeDataSet->skyLightIdx != -1 && probeDataSet->effectiveProbeCount >= probeDataSet->maxProbeCount)
          break;
 
       const ProbeRenderInst& curEntry = mActiveProbes[i];
@@ -693,8 +693,11 @@ void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* pro
 
       if (curEntry.mProbeShapeType != ProbeRenderInst::Skylight)
       {
-         bestPickProbes[probeDataSet->effectiveProbeCount] = i;
-         probeDataSet->effectiveProbeCount++;
+         if (probeDataSet->effectiveProbeCount < probeDataSet->maxProbeCount)
+         {
+            bestPickProbes[probeDataSet->effectiveProbeCount] = i;
+            probeDataSet->effectiveProbeCount++;
+         }
       }
       else
       {
@@ -782,7 +785,7 @@ void RenderProbeMgr::render( SceneRenderState *state )
    _setupPerFrameParameters(state);
 
    // Early out if nothing to draw.
-   if (!RenderProbeMgr::smRenderReflectionProbes || (!state->isDiffusePass() && !state->isReflectPass()) || (mProbeData.effectiveProbeCount == 0 && mSkylightCubemapIdx == -1))
+   if (!RenderProbeMgr::smRenderReflectionProbes || (!state->isDiffusePass() && !state->isReflectPass()) || (mProbeData.effectiveProbeCount == 0 && mProbeData.skyLightIdx == -1))
    {
       getProbeArrayEffect()->setSkip(true);
       return;

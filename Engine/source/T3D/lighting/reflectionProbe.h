@@ -157,6 +157,11 @@ protected:
    F32 mRadius;
 
    /// <summary>
+   /// A modifier value that adjusts the probe's specific influence. Used when sorting probes for rendering
+   /// </summary>
+   F32 mInfluence;
+
+   /// <summary>
    /// The reference positional offset for the probe. This is used for adjusting the perceived center and area of influence.
    /// Helpful in adjusting parallax issues
    /// </summary>
@@ -218,6 +223,7 @@ public:
    static bool _doBake(void *object, const char *index, const char *data);
    static bool _toggleEditPosOffset(void *object, const char *index, const char *data);
    static bool _setRadius(void *object, const char *index, const char *data);
+   static bool _setInfluence(void* object, const char* index, const char* data);
    static bool _setReflectionMode(void *object, const char *index, const char *data);
 
    // Handle when we are added to the scene and removed from the scene

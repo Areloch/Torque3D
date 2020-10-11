@@ -168,6 +168,8 @@ void Skylight::prepRenderImage(SceneRenderState *state)
       processDynamicCubemap();
    }*/
 
+   PROBEMGR->submitProbe(mProbeInfo);
+
 #ifdef TORQUE_TOOLS
    if (mProbeInfo.mIsEnabled && Skylight::smRenderPreviewProbes && gEditingMission && mEditorShapeInst)
    {

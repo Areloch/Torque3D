@@ -107,6 +107,7 @@ ReflectionProbe::ReflectionProbe()
    mDirty = false;
 
    mRadius = 10;
+   mInfluence = 1;
    mObjScale = Point3F::One * 10;
    mProbeRefScale = Point3F::One*10;
 
@@ -136,23 +137,26 @@ void ReflectionProbe::initPersistFields()
 {
    addGroup("Rendering");
       addProtectedField("enabled", TypeBool, Offset(mEnabled, ReflectionProbe),
-         &_setEnabled, &defaultProtectedGetFn, "Regenerate Voxel Grid");
+         &_setEnabled, &defaultProtectedGetFn, "Is the probe enabled or not");
    endGroup("Rendering");
 
    addGroup("Reflection");
       addProtectedField("radius", TypeF32, Offset(mRadius, ReflectionProbe), &_setRadius, &defaultProtectedGetFn, 
-         "The name of the material used to render the mesh.");
+         "The radius of the probe's influence. Only really relevent in Sphere probes.");
+
+      addProtectedField("influence", TypeF32, Offset(mInfluence, ReflectionProbe), &_setInfluence, &defaultProtectedGetFn,
+         "A modifier value that adjusts the probe's specific influence. Used when sorting probes for rendering.");
 
       addProtectedField("EditPosOffset", TypeBool, Offset(mEditPosOffset, ReflectionProbe),
       &_toggleEditPosOffset, &defaultProtectedGetFn, "Toggle Edit Pos Offset Mode", AbstractClassRep::FieldFlags::FIELD_ComponentInspectors);
 
-	   addField("refOffset", TypePoint3F, Offset(mProbeRefOffset, ReflectionProbe), "");
-      addField("refScale", TypePoint3F, Offset(mProbeRefScale, ReflectionProbe), "");
+	   addField("refOffset", TypePoint3F, Offset(mProbeRefOffset, ReflectionProbe), "The reference positional offset for the probe. This is used for adjusting the perceived center and area of influence.\nHelpful in adjusting parallax issues");
+      addField("refScale", TypePoint3F, Offset(mProbeRefScale, ReflectionProbe), "The reference scale for the probe. This is used for adjusting the perceived center and area of influence.\nHelpful in adjusting parallax issues");
 
       addProtectedField("ReflectionMode", TypeReflectionModeEnum, Offset(mReflectionModeType, ReflectionProbe), &_setReflectionMode, &defaultProtectedGetFn,
-         "The type of mesh data to use for collision queries.");
+         "Used to dictate what sort of cubemap the probes use when using IBL.");
 
-      addField("StaticCubemap", TypeCubemapName, Offset(mCubemapName, ReflectionProbe), "Cubemap used instead of reflection texture if fullReflect is off.");
+      addField("StaticCubemap", TypeCubemapName, Offset(mCubemapName, ReflectionProbe), "This is used when a static cubemap is used. The name of the cubemap is looked up and loaded for the IBL calculations.");
 
       //addField("DynamicReflectionRefreshMS", TypeS32, Offset(mRefreshRateMS, ReflectionProbe), "How often the dynamic cubemap is refreshed in milliseconds. Only works when the ReflectionMode is set to DynamicCubemap.");
 
@@ -228,6 +232,16 @@ bool ReflectionProbe::_setRadius(void *object, const char *index, const char *da
    probe->mObjScale = Point3F(probe->mRadius, probe->mRadius, probe->mRadius);
    probe->setMaskBits(StaticDataMask);
    
+   return true;
+}
+
+bool ReflectionProbe::_setInfluence(void* object, const char* index, const char* data)
+{
+   ReflectionProbe* probe = reinterpret_cast<ReflectionProbe*>(object);
+
+   probe->mInfluence = dAtof(data);
+   probe->setMaskBits(StaticDataMask);
+
    return true;
 }
 
@@ -406,6 +420,7 @@ U32 ReflectionProbe::packUpdate(NetConnection *conn, U32 mask, BitStream *stream
    {
       stream->write((U32)mProbeShapeType);
       stream->write(mRadius);
+      stream->write(mInfluence);
       stream->write(mProbeUniqueID);
       stream->write((U32)mReflectionModeType);
       stream->write(mCubemapName);
@@ -450,6 +465,7 @@ void ReflectionProbe::unpackUpdate(NetConnection *conn, BitStream *stream)
       mProbeShapeType = (ProbeRenderInst::ProbeShapeType)shapeType;
 
       stream->read(&mRadius);
+      stream->read(&mInfluence);
 
       stream->read(&mProbeUniqueID);
 
@@ -506,7 +522,7 @@ void ReflectionProbe::updateProbeParams()
 
       setGlobalBounds();
 
-      mProbeInfo.mScore = -1.0f;
+      mProbeInfo.mScore = 10000.0f;
    }
    else
    {
@@ -759,12 +775,12 @@ void ReflectionProbe::prepRenderImage(SceneRenderState *state)
    }*/
 
    //Update our score based on our radius, distance
-   mProbeInfo.mScore = mProbeInfo.mRadius/mMax(dist,1.0f);
+   mProbeInfo.mScore = mMax(dist, 1.0f) * mInfluence;
 
    Point3F vect = distVec;
    vect.normalizeSafe();
 
-   mProbeInfo.mScore *= mMax(mAbs(mDot(vect, state->getCameraTransform().getForwardVector())),0.001f);
+   //mProbeInfo.mScore *= mMax(mAbs(mDot(vect, state->getCameraTransform().getForwardVector())),0.001f);
 
    PROBEMGR->submitProbe(mProbeInfo);
 
