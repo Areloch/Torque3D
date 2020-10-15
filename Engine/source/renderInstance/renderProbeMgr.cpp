@@ -294,8 +294,7 @@ RenderProbeMgr::RenderProbeMgr()
    mHasSkylight(false),
    mSkylightCubemapIdx(-1),
    mCubeMapCount(0),
-   mDefaultSkyLight(nullptr),
-   mBakeRenderTarget(nullptr)
+   mDefaultSkyLight(nullptr)
 {
    mEffectiveProbeCount = 0;
    mMipCount = 0;
@@ -774,7 +773,10 @@ void RenderProbeMgr::setProbeInfo(ProcessedMaterial *pmat,
 void RenderProbeMgr::render( SceneRenderState *state )
 {
    if (getProbeArrayEffect() == nullptr)
+   {
+      mActiveProbes.clear();
       return;
+   }
 
    GFXDEBUGEVENT_SCOPE(RenderProbeMgr_render, ColorI::WHITE);
 
@@ -788,6 +790,7 @@ void RenderProbeMgr::render( SceneRenderState *state )
    if (!RenderProbeMgr::smRenderReflectionProbes || (!state->isDiffusePass() && !state->isReflectPass()) || (mProbeData.effectiveProbeCount == 0 && mProbeData.skyLightIdx == -1))
    {
       getProbeArrayEffect()->setSkip(true);
+      mActiveProbes.clear();
       return;
    }
 
@@ -928,8 +931,7 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
    reflDesc.detailAdjust = 1;
    reflDesc.objectTypeMask = probe->mProbeShapeType == ProbeRenderInst::ProbeShapeType::Skylight ? SKYLIGHT_CAPTURE_TYPEMASK : REFLECTION_PROBE_CAPTURE_TYPEMASK;
 
-   if(!mCubeReflector.isEnabled())
-      mCubeReflector.registerReflector(probe, &reflDesc);
+   mCubeReflector.registerReflector(probe, &reflDesc);
 
    ReflectParams reflParams;
 
@@ -975,20 +977,20 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
    //Now, save out the maps
    if (mCubeReflector.getCubemap())
    {
-      CubemapData* prefilterMapData = getPrefilterMapData();
-      CubemapData* irradMapData = getPrefilterMapData();
+      CubemapData* prefilterMapData = new CubemapData();
+      prefilterMapData->createMap();
+
+      CubemapData* irradMapData = new CubemapData();
+      irradMapData->createMap();
 
       //Prep it with whatever resolution we've dictated for our bake
       irradMapData->mCubemap->initDynamic(resolution, reflectFormat);
       prefilterMapData->mCubemap->initDynamic(resolution, reflectFormat);
 
-      if (mBakeRenderTarget == nullptr)
-         mBakeRenderTarget = GFX->allocRenderToTextureTarget(false);
-      else
-         mBakeRenderTarget->resurrect();
+      GFXTextureTargetRef bakeTarget = GFX->allocRenderToTextureTarget(false);
 
-      IBLUtilities::GenerateIrradianceMap(mBakeRenderTarget, mCubeReflector.getCubemap(), irradMapData->mCubemap);
-      IBLUtilities::GeneratePrefilterMap(mBakeRenderTarget, mCubeReflector.getCubemap(), prefilterMipLevels, prefilterMapData->mCubemap);
+      IBLUtilities::GenerateIrradianceMap(bakeTarget, mCubeReflector.getCubemap(), irradMapData->mCubemap);
+      IBLUtilities::GeneratePrefilterMap(bakeTarget, mCubeReflector.getCubemap(), prefilterMipLevels, prefilterMapData->mCubemap);
 
       U32 endMSTime = Platform::getRealMilliseconds();
       F32 diffTime = F32(endMSTime - startMSTime);
@@ -1001,8 +1003,6 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
          IBLUtilities::SaveCubeMap(clientProbe->getIrradianceMapPath(), irradMapData->mCubemap);
          IBLUtilities::SaveCubeMap(clientProbe->getPrefilterMapPath(), prefilterMapData->mCubemap);
       }
-
-      mBakeRenderTarget->zombify();
 
       probe->mCubemapDirty = true;
    }
@@ -1017,6 +1017,8 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
 
    U32 endMSTime = Platform::getRealMilliseconds();
    F32 diffTime = F32(endMSTime - startMSTime);
+
+   mCubeReflector.unregisterReflector();
 
    probe->setMaskBits(-1);
 

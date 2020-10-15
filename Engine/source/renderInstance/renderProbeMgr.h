@@ -267,8 +267,6 @@ private:
 
    GFXTexHandle mBRDFTexture;
 
-   GFXTextureTargetRef mBakeRenderTarget;
-
    ProbeDataSet mProbeData;
 
    ///Prevents us from saving out the cubemaps(for now) but allows us the full HDR range on the in-memory cubemap captures
