@@ -133,8 +133,7 @@ struct ProbeShaderConstants
    //Reflection Probes
    GFXShaderConstHandle *mProbePositionSC;
    GFXShaderConstHandle *mProbeRefPosSC;
-   GFXShaderConstHandle *mRefBoxMinSC;
-   GFXShaderConstHandle *mRefBoxMaxSC;
+   GFXShaderConstHandle *mRefScaleSC;
    GFXShaderConstHandle *mWorldToObjArraySC;
    GFXShaderConstHandle *mProbeConfigDataSC;
    GFXShaderConstHandle *mProbeSpecularCubemapSC;
@@ -160,8 +159,7 @@ typedef Map<GFXShader*, ProbeShaderConstants*> ProbeConstantMap;
 struct ProbeDataSet
 {
    Vector<Point4F> probePositionArray;
-   Vector<Point4F> refBoxMinArray;
-   Vector<Point4F> refBoxMaxArray;
+   Vector<Point4F> refScaleArray;
    Vector<Point4F> probeRefPositionArray;
    Vector<Point4F> probeConfigArray;
 
@@ -175,8 +173,7 @@ struct ProbeDataSet
    ProbeDataSet()
    {
       probePositionArray.setSize(0);
-      refBoxMinArray.setSize(0);
-      refBoxMaxArray.setSize(0);
+      refScaleArray.setSize(0);
       probeRefPositionArray.setSize(0);
       probeConfigArray.setSize(0);
 
@@ -192,8 +189,7 @@ struct ProbeDataSet
       maxProbeCount = _maxProbeCount;
 
       probePositionArray.setSize(maxProbeCount);
-      refBoxMinArray.setSize(maxProbeCount);
-      refBoxMaxArray.setSize(maxProbeCount);
+      refScaleArray.setSize(maxProbeCount);
       probeRefPositionArray.setSize(maxProbeCount);
       probeConfigArray.setSize(maxProbeCount);
 

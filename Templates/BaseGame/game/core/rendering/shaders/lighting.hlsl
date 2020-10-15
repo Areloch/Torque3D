@@ -335,12 +335,12 @@ float defineBoxSpaceInfluence(float3 wsPosition, float4x4 worldToObj, float atte
 // Box Projected IBL Lighting
 // Based on: http://www.gamedev.net/topic/568829-box-projected-cubemap-environment-mapping/
 // and https://seblagarde.wordpress.com/2012/09/29/image-based-lighting-approaches-and-parallax-corrected-cubemap/
-float3 boxProject(float3 wsPosition, float3 wsReflectVec, float4x4 worldToObj, float3 refBoxMin, float3 refBoxMax, float3 refPosition)
+float3 boxProject(float3 wsPosition, float3 wsReflectVec, float4x4 worldToObj, float3 refScale, float3 refPosition)
 {
    float3 RayLS = mul(worldToObj, float4(wsReflectVec, 0.0)).xyz;
    float3 PositionLS = mul(worldToObj, float4(wsPosition, 1.0)).xyz;
 
-   float3 unit = refBoxMax.xyz - refBoxMin.xyz;
+   float3 unit = refScale;
    float3 plane1vec = (unit / 2 - PositionLS) / RayLS;
    float3 plane2vec = (-unit / 2 - PositionLS) / RayLS;
    float3 furthestPlane = max(plane1vec, plane2vec);
@@ -352,7 +352,7 @@ float3 boxProject(float3 wsPosition, float3 wsReflectVec, float4x4 worldToObj, f
 
 float4 computeForwardProbes(Surface surface,
     float cubeMips, int numProbes, float4x4 worldToObjArray[MAX_FORWARD_PROBES], float4 probeConfigData[MAX_FORWARD_PROBES], 
-    float4 inProbePosArray[MAX_FORWARD_PROBES], float4 refBoxMinArray[MAX_FORWARD_PROBES], float4 refBoxMaxArray[MAX_FORWARD_PROBES], float4 inRefPosArray[MAX_FORWARD_PROBES],
+    float4 inProbePosArray[MAX_FORWARD_PROBES], float4 refScaleArray[MAX_FORWARD_PROBES], float4 inRefPosArray[MAX_FORWARD_PROBES],
     float skylightCubemapIdx, TORQUE_SAMPLER2D(BRDFTexture), 
 	 TORQUE_SAMPLERCUBEARRAY(irradianceCubemapAR), TORQUE_SAMPLERCUBEARRAY(specularCubemapAR))
 {
@@ -456,7 +456,7 @@ float4 computeForwardProbes(Surface surface,
       if (contrib > 0.0f)
       {
          int cubemapIdx = probeConfigData[i].a;
-         float3 dir = boxProject(surface.P, surface.R, worldToObjArray[i], refBoxMinArray[i].xyz, refBoxMaxArray[i].xyz, inRefPosArray[i].xyz);
+         float3 dir = boxProject(surface.P, surface.R, worldToObjArray[i], refScaleArray[i].xyz, inRefPosArray[i].xyz);
 
          irradiance += TORQUE_TEXCUBEARRAYLOD(irradianceCubemapAR, dir, cubemapIdx, 0).xyz * contrib;
          specular += TORQUE_TEXCUBEARRAYLOD(specularCubemapAR, dir, cubemapIdx, lod).xyz * contrib;
@@ -494,7 +494,7 @@ float4 computeForwardProbes(Surface surface,
 
 float4 debugVizForwardProbes(Surface surface,
     float cubeMips, int numProbes, float4x4 worldToObjArray[MAX_FORWARD_PROBES], float4 probeConfigData[MAX_FORWARD_PROBES], 
-    float4 inProbePosArray[MAX_FORWARD_PROBES], float4 refBoxMinArray[MAX_FORWARD_PROBES], float4 refBoxMaxArray[MAX_FORWARD_PROBES], float4 inRefPosArray[MAX_FORWARD_PROBES],
+    float4 inProbePosArray[MAX_FORWARD_PROBES], float4 refScaleArray[MAX_FORWARD_PROBES], float4 inRefPosArray[MAX_FORWARD_PROBES],
     float skylightCubemapIdx, TORQUE_SAMPLER2D(BRDFTexture), 
 	 TORQUE_SAMPLERCUBEARRAY(irradianceCubemapAR), TORQUE_SAMPLERCUBEARRAY(specularCubemapAR), int showAtten, int showContrib, int showSpec, int showDiff)
 {
@@ -605,7 +605,7 @@ float4 debugVizForwardProbes(Surface surface,
       if (contrib > 0.0f)
       {
          int cubemapIdx = probeConfigData[i].a;
-         float3 dir = boxProject(surface.P, surface.R, worldToObjArray[i], refBoxMinArray[i].xyz, refBoxMaxArray[i].xyz, inRefPosArray[i].xyz);
+         float3 dir = boxProject(surface.P, surface.R, worldToObjArray[i], refScaleArray[i].xyz, inRefPosArray[i].xyz);
 
          irradiance += TORQUE_TEXCUBEARRAYLOD(irradianceCubemapAR, dir, cubemapIdx, 0).xyz * contrib;
          specular += TORQUE_TEXCUBEARRAYLOD(specularCubemapAR, dir, cubemapIdx, lod).xyz * contrib;
