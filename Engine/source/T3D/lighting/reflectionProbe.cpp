@@ -822,7 +822,7 @@ void ReflectionProbe::prepRenderImage(SceneRenderState *state)
       rdata.setSceneState(state);
       rdata.setFadeOverride(1.0f);
 
-      if (mReflectionModeType != DynamicCubemap)
+      if (mReflectionModeType != DynamicCubemap && mEditorCubemapData->mCubemap)
          rdata.setCubemap(mEditorCubemapData->mCubemap);
 
       // We might have some forward lit materials
@@ -899,8 +899,8 @@ void ReflectionProbe::_onRenderViz(ObjectRenderInst *ri,
 
 void ReflectionProbe::setPreviewMatParameters(SceneRenderState* renderState, BaseMatInstance* mat)
 {
-   if (!mat->getFeatures().hasFeature(MFT_isDeferred))
-      return;
+   //if (!mat->getFeatures().hasFeature(MFT_isDeferred))
+   //   return;
 
    //Set up the params
    MaterialParameters *matParams = mat->getMaterialParameters();
@@ -915,7 +915,8 @@ void ReflectionProbe::setPreviewMatParameters(SceneRenderState* renderState, Bas
    GFX->setTexture(0, deferredTexObject);
 
    //Set the cubemap
-   //GFX->setCubeTexture(1, mPrefilterMap->mCubemap);
+   if(mEditorCubemapData->mCubemap)
+      GFX->setCubeTexture(1, mEditorCubemapData->mCubemap);
 
    //Set the invViewMat
    MatrixSet &matrixSet = renderState->getRenderPass()->getMatrixSet();

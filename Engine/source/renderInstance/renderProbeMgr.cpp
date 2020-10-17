@@ -126,9 +126,9 @@ bool ProbeRenderInst::setCubemaps(FileName prefilPath, FileName irradPath)
    if (!Platform::isFile(prefilPath) || !Platform::isFile(irradPath))
       return false;
 
-   CubemapData* prefilterMapData = PROBEMGR->getPrefilterMapData();
+   prefilterMapData = new CubemapData();
    prefilterMapData->setCubemapFile(FileName(prefilPath));
-   prefilterMapData->updateFaces();
+   prefilterMapData->createMap();
 
    if (!prefilterMapData->mCubemap->isInitialized())
    {
@@ -136,17 +136,25 @@ bool ProbeRenderInst::setCubemaps(FileName prefilPath, FileName irradPath)
       return false;
    }
 
-   CubemapData* irradMapData = PROBEMGR->getIrradianceMapData();
-   irradMapData->setCubemapFile(FileName(irradPath));
-   irradMapData->updateFaces();
+   irradianceMapData = new CubemapData();
+   irradianceMapData->setCubemapFile(FileName(irradPath));
+   irradianceMapData->createMap();
 
-   if (!irradMapData->mCubemap->isInitialized())
+   if (!irradianceMapData->mCubemap->isInitialized())
    {
       Con::errorf("ProbeRenderInst::setCubemaps() - Unable to load baked iraddiance map at %s", irradPath.c_str());
       return false;
    }
 
-   return setCubemaps(prefilterMapData->mCubemap, irradMapData->mCubemap);
+   bool success = setCubemaps(prefilterMapData->mCubemap, irradianceMapData->mCubemap);
+
+   //Cleanup the temps
+   //TEXMGR->releaseCubemap(irradianceMapData->mCubemap);
+   //TEXMGR->releaseCubemap(prefilterMapData->mCubemap);
+   delete irradianceMapData;
+   delete prefilterMapData;
+
+   return success;
 }
 
 bool ProbeRenderInst::setCubemap(StringTableEntry cubemapName)
@@ -179,8 +187,10 @@ bool ProbeRenderInst::setCubemap(StringTableEntry cubemapName)
          staticCubemap->updateFaces();
       }
 
-      CubemapData* prefilterMapData = PROBEMGR->getPrefilterMapData();
-      CubemapData* irradMapData = PROBEMGR->getIrradianceMapData();
+      CubemapData* prefilterMapData = new CubemapData();
+      prefilterMapData->createMap();
+      CubemapData* irradMapData = new CubemapData();
+      irradMapData->createMap();
 
       if (PROBEMGR->getUseHDRCaptures())
       {
@@ -706,12 +716,13 @@ void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* pro
 
       const ProbeRenderInst& curEntry = mActiveProbes[bestPickProbes[i]];
 
-      Point3F refPos = curEntry.getPosition() + curEntry.mProbeRefOffset;
+      Point3F probePos = curEntry.getPosition();
+      Point3F refPos = probePos + curEntry.mProbeRefOffset;
 
       probeDataSet->probeWorldToObjArray[i] = curEntry.getTransform();
 
-      probeDataSet->probePositionArray[i] = curEntry.getPosition();
-      probeDataSet->probeRefPositionArray[i] = curEntry.mProbeRefOffset;
+      probeDataSet->probePositionArray[i] = Point4F(probePos.x, probePos.y, probePos.z, 0);
+      probeDataSet->probeRefPositionArray[i] = Point4F(refPos.x, refPos.y, refPos.z, 0);
 
       probeDataSet->refScaleArray[i] = curEntry.mProbeRefScale * curEntry.getTransform().getScale();
       probeDataSet->probeConfigArray[i] = Point4F(curEntry.mProbeShapeType,
@@ -881,7 +892,7 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
 
    String path = Con::getVariable("$pref::ReflectionProbes::CurrentLevelPath", "levels/");
    U32 resolution = Con::getIntVariable("$pref::ReflectionProbes::BakeResolution", 64);
-   U32 prefilterMipLevels = mLog2(F32(resolution))+1;
+   U32 prefilterMipLevels = mLog2(F32(resolution)) + 1;
    bool renderWithProbes = Con::getIntVariable("$pref::ReflectionProbes::RenderWithProbes", false);
 
    ReflectionProbe* clientProbe = nullptr;
@@ -962,9 +973,10 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
       reflectFormat = GFXFormatR8G8B8A8;
    const GFXFormat oldRefFmt = REFLECTMGR->getReflectFormat();
    REFLECTMGR->setReflectFormat(reflectFormat);
-   mCubeReflector.updateReflection(reflParams, query.cameraMatrix.getPosition());
+   mCubeReflector.updateReflection(reflParams);
 
    //Now, save out the maps
+   //create irridiance cubemap
    if (mCubeReflector.getCubemap())
    {
       CubemapData* prefilterMapData = new CubemapData();
@@ -1005,10 +1017,10 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe, bool writeFiles)
    if (!renderWithProbes)
       RenderProbeMgr::smRenderReflectionProbes = probeRenderState;
 
+   mCubeReflector.unregisterReflector();
+
    U32 endMSTime = Platform::getRealMilliseconds();
    F32 diffTime = F32(endMSTime - startMSTime);
-
-   mCubeReflector.unregisterReflector();
 
    probe->setMaskBits(-1);
 

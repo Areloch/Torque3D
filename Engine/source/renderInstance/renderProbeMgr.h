@@ -93,6 +93,10 @@ struct ProbeRenderInst
 
    U32 mProbeIdx;
 
+   //Temporary for holding onto the cubemaps being loaded/processed before being uploaded to the GPU
+   CubemapData* prefilterMapData;
+   CubemapData* irradianceMapData;
+
 public:
 
    ProbeRenderInst();
