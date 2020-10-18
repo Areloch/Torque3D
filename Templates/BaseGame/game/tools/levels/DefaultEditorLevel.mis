@@ -5,6 +5,7 @@ new Scene(EditorTemplateLevel) {
    isSubScene = "0";
    isEditing = "0";
    isDirty = "0";
+   EditPostEffects = "0";
       cdTrack = "2";
       CTF_scoreLimit = "5";
       Enabled = "1";
@@ -35,6 +36,7 @@ new Scene(EditorTemplateLevel) {
       Material = "BlankSkyMat";
       drawBottom = "0";
       fogBandHeight = "0";
+      dirtyGameObject = "0";
       position = "0 0 0";
       rotation = "1 0 0 0";
       scale = "1 1 1";
@@ -48,8 +50,6 @@ new Scene(EditorTemplateLevel) {
       ambient = "0.337255 0.533333 0.619608 1";
       brightness = "1";
       castShadows = "1";
-      staticRefreshFreq = "250";
-      dynamicRefreshFreq = "8";
       coronaEnabled = "1";
       coronaScale = "0.5";
       coronaTint = "1 1 1 1";
@@ -68,6 +68,7 @@ new Scene(EditorTemplateLevel) {
       representedInLightmap = "0";
       shadowDarkenColor = "0 0 0 -1";
       includeLightmappedGeometryInShadow = "0";
+      dirtyGameObject = "0";
       position = "0 0 0";
       rotation = "1 0 0 0";
       scale = "1 1 1";
@@ -75,6 +76,7 @@ new Scene(EditorTemplateLevel) {
       canSaveDynamicFields = "1";
          bias = "0.1";
          Blur = "1";
+         dynamicRefreshFreq = "8";
          Enabled = "1";
          height = "1024";
          lightBleedFactor = "0.8";
@@ -82,6 +84,7 @@ new Scene(EditorTemplateLevel) {
          pointShadowType = "PointShadowType_Paraboloid";
          shadowBox = "-100 -100 -100 100 100 100";
          splitFadeDistances = "1 1 1 1";
+         staticRefreshFreq = "250";
          width = "3072";
    };
    new GroundPlane() {
@@ -89,6 +92,7 @@ new Scene(EditorTemplateLevel) {
       scaleU = "25";
       scaleV = "25";
       Material = "Grid_512_Grey";
+      dirtyGameObject = "0";
       canSave = "1";
       canSaveDynamicFields = "1";
          Enabled = "1";
@@ -99,12 +103,141 @@ new Scene(EditorTemplateLevel) {
    new Skylight() {
       Enabled = "1";
       ReflectionMode = "Baked Cubemap";
+      dirtyGameObject = "0";
       position = "1.37009 -5.23561 46.5817";
       rotation = "1 0 0 0";
       canSave = "1";
       canSaveDynamicFields = "1";
       persistentId = "d5eb3afb-dced-11e9-a423-bb0e346e3870";
          reflectionPath = "tools/levels/BlankRoom/probes/";
+   };
+   new BoxEnvironmentProbe() {
+      Enabled = "1";
+      refOffset = "0 0 0";
+      refScale = "10 10 10";
+      ReflectionMode = "Baked Cubemap";
+      dirtyGameObject = "0";
+      position = "17.1081 -5.95479 4.70431";
+      rotation = "1 0 0 0";
+      scale = "10 10 10";
+      canSave = "1";
+      canSaveDynamicFields = "1";
+      persistentId = "3b51c1e6-10e3-11eb-9676-86a541d8cdf2";
+      attenuation = "0";
+   };
+   new BoxEnvironmentProbe() {
+      Enabled = "1";
+      refOffset = "0 0 0";
+      refScale = "10 10 10";
+      ReflectionMode = "Baked Cubemap";
+      dirtyGameObject = "0";
+      position = "26.8802 -5.95479 4.70431";
+      rotation = "1 0 0 0";
+      scale = "10 10 10";
+      canSave = "1";
+      canSaveDynamicFields = "1";
+      persistentId = "3c6a477b-10e3-11eb-9676-86a541d8cdf2";
+      attenuation = "0";
+   };
+   new BoxEnvironmentProbe() {
+      Enabled = "1";
+      refOffset = "0 0 0";
+      refScale = "10 10 10";
+      ReflectionMode = "Baked Cubemap";
+      dirtyGameObject = "0";
+      position = "36.7781 -5.95479 4.70431";
+      rotation = "1 0 0 0";
+      scale = "10 10 10";
+      canSave = "1";
+      canSaveDynamicFields = "1";
+      persistentId = "3d53ca2a-10e3-11eb-9676-86a541d8cdf2";
+      attenuation = "0";
+   };
+   new BoxEnvironmentProbe() {
+      Enabled = "1";
+      refOffset = "0 0 0";
+      refScale = "10 10 10";
+      ReflectionMode = "Baked Cubemap";
+      dirtyGameObject = "0";
+      position = "46.6006 -5.95479 4.70431";
+      rotation = "1 0 0 0";
+      scale = "10 10 10";
+      canSave = "1";
+      canSaveDynamicFields = "1";
+      persistentId = "3f178d58-10e3-11eb-9676-86a541d8cdf2";
+      attenuation = "0";
+   };
+   new BoxEnvironmentProbe() {
+      Enabled = "1";
+      refOffset = "0 0 0";
+      refScale = "10 10 10";
+      ReflectionMode = "Baked Cubemap";
+      dirtyGameObject = "0";
+      position = "46.6006 4.74954 4.70431";
+      rotation = "1 0 0 0";
+      scale = "10 10 10";
+      canSave = "1";
+      canSaveDynamicFields = "1";
+      persistentId = "43e4eceb-10e3-11eb-9676-86a541d8cdf2";
+      attenuation = "0";
+   };
+   new BoxEnvironmentProbe() {
+      Enabled = "1";
+      refOffset = "0 0 0";
+      refScale = "10 10 10";
+      ReflectionMode = "Baked Cubemap";
+      dirtyGameObject = "0";
+      position = "36.7781 4.74954 4.70431";
+      rotation = "1 0 0 0";
+      scale = "10 10 10";
+      canSave = "1";
+      canSaveDynamicFields = "1";
+      persistentId = "43e8e4c2-10e3-11eb-9676-86a541d8cdf2";
+      attenuation = "0";
+   };
+   new BoxEnvironmentProbe() {
+      Enabled = "1";
+      refOffset = "0 0 0";
+      refScale = "10 10 10";
+      ReflectionMode = "Baked Cubemap";
+      dirtyGameObject = "0";
+      position = "26.8802 4.74954 4.70431";
+      rotation = "1 0 0 0";
+      scale = "10 10 10";
+      canSave = "1";
+      canSaveDynamicFields = "1";
+      persistentId = "43ed51d4-10e3-11eb-9676-86a541d8cdf2";
+      attenuation = "0";
+   };
+   new BoxEnvironmentProbe() {
+      Enabled = "1";
+      refOffset = "0 0 0";
+      refScale = "10 10 10";
+      ReflectionMode = "Baked Cubemap";
+      dirtyGameObject = "0";
+      position = "17.1081 4.74954 4.70431";
+      rotation = "1 0 0 0";
+      scale = "10 10 10";
+      canSave = "1";
+      canSaveDynamicFields = "1";
+      persistentId = "43f197e6-10e3-11eb-9676-86a541d8cdf2";
+      attenuation = "0";
+   };
+   new ConvexShape() {
+      Material = "Grid_512_Orange";
+      dirtyGameObject = "0";
+      position = "21.9117 1.00045 3.91607";
+      rotation = "0 -0 -1 7.10815";
+      scale = "1 1 1";
+      canSave = "1";
+      canSaveDynamicFields = "1";
+
+      surface = "0 0 0 1 0 0 3.91606 0 0 0 1 1 0 1 1";
+      surface = "0 1 0 0 0 0 -3.91606 0 0 0 1 1 0 1 1";
+      surface = "0.707107 0 0 0.707106 0 1.39125 0 0 0 0 1 1 0 1 1";
+      surface = "0 0.707107 -0.707107 0 0 -1.39125 -5.68434e-14 0 0 0 1 1 0 1 1";
+      surface = "0.5 0.5 -0.5 0.5 -1.7095 0 -2.21722e-06 0 0 0 1 1 0 1 1";
+      surface = "0.5 -0.5 0.5 0.5 1.7095 0 -2.21722e-06 0 0 0 1 1 0 1 1";
    };
 };
 //--- OBJECT WRITE END ---
