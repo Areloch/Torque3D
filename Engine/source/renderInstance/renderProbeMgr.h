@@ -236,6 +236,7 @@ public:
    static const U32 INVALID_CUBE_SLOT = U32_MAX;
 
    static F32 smMaxProbeDrawDistance;
+   static S32 smMaxProbesPerFrame;
 
 private:
    //Array rendering

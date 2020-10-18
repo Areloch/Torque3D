@@ -40,7 +40,10 @@ singleton Material(Grid_512_Black)
 
 singleton Material(Grid_512_ForestGreen)
 {
-   diffuseMap[0] = "./512_forestgreen.png";
+   diffuseMap[0] = "tools/base/images/512_forestgreen.png";
+   mapTo = "512_forestgreen.png";
+   roughness[0] = "0";
+   metalness[0] = "1";
 };
 
 singleton Material(Grid_512_ForestGreen_Lines)

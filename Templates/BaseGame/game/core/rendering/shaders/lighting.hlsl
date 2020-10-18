@@ -45,7 +45,10 @@ uniform float4 albedo;
 
 #endif // !TORQUE_SHADERGEN
 
+#ifndef MAX_PROBES
 #define MAX_PROBES 8
+#endif
+
 #define MAX_FORWARD_PROBES 4
 
 #define MAX_FORWARD_LIGHT 4
@@ -216,8 +219,13 @@ float3 evaluateStandardBRDF(Surface surface, SurfaceToLight surfaceToLight)
    float Vis = V_SmithGGXCorrelated(surface.NdotV, surfaceToLight.NdotL, surface.linearRoughnessSq);
    float D = D_GGX(surfaceToLight.NdotH, surface.linearRoughnessSq);
    float3 Fr = D * F * Vis;
-
+   
+#if CAPTURING == true
+    return lerp(Fd + Fr,surface.f0,surface.metalness);
+#else
    return Fd + Fr;
+#endif
+
 }
 
 float3 getDirectionalLight(Surface surface, SurfaceToLight surfaceToLight, float3 lightColor, float lightIntensity, float shadow)

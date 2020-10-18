@@ -568,8 +568,6 @@ void ReflectionProbe::processDynamicCubemap()
 
 void ReflectionProbe::processBakedCubemap()
 {
-
-
    mProbeInfo.mIsEnabled = false;
 
    if ((mReflectionModeType != BakedCubemap) || mProbeUniqueID.isEmpty())
@@ -612,6 +610,10 @@ void ReflectionProbe::processBakedCubemap()
 
       //Update the probe manager with our new texture!
       PROBEMGR->updateProbeTexture(&mProbeInfo);
+
+      //now, cleanup
+      mProbeInfo.mPrefilterCubemap.free();
+      mProbeInfo.mIrradianceCubemap.free();
    }
 }
 

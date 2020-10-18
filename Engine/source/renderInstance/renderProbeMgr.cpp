@@ -62,6 +62,7 @@ RenderProbeMgr *RenderProbeMgr::smProbeManager = NULL;
 
 bool RenderProbeMgr::smRenderReflectionProbes = true;
 F32 RenderProbeMgr::smMaxProbeDrawDistance = 100;
+S32 RenderProbeMgr::smMaxProbesPerFrame = 8;
 
 S32 QSORT_CALLBACK AscendingReflectProbeInfluence(const void* a, const void* b)
 {
@@ -313,6 +314,7 @@ void RenderProbeMgr::consoleInit()
 
    // Vars for debug rendering while the RoadEditor is open, only used if smEditorOpen is true.
    Con::addVariable("$pref::maxProbeDrawDistance", TypeF32, &RenderProbeMgr::smMaxProbeDrawDistance, "Max distance for reflection probes to render.\n");
+   Con::addVariable("$pref::MaxProbesPerFrame", TypeS32, &RenderProbeMgr::smMaxProbesPerFrame, "Max number of Environment Probes that can be rendered per-frame.\n");
 }
 
 void RenderProbeMgr::registerProbe(ProbeRenderInst* newProbe)
@@ -457,7 +459,7 @@ void RenderProbeMgr::_setupPerFrameParameters(const SceneRenderState *state)
 {
    PROFILE_SCOPE(RenderProbeMgr_SetupPerFrameParameters);
 
-   mProbeData = ProbeDataSet(PROBE_MAX_FRAME);
+   mProbeData = ProbeDataSet(smMaxProbesPerFrame);
 
    getBestProbes(state->getCameraPosition(), &mProbeData);
 }
@@ -717,6 +719,9 @@ void RenderProbeMgr::render( SceneRenderState *state )
    else
       mProbeArrayEffect->setShaderMacro("SKYLIGHT_ONLY", "0");
 
+   String probePerFrame = Con::getVariable("$pref::MaxProbesPerFrame", "8");
+   mProbeArrayEffect->setShaderMacro("MAX_PROBES", probePerFrame);
+
    //ssao mask
    if (AdvancedLightBinManager::smUseSSAOMask)
    {
@@ -875,7 +880,10 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe *probe)
       reflectFormat = GFXFormatR8G8B8A8;
    const GFXFormat oldRefFmt = REFLECTMGR->getReflectFormat();
    REFLECTMGR->setReflectFormat(reflectFormat);
-   cubeRefl.updateReflection(reflParams);
+   
+   mProbeArrayEffect->setShaderConst("$CAPTURING", true);
+   cubeRefl.updateReflection(reflParams, clientProbe->getTransform().getPosition()+clientProbe->mProbeRefOffset);
+   mProbeArrayEffect->setShaderConst("$CAPTURING", false);
 
    //Now, save out the maps
    //create irridiance cubemap
