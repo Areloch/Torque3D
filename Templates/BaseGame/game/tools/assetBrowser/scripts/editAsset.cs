@@ -29,12 +29,14 @@ function AssetBrowser::editAsset(%this, %assetDef)
       }
    }
       
+   if(%assetDef !$= "")
+   {      
+      %assetType = %assetDef.getClassName();
       
-   %assetType = %assetDef.getClassName();
-   
-   //Build out the edit command
-   %buildCommand = %this @ ".edit" @ %assetType @ "(" @ %assetDef @ ");";
-   eval(%buildCommand);
+      //Build out the edit command
+      %buildCommand = %this @ ".edit" @ %assetType @ "(" @ %assetDef @ ");";
+      eval(%buildCommand);
+   }
 }
 
 function AssetBrowser::appendSubLevel(%this)

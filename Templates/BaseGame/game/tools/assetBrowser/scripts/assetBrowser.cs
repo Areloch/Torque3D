@@ -333,19 +333,8 @@ function AssetBrowser::buildAssetPreview( %this, %asset, %moduleName )
       //special-case entry
       if(getFieldCount(%asset) > 1)
       {
-         %specialType = getField(%asset,0);
-         
-         /*if(%specialType $= "Folder")
-         {
-            
-         }
-         else if(%specialType $= "Datablock")
-         {
-            %sdfasdgah = true;  
-         }*/
-         %assetType = %specialType;
+         %assetType = getField(%asset,0);
          %assetName = getField(%asset, 1);
-         %sdfasdgah = true;  
          
          if(%assetType $= "Folder")
          {
@@ -384,6 +373,22 @@ function AssetBrowser::buildAssetPreview( %this, %asset, %moduleName )
             %assetDesc.assetType = %assetType;
          }
          else if(%assetType $= "Prefab")
+         {
+            %fullPath = %moduleName !$= "" ? %moduleName @ "/" @ %assetName : %assetName;
+            %fullPath = strreplace(%fullPath, "/", "_");
+            %fullPath = strreplace(%fullPath, ".", "-");
+            
+            if(isObject(%fullPath))
+               %assetDesc = %fullPath;
+            else
+               %assetDesc = new ScriptObject(%fullPath);
+               
+            %assetDesc.dirPath = %moduleName;
+            %assetDesc.assetName = %assetName;
+            %assetDesc.description = %moduleName @ "/" @ %assetName;
+            %assetDesc.assetType = %assetType;
+         }
+         else if(%assetType $= "Cpp")
          {
             %fullPath = %moduleName !$= "" ? %moduleName @ "/" @ %assetName : %assetName;
             %fullPath = strreplace(%fullPath, "/", "_");
@@ -1551,7 +1556,6 @@ function AssetBrowser::doRebuildAssetArray(%this)
          }
       }
       
-      
       %this.getLooseFilesInDir();
       
       %looseFiles = ABLooseFileArray.count();
@@ -1560,6 +1564,7 @@ function AssetBrowser::doRebuildAssetArray(%this)
          %looseFileFullPath = ABLooseFileArray.getKey(%i);
          %looseFilePath = filePath(%looseFileFullPath);
          %looseFileName = fileName(%looseFileFullPath);
+         %looseFileExt = fileExt(%looseFileFullPath);
          
          %assetArray.add( %looseFilePath, "LooseFile" TAB %looseFileName );
       }
@@ -1590,6 +1595,54 @@ function AssetBrowser::doRebuildAssetArray(%this)
          }
 
          %fullPrefabPath = findNextFile( %breadcrumbPath @ "/" @ %expr );
+      }
+      
+      //C++ files
+      %cppPattern = %breadcrumbPath @ "/" @ "*.cpp";
+      for (%fullCppPath = findFirstFile(%cppPattern); %fullCppPath !$= ""; %fullCppPath = findNextFile(%cppPattern))
+      {
+         %cppPath = filePath(%fullCppPath);
+         %cppName = fileName(%fullCppPath);
+         
+         %searchActive = AssetSearchTerms.count() != 0;
+         if(%searchActive)
+         {
+            if(startsWith(%cppPath, %breadcrumbPath))
+            {
+               if(matchesSearch(%cppName, "Cpp"))
+               {
+                  %assetArray.add( %cppPath, "Cpp" TAB %cppName );
+               }  
+            }
+         }
+         else if(%cppPath $= %breadcrumbPath)
+         {
+            %assetArray.add( %cppPath, "Cpp" TAB %cppName );
+         }
+      }
+      
+      //C++ Header files
+      %cppPattern = %breadcrumbPath @ "/" @ "*.h";
+      for (%fullCppPath = findFirstFile(%cppPattern); %fullCppPath !$= ""; %fullCppPath = findNextFile(%cppPattern))
+      {
+         %cppPath = filePath(%fullCppPath);
+         %cppName = fileName(%fullCppPath);
+         
+         %searchActive = AssetSearchTerms.count() != 0;
+         if(%searchActive)
+         {
+            if(startsWith(%cppPath, %breadcrumbPath))
+            {
+               if(matchesSearch(%cppName, "Cpp"))
+               {
+                  %assetArray.add( %cppPath, "Cpp" TAB %cppName );
+               }  
+            }
+         }
+         else if(%cppPath $= %breadcrumbPath)
+         {
+            %assetArray.add( %cppPath, "Cpp" TAB %cppName );
+         }
       }
    }
 	

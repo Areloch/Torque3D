@@ -157,6 +157,8 @@ function getAssetTypeByFilename(%filePath)
       return "GUIAsset";
    else if (%fileExt $= ".zip")
       return "zip";
+   else if( %fileExt $= ".cpp" || %fileExt $= ".h" )
+      return "Cpp";
    else if( %fileExt $= "")
       return "folder";
    
