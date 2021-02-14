@@ -1,0 +1,8 @@
+<MaterialAsset
+    canSave="true"
+    canSaveDynamicFields="true"
+    AssetName="warnMat"
+    scriptFile="@assetFile=warnMat.tscript"
+    materialDefinitionName="warnMat"
+    imageMap0="@Asset=Core_Rendering:warnMat_image"
+    originalFilePath="D:/Gamedev/T3DMIT/PRs/reMoreAsseting/My Projects/reMoreAsseting/game/core/rendering/images/warnMat.dds" />
