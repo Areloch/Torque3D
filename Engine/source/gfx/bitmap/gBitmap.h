@@ -303,6 +303,11 @@ inline U32 GBitmap::getHeight(const U32 in_mipLevel) const
    return (retVal != 0) ? retVal : 1;
 }
 
+inline U32 GBitmap::getDepth(const U32 in_mipLevel) const
+{
+   return 1;
+}
+
 inline const U8* GBitmap::getBits(const U32 in_mipLevel) const
 {
    AssertFatal(in_mipLevel < mNumMipLevels,

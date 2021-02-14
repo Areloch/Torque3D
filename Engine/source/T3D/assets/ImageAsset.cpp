@@ -133,7 +133,7 @@ EndImplementEnumType;
 
 
 //-----------------------------------------------------------------------------
-ImageAsset::ImageAsset() : AssetBase(), mImage(nullptr), mUseMips(true), mIsHDRImage(false), mIsValidImage(false), mImageType(Albedo)
+ImageAsset::ImageAsset() : AssetBase(), mBitmap(nullptr), /*mTexture(nullptr),*/ mUseMips(true), mIsHDRImage(false), mIsValidImage(false), mImageType(Albedo)
 {
    mImageFileName = StringTable->EmptyString();
    mImagePath = StringTable->EmptyString();
@@ -239,7 +239,7 @@ StringTableEntry ImageAsset::getAssetIdByFilename(StringTableEntry fileName)
       }
 
       //Didn't work, so have us fall back to a placeholder asset
-      imageAssetId = StringTable->insert("Core_Rendering:noImage");
+      imageAssetId = StringTable->insert("Core_Rendering:missingTexture");
    }
    else
    {
@@ -258,7 +258,7 @@ bool ImageAsset::getAssetById(StringTableEntry assetId, AssetPtr<ImageAsset>* im
       return true;
 
    //Didn't work, so have us fall back to a placeholder asset
-   StringTableEntry noImageId = StringTable->insert("Core_Rendering:noMaterial");
+   StringTableEntry noImageId = StringTable->insert("Core_Rendering:missingTexture");
    imageAsset->setAssetId(noImageId);
 
    if (!imageAsset->isNull())
@@ -275,7 +275,8 @@ void ImageAsset::copyTo(SimObject* object)
 
 void ImageAsset::loadImage()
 {
-   SAFE_DELETE(mImage);
+   SAFE_DELETE(mBitmap);
+   //SAFE_DELETE(mTexture);
 
    if (mImagePath)
    {
@@ -285,13 +286,17 @@ void ImageAsset::loadImage()
          return;
       }
 
-      mImage.set(mImagePath, &GFXStaticTextureSRGBProfile, avar("%s() - mImage (line %d)", __FUNCTION__, __LINE__));
+      GFXTexHandle texture = getTexture(&GFXStaticTextureSRGBProfile);
 
-      if (mImage)
+      //mTexture.set(mImagePath, &GFXStaticTextureSRGBProfile, avar("%s() - mImage (line %d)", __FUNCTION__, __LINE__));
+
+      if (texture.isValid())
       {
          mIsValidImage = true;
          return;
       }
+
+      mBitmap = texture.getBitmap();
    }
 
    mIsValidImage = false;
@@ -320,9 +325,14 @@ void ImageAsset::setImageFileName(const char* pScriptFile)
    mImageFileName = StringTable->insert(pScriptFile);
 }
 
-GFXTexHandle ImageAsset::getImage(GFXTextureProfile requestedProfile)
+const GBitmap& ImageAsset::getImage()
 {
-   /*if (mResourceMap.contains(requestedProfile))
+   return *mBitmap;
+}
+
+GFXTexHandle ImageAsset::getTexture(GFXTextureProfile* requestedProfile)
+{
+   if (mResourceMap.contains(requestedProfile))
    {
       return mResourceMap.find(requestedProfile)->value;
    }
@@ -330,14 +340,14 @@ GFXTexHandle ImageAsset::getImage(GFXTextureProfile requestedProfile)
    {
       //If we don't have an existing map case to the requested format, we'll just create it and insert it in
       GFXTexHandle newImage;
-      newImage.set(mImageFileName, &requestedProfile, avar("%s() - mImage (line %d)", __FUNCTION__, __LINE__));
+      newImage.set(mImagePath, requestedProfile, avar("%s() - mImage (line %d)", __FUNCTION__, __LINE__));
       mResourceMap.insert(requestedProfile, newImage);
 
       return newImage;
-   }*/
+   }
 
-   if (mImage.isValid())
-      return mImage;
+   //if (mTexture.isValid())
+   //   return mTexture;
 
    return nullptr;
 }
@@ -348,7 +358,7 @@ const char* ImageAsset::getImageInfo()
    {
       static const U32 bufSize = 2048;
       char* returnBuffer = Con::getReturnBuffer(bufSize);
-      dSprintf(returnBuffer, bufSize, "%s %d %d %d", GFXStringTextureFormat[mImage.getFormat()], mImage.getHeight(), mImage.getWidth(), mImage.getDepth());
+      dSprintf(returnBuffer, bufSize, "%s %d %d %d", GFXStringTextureFormat[mBitmap->getFormat()], mBitmap->getHeight(), mBitmap->getWidth(), mBitmap->getDepth());
 
       return returnBuffer;
    }

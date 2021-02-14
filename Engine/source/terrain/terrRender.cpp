@@ -130,8 +130,17 @@ void TerrainBlock::_updateMaterials()
       if (mat->getIsSRGB())
          profile = &GFXStaticTextureSRGBProfile;
 
-      if (mat->getDetailMap().isNotEmpty())
+      if (mat->getDetailMapAsset().notNull())
+      {
+         auto detAsset = mat->getDetailMapAsset()->getTexture(profile);
+         detailTexArray[i] = mat->getDetailMapAsset()->getTexture(profile);// TEXMGR->createTexture(mat->getDetailMap(), profile);
+      }
+      else
+      {
          detailTexArray[i] = TEXMGR->createTexture(mat->getDetailMap(), profile);
+      }
+      //if (mat->getDetailMap().isNotEmpty())
+      //   detailTexArray[i] = TEXMGR->createTexture(mat->getDetailMap(), profile);
       if (mat->getMacroMap().isNotEmpty())
          macroTexArray[i] = TEXMGR->createTexture(mat->getMacroMap(), profile);
       if (mat->getNormalMap().isNotEmpty())
