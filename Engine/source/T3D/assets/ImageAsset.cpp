@@ -92,9 +92,6 @@ ConsoleSetType(TypeImageAssetId)
    // Was a single argument specified?
    if (argc == 1)
    {
-      // Yes, so fetch field value.
-      const char* pFieldValue = argv[0];
-
       *((const char**)dptr) = StringTable->insert(argv[0]);
 
       return;
@@ -138,18 +135,6 @@ ImplementEnumType(ImageAssetType,
    ImageAsset::~ImageAsset()
    {
       SAFE_DELETE(mBitmap);
-
-      if (mImageFileName == StringTable->insert("FloorGray.png"))
-      {
-         bool sdfgsdfgdsf = true;
-         bool sdfgdsfg = true;
-      }
-
-      /*for (ResourceMapping::iterator itr = mResourceMap.begin();  itr != mResourceMap.end(); ++itr)
-      {
-         (itr)->value.free();
-         (itr)->value = nullptr;
-      }*/
    }
 
    //-----------------------------------------------------------------------------
@@ -200,7 +185,7 @@ ImplementEnumType(ImageAssetType,
          }
 
          //Didn't work, so have us fall back to a placeholder asset
-         imageAsset->setAssetId(StringTable->insert("Core_Rendering:noImage"));
+         imageAsset->setAssetId(StringTable->insert("Core_Rendering:missingTexture_image"));
 
          if (!imageAsset->isNull())
             return true;
@@ -253,7 +238,7 @@ ImplementEnumType(ImageAssetType,
          }
 
          //Didn't work, so have us fall back to a placeholder asset
-         imageAssetId = StringTable->insert("Core_Rendering:noTexture");
+         imageAssetId = StringTable->insert("Core_Rendering:missingTexture_image");
       }
       else
       {
@@ -274,7 +259,7 @@ ImplementEnumType(ImageAssetType,
       if (imageAsset->notNull())
       {
          //Didn't work, so have us fall back to a placeholder asset
-         StringTableEntry noImageId = StringTable->insert("Core_Rendering:noTexture");
+         StringTableEntry noImageId = StringTable->insert("Core_Rendering:missingTexture_image");
          imageAsset->setAssetId(noImageId);
 
          //handle fallback not being loaded itself
@@ -360,12 +345,6 @@ ImplementEnumType(ImageAssetType,
 
    GFXTexHandle ImageAsset::getTexture(GFXTextureProfile* requestedProfile)
    {
-      if (mImageFileName == StringTable->insert("FloorGray.png"))
-      {
-         bool sdfgsdfgdsf = true;
-         bool sdfgdsfg = true;
-      }
-
       if (mResourceMap.contains(requestedProfile))
       {
          mLoadedState = Ok;

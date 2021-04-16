@@ -180,6 +180,7 @@ public: \
          StringTableEntry assetId = MaterialAsset::getAssetIdByMaterialName(_in);\
          if (assetId != StringTable->EmptyString())\
          {\
+            m##name##AssetId = _in;\
             if (MaterialAsset::getAssetById(m##name##AssetId, &m##name##Asset))\
             {\
                if (m##name##Asset.getAssetId() != StringTable->insert("Core_Rendering:noMaterial"))\
@@ -216,7 +217,16 @@ public: \
             m##name##Inst = MATMGR->createMatInstance("WarningMaterial");\
          \
          if (!m##name##Inst)\
+         {\
             Con::errorf("classname::_initMaterial - no Material called '%s'", m##name##Asset->getMaterialDefinitionName());\
+         }\
+         else\
+         {\
+            \
+            FeatureSet features = MATMGR->getDefaultFeatures();\
+            \
+            m##name##Inst->init(features, getGFXVertexFormat<VertexType>()); \
+         }\
          return true;\
       }\
       return false;\
@@ -233,15 +243,7 @@ public: \
    }
 
 #define DECLARE_MATERIALASSET_SETGET(className, name)\
-   static bool _set##name##Name(void* obj, const char* index, const char* data)\
-   {\
-      bool ret = false;\
-      className* object = static_cast<className*>(obj);\
-      ret = object->_set##name(StringTable->insert(data));\
-      return ret;\
-   }\
-   \
-   static bool _set##name##Asset(void* obj, const char* index, const char* data)\
+   static bool _set##name##Data(void* obj, const char* index, const char* data)\
    {\
       bool ret = false;\
       className* object = static_cast<className*>(obj);\
@@ -250,17 +252,7 @@ public: \
    }
 
 #define DECLARE_MATERIALASSET_NET_SETGET(className, name, bitmask)\
-   static bool _set##name##Name(void* obj, const char* index, const char* data)\
-   {\
-      bool ret = false;\
-      className* object = static_cast<className*>(obj);\
-      ret = object->_set##name(StringTable->insert(data));\
-      if(ret)\
-         object->setMaskBits(bitmask);\
-      return ret;\
-   }\
-   \
-   static bool _set##name##Asset(void* obj, const char* index, const char* data)\
+   static bool _set##name##Data(void* obj, const char* index, const char* data)\
    {\
       bool ret = false;\
       className* object = static_cast<className*>(obj);\
@@ -292,8 +284,8 @@ DefineEngineMethod(className, set##name, bool, (const char* mat), , assetText(na
    m##name##Inst = NULL;
 
 #define INITPERSISTFIELD_MATERIALASSET(name, consoleClass, docs) \
-   addProtectedField(#name, TypeMaterialName, Offset(m##name##Name, consoleClass), _set##name##Name, &defaultProtectedGetFn,assetDoc(name, docs)); \
-   addProtectedField(assetText(name, Asset), TypeMaterialAssetId, Offset(m##name##AssetId, consoleClass), consoleClass::_set##name##Asset, &defaultProtectedGetFn, assetDoc(name, asset docs.));
+   addProtectedField(#name, TypeMaterialName, Offset(m##name##Name, consoleClass), _set##name##Data, &defaultProtectedGetFn,assetDoc(name, docs)); \
+   addProtectedField(assetText(name, Asset), TypeMaterialAssetId, Offset(m##name##AssetId, consoleClass), _set##name##Data, &defaultProtectedGetFn, assetDoc(name, asset docs.));
 
 #define CLONE_MATERIALASSET(name) \
    m##name##Name = other.m##name##Name;\

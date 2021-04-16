@@ -106,8 +106,126 @@ private:
    F32               mScaleV;       ///< Scale factor for V texture coordinates.
 
    //DECLARE_MATERIALASSET(GroundPlane, Material);
+public: \
+   String mMaterialName; \
+   StringTableEntry mMaterialAssetId;\
+   AssetPtr<MaterialAsset>  mMaterialAsset;\
+   SimObjectPtr<Material> mMaterial;\
+   BaseMatInstance* mMaterialInst;\
+public: \
+   const StringTableEntry getMaterialFile() const { return StringTable->insert(mMaterialName.c_str()); }\
+   void setMaterialName(const FileName &_in) { mMaterialName = _in;}\
+   const AssetPtr<MaterialAsset> & getMaterialAsset() const { return mMaterialAsset; }\
+   void setMaterialAsset(const AssetPtr<MaterialAsset> &_in) { mMaterialAsset = _in;}\
+   \
+   bool _setMaterial(StringTableEntry _in)\
+   {\
+      if (_in == StringTable->EmptyString())\
+      {\
+         mMaterialName = String::EmptyString;\
+         mMaterialAssetId = StringTable->EmptyString();\
+         mMaterialAsset = NULL;\
+         mMaterial = NULL;\
+         SAFE_DELETE(mMaterialInst);\
+         return true;\
+      }\
+      \
+      if (AssetDatabase.isDeclaredAsset(_in))\
+      {\
+         mMaterialAssetId = _in;\
+         \
+         U32 assetState = MaterialAsset::getAssetById(mMaterialAssetId, &mMaterialAsset);\
+         \
+         if (MaterialAsset::Ok == assetState)\
+         {\
+            mMaterialName = String::EmptyString;\
+         }\
+         else\
+         {\
+            mMaterialName = _in;\
+            mMaterialAsset = NULL;\
+         }\
+      }\
+      else\
+      {\
+         StringTableEntry assetId = MaterialAsset::getAssetIdByMaterialName(_in);\
+         if (assetId != StringTable->EmptyString())\
+         {\
+            mMaterialAssetId = assetId;\
+            if (MaterialAsset::getAssetById(mMaterialAssetId, &mMaterialAsset))\
+            {\
+               if (mMaterialAsset.getAssetId() != StringTable->insert("Core_Rendering:noMaterial"))\
+               {\
+                  mMaterialName = String::EmptyString;\
+               }\
+               else\
+               {\
+                  mMaterialAssetId = StringTable->EmptyString();\
+               }\
+            }\
+         }\
+         else\
+         {\
+            mMaterialName = _in;\
+            mMaterialAssetId = StringTable->EmptyString();\
+            mMaterialAsset = NULL;\
+         }\
+      }\
+      if (getMaterial() != StringTable->EmptyString())\
+      {\
+         if (mMaterialInst && String(mMaterialAsset->getMaterialDefinitionName()).equal(mMaterialInst->getMaterial()->getName(), String::NoCase))\
+            return false;\
+         SAFE_DELETE(mMaterialInst);\
+         Material* tempMat = nullptr;\
+         \
+         if (!Sim::findObject(mMaterialAsset->getMaterialDefinitionName(), tempMat))\
+            Con::errorf("classname::_initMaterial - Material %s was not found.", mMaterialAsset->getMaterialDefinitionName());\
+         mMaterial = tempMat;\
+         \
+         if (mMaterial)\
+            mMaterialInst = mMaterial->createMatInstance();\
+         else\
+            mMaterialInst = MATMGR->createMatInstance("WarningMaterial");\
+         \
+         if (!mMaterialInst)\
+         {\
+            Con::errorf("classname::_initMaterial - no Material called '%s'", mMaterialAsset->getMaterialDefinitionName()); \
+         }\
+         else\
+         {\
+            \
+            FeatureSet features = MATMGR->getDefaultFeatures();\
+            \
+            mMaterialInst->init(features, getGFXVertexFormat<VertexType>());\
+         }\
+         return true;\
+      }\
+      return false;\
+   }\
+   \
+   const StringTableEntry getMaterial() const\
+   {\
+      if (mMaterialAsset && (mMaterialAsset->getMaterialDefinitionName() != StringTable->EmptyString()))\
+         return mMaterialAsset->getMaterialDefinitionName();\
+      else if (mMaterialName.isNotEmpty())\
+         return StringTable->insert(mMaterialName.c_str());\
+      else\
+         return StringTable->EmptyString();\
+   }
 
+   //DECLARE_MATERIALASSET_NET_SETGET(GroundPlane, Material, -1);
 
+   static bool _setMaterialData(void* obj, const char* index, const char* data)\
+   {\
+      bool ret = false;\
+      GroundPlane* object = static_cast<GroundPlane*>(obj);\
+      ret = object->_setMaterial(StringTable->insert(data));\
+      if(ret)\
+         object->setMaskBits(-1);\
+      return ret;\
+   }
+
+   /*
 public:
    String mMaterialName;
    StringTableEntry mMaterialAssetId;
@@ -237,7 +355,7 @@ public:
       if(ret)\
          object->setMaskBits(-1);\
       return ret;\
-   }
+   }*/
 
    PhysicsBody *mPhysicsRep;
 

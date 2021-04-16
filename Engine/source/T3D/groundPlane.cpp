@@ -156,6 +156,8 @@ void GroundPlane::onRemove()
    if (!mMaterialAsset.isNull())
       AssetDatabase.releaseAsset(mMaterialAsset.getAssetId());
 
+   SAFE_DELETE(mMaterialInst);
+
    SAFE_DELETE( mPhysicsRep );
 
    removeFromScene();
@@ -194,15 +196,7 @@ U32 GroundPlane::packUpdate( NetConnection* connection, U32 mask, BitStream* str
    stream->write( mScaleU );
    stream->write( mScaleV );
 
-   //PACK_MATERIALASSET(connection, Material);
-
-   if (stream->writeFlag(mMaterialAsset.notNull()))\
-   {\
-      NetStringHandle assetIdStr = mMaterialAsset.getAssetId();\
-      connection->packNetStringHandleU(stream, assetIdStr);\
-   }\
-   else\
-      stream->writeString(mMaterialName);
+   PACK_MATERIALASSET(connection, Material);
 
    return retMask;
 }
@@ -215,14 +209,7 @@ void GroundPlane::unpackUpdate( NetConnection* connection, BitStream* stream )
    stream->read( &mScaleU );
    stream->read( &mScaleV );
 
-   //UNPACK_MATERIALASSET(connection, Material);
-   if (stream->readFlag())\
-   {\
-      mMaterialAssetId = StringTable->insert(connection->unpackNetStringHandleU(stream).getString()); \
-      _setMaterial(mMaterialAssetId);
-   }\
-   else\
-      mMaterialName = stream->readSTString();
+   UNPACK_MATERIALASSET(connection, Material);
 
    // If we're added then something possibly changed in 
    // the editor... do an update of the material and the

@@ -256,15 +256,7 @@ public: \
    }
 
 #define DECLARE_IMAGEASSET_SETGET(className, name)\
-   static bool _set##name##Filename(void* obj, const char* index, const char* data)\
-   {\
-      bool ret = false;\
-      className* object = static_cast<className*>(obj);\
-      ret = object->_set##name(StringTable->insert(data));\
-      return ret;\
-   }\
-   \
-   static bool _set##name##Asset(void* obj, const char* index, const char* data)\
+   static bool _set##name##Data(void* obj, const char* index, const char* data)\
    {\
       bool ret = false;\
       className* object = static_cast<className*>(obj);\
@@ -273,17 +265,7 @@ public: \
    }
 
 #define DECLARE_IMAGEASSET_NET_SETGET(className, name, bitmask)\
-   static bool _set##name##Filename(void* obj, const char* index, const char* data)\
-   {\
-      bool ret = false;\
-      className* object = static_cast<className*>(obj);\
-      ret = object->_set##name(StringTable->insert(data));\
-      if(ret)\
-         object->setMaskBits(bitmask);\
-      return ret;\
-   }\
-   \
-   static bool _set##name##Asset(void* obj, const char* index, const char* data)\
+   static bool _set##name##Data(void* obj, const char* index, const char* data)\
    {\
       bool ret = false;\
       className* object = static_cast<className*>(obj);\
@@ -313,8 +295,8 @@ DefineEngineMethod(className, set##name, bool, (const char* map), , assetText(na
    m##name##Asset = NULL;
 
 #define INITPERSISTFIELD_IMAGEASSET(name, consoleClass, docs) \
-   addProtectedField(#name, TypeImageFilename, Offset(m##name##Filename, consoleClass), _set##name##Filename,&defaultProtectedGetFn,assetDoc(name, docs)); \
-   addProtectedField(assetText(name, Asset), TypeImageAssetId, Offset(m##name##AssetId, consoleClass), consoleClass::_set##name##Asset, &defaultProtectedGetFn, assetDoc(name, asset docs.));
+   addProtectedField(#name, TypeImageFilename, Offset(m##name##Filename, consoleClass), _set##name##Data, &defaultProtectedGetFn,assetDoc(name, docs)); \
+   addProtectedField(assetText(name, Asset), TypeImageAssetId, Offset(m##name##AssetId, consoleClass), _set##name##Data, &defaultProtectedGetFn, assetDoc(name, asset docs.));
 
 #define CLONE_IMAGEASSET(name) \
    m##name##Filename = other.m##name##Filename;\
@@ -379,6 +361,7 @@ if (m##name##AssetId != StringTable->EmptyString())\
    if (stream->readFlag())\
    {\
       m##name##AssetId = StringTable->insert(netconn->unpackNetStringHandleU(stream).getString());\
+      _set##name(m##name##AssetId);\
    }\
    else\
       m##name##Filename = stream->readSTString();
@@ -624,6 +607,7 @@ if (m##name##AssetId[index] != StringTable->EmptyString())\
    if (stream->readFlag())\
    {\
       m##name##AssetId[index] = StringTable->insert(netconn->unpackNetStringHandleU(stream).getString());\
+      _set##name(m##name##AssetId[index], index);\
    }\
    else\
       m##name##Filename[index] = stream->readSTString();

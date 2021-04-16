@@ -220,12 +220,6 @@ public: \
    \
    bool _setDiffuseMap(StringTableEntry _in, const U32& index)\
    {\
-      if (_in == StringTable->insert("Prototyping:FloorGray_ALBEDO") || _in == StringTable->insert("FloorGray"))
-      {
-         bool adfgadfgdfg = true;
-         bool sghsfgh = true;
-      }
-
       if(index >= smDiffuseMapCount || index < 0)\
          return false;\
       if (_in == StringTable->EmptyString())\

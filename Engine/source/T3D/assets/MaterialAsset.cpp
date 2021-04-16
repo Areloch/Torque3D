@@ -327,8 +327,8 @@ bool MaterialAsset::getAssetById(StringTableEntry assetId, AssetPtr<MaterialAsse
       return true;
 
    //Didn't work, so have us fall back to a placeholder asset
-   StringTableEntry noImageId = StringTable->insert("Core_Rendering:noMaterial");
-   materialAsset->setAssetId(noImageId);
+   StringTableEntry noMaterialId = StringTable->insert("Core_Rendering:noMaterial");
+   materialAsset->setAssetId(noMaterialId);
 
    if (!materialAsset->isNull())
       return true;
