@@ -47,14 +47,14 @@
 
 IMPLEMENT_CONOBJECT(SoundAsset);
 
-ConsoleType(SoundAssetPtr, TypeSoundAssetPtr, SoundAsset, ASSET_ID_FIELD_PREFIX)
+ConsoleType(SoundAssetPtr, TypeSoundAssetPtr, const char*, ASSET_ID_FIELD_PREFIX)
 
 //-----------------------------------------------------------------------------
 
 ConsoleGetType(TypeSoundAssetPtr)
 {
    // Fetch asset Id.
-   return (*((AssetPtr<SoundAsset>*)dptr)).getAssetId();
+   return *((const char**)(dptr));
 }
 
 //-----------------------------------------------------------------------------
@@ -65,21 +65,7 @@ ConsoleSetType(TypeSoundAssetPtr)
    if (argc == 1)
    {
       // Yes, so fetch field value.
-      const char* pFieldValue = argv[0];
-
-      // Fetch asset pointer.
-      AssetPtr<SoundAsset>* pAssetPtr = dynamic_cast<AssetPtr<SoundAsset>*>((AssetPtrBase*)(dptr));
-
-      // Is the asset pointer the correct type?
-      if (pAssetPtr == NULL)
-      {
-         // No, so fail.
-         //Con::warnf("(TypeSoundAssetPtr) - Failed to set asset Id '%d'.", pFieldValue);
-         return;
-      }
-
-      // Set asset.
-      pAssetPtr->setAssetId(pFieldValue);
+      *((const char**)dptr) = StringTable->insert(argv[0]);
 
       return;
    }
@@ -90,15 +76,55 @@ ConsoleSetType(TypeSoundAssetPtr)
 
 //-----------------------------------------------------------------------------
 
+ConsoleType(assetIdString, TypeSoundAssetId, const char*, ASSET_ID_FIELD_PREFIX)
+
+ConsoleGetType(TypeSoundAssetId)
+{
+   // Fetch asset Id.
+   return *((const char**)(dptr));
+}
+
+ConsoleSetType(TypeSoundAssetId)
+{
+   // Was a single argument specified?
+   if (argc == 1)
+   {
+      // Yes, so fetch field value.
+      *((const char**)dptr) = StringTable->insert(argv[0]);
+
+      return;
+   }
+
+   // Warn.
+   Con::warnf("(TypeAssetId) - Cannot set multiple args to a single asset.");
+}
+
+//-----------------------------------------------------------------------------
+
 SoundAsset::SoundAsset()
 {
    mSoundFile = StringTable->EmptyString();
    mSoundPath = StringTable->EmptyString();
 
+   mSubtitleString = StringTable->EmptyString();
+
+   // SFX description inits
+   // reverb is useless here, reverb is inacted on listener.
    mPitchAdjust = 1;
    mVolumeAdjust = 1;
+   mIs3D = true;
+   mLoop = false;
+   mIsStreaming = false;
+   mUseHardware = false;
+   mMinDistance = 1;
+   mMaxDistance = 100;
+   mConeInsideAngle = 360;
+   mConeOutsideAngle = 360;
+   mConeOutsideVolume = 1;
+   mRolloffFactor = -1.0f;
+   mScatterDistance = Point3F(0.f, 0.f, 0.f);
+   mPriority = 1.0f;
 
-   //mSound = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -117,8 +143,23 @@ void SoundAsset::initPersistFields()
    addProtectedField("soundFile", TypeAssetLooseFilePath, Offset(mSoundFile, SoundAsset),
       &setSoundFile, &getSoundFile, "Path to the sound file.");
 
-   addField("pitchAdjust", TypeF32, Offset(mPitchAdjust, SoundAsset), "Adjustment of the pitch value");
+   addField("pitchAdjust", TypeF32, Offset(mPitchAdjust, SoundAsset), "Adjustment of the pitch value 1 is default.");
    addField("volumeAdjust", TypeF32, Offset(mVolumeAdjust, SoundAsset), "Adjustment to the volume.");
+   addField("is3D", TypeBool, Offset(mVolumeAdjust, SoundAsset), "Set this sound to 3D.");
+   addField("isLooping", TypeBool, Offset(mLoop, SoundAsset), "Does this sound loop.");
+   addField("useHardware", TypeBool, Offset(mUseHardware, SoundAsset), "Use hardware mixing for this sound.");
+   // if streaming, a default packet size should be chosen for all sounds.
+   addField("isStreaming", TypeBool, Offset(mIsStreaming, SoundAsset), "Use streaming.");
+   //....why?
+   addField("minDistance", TypeF32, Offset(mMinDistance, SoundAsset), "Minimum distance for sound.");
+   // more like it.
+   addField("maxDistance", TypeF32, Offset(mMaxDistance, SoundAsset), "Max distance for sound.");
+   addField("scatterDistance", TypePoint3F, Offset(mScatterDistance, SoundAsset), "Randomization to the spacial position of the sound.");
+   addField("coneInsideAngle", TypeS32, Offset(mConeInsideAngle, SoundAsset), "Cone inside angle.");
+   addField("coneOutsideAngle", TypeS32, Offset(mConeOutsideAngle, SoundAsset), "Cone outside angle.");
+   addField("coneOutsideVolume", TypeS32, Offset(mConeOutsideVolume, SoundAsset), "Cone outside volume.");
+   addField("rolloffFactor", TypeF32, Offset(mRolloffFactor, SoundAsset), "Rolloff factor.");
+
 }
 
 //------------------------------------------------------------------------------

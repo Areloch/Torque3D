@@ -39,6 +39,12 @@
 #include "assets/assetFieldTypes.h"
 #endif
 
+#include "gui/editor/guiInspectorTypes.h"
+
+#ifndef _BITSTREAM_H_
+#include "core/stream/bitStream.h"
+#endif
+
 class SFXTrack;
 
 //-----------------------------------------------------------------------------
@@ -49,8 +55,27 @@ class SoundAsset : public AssetBase
 protected:
    StringTableEntry        mSoundFile;
    StringTableEntry        mSoundPath;
+   // subtitles
+   StringTableEntry        mSubtitleString;
+
+   bool                    mPreload;
+
+   // SFXDesctriptions, some off these will be removed
    F32                     mPitchAdjust;
    F32                     mVolumeAdjust;
+   bool                    mIs3D;
+   bool                    mLoop;
+   bool                    mIsStreaming;
+   bool                    mUseHardware;
+
+   F32                     mMinDistance;
+   F32                     mMaxDistance;
+   U32                     mConeInsideAngle;
+   U32                     mConeOutsideAngle;
+   F32                     mConeOutsideVolume;
+   F32                     mRolloffFactor;
+   Point3F                 mScatterDistance;
+   F32                     mPriority;
 
 public:
    SoundAsset();
@@ -77,6 +102,187 @@ protected:
 };
 
 DefineConsoleType(TypeSoundAssetPtr, SoundAsset)
+DefineConsoleType(TypeSoundAssetId, String)
+
+//-----------------------------------------------------------------------------
+// TypeAssetId GuiInspectorField Class
+//-----------------------------------------------------------------------------
+class GuiInspectorTypeSoundAssetPtr : public GuiInspectorTypeFileName
+{
+   typedef GuiInspectorTypeFileName Parent;
+public:
+
+   GuiBitmapButtonCtrl* mSoundButton;
+
+   DECLARE_CONOBJECT(GuiInspectorTypeSoundAssetPtr);
+   static void consoleInit();
+
+   virtual GuiControl* constructEditControl();
+   virtual bool updateRects();
+};
+
+class GuiInspectorTypeSoundAssetId : public GuiInspectorTypeSoundAssetPtr
+{
+   typedef GuiInspectorTypeSoundAssetPtr Parent;
+public:
+
+   DECLARE_CONOBJECT(GuiInspectorTypeSoundAssetId);
+   static void consoleInit();
+};
+
+#pragma region Singular Asset Macros
+
+//Singular assets
+/// <Summary>
+/// Declares a sound asset
+/// This establishes the assetId, asset and legacy filepath fields, along with supplemental getter and setter functions
+/// </Summary>
+#define DECLARE_SOUNDASSET(className, name) public: \
+   FileName m##name##Filename = String::EmptyString; \
+   StringTableEntry m##name##AssetId = StringTable->EmptyString();\
+public: \
+   const StringTableEntry get##name##File() const { return StringTable->insert(m##name##Filename.c_str()); }\
+   void set##name##File(const FileName &_in) { m##name##Filename = _in;}\
+   const AssetPtr<SoundAsset> & get##name##Asset() const { return m##name##Asset; }\
+   void set##name##Asset(const AssetPtr<SoundAsset> &_in) { m##name##Asset = _in;}\
+   \
+   bool _set##name(StringTableEntry _in)\
+   {\
+      if (_in == StringTable->EmptyString())\
+      {\
+         m##name##Name = StringTable->EmptyString();\
+         m##name##AssetId = StringTable->EmptyString();\
+         m##name##Asset = NULL;\
+         m##name = NULL;\
+         return true;\
+      }\
+      \
+      if (AssetDatabase.isDeclaredAsset(_in))\
+      {\
+         m##name##AssetId = _in;\
+         \
+         U32 assetState = SoundAsset::getAssetById(m##name##AssetId, &m##name##Asset);\
+         \
+         if (SoundAsset::Ok == assetState)\
+         {\
+            m##name##Name = StringTable->EmptyString();\
+         }\
+         else\
+         {\
+            m##name##Name = _in;\
+            m##name##Asset = NULL;\
+         }\
+      }\
+      else\
+      {\
+         if (SoundAsset::getAssetByFilename(_in, &m##name##Asset))\
+         {\
+            m##name##AssetId = m##name##Asset.getAssetId();\
+            \
+         }\
+         else\
+         {\
+            m##name##Name = _in;\
+            m##name##AssetId = StringTable->EmptyString();\
+            m##name##Asset = NULL;\
+         }\
+      }\
+      if (get##name() != StringTable->EmptyString() && m##name##Asset.notNull())\
+      {\
+         m##name = m##name##Asset->getShapeResource();\
+         \
+         if (bool(m##name) == NULL)\
+         {\
+            Con::errorf("%s::_set##name() - %s: Couldn't load sound %s", assetText(className,""), get##name());\
+            return false;\
+         }\
+         return true;\
+      }\
+      return false;\
+   }\
+   \
+   const StringTableEntry get##name() const\
+   {\
+      if (m##name##Asset && (m##name##Asset->getShapePath() != StringTable->EmptyString()))\
+         return m##name##Asset->getShapePath();\
+      else if (m##name##Name != StringTable->EmptyString())\
+         return StringTable->insert(m##name##Name);\
+      else\
+         return StringTable->EmptyString();\
+   }\
+   Resource<SFXTrack> get##name##Resource() \
+   {\
+      return m##name;\
+   }
+
+#define DECLARE_SOUNDASSET_SETGET(className, name)\
+   static bool _set##name##Data(void* obj, const char* index, const char* data)\
+   {\
+      bool ret = false;\
+      className* object = static_cast<className*>(obj);\
+      ret = object->_set##name(StringTable->insert(data));\
+      return ret;\
+   }
+
+#define DECLARE_SOUNDASSET_NET_SETGET(className, name, bitmask)\
+   static bool _set##name##Data(void* obj, const char* index, const char* data)\
+   {\
+      bool ret = false;\
+      className* object = static_cast<className*>(obj);\
+      ret = object->_set##name(StringTable->insert(data));\
+      if(ret)\
+         object->setMaskBits(bitmask);\
+      return ret;\
+   }
+
+#define DEF_SOUNDASSET_BINDS(className,name)\
+DefineEngineMethod(className, get##name, String, (), , "get name")\
+{\
+   return object->get##name(); \
+}\
+DefineEngineMethod(className, get##name##Asset, String, (), , assetText(name, asset reference))\
+{\
+   return object->m##name##AssetId; \
+}\
+DefineEngineMethod(className, set##name, bool, (const char*  shape), , assetText(name,assignment. first tries asset then flat file.))\
+{\
+   return object->_set##name(StringTable->insert(shape));\
+}
+
+#define INIT_SOUNDASSET(name) \
+   m##name##Name = StringTable->EmptyString(); \
+   m##name##AssetId = StringTable->EmptyString(); \
+   m##name##Asset = NULL; \
+   m##name = NULL;\
+
+#define INITPERSISTFIELD_SOUNDASSET(name, consoleClass, docs) \
+   addProtectedField(assetText(name, File), TypeShapeFilename, Offset(m##name##Name, consoleClass), _set##name##Data, & defaultProtectedGetFn, assetText(name, docs)); \
+   addProtectedField(assetText(name, Asset), TypeShapeAssetId, Offset(m##name##AssetId, consoleClass), _set##name##Data, & defaultProtectedGetFn, assetText(name, asset reference.));
+
+#define CLONE_SOUNDASSET(name) \
+   m##name##Name = other.m##name##Name;\
+   m##name##AssetId = other.m##name##AssetId;\
+   m##name##Asset = other.m##name##Asset;\
+
+#define PACK_SOUNDASSET(netconn, name)\
+   if (stream->writeFlag(m##name##Asset.notNull()))\
+   {\
+      NetStringHandle assetIdStr = m##name##Asset.getAssetId();\
+      netconn->packNetStringHandleU(stream, assetIdStr);\
+   }\
+   else\
+      stream->writeString(m##name##Name);
+
+#define UNPACK_SOUNDASSET(netconn, name)\
+   if (stream->readFlag())\
+   {\
+      m##name##AssetId = StringTable->insert(netconn->unpackNetStringHandleU(stream).getString());\
+      _set##name(m##name##AssetId);\
+   }\
+   else\
+      m##name##Name = stream->readSTString();
+
+#pragma endregion
 
 #endif // _ASSET_BASE_H_
 
