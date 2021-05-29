@@ -45,7 +45,11 @@
 #include "core/stream/bitStream.h"
 #endif
 
-class SFXTrack;
+#ifndef _SFXRESOURCE_H_
+#include "sfx/sfxResource.h"
+#endif
+
+class SFXResource;
 
 //-----------------------------------------------------------------------------
 class SoundAsset : public AssetBase
@@ -57,6 +61,8 @@ protected:
    StringTableEntry        mSoundPath;
    // subtitles
    StringTableEntry        mSubtitleString;
+
+   Resource<SFXResource>   mSoundResource;
 
    bool                    mPreload;
 
@@ -84,6 +90,9 @@ public:
    /// Engine.
    static void initPersistFields();
    virtual void copyTo(SimObject* object);
+
+   SFXResource* getSound() { return mSoundResource; }
+   Resource<SFXResource> getSoundResource() { return mSoundResource; }
 
    /// Declare Console Object.
    DECLARE_CONOBJECT(SoundAsset);
@@ -189,7 +198,7 @@ public: \
       }\
       if (get##name() != StringTable->EmptyString() && m##name##Asset.notNull())\
       {\
-         m##name = m##name##Asset->getShapeResource();\
+         m##name = m##name##Asset->getSoundResource();\
          \
          if (bool(m##name) == NULL)\
          {\
@@ -203,14 +212,14 @@ public: \
    \
    const StringTableEntry get##name() const\
    {\
-      if (m##name##Asset && (m##name##Asset->getShapePath() != StringTable->EmptyString()))\
-         return m##name##Asset->getShapePath();\
+      if (m##name##Asset && (m##name##Asset->getSoundPath() != StringTable->EmptyString()))\
+         return m##name##Asset->getSoundPath();\
       else if (m##name##Name != StringTable->EmptyString())\
          return StringTable->insert(m##name##Name);\
       else\
          return StringTable->EmptyString();\
    }\
-   Resource<SFXTrack> get##name##Resource() \
+   Resource<SFXResource> get##name##Resource() \
    {\
       return m##name;\
    }
@@ -263,6 +272,22 @@ DefineEngineMethod(className, set##name, bool, (const char*  shape), , assetText
    m##name##Name = other.m##name##Name;\
    m##name##AssetId = other.m##name##AssetId;\
    m##name##Asset = other.m##name##Asset;\
+
+#define PACKDATA_SOUNDASSET(name)\
+   if (stream->writeFlag(m##name##Asset.notNull()))\
+   {\
+      stream->writeString(m##name##Asset.getAssetId());\
+   }\
+   else\
+      stream->writeString(m##name##Name);
+
+#define UNPACKDATA_SOUNDASSET(name)\
+   if (stream->readFlag())\
+   {\
+      m##name##AssetId = stream->readSTString();\
+   }\
+   else\
+      m##name##Name = stream->readSTString();
 
 #define PACK_SOUNDASSET(netconn, name)\
    if (stream->writeFlag(m##name##Asset.notNull()))\
