@@ -64,6 +64,9 @@ protected:
 
    Resource<SFXResource>   mSoundResource;
 
+   typedef Signal<void()> SoundAssetChanged;
+   SoundAssetChanged mChangeSignal;
+
    bool                    mPreload;
 
    // SFXDesctriptions, some off these will be removed
@@ -98,12 +101,17 @@ public:
    DECLARE_CONOBJECT(SoundAsset);
 
    void                    setSoundFile(const char* pSoundFile);
+   bool loadSound();
    inline StringTableEntry getSoundFile(void) const { return mSoundFile; };
-
    inline StringTableEntry getSoundPath(void) const { return mSoundPath; };
+
+   bool isLoop() { return mLoop; }
+   bool is3D() { return mIs3D; }
+
 
 protected:
    virtual void            initializeAsset(void);
+   void _onResourceChanged(const Torque::Path & path);
    virtual void            onAssetRefresh(void);
 
    static bool setSoundFile(void *obj, const char *index, const char *data) { static_cast<SoundAsset*>(obj)->setSoundFile(data); return false; }
@@ -265,8 +273,8 @@ DefineEngineMethod(className, set##name, bool, (const char*  shape), , assetText
    m##name = NULL;\
 
 #define INITPERSISTFIELD_SOUNDASSET(name, consoleClass, docs) \
-   addProtectedField(assetText(name, File), TypeShapeFilename, Offset(m##name##Name, consoleClass), _set##name##Data, & defaultProtectedGetFn, assetText(name, docs)); \
-   addProtectedField(assetText(name, Asset), TypeShapeAssetId, Offset(m##name##AssetId, consoleClass), _set##name##Data, & defaultProtectedGetFn, assetText(name, asset reference.));
+   addProtectedField(assetText(name, File), TypeSoundFilename, Offset(m##name##Name, consoleClass), _set##name##Data, & defaultProtectedGetFn, assetText(name, docs)); \
+   addProtectedField(assetText(name, Asset), TypeSoundAssetId, Offset(m##name##AssetId, consoleClass), _set##name##Data, & defaultProtectedGetFn, assetText(name, asset reference.));
 
 #define CLONE_SOUNDASSET(name) \
    m##name##Name = other.m##name##Name;\

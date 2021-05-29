@@ -339,11 +339,12 @@ void SimObject::writeFields(Stream &stream, U32 tabStop)
 
          // detect and collapse relative path information
          char fnBuf[1024];
-         if (f->type == TypeFilename ||
+         if (f->type == TypeFilename       ||
              f->type == TypeStringFilename ||
-             f->type == TypeImageFilename ||
+             f->type == TypeImageFilename  ||
              f->type == TypePrefabFilename ||
-             f->type == TypeShapeFilename)
+             f->type == TypeShapeFilename  ||
+             f->type == TypeSoundFilename )
          {
             Con::collapseScriptFilename(fnBuf, 1024, val);
             val = fnBuf;

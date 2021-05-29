@@ -172,20 +172,66 @@ void SoundAsset::copyTo(SimObject* object)
 
 void SoundAsset::initializeAsset(void)
 {
-   mSoundPath = expandAssetFilePath(mSoundFile);
+   Parent::initializeAsset();
+
+   if (mSoundFile == StringTable->EmptyString())
+      return;
+
+   ResourceManager::get().getChangedSignal.notify(this, &SoundAsset::_onResourceChanged);
+
+   //Ensure our path is expando'd if it isn't already
+   if (!Platform::isFullPath(mSoundPath))
+      mSoundPath = getOwned() ? expandAssetFilePath(mSoundFile) : mSoundPath;
+
+   mSoundPath = expandAssetFilePath(mSoundPath);
+
+   loadSound();
+}
+
+void SoundAsset::_onResourceChanged(const Torque::Path &path)
+{
+   if (path != Torque::Path(mSoundPath))
+      return;
+
+   refreshAsset();
+
+   loadSound();
 }
 
 void SoundAsset::onAssetRefresh(void)
 {
-   mSoundPath = expandAssetFilePath(mSoundFile);
+   if (mSoundFile == StringTable->EmptyString())
+      return;
+
+   //Update
+   if (!Platform::isFullPath(mSoundFile))
+      mSoundPath = getOwned() ? expandAssetFilePath(mSoundFile) : mSoundPath;
+
+   loadSound();
+}
+
+bool SoundAsset::loadSound()
+{
+   mSoundResource = ResourceManager::get().load(mSoundPath);
+
+   if (!mSoundResource)
+   {
+      Con::errorf("SoundAsset::loadShape : failed to load sound file %s (%s)!", getAssetName(), mSoundPath);
+      mLoadedState = BadFileReference;
+      return false; //if it failed to load, bail out
+   }
+
+   mChangeSignal.trigger();
+   mLoadedState = Ok;
+   return true;
 }
 
 void SoundAsset::setSoundFile(const char* pSoundFile)
 {
    // Sanity!
-   AssertFatal(pSoundFile != NULL, "Cannot use a NULL shape file.");
+   AssertFatal(pSoundFile != NULL, "Cannot use a NULL sound file.");
 
-   // Fetch image file.
+   // Fetch sound file.
    pSoundFile = StringTable->insert(pSoundFile);
 
    // Ignore no change,
@@ -193,7 +239,7 @@ void SoundAsset::setSoundFile(const char* pSoundFile)
       return;
 
    // Update.
-   mSoundFile = StringTable->insert(pSoundFile);
+   mSoundFile = pSoundFile;
 
    // Refresh the asset.
    refreshAsset();

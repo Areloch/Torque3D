@@ -282,6 +282,33 @@ ConsoleProcessData( TypeShapeFilename )
 }
 
 //-----------------------------------------------------------------------------
+// TypeSoundFilename
+//-----------------------------------------------------------------------------
+ConsolePrepType(filename, TypeSoundFilename, const char*)
+
+ConsoleSetType(TypeSoundFilename)
+{
+   Con::setData(TypeFilename, dptr, 0, argc, argv, tbl, flag);
+}
+
+ConsoleGetType(TypeSoundFilename)
+{
+   return *((const char **)(dptr));
+}
+
+ConsoleProcessData(TypeSoundFilename)
+{
+   if (Con::expandScriptFilename(buffer, bufferSz, data))
+      return buffer;
+   else
+   {
+      Con::warnf("(TypeSoundFilename) illegal filename detected: %s", data);
+      return data;
+   }
+}
+
+
+//-----------------------------------------------------------------------------
 // TypeS8
 //-----------------------------------------------------------------------------
 ConsoleType(char, TypeS8, S8, "")
