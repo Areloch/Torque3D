@@ -105,8 +105,9 @@ SoundAsset::SoundAsset()
 {
    mSoundFile = StringTable->EmptyString();
    mSoundPath = StringTable->EmptyString();
-
    mSubtitleString = StringTable->EmptyString();
+
+   mLoadedState = AssetErrCode::NotLoaded;
 
    // SFX description inits
    // reverb is useless here, reverb is inacted on listener.
