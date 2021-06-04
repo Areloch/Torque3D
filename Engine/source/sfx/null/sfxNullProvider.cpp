@@ -22,6 +22,7 @@
 
 #include "sfx/sfxProvider.h"
 #include "sfx/null/sfxNullDevice.h"
+#include "sfx/null/sfxNullInputDevice.h"
 #include "core/strings/stringFunctions.h"
 #include "core/module.h"
 
@@ -42,6 +43,7 @@ public:
 
    SFXDevice* createDevice( const String& deviceName, bool useHardware, S32 maxBuffers );
 
+   SFXInputDevice* createInputDevice(const String deviceName);
 };
 
 MODULE_BEGIN( SFXNull )
@@ -95,3 +97,9 @@ SFXDevice* SFXNullProvider::createDevice( const String& deviceName, bool useHard
 
    return NULL;
 }
+
+SFXInputDevice *SFXNullProvider::createInputDevice(const String deviceName)
+{
+   return new SFXNULLInputDevice(this, deviceName);
+}
+

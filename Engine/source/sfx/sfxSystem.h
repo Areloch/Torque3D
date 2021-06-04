@@ -47,7 +47,9 @@ class SFXSource;
 class SFXSound;
 class SFXBuffer;
 class SFXDescription;
-
+/// voip additions
+class SFXInputDevice;
+/// voip additions end ---
 
 /// SFX system events that can be received notifications on.
 enum SFXSystemEventType
@@ -126,6 +128,9 @@ class SFXSystem
       /// The current output sound device initialized
       /// and ready to play back.
       SFXDevice* mDevice;
+
+      /// current input device.
+      SFXInputDevice* mInputDevice;
       
       ///
       SFXSoundVector mSounds;
@@ -435,6 +440,10 @@ class SFXSystem
       
       ///
       void notifyTrackChanged( SFXTrack* track );
+
+      /// we need to be able to reference this.
+      SFXInputDevice* getInputDevice() const { return mInputDevice; }
+
 };
 
 

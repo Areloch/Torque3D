@@ -178,7 +178,7 @@ void SoundAsset::initializeAsset(void)
    if (mSoundFile == StringTable->EmptyString())
       return;
 
-   ResourceManager::get().getChangedSignal.notify(this, &SoundAsset::_onResourceChanged);
+   //ResourceManager::get().getChangedSignal.notify(this, &SoundAsset::_onResourceChanged);
 
    //Ensure our path is expando'd if it isn't already
    if (!Platform::isFullPath(mSoundPath))
