@@ -116,6 +116,27 @@ function ExampleGameMode::spawnControlObject(%this, %client)
 
       %client.camera.setTransform("0 0 1 0 0 0 0");
    }
+   
+   %client.createVoipClient();
+   
+   $VoipClient = %client;
+   
+   GlobalActionMap.bind(keyboard, "alt v", startVoip);
+   
+}
+
+function startVoip(%val)
+{
+	echo("key pressed");
+	if(%val)
+	{
+		echo("voip started");
+		$VoipClient.startRecordingVoip();
+	}
+	else
+	{
+		echo("voip ended");
+	}
 }
 
 //This is called when the client has initially established a connection to the game server
