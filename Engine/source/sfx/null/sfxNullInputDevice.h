@@ -29,11 +29,14 @@ public:
 
    virtual void stopRecording() {};
 
-   virtual U32 sampleCount() { return 0; }
+   virtual S32 sampleCount() { return 0; }
 
-   virtual void receiveSamples(const void* buffer) {};
+   virtual void receiveSamples(U32 samples, void *buffer) {};
 
    virtual U32 getFrameSize() { return 0; }
+
+   virtual void playRawStream(U32 samples, U32 rate, const void *data) {};
+
 };
 
 #endif

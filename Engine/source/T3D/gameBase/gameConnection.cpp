@@ -261,6 +261,9 @@ GameConnection::GameConnection()
 
    mVisibleGhostDistance = 0.0f;
 
+   mListenVoip = true;
+   mVoipCreated = false;
+
    clearDisplayDevice();
 }
 
@@ -371,7 +374,6 @@ void GameConnection::onConnectionEstablished(bool isInitiator)
       setTranslatesStrings(true);
       Sim::getClientGroup()->addObject(this);
       mMoveList->init();
-
       const char *argv[MaxConnectArgs + 2];
       argv[0] = "onConnect";
       argv[1] = NULL; // Filled in later
@@ -646,6 +648,7 @@ void GameConnection::setCameraObject(GameBase *obj)
          smFovUpdate.trigger(fov);
       }
    }
+
 }
 
 GameBase* GameConnection::getCameraObject()
@@ -1124,6 +1127,10 @@ void GameConnection::readPacket(BitStream *bstream)
 
    if (isConnectionToServer())
    {
+
+      //read audio data
+      //bstream->readBits(2, (const void*));
+
       mMoveList->clientReadMovePacket(bstream);
 
 #ifdef TORQUE_AFX_ENABLED
@@ -1331,6 +1338,10 @@ void GameConnection::writePacket(BitStream *bstream, PacketNotify *note)
    U32 startPos = bstream->getBitPosition();
    if (isConnectionToServer())
    {
+
+      // write audio data
+      //bstream->writeBits(2, (const void*));
+
       mMoveList->clientWriteMovePacket(bstream);
 
       bstream->writeFlag(mCameraPos == 1);
@@ -2406,6 +2417,34 @@ DefineEngineMethod( GameConnection, getVisibleGhostDistance, F32, (),,
    )
 {
    return object->getVisibleGhostDistance();
+}
+
+void GameConnection::createVoipClient()
+{
+
+   if (!mVoipCreated)
+   {
+      mVoipClient = new VoipClient();
+      mVoipCreated = true;
+
+      mVoipClient->startRecordingVoip();
+   }
+
+}
+
+DefineEngineMethod(GameConnection, createVoipClient, void, (), , "")
+{
+   object->createVoipClient();
+}
+
+DefineEngineMethod(GameConnection, getVoipClient, VoipClient*, (), , "")
+{
+   return object->getVoipClient();
+}
+
+DefineEngineMethod(GameConnection, startRecordingVoip, void, (), , "")
+{
+   object->getVoipClient()->clientWriteVoip();
 }
 
 #ifdef TORQUE_AFX_ENABLED 

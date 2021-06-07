@@ -7,12 +7,16 @@ class SFXProvider;
 #include "sfx/sfxInputDevice.h"
 #endif
 
+#ifndef _SFXALVOICE_H_
+#include "sfx/openal/sfxALVoice.h"
+#endif
+
 #ifndef _SFXPROVIDER_H_
 #include "sfx/sfxProvider.h"
 #endif
 
 #ifndef _OPENALFNTABLE
-#  include "sfx/openal/LoadOAL.h"
+#include "sfx/openal/LoadOAL.h"
 #endif
 
 class SFXALInputDevice : public SFXInputDevice
@@ -40,12 +44,14 @@ public:
 
    virtual void stopRecording();
 
-   virtual U32 sampleCount();
+   virtual S32 sampleCount();
 
-   virtual void receiveSamples(const void* buffer);
+   virtual void receiveSamples(U32 samples, void *buffer);
 
    /// this is important to keep data in sync.
-   virtual U32 getFrameSize() const { return mFrameSize; }
+   virtual U32 getFrameSize() { return mFrameSize; }
+
+   virtual void playRawStream(U32 samples, U32 rate, const void *data);
 
 };
 

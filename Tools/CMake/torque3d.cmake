@@ -441,6 +441,11 @@ if(TORQUE_THEORA)
     addLib(libtheora)
 endif()
 
+# Speex VoIP
+add_subdirectory( ${libDir}/speex ${CMAKE_CURRENT_BINARY_DIR}/speex)
+addInclude("${libDir}/speex/include")
+addInclude("${libDir}/speex/")
+
 # Include tools for non-tool builds (or define player if a tool build)
 if(TORQUE_TOOLS)
     addPath("${srcDir}/gui/worldEditor")
@@ -675,6 +680,7 @@ addLib(squish)
 addLib(collada)
 addLib(pcre)
 addLib(convexDecomp)
+
 if (TORQUE_OPENGL)
    addLib(glad)
 endif()
@@ -859,6 +865,7 @@ addInclude("${libDir}/opcode")
 addInclude("${libDir}/collada/include")
 addInclude("${libDir}/collada/include/1.4")
 addInclude("${libDir}/assimp/include")
+
 if(TORQUE_SDL)
    addInclude("${libDir}/nativeFileDialogs/include")
 endif()
