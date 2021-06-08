@@ -5,20 +5,25 @@ IMPLEMENT_CO_NETEVENT_V1(VoipEvent);
 
 VoipEvent::VoipEvent()
 {
+   mSourceId = -1;
+   mGuaranteeType = Guaranteed;
    mData = "";
-   dStrcpy(mData, "reeeeeeeeee", 1024);
    mFrames = 0;
    mLength = 0;
+   Con::printf("Should not be used! create with VoipEvent(const char* data, U32 frames, U32 length)!");
 }
 
-VoipEvent::VoipEvent(char *data, U32 frames, U32 length)
+VoipEvent::VoipEvent(const char* data, U32 frames, U32 length)
 {
-   Con::printf("VoipEvent Created: %s Frames:%d Length:%d",data,frames);
-   mData = "";
-   //dMemset(mData, 0, 1024);
-   dStrcpy(mData, data, length);
+   mSourceId = -1;
+   mGuaranteeType = Guaranteed;
+   Con::printf("Creating VoipEvent: %s Frames:%d Length:%d", data, frames, length);
+   //mData = "";
+   mData = data;
    mFrames = frames;
    mLength = length;
+
+   Con::printf("Creation finished");
 }
 
 void VoipEvent::pack(NetConnection *conn, BitStream *bstream)
@@ -26,7 +31,7 @@ void VoipEvent::pack(NetConnection *conn, BitStream *bstream)
    Con::printf("VoipEvent packed");
    bstream->writeInt(mLength, 4);
    bstream->writeInt(mFrames, 4);
-   bstream->writeLongString(mLength, mData);
+   bstream->writeLongString(mLength, const_cast<char*>(mData));
 }
 
 void VoipEvent::write(NetConnection *conn, BitStream *bstream)
@@ -41,7 +46,7 @@ void VoipEvent::unpack(NetConnection *conn, BitStream *bstream)
    Con::printf("VoipEvent unpack");
    mLength = bstream->readInt(4);
    mFrames = bstream->readInt(4);
-   bstream->readLongString(mLength, mData);
+   bstream->readLongString(mLength, const_cast<char*>(mData));
 }
 
 void VoipEvent::process(NetConnection *conn)
@@ -50,7 +55,7 @@ void VoipEvent::process(NetConnection *conn)
    if (conn->isConnectionToServer())
    {
       GameConnection* gc = (GameConnection*)conn;
-      gc->getVoipClient()->clientReadVoip(mData,mFrames,mLength);
+      gc->getVoipClient()->clientReadVoip(mData, mFrames, mLength);
    }
    else
    {

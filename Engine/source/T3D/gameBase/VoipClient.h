@@ -56,7 +56,7 @@ public:
    void setClient(GameConnection *connection) { mConnection = connection; }
 
    void clientWriteVoip();
-   void clientReadVoip(char *data, U32 frames, U32 length);
+   void clientReadVoip(const char *data, U32 frames, U32 length);
 
 };
 

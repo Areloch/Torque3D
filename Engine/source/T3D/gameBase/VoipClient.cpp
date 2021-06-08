@@ -80,10 +80,13 @@ void VoipClient::stopRecordingVoip()
 
 void VoipClient::clientWriteVoip()
 {
+   if (isServerObject()) return;
    /// create our data buffers.
    Con::printf("write voip");
    char enBuf[1024];
+   dMemset(enBuf, 0, 1024);
    S16 buff[2048];
+   dMemset(buff, 0, 2048);
    /// position pointers
    U32 bPos = 0;
    U32 pos = 0;
@@ -99,7 +102,7 @@ void VoipClient::clientWriteVoip()
    Con::printf("Samples: %d", samples);
 
    samples -= samples % frameSize;
-   mClientDev->receiveSamples(samples, (void *) &buff);
+   mClientDev->receiveSamples(samples, (void *)&buff);
 
    while (samples > 0)
    {
@@ -110,9 +113,7 @@ void VoipClient::clientWriteVoip()
       /// we have to encode as ints.
       speex_encode_int(speexEncoder, sampPtr, &encoderBits);
       /// outputs the length of the encoding.
-      len = speex_bits_write(&encoderBits, &enBuf[bPos +1], sizeof(enBuf) - (bPos +1));
-      Con::printf("Encode Buffer: %s", enBuf);
-
+      len = speex_bits_write(&encoderBits, enBuf, 1024);
       bPos += len + 1;
       pos += frameSize;
       samples -= frameSize;
@@ -120,12 +121,12 @@ void VoipClient::clientWriteVoip()
    }
 
    Con::printf("Length: %d Frames: %d", sizeof(enBuf), frames);
-
+   
    mConnection->postNetEvent(new VoipEvent(enBuf, frames, sizeof(enBuf)));
 
 }
 
-void VoipClient::clientReadVoip(char *data, U32 frames, U32 length)
+void VoipClient::clientReadVoip(const char *data, U32 frames, U32 length)
 {
    /// this codeblock is eventually going to hold the sender id aswell.
 
