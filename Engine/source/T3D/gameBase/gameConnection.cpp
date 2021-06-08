@@ -2446,7 +2446,19 @@ DefineEngineMethod(GameConnection, getVoipClient, SimObject*, (), , "")
 DefineEngineMethod(GameConnection, startRecordingVoip, void, (), , "")
 {
    if (object->getVoipClient())
+   {
+      object->getVoipClient()->startRecordingVoip();
       object->getVoipClient()->clientWriteVoip();
+   }
+}
+
+DefineEngineMethod(GameConnection, stopRecordingVoip, void, (), , "")
+{
+   if (object->getVoipClient())
+   {
+      object->getVoipClient()->stopRecordingVoip();
+      object->getVoipClient()->clientWriteVoip();
+   }
 }
 
 #ifdef TORQUE_AFX_ENABLED 

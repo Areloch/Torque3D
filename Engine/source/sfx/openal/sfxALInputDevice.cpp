@@ -5,6 +5,7 @@ SFXALInputDevice::SFXALInputDevice(SFXProvider *provider, const OPENALFNTABLE &o
    : Parent(provider, deviceName),
       mOpenAL(openal),
       mChannels(1),
+      mActive(false),
       mBits(16)
 {
    /// format for speex narrowband, this will probably need changed for opus.
@@ -29,16 +30,22 @@ SFXALInputDevice::~SFXALInputDevice()
 void SFXALInputDevice::startRecording()
 {
 
-   if(mCaptureDevice)
+   if (mCaptureDevice && !mActive)
+   {
       mOpenAL.alcCaptureStart(mCaptureDevice);
+      mActive = true;
+   }
 
 }
 
 void SFXALInputDevice::stopRecording()
 {
 
-   if (mCaptureDevice)
+   if (mCaptureDevice && mActive)
+   {
       mOpenAL.alcCaptureStop(mCaptureDevice);
+      mActive = false;
+   }
 
 }
 

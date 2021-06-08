@@ -52,6 +52,8 @@ public:
 
    virtual U32 getFrameSize() = 0;
 
+   virtual bool isActive() = 0;
+
    virtual void playRawStream(U32 samples, U32 rate, const char *data) {};
 
 };

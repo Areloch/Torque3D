@@ -37,6 +37,7 @@ protected:
    U32 mBits;
    U32 mChannels;
    U32 mFrameSize;
+   bool mActive;
 
 public:
 
@@ -47,6 +48,8 @@ public:
    virtual S32 sampleCount();
 
    virtual void receiveSamples(U32 samples, char *buffer);
+
+   virtual bool isActive() { return mActive; }
 
    /// this is important to keep data in sync.
    virtual U32 getFrameSize() { return mFrameSize; }

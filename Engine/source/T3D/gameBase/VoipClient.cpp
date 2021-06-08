@@ -1,7 +1,10 @@
 #include "platform/platform.h"
 #include "T3D/gameBase/VoipClient.h"
 #include "T3D/gameBase/voipEvent.h"
+#include "T3D/gameBase/gameConnection.h"
 #include "platform/threads/threadPool.h"
+
+#include <speex/speex.h>
 
 IMPLEMENT_CONOBJECT(VoipClient);
 
@@ -71,11 +74,23 @@ void VoipClient::startRecordingVoip()
 void VoipClient::stopRecordingVoip()
 {
    if (mClientDev)
+   {
       mClientDev->stopRecording();
+   }
 }
 
 
 void VoipClient::clientWriteVoip()
+{
+   voiceCompress(speexEncoder, frameSize, encoderBits, mClientDev, mConnection);
+}
+
+void VoipClient::clientReadVoip(const char *data, U32 frames, U32 length)
+{
+   voiceDeCompress(speexDecoder, frames, sampleRate, length, decoderBits, mClientDev, data);
+}
+
+void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, SpeexBits encoderBits, SFXInputDevice *clientDev, GameConnection *conn)
 {
    //if (isServerObject()) return;
    /// create our data buffers.
@@ -117,10 +132,10 @@ void VoipClient::clientWriteVoip()
       samples -= frameSize;
 
    }
-   
+
 }
 
-void VoipClient::clientReadVoip(const char *data, U32 frames, U32 length)
+void VoipClient::DeCompressJob::rawDeCompress(void* speexDecoder, U32 frames, U32 sampleRate, U32 length, SpeexBits decoderBits, SFXInputDevice *clientDev, const char *data)
 {
    /// this codeblock is eventually going to hold the sender id aswell.
 
@@ -135,6 +150,5 @@ void VoipClient::clientReadVoip(const char *data, U32 frames, U32 length)
    speex_bits_read_from(&decoderBits, encoded, length);
    speex_decode_int(speexDecoder, &decoderBits, decode);
 
-   mClientDev->playRawStream(frames, sampleRate, (const char*)decode);
-
+   clientDev->playRawStream(frames, sampleRate, (const char*)decode);
 }

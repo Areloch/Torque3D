@@ -33,6 +33,8 @@ public:
 
    virtual void receiveSamples(U32 samples, char *buffer) {};
 
+   virtual bool isActive() { return false; }
+
    virtual U32 getFrameSize() { return 0; }
 
    virtual void playRawStream(U32 samples, U32 rate, const char *data) {};

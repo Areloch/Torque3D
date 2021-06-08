@@ -17,7 +17,7 @@ VoipEvent::VoipEvent(const char* data, U32 frames, U32 length)
 {
    mSourceId = -1;
    mGuaranteeType = Guaranteed;
-   Con::printf("Creating VoipEvent: %s  Length:%d Encode Length:%d", data, frames, length);
+   Con::printf("Creating VoipEvent: %s  Frames:%d Length:%d", data, frames, length);
    for (U32 i = 0; i < length; i++)
       mOutData[i] = data[i];
    mFrames = frames;
@@ -47,7 +47,7 @@ void VoipEvent::unpack(NetConnection *conn, BitStream *bstream)
    mLength = bstream->readInt(32);
    mFrames = bstream->readInt(32);
    bstream->readLongString(mLength, mOutData);
-   Con::printf("Unpack Data: %s Length: %d Encode Length: %d", mOutData, mLength, mFrames);
+   Con::printf("Unpack Data: %s Frames: %d Length: %d", mOutData, mFrames, mLength);
 }
 
 void VoipEvent::process(NetConnection *conn)
