@@ -7,7 +7,7 @@ VoipEvent::VoipEvent()
 {
    mSourceId = -1;
    mGuaranteeType = Guaranteed;
-   mData = "";
+   dMemset(mOutData, 0, 1024);
    mFrames = 0;
    mLength = 0;
    Con::printf("Should not be used! create with VoipEvent(const char* data, U32 frames, U32 length)!");
@@ -17,9 +17,9 @@ VoipEvent::VoipEvent(const char* data, U32 frames, U32 length)
 {
    mSourceId = -1;
    mGuaranteeType = Guaranteed;
-   Con::printf("Creating VoipEvent: %s Frames:%d Length:%d", data, frames, length);
-   //mData = "";
-   mData = data;
+   Con::printf("Creating VoipEvent: %s  Length:%d Encode Length:%d", data, frames, length);
+   for (U32 i = 0; i < length; i++)
+      mOutData[i] = data[i];
    mFrames = frames;
    mLength = length;
 
@@ -31,7 +31,7 @@ void VoipEvent::pack(NetConnection *conn, BitStream *bstream)
    Con::printf("VoipEvent packed");
    bstream->writeInt(mLength, 32);
    bstream->writeInt(mFrames, 32);
-   bstream->writeLongString(mLength, const_cast<char*>(mData));
+   bstream->writeLongString(mLength, mOutData);
 }
 
 void VoipEvent::write(NetConnection *conn, BitStream *bstream)
@@ -46,7 +46,8 @@ void VoipEvent::unpack(NetConnection *conn, BitStream *bstream)
    Con::printf("VoipEvent unpack");
    mLength = bstream->readInt(32);
    mFrames = bstream->readInt(32);
-   bstream->readLongString(mLength, const_cast<char*>(mData));
+   bstream->readLongString(mLength, mOutData);
+   Con::printf("Unpack Data: %s Length: %d Encode Length: %d", mOutData, mLength, mFrames);
 }
 
 void VoipEvent::process(NetConnection *conn)
@@ -55,7 +56,7 @@ void VoipEvent::process(NetConnection *conn)
    if (conn->isConnectionToServer())
    {
       GameConnection* gc = (GameConnection*)conn;
-      gc->getVoipClient()->clientReadVoip(mData, mFrames, mLength);
+      gc->getVoipClient()->clientReadVoip(mOutData, mFrames, mLength);
    }
    else
    {
@@ -66,10 +67,10 @@ void VoipEvent::process(NetConnection *conn)
 
          if (gc && gc->isListening())
          {
-            if (mSourceId == gc->getId())
-               continue;
+            //if (mSourceId == gc->getId())
+            //   continue;
 
-            gc->postNetEvent(new VoipEvent(mData, mFrames, mLength));
+            gc->postNetEvent(new VoipEvent(mOutData, mFrames, mLength));
          }
       }
    }

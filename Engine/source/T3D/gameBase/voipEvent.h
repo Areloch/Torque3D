@@ -26,14 +26,14 @@ public:
 
 protected:
 
-   const char *mData;
+   char mOutData[1024];
    U32 mFrames;
    U32 mLength;
 
 public:
 
    VoipEvent();
-   VoipEvent(const char *data, U32 frames, U32 length);
+   VoipEvent(const char* data, U32 frames, U32 length);
    void pack(NetConnection *conn, BitStream *bstream);
    void write(NetConnection *conn, BitStream *bstream);
    void unpack(NetConnection *conn, BitStream *bstream);

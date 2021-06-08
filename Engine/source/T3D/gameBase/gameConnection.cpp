@@ -2438,7 +2438,7 @@ DefineEngineMethod(GameConnection, createVoipClient, void, (), , "")
    object->createVoipClient();
 }
 
-DefineEngineMethod(GameConnection, getVoipClient, VoipClient*, (), , "")
+DefineEngineMethod(GameConnection, getVoipClient, SimObject*, (), , "")
 {
    return object->getVoipClient();
 }

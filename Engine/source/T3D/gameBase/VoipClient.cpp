@@ -1,6 +1,7 @@
 #include "platform/platform.h"
 #include "T3D/gameBase/VoipClient.h"
 #include "T3D/gameBase/voipEvent.h"
+#include "platform/threads/threadPool.h"
 
 IMPLEMENT_CONOBJECT(VoipClient);
 
@@ -22,11 +23,6 @@ DefineEngineMethod(VoipClient, stopRecording, void, (), ,
 
 VoipClient::VoipClient()
 {
-   /// speex initialization
-   /// encoder bits can and probably should be set each time
-   /// a recording starts but we need them ready.
-   speex_bits_init(&encoderBits);
-   speex_bits_reset(&encoderBits);
    /// create encoder in narrowband mode, the settings in openal input.
    speexEncoder = speex_encoder_init(&speex_nb_mode);
    /// set encoder quality to 8 (15kbps)
@@ -37,9 +33,10 @@ VoipClient::VoipClient()
    speex_encoder_ctl(speexEncoder, SPEEX_GET_FRAME_SIZE, &frameSize);
    speex_encoder_ctl(speexEncoder, SPEEX_GET_SAMPLING_RATE, &sampleRate);
 
-   speex_bits_init(&decoderBits);
-   speex_bits_reset(&decoderBits);
    speexDecoder = speex_decoder_init(&speex_nb_mode);
+
+   U32 en = 1;
+   speex_encoder_ctl(speexDecoder, SPEEX_SET_ENH, &en);
 
    /// need this for quick access to samples.
    mClientDev = SFX->getInputDevice();
@@ -85,45 +82,42 @@ void VoipClient::clientWriteVoip()
    Con::printf("write voip");
    char enBuf[1024];
    dMemset(enBuf, 0, 1024);
-   S16 buff[2048];
+   static S16 buff[2048];
    dMemset(buff, 0, 2048);
-   /// position pointers
-   U32 bPos = 0;
-   U32 pos = 0;
-   /// speex frame pointer.
-   U32 frames = 0;
    /// get our sample count.
    U32 samples = mClientDev->sampleCount();
+   U32 pos = 0;
+   U32 bPos = 0;
 
    /// 12 samples should = 240ms
    if (samples > (frameSize * 12))
       samples = (frameSize * 12);
 
+   samples -= samples % frameSize;
+
    Con::printf("Samples: %d", samples);
 
-   samples -= samples % frameSize;
-   mClientDev->receiveSamples(samples, (void *)&buff);
+   mClientDev->receiveSamples(samples, (char *)&buff);
 
+   speex_bits_init(&encoderBits);
    while (samples > 0)
    {
       S16 *sampPtr = &buff[pos];
       U32 len;
-      /// reset bits for data.
       speex_bits_reset(&encoderBits);
       /// we have to encode as ints.
       speex_encode_int(speexEncoder, sampPtr, &encoderBits);
       /// outputs the length of the encoding.
-      len = speex_bits_write(&encoderBits, enBuf, 1024);
+      len = speex_bits_write(&encoderBits, enBuf, sizeof(enBuf));
+
+      mConnection->postNetEvent(new VoipEvent(enBuf, frameSize, sizeof(enBuf)));
+
       bPos += len + 1;
       pos += frameSize;
       samples -= frameSize;
-      frames++;
+
    }
-
-   Con::printf("Length: %d Frames: %d", sizeof(enBuf), frames);
    
-   mConnection->postNetEvent(new VoipEvent(enBuf, frames, sizeof(enBuf)));
-
 }
 
 void VoipClient::clientReadVoip(const char *data, U32 frames, U32 length)
@@ -131,21 +125,16 @@ void VoipClient::clientReadVoip(const char *data, U32 frames, U32 length)
    /// this codeblock is eventually going to hold the sender id aswell.
 
    S16 decode[4096];
-   S16 written = 0;
+   char encoded[1024];
+   for (U32 i = 0; i < length; i++)
+      encoded[i] = data[i];
+
+   speex_bits_init(&decoderBits);
 
    speex_bits_reset(&decoderBits);
+   speex_bits_read_from(&decoderBits, encoded, length);
+   speex_decode_int(speexDecoder, &decoderBits, decode);
 
-   for (U32 i = 0; i < frames; i++)
-   {
-      speex_bits_read_from(&decoderBits, data, length);
-      speex_decode_int(speexDecoder, &decoderBits, (spx_int16_t*)decode + written);
-
-      written += frameSize;
-   }
-
-   if (written > 0)
-   {
-      mClientDev->playRawStream(written, sampleRate, (const void*)decode);
-   }
+   mClientDev->playRawStream(frames, sampleRate, (const char*)decode);
 
 }

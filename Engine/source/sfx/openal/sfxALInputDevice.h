@@ -46,12 +46,12 @@ public:
 
    virtual S32 sampleCount();
 
-   virtual void receiveSamples(U32 samples, void *buffer);
+   virtual void receiveSamples(U32 samples, char *buffer);
 
    /// this is important to keep data in sync.
    virtual U32 getFrameSize() { return mFrameSize; }
 
-   virtual void playRawStream(U32 samples, U32 rate, const void *data);
+   virtual void playRawStream(U32 samples, U32 rate, const char *data);
 
 };
 

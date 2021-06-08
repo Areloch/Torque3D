@@ -48,11 +48,11 @@ public:
 
    virtual S32 sampleCount() = 0;
 
-   virtual void receiveSamples(U32 samples, void *buffer) {};
+   virtual void receiveSamples(U32 samples, char *buffer) {};
 
    virtual U32 getFrameSize() = 0;
 
-   virtual void playRawStream(U32 samples, U32 rate, const void *data) {};
+   virtual void playRawStream(U32 samples, U32 rate, const char *data) {};
 
 };
 

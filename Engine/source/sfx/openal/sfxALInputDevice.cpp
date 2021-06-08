@@ -54,7 +54,7 @@ S32 SFXALInputDevice::sampleCount()
    
 }
 
-void SFXALInputDevice::receiveSamples(U32 samples, void *buffer)
+void SFXALInputDevice::receiveSamples(U32 samples, char *buffer)
 {
 
    if (mCaptureDevice)
@@ -62,7 +62,7 @@ void SFXALInputDevice::receiveSamples(U32 samples, void *buffer)
 
 }
 
-void SFXALInputDevice::playRawStream(U32 samples,U32 rate, const void *data)
+void SFXALInputDevice::playRawStream(U32 samples,U32 rate, const char *data)
 {
    ALuint buffer;
    ALuint format = AL_FORMAT_MONO16;
