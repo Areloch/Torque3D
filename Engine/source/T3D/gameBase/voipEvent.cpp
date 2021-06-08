@@ -29,8 +29,8 @@ VoipEvent::VoipEvent(const char* data, U32 frames, U32 length)
 void VoipEvent::pack(NetConnection *conn, BitStream *bstream)
 {
    Con::printf("VoipEvent packed");
-   bstream->writeInt(mLength, 4);
-   bstream->writeInt(mFrames, 4);
+   bstream->writeInt(mLength, 32);
+   bstream->writeInt(mFrames, 32);
    bstream->writeLongString(mLength, const_cast<char*>(mData));
 }
 
@@ -44,8 +44,8 @@ void VoipEvent::write(NetConnection *conn, BitStream *bstream)
 void VoipEvent::unpack(NetConnection *conn, BitStream *bstream)
 {
    Con::printf("VoipEvent unpack");
-   mLength = bstream->readInt(4);
-   mFrames = bstream->readInt(4);
+   mLength = bstream->readInt(32);
+   mFrames = bstream->readInt(32);
    bstream->readLongString(mLength, const_cast<char*>(mData));
 }
 

@@ -80,7 +80,7 @@ void VoipClient::stopRecordingVoip()
 
 void VoipClient::clientWriteVoip()
 {
-   if (isServerObject()) return;
+   //if (isServerObject()) return;
    /// create our data buffers.
    Con::printf("write voip");
    char enBuf[1024];

@@ -263,7 +263,7 @@ GameConnection::GameConnection()
 
    mListenVoip = true;
    mVoipCreated = false;
-
+   mVoipClient = NULL;
    clearDisplayDevice();
 }
 
@@ -2428,6 +2428,7 @@ void GameConnection::createVoipClient()
       mVoipCreated = true;
 
       mVoipClient->startRecordingVoip();
+      mVoipClient->setClient(this);
    }
 
 }
@@ -2444,7 +2445,8 @@ DefineEngineMethod(GameConnection, getVoipClient, VoipClient*, (), , "")
 
 DefineEngineMethod(GameConnection, startRecordingVoip, void, (), , "")
 {
-   object->getVoipClient()->clientWriteVoip();
+   if (object->getVoipClient())
+      object->getVoipClient()->clientWriteVoip();
 }
 
 #ifdef TORQUE_AFX_ENABLED 
