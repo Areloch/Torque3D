@@ -29,10 +29,10 @@ VoipClient::VoipClient()
    /// create encoder in narrowband mode, the settings in openal input.
    speexEncoder = speex_encoder_init(&speex_nb_mode);
    /// set encoder quality to 8 (15kbps)
-   U32 quality = 0;
-   U32 complex = 10;
+   U32 quality = 8;
+   //U32 complex = 10;
    speex_encoder_ctl(speexEncoder, SPEEX_SET_QUALITY, &quality);
-   speex_encoder_ctl(speexEncoder, SPEEX_SET_COMPLEXITY, &complex);
+   //speex_encoder_ctl(speexEncoder, SPEEX_SET_COMPLEXITY, &complex);
 
    /// after quality is set get sample rate and frame size.
    speex_encoder_ctl(speexEncoder, SPEEX_GET_FRAME_SIZE, &frameSize);
@@ -98,7 +98,6 @@ void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, Spe
    /// create our data buffers.
    Con::printf("write voip");
    char enBuf[1024];
-   char frameBuf[256];
    dMemset(enBuf, 0, 1024);
    S16 buff[2048];
    dMemset(buff, 0, 2048);
@@ -107,7 +106,7 @@ void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, Spe
    U32 pos = 0;
    U32 bPos = 0;
    U32 frames = 0;
-   /// 12 samples should = 240ms
+   /// 4 samples should = 240ms
    if (samples > (frameSize * 4))
       samples = (frameSize * 4);
 
@@ -119,18 +118,17 @@ void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, Spe
 
    speex_bits_init(&encoderBits);
    speex_bits_reset(&encoderBits);
-   while (samples > 0)
+   if (samples > 0)
    {
       S16 *sampPtr = &buff[pos];
-      S8 len = 0;
+      S16 len = 0;
       /// we have to encode as ints.
-      speex_encode_int(speexEncoder, sampPtr, &encoderBits);
+      speex_encode_int(speexEncoder, (spx_int16_t*)sampPtr, &encoderBits);
       /// outputs the length of the encoding.
-      len = speex_bits_write(&encoderBits, frameBuf, sizeof(frameBuf));
+      len = speex_bits_write(&encoderBits, enBuf, sizeof(enBuf));
       AssertFatal(len > 0 && len < 256, avar("invalid length: %i", len));
-      for(U32 i = 0; i < len; i++)
-         enBuf[bPos + i] = frameBuf[i];
-      bPos += len +1;
+      //enBuf[bPos] = len;
+      bPos += (len+1);
       pos += frameSize;
       samples -= frameSize;
       frames++;
