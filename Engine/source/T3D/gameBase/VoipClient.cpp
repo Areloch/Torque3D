@@ -26,18 +26,23 @@ DefineEngineMethod(VoipClient, stopRecording, void, (), ,
 
 VoipClient::VoipClient()
 {
+
+   speex_bits_init(&encoderBits);
    /// create encoder in narrowband mode, the settings in openal input.
    speexEncoder = speex_encoder_init(&speex_nb_mode);
    /// set encoder quality to 8 (15kbps)
    U32 quality = 8;
-   //U32 complex = 10;
+   U32 complex = 10;
+   U32 vbr = 0;
    speex_encoder_ctl(speexEncoder, SPEEX_SET_QUALITY, &quality);
-   //speex_encoder_ctl(speexEncoder, SPEEX_SET_COMPLEXITY, &complex);
+   speex_encoder_ctl(speexEncoder, SPEEX_SET_COMPLEXITY, &complex);
+   speex_encoder_ctl(speexEncoder, SPEEX_SET_VBR, &vbr);
 
    /// after quality is set get sample rate and frame size.
    speex_encoder_ctl(speexEncoder, SPEEX_GET_FRAME_SIZE, &frameSize);
    speex_encoder_ctl(speexEncoder, SPEEX_GET_SAMPLING_RATE, &sampleRate);
 
+   speex_bits_init(&decoderBits);
    speexDecoder = speex_decoder_init(&speex_nb_mode);
 
    U32 en = 1;
@@ -96,7 +101,6 @@ void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, Spe
 {
    //if (isServerObject()) return;
    /// create our data buffers.
-   Con::printf("write voip");
    char enBuf[1024];
    dMemset(enBuf, 0, 1024);
    S16 buff[2048];
@@ -112,22 +116,19 @@ void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, Spe
 
    samples -= samples % frameSize;
 
-   Con::printf("Samples: %d", samples);
-
    clientDev->receiveSamples(samples, (char *)&buff);
-
-   speex_bits_init(&encoderBits);
-   speex_bits_reset(&encoderBits);
-   if (samples > 0)
+   
+   while (samples > 0)
    {
       S16 *sampPtr = &buff[pos];
-      S16 len = 0;
+      U32 len = 0;
       /// we have to encode as ints.
-      speex_encode_int(speexEncoder, (spx_int16_t*)sampPtr, &encoderBits);
+      speex_bits_reset(&encoderBits);
+      speex_encode_int(speexEncoder, sampPtr, &encoderBits);
       /// outputs the length of the encoding.
-      len = speex_bits_write(&encoderBits, enBuf, sizeof(enBuf));
+      len = speex_bits_write(&encoderBits, (char*) &enBuf[bPos+1], sizeof(enBuf) - (bPos+1));
       AssertFatal(len > 0 && len < 256, avar("invalid length: %i", len));
-      //enBuf[bPos] = len;
+      enBuf[bPos] = (char)len;
       bPos += (len+1);
       pos += frameSize;
       samples -= frameSize;
@@ -137,7 +138,7 @@ void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, Spe
    //getNextPow2(bPos);
 
    ThreadPool* pThreadPool = &ThreadPool::GLOBAL();
-   VoipEvent *ev = new VoipEvent(enBuf, frames, bPos);
+   VoipEvent *ev = new VoipEvent(enBuf, frames, (bPos+1));
    ThreadSafeRef<CompressJobResult> item(new CompressJobResult(ev, conn));
    pThreadPool->queueWorkItemOnMainThread(item);
 
@@ -146,11 +147,8 @@ void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, Spe
 void VoipClient::DeCompressJob::rawDeCompress(void* speexDecoder, U32 frames, U32 sampleRate, U32 length, SpeexBits decoderBits, SFXInputDevice *clientDev, GameConnection *conn, const char *data)
 {
    /// this codeblock is eventually going to hold the sender id aswell.
-
    S16 decode[4096];
    U32 outSize = 0;
-   Con::printf("Data Received: %s Frames: %d Length: %d", data, frames, length);
-   speex_bits_init(&decoderBits);
    speex_bits_reset(&decoderBits);
    for (U32 i = 0; i < frames; i++)
    {
