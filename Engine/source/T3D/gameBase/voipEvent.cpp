@@ -17,6 +17,7 @@ VoipEvent::VoipEvent(const char* data, U32 frames, U32 length)
 {
    mSourceId = -1;
    mGuaranteeType = Guaranteed;
+   dMemset(mOutData, 0, length);
    Con::printf("Creating VoipEvent: %s  Frames:%d Length:%d", data, frames, length);
    for (U32 i = 0; i < length; i++)
       mOutData[i] = data[i];
@@ -68,7 +69,7 @@ void VoipEvent::process(NetConnection *conn)
          if (gc && gc->isListening())
          {
             //if (mSourceId == gc->getId())
-            //   continue;
+              // continue;
 
             gc->postNetEvent(new VoipEvent(mOutData, mFrames, mLength));
          }
