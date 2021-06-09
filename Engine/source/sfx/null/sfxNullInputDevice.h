@@ -29,7 +29,7 @@ public:
 
    virtual void stopRecording() {};
 
-   virtual S32 sampleCount() { return 0; }
+   virtual U32 sampleCount() { return 0; }
 
    virtual void receiveSamples(U32 samples, char *buffer) {};
 

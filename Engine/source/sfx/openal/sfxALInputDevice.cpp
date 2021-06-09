@@ -10,13 +10,15 @@ SFXALInputDevice::SFXALInputDevice(SFXProvider *provider, const OPENALFNTABLE &o
 {
    /// format for speex narrowband, this will probably need changed for opus.
    /// this is possible to set dynamically but for testing not necessary.
-   mCaptureDevice = mOpenAL.alcCaptureOpenDevice(deviceName, 8000, AL_FORMAT_MONO16, 4096);
+   mCaptureDevice = mOpenAL.alcCaptureOpenDevice(deviceName, 8000, AL_FORMAT_MONO16, 1024);
 
    Con::printf("Input Device: %s", mOpenAL.alcGetString(
       mCaptureDevice, ALC_CAPTURE_DEVICE_SPECIFIER));
 
    /// keeping track of openal framesize, for reasons.... :-P
    mFrameSize = mChannels * mBits / 8;
+
+   Con::printf("Frame Size: %d", mFrameSize);
 
 }
 
@@ -49,15 +51,20 @@ void SFXALInputDevice::stopRecording()
 
 }
 
-S32 SFXALInputDevice::sampleCount()
+U32 SFXALInputDevice::sampleCount()
 {
 
-   ALint samples = 0;
+   U32 retVal = 0;
+   
 
-   if(mCaptureDevice)
+   if (mCaptureDevice)
+   {
+      ALint samples = 0;
       mOpenAL.alcGetIntegerv(mCaptureDevice, ALC_CAPTURE_SAMPLES, sizeof(samples), &samples);
+      retVal = (U32)samples;
+   }
 
-   return (S32)samples;
+   return retVal;
    
 }
 
@@ -69,7 +76,7 @@ void SFXALInputDevice::receiveSamples(U32 samples, char *buffer)
 
 }
 
-void SFXALInputDevice::playRawStream(U32 samples,U32 rate, const char *data)
+void SFXALInputDevice::playRawStream(U32 samples, U32 rate, const char *data)
 {
    ALuint buffer;
    ALuint format = AL_FORMAT_MONO16;
@@ -79,7 +86,8 @@ void SFXALInputDevice::playRawStream(U32 samples,U32 rate, const char *data)
    mOpenAL.alGenBuffers(1, &buffer);
    mOpenAL.alBufferData(buffer, format, (ALvoid*)data, (samples * 2 * 1), rate);
    mOpenAL.alGenSources(1, &source);
-   mOpenAL.alSourcei(source, AL_BUFFER, buffer);
+
+   mOpenAL.alSourceQueueBuffers(source, 1, &buffer);
 
    mOpenAL.alSourcePlay(source);
 

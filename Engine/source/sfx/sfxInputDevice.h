@@ -46,7 +46,7 @@ public:
    virtual void startRecording() {};
    virtual void stopRecording() {};
 
-   virtual S32 sampleCount() = 0;
+   virtual U32 sampleCount() = 0;
 
    virtual void receiveSamples(U32 samples, char *buffer) {};
 

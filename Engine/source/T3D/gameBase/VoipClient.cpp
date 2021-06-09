@@ -86,7 +86,6 @@ void VoipClient::stopRecordingVoip()
    }
 }
 
-
 void VoipClient::clientWriteVoip()
 {
    voiceCompress(speexEncoder, frameSize, encoderBits, mClientDev, mConnection);
@@ -99,33 +98,34 @@ void VoipClient::clientReadVoip(const char *data, U32 frames, U32 length)
 
 void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, SpeexBits encoderBits, SFXInputDevice *clientDev, GameConnection *conn)
 {
-   //if (isServerObject()) return;
    /// create our data buffers.
    char enBuf[160];
    dMemset(enBuf, 0, 160);
-   S16 buff[640];
-   dMemset(buff, 0, 640);
-   /// get our sample count.
+   S16 buff[480];
+   dMemset(buff, 0, 480);
    U32 pos = 0;
+   /// get our sample count.
    U32 samples = clientDev->sampleCount();
-   /// 4 samples should = 240ms
-   if (samples > (frameSize * 4))
-      samples = (frameSize * 4);
+   /// 3 samples should = 60ms
+   if (samples > (frameSize * 3))
+      samples = (frameSize * 3);
 
    samples -= samples % frameSize;
 
    clientDev->receiveSamples(samples, (char *)&buff);
 
-   speex_bits_reset(&encoderBits);
+   
    while (samples > 0)
    {
       S16 *sampPtr = &buff[pos];
       U32 len = 0;
+      speex_bits_reset(&encoderBits);
       speex_encode_int(speexEncoder, sampPtr, &encoderBits);
 
       len = speex_bits_write(&encoderBits, enBuf, 160);
+
       ThreadPool* pThreadPool = &ThreadPool::GLOBAL();
-      VoipEvent *ev = new VoipEvent(enBuf, 1, len + 1);
+      VoipEvent *ev = new VoipEvent(enBuf, len, sizeof(enBuf));
       ThreadSafeRef<CompressJobResult> item(new CompressJobResult(ev, conn));
       pThreadPool->queueWorkItemOnMainThread(item);
 
@@ -139,16 +139,12 @@ void VoipClient::DeCompressJob::rawDeCompress(void* speexDecoder, U32 frames, U3
 {
    /// this codeblock is eventually going to hold the sender id aswell.
    S16 decode[160];
-   dMemset(decode, 0, 160);
-   U32 outSize = 0;
    speex_bits_reset(&decoderBits);
-   speex_bits_read_from(&decoderBits, data, (length-1));
+   speex_bits_read_from(&decoderBits, data, frames);
 
    speex_decode_int(speexDecoder, &decoderBits, decode);
 
-   speex_decoder_ctl(speexDecoder, SPEEX_GET_FRAME_SIZE, &outSize);
-
-   clientDev->playRawStream((length -1) , sampleRate, (const char*)decode);
+   clientDev->playRawStream(frames, sampleRate, (const char*)decode);
 
    ThreadPool* pThreadPool = &ThreadPool::GLOBAL();
    ThreadSafeRef<DeCompressJobResult> item(new DeCompressJobResult(clientDev, conn));
