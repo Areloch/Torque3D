@@ -101,44 +101,31 @@ void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, Spe
 {
    //if (isServerObject()) return;
    /// create our data buffers.
-   char enBuf[1024];
-   dMemset(enBuf, 0, 1024);
-   S16 buff[2048];
-   dMemset(buff, 0, 2048);
+   char enBuf[160];
+   dMemset(enBuf, 0, 160);
+   S16 buff[160];
+   dMemset(buff, 0, 160);
    /// get our sample count.
    U32 samples = clientDev->sampleCount();
-   U32 pos = 0;
-   U32 bPos = 0;
-   U32 frames = 0;
    /// 4 samples should = 240ms
-   if (samples > (frameSize * 4))
-      samples = (frameSize * 4);
+   if (samples > (frameSize))
+      samples = (frameSize);
 
    samples -= samples % frameSize;
 
    clientDev->receiveSamples(samples, (char *)&buff);
-   
-   while (samples > 0)
-   {
-      S16 *sampPtr = &buff[pos];
-      U32 len = 0;
-      /// we have to encode as ints.
-      speex_bits_reset(&encoderBits);
-      speex_encode_int(speexEncoder, sampPtr, &encoderBits);
-      /// outputs the length of the encoding.
-      len = speex_bits_write(&encoderBits, (char*) &enBuf[bPos+1], sizeof(enBuf) - (bPos+1));
-      AssertFatal(len > 0 && len < 256, avar("invalid length: %i", len));
-      enBuf[bPos] = (char)len;
-      bPos += (len+1);
-      pos += frameSize;
-      samples -= frameSize;
-      frames++;
-   }
+
+   speex_bits_reset(&encoderBits);
+
+   U32 len = 0;
+   speex_encode_int(speexEncoder, buff, &encoderBits);
+
+   len = speex_bits_write(&encoderBits, enBuf, 160);
 
    //getNextPow2(bPos);
 
    ThreadPool* pThreadPool = &ThreadPool::GLOBAL();
-   VoipEvent *ev = new VoipEvent(enBuf, frames, (bPos+1));
+   VoipEvent *ev = new VoipEvent(enBuf, 1, len+1);
    ThreadSafeRef<CompressJobResult> item(new CompressJobResult(ev, conn));
    pThreadPool->queueWorkItemOnMainThread(item);
 
@@ -147,15 +134,15 @@ void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, Spe
 void VoipClient::DeCompressJob::rawDeCompress(void* speexDecoder, U32 frames, U32 sampleRate, U32 length, SpeexBits decoderBits, SFXInputDevice *clientDev, GameConnection *conn, const char *data)
 {
    /// this codeblock is eventually going to hold the sender id aswell.
-   S16 decode[4096];
+   S16 decode[160];
+   dMemset(decode, 0, 160);
    U32 outSize = 0;
    speex_bits_reset(&decoderBits);
-   for (U32 i = 0; i < frames; i++)
-   {
-      speex_bits_read_from(&decoderBits, data, length);
-      speex_decode_int(speexDecoder, &decoderBits, decode + outSize);
-      outSize += 160;
-   }
+   speex_bits_read_from(&decoderBits, data, (length-1));
+
+   speex_decode_int(speexDecoder, &decoderBits, decode);
+
+   speex_decoder_ctl(speexDecoder, SPEEX_GET_FRAME_SIZE, &outSize);
 
    clientDev->playRawStream(outSize, sampleRate, (const char*)decode);
 
