@@ -100,19 +100,19 @@ void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, Spe
    static S16 buff[2048];
    dMemset(buff, 0, 2048);
    /// get our sample count.
-   U32 samples = mClientDev->sampleCount();
+   U32 samples = clientDev->sampleCount();
    U32 pos = 0;
    U32 bPos = 0;
 
    /// 12 samples should = 240ms
-   if (samples > (frameSize * 12))
-      samples = (frameSize * 12);
+   if (samples > (frameSize * 4))
+      samples = (frameSize * 4);
 
    samples -= samples % frameSize;
 
    Con::printf("Samples: %d", samples);
 
-   mClientDev->receiveSamples(samples, (char *)&buff);
+   clientDev->receiveSamples(samples, (char *)&buff);
 
    speex_bits_init(&encoderBits);
    while (samples > 0)
@@ -125,7 +125,7 @@ void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, Spe
       /// outputs the length of the encoding.
       len = speex_bits_write(&encoderBits, enBuf, sizeof(enBuf));
 
-      mConnection->postNetEvent(new VoipEvent(enBuf, frameSize, sizeof(enBuf)));
+      conn->postNetEvent(new VoipEvent(enBuf, frameSize, sizeof(enBuf)));
 
       bPos += len + 1;
       pos += frameSize;
