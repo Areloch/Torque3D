@@ -112,7 +112,6 @@ void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, Spe
    samples -= samples % frameSize;
 
    clientDev->receiveSamples(samples, buff);
-
    
    while (samples > 0)
    {
@@ -120,7 +119,6 @@ void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, Spe
       U16 len = 0;
       speex_bits_reset(&encoderBits);
       speex_encode_int(speexEncoder, sampPtr, &encoderBits);
-
       len = speex_bits_write(&encoderBits, &enBuf[nbBytes+1], bufflen - (nbBytes+1));
       Con::printf("Length Encoded: %d", len);
       enBuf[nbBytes] = (char)len;
@@ -169,10 +167,10 @@ void VoipClient::DeCompressJob::rawDeCompress(void* speexDecoder, U32 frames, U3
       U32 bufferLen = fSize * frames;
       S16* decode = (S16*)dMalloc(bufferLen * 2);
       dMemset(decode, 0, bufferLen * 2);
-      speex_bits_reset(&decoderBits);
       Con::printf("Frames: %d", frames);
       for (U32 i = 0; i < frames; i++)
       {
+         speex_bits_reset(&decoderBits);
          Con::printf("Length Decoded: %d", data[pos]);
          speex_bits_read_from(&decoderBits, &data[pos+1], data[pos]);
          speex_decode_int(speexDecoder, &decoderBits, decode + written);
