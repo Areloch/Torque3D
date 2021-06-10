@@ -31,7 +31,7 @@ public:
 
    virtual U32 sampleCount() { return 0; }
 
-   virtual void receiveSamples(U32 samples, char *buffer) {};
+   virtual void receiveSamples(U32 samples, S16*buffer) {};
 
    virtual bool isActive() { return false; }
 

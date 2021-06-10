@@ -94,65 +94,96 @@ void VoipClient::clientReadVoip(const char *data, U32 frames, U32 length)
 
 void VoipClient::CompressJob::rawCompress(void* speexEncoder, U32 frameSize, SpeexBits encoderBits, SFXInputDevice *clientDev, GameConnection *conn)
 {
+   U32 bufflen = frameSize*8;
    /// create our data buffers.
-   char enBuf[640];
-   dMemset(enBuf, 0, 640);
-   S16 buff[640];
-   dMemset(buff, 0, 640);
+   char *enBuf = (char*)dMalloc(bufflen);
+   dMemset(enBuf, 0, bufflen);
+   S16 *buff = (S16*)dMalloc(bufflen*2);
+   dMemset(buff, 0, bufflen*2);
    U32 pos = 0;
    U32 frames = 0;
    U32 nbBytes = 0;
    /// get our sample count.
    U32 samples = clientDev->sampleCount();
    /// 4 samples should = 80ms
-   if (samples > (frameSize * 4))
-      samples = (frameSize * 4);
+   if (samples > (bufflen))
+      samples = (bufflen);
 
    samples -= samples % frameSize;
 
-   clientDev->receiveSamples(samples, (char *)&buff);
+   clientDev->receiveSamples(samples, buff);
 
    
    while (samples > 0)
    {
       S16 *sampPtr = &buff[pos];
-      U32 len = 0;
+      U16 len = 0;
       speex_bits_reset(&encoderBits);
       speex_encode_int(speexEncoder, sampPtr, &encoderBits);
 
-      len = speex_bits_write(&encoderBits, (char*)&enBuf[nbBytes], sizeof(enBuf) - nbBytes);
-      nbBytes = len + 1;
+      len = speex_bits_write(&encoderBits, &enBuf[nbBytes+1], bufflen - (nbBytes+1));
+      Con::printf("Length Encoded: %d", len);
+      enBuf[nbBytes] = (char)len;
+      nbBytes += len + 1;
       samples -= frameSize;
       pos += frameSize;
       frames++;
    }
 
    ThreadPool* pThreadPool = &ThreadPool::GLOBAL();
-   VoipEvent *ev = new VoipEvent(enBuf, frames, nbBytes);
-   ThreadSafeRef<CompressJobResult> item(new CompressJobResult(ev, conn));
-   pThreadPool->queueWorkItemOnMainThread(item);
+   if (nbBytes < 1)
+   {
+      ThreadSafeRef<DeCompressJobResult> item(new DeCompressJobResult(clientDev, conn));
+      pThreadPool->queueWorkItemOnMainThread(item);
+   }
+   else
+   {
 
+      VoipEvent *ev = new VoipEvent(enBuf, frames, nbBytes + 1);
+      ThreadSafeRef<CompressJobResult> item(new CompressJobResult(ev, conn));
+      pThreadPool->queueWorkItemOnMainThread(item);
+   }
+
+   free(enBuf);
+   free(buff);
 }
 
 void VoipClient::DeCompressJob::rawDeCompress(void* speexDecoder, U32 frames, U32 sampleRate, U32 length, SpeexBits decoderBits, SFXInputDevice *clientDev, GameConnection *conn, const char *data)
 {
    /// this codeblock is eventually going to hold the sender id aswell.
-   S16 decode[640];
-   U32 written = 0;
-   speex_bits_reset(&decoderBits);
-
-   for (U32 i = 0; i < frames; i++)
-   {
-      speex_bits_read_from(&decoderBits, data, length);
-      speex_decode_int(speexDecoder, &decoderBits, decode + written);
-      written += 160;
-   }
-
-   clientDev->playRawStream(written, sampleRate, (const char*)decode);
+   /// no data escape
    ThreadPool* pThreadPool = &ThreadPool::GLOBAL();
-   ThreadSafeRef<DeCompressJobResult> item(new DeCompressJobResult(clientDev, conn));
-   pThreadPool->queueWorkItemOnMainThread(item);
-
+   if (length < 1)
+   {
+      
+      ThreadSafeRef<DeCompressJobResult> item(new DeCompressJobResult(clientDev, conn));
+      pThreadPool->queueWorkItemOnMainThread(item);
+   }
+   else
+   {
+      U32 fSize;
+      U32 written = 0;
+      U16 pos = 0;
+      //enough for each frame.
+      speex_decoder_ctl(speexDecoder, SPEEX_GET_FRAME_SIZE, &fSize);
+      U32 bufferLen = fSize * frames;
+      S16* decode = (S16*)dMalloc(bufferLen * 2);
+      dMemset(decode, 0, bufferLen * 2);
+      speex_bits_reset(&decoderBits);
+      Con::printf("Frames: %d", frames);
+      for (U32 i = 0; i < frames; i++)
+      {
+         Con::printf("Length Decoded: %d", data[pos]);
+         speex_bits_read_from(&decoderBits, &data[pos+1], data[pos]);
+         speex_decode_int(speexDecoder, &decoderBits, decode + written);
+         pos += data[pos] + 1;
+         written += fSize;
+      }
+      clientDev->playRawStream(written, sampleRate, (const char*)decode);
+      ThreadSafeRef<DeCompressJobResult> item(new DeCompressJobResult(clientDev, conn));
+      pThreadPool->queueWorkItemOnMainThread(item);
+      free(decode);
+   }
 }
 
 void VoipClient::CompressJobResult::execute()

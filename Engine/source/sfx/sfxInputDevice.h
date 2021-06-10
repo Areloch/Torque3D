@@ -48,7 +48,7 @@ public:
 
    virtual U32 sampleCount() = 0;
 
-   virtual void receiveSamples(U32 samples, char *buffer) {};
+   virtual void receiveSamples(U32 samples, S16 *buffer) {};
 
    virtual U32 getFrameSize() = 0;
 

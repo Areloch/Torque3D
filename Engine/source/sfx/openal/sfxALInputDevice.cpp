@@ -10,7 +10,7 @@ SFXALInputDevice::SFXALInputDevice(SFXProvider *provider, const OPENALFNTABLE &o
 {
    /// format for speex narrowband, this will probably need changed for opus.
    /// this is possible to set dynamically but for testing not necessary.
-   mCaptureDevice = mOpenAL.alcCaptureOpenDevice(deviceName, 8000, AL_FORMAT_MONO16, 1024);
+   mCaptureDevice = mOpenAL.alcCaptureOpenDevice(deviceName, 8000, AL_FORMAT_MONO16, 4096);
 
    Con::printf("Input Device: %s", mOpenAL.alcGetString(
       mCaptureDevice, ALC_CAPTURE_DEVICE_SPECIFIER));
@@ -68,7 +68,7 @@ U32 SFXALInputDevice::sampleCount()
    
 }
 
-void SFXALInputDevice::receiveSamples(U32 samples, char *buffer)
+void SFXALInputDevice::receiveSamples(U32 samples, S16*buffer)
 {
 
    if (mCaptureDevice)
