@@ -42,6 +42,7 @@
 
 // Debug Profiling.
 #include "platform/profiler.h"
+#include "sfx/sfxTypes.h"
 
 //-----------------------------------------------------------------------------
 
@@ -126,7 +127,6 @@ SoundAsset::SoundAsset()
    mProfileDesc->mScatterDistance = Point3F(0.f, 0.f, 0.f);
    mProfileDesc->mPriority = 1.0f;
    mProfileDesc->mSourceGroup = NULL;
-   mSFXProfile = NULL;
 
 }
 
@@ -134,6 +134,8 @@ SoundAsset::SoundAsset()
 
 SoundAsset::~SoundAsset()
 {
+   delete(mSFXProfile);
+   delete(mProfileDesc);
 }
 
 //-----------------------------------------------------------------------------
@@ -150,18 +152,19 @@ void SoundAsset::initPersistFields()
    addField("volumeAdjust", TypeF32, Offset(mProfileDesc->mVolume, SoundAsset), "Adjustment to the volume.");
    addField("is3D", TypeBool, Offset(mProfileDesc->mIs3D, SoundAsset), "Set this sound to 3D.");
    addField("isLooping", TypeBool, Offset(mProfileDesc->mIsLooping, SoundAsset), "Does this sound loop.");
-   addField("useHardware", TypeBool, Offset(mProfileDesc->mUseHardware, SoundAsset), "Use hardware mixing for this sound.");
    // if streaming, a default packet size should be chosen for all sounds.
    addField("isStreaming", TypeBool, Offset(mProfileDesc->mIsStreaming, SoundAsset), "Use streaming.");
    //....why?
+   addField("useHardware", TypeBool, Offset(mProfileDesc->mUseHardware, SoundAsset), "Use hardware mixing for this sound.");
    addField("minDistance", TypeF32, Offset(mProfileDesc->mMinDistance, SoundAsset), "Minimum distance for sound.");
    // more like it.
    addField("maxDistance", TypeF32, Offset(mProfileDesc->mMaxDistance, SoundAsset), "Max distance for sound.");
-   addField("scatterDistance", TypePoint3F, Offset(mProfileDesc->mScatterDistance, SoundAsset), "Randomization to the spacial position of the sound.");
    addField("coneInsideAngle", TypeS32, Offset(mProfileDesc->mConeInsideAngle, SoundAsset), "Cone inside angle.");
    addField("coneOutsideAngle", TypeS32, Offset(mProfileDesc->mConeOutsideAngle, SoundAsset), "Cone outside angle.");
    addField("coneOutsideVolume", TypeS32, Offset(mProfileDesc->mConeOutsideVolume, SoundAsset), "Cone outside volume.");
    addField("rolloffFactor", TypeF32, Offset(mProfileDesc->mRolloffFactor, SoundAsset), "Rolloff factor.");
+   addField("scatterDistance", TypePoint3F, Offset(mProfileDesc->mScatterDistance, SoundAsset), "Randomization to the spacial position of the sound.");
+   addField("sourceGroup", TypeSFXSourceName, Offset(mProfileDesc->mSourceGroup, SoundAsset), "Group that sources playing with this description should be put into.");
 
 }
 
@@ -256,4 +259,37 @@ void SoundAsset::setSoundFile(const char* pSoundFile)
 DefineEngineMethod(SoundAsset, getSoundPath, const char*, (), , "")
 {
    return object->getSoundPath();
+}
+
+IMPLEMENT_CONOBJECT(GuiInspectorTypeSoundAssetId);
+
+ConsoleDocClass(GuiInspectorTypeSoundAssetId,
+   "@brief Inspector field type for Sounds\n\n"
+   "Editor use only.\n\n"
+   "@internal"
+);
+
+void GuiInspectorTypeSoundAssetId::consoleInit()
+{
+   Parent::consoleInit();
+
+   ConsoleBaseType::getType(TypeSoundAssetId)->setInspectorFieldType("GuiInspectorTypeSoundAssetId");
+}
+
+IMPLEMENT_CONOBJECT(GuiInspectorTypeSoundAssetPtr);
+
+ConsoleDocClass(GuiInspectorTypeSoundAssetPtr,
+   "@brief Inspector field type for Sounds\n\n"
+   "Editor use only.\n\n"
+   "@internal"
+);
+
+GuiControl * GuiInspectorTypeSoundAssetPtr::constructEditControl()
+{
+   return nullptr;
+}
+
+bool GuiInspectorTypeSoundAssetPtr::updateRects()
+{
+   return false;
 }

@@ -67,8 +67,8 @@ class SoundAsset : public AssetBase
 protected:
    StringTableEntry        mSoundFile;
    StringTableEntry        mSoundPath;
-   SFXProfile              *mSFXProfile;
-   SFXDescription          *mProfileDesc;
+   SFXProfile              *mSFXProfile = new SFXProfile();
+   SFXDescription          *mProfileDesc = new SFXDescription();
    // subtitles
    StringTableEntry        mSubtitleString;
    bool                    mPreload;
