@@ -49,6 +49,14 @@
 #include "sfx/sfxResource.h"
 #endif
 
+#ifndef _SFXDESCRIPTION_H_
+#include "sfx/sfxDescription.h"
+#endif // !_SFXDESCRIPTION_H_
+
+#ifndef _SFXPROFILE_H_
+#include "sfx/sfxProfile.h"
+#endif // !_SFXPROFILE_H_
+
 class SFXResource;
 
 //-----------------------------------------------------------------------------
@@ -59,15 +67,15 @@ class SoundAsset : public AssetBase
 protected:
    StringTableEntry        mSoundFile;
    StringTableEntry        mSoundPath;
+   SFXProfile              *mSFXProfile;
+   SFXDescription          *mProfileDesc;
    // subtitles
    StringTableEntry        mSubtitleString;
-
-   Resource<SFXResource>   mSoundResource;
-
-   typedef Signal<void()> SoundAssetChanged;
-   SoundAssetChanged mChangeSignal;
-
    bool                    mPreload;
+
+   /*These will be needed in the refactor!
+   Resource<SFXResource>   mSoundResource;
+   
 
    // SFXDesctriptions, some off these will be removed
    F32                     mPitchAdjust;
@@ -85,6 +93,10 @@ protected:
    F32                     mRolloffFactor;
    Point3F                 mScatterDistance;
    F32                     mPriority;
+   */
+
+   typedef Signal<void()> SoundAssetChanged;
+   SoundAssetChanged mChangeSignal;
 
 public:
    SoundAsset();
@@ -94,8 +106,8 @@ public:
    static void initPersistFields();
    virtual void copyTo(SimObject* object);
 
-   SFXResource* getSound() { return mSoundResource; }
-   Resource<SFXResource> getSoundResource() { return mSoundResource; }
+   //SFXResource* getSound() { return mSoundResource; }
+   Resource<SFXResource> getSoundResource() { return mSFXProfile->getResource(); }
 
    /// Declare Console Object.
    DECLARE_CONOBJECT(SoundAsset);
@@ -104,9 +116,11 @@ public:
    bool loadSound();
    inline StringTableEntry getSoundFile(void) const { return mSoundFile; };
    inline StringTableEntry getSoundPath(void) const { return mSoundPath; };
+   SFXProfile* getSfxProfile() { return mSFXProfile; }
+   SFXDescription* getSfxDescription() { return mProfileDesc; }
 
-   bool isLoop() { return mLoop; }
-   bool is3D() { return mIs3D; }
+   bool isLoop() { return mProfileDesc->mIsLooping; }
+   bool is3D() { return mProfileDesc->mIs3D; }
 
 
 protected:
@@ -154,9 +168,11 @@ public:
 /// Declares a sound asset
 /// This establishes the assetId, asset and legacy filepath fields, along with supplemental getter and setter functions
 /// </Summary>
-#define DECLARE_SOUNDASSET(className, name) public: \
+#define DECLARE_SOUNDASSET(className, name, profile) public: \
    FileName m##name##Filename = String::EmptyString; \
    StringTableEntry m##name##AssetId = StringTable->EmptyString();\
+   AssetPtr<SoundAsset> m##name##Asset = NULL;\
+   SFXProfile* m##name##Profile = &profile;\
 public: \
    const StringTableEntry get##name##File() const { return StringTable->insert(m##name##Filename.c_str()); }\
    void set##name##File(const FileName &_in) { m##name##Filename = _in;}\
@@ -196,6 +212,10 @@ public: \
          {\
             m##name##AssetId = m##name##Asset.getAssetId();\
             \
+            if(SoundAsset::Ok == m##name##Asset->getStatus())\
+            {\
+               m##name##Filename = String::EmptyString;\
+            }\
          }\
          else\
          {\

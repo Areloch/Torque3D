@@ -108,23 +108,25 @@ SoundAsset::SoundAsset()
    mSubtitleString = StringTable->EmptyString();
 
    mLoadedState = AssetErrCode::NotLoaded;
-
+   mPreload = false;
    // SFX description inits
    // reverb is useless here, reverb is inacted on listener.
-   mPitchAdjust = 1;
-   mVolumeAdjust = 1;
-   mIs3D = true;
-   mLoop = false;
-   mIsStreaming = false;
-   mUseHardware = false;
-   mMinDistance = 1;
-   mMaxDistance = 100;
-   mConeInsideAngle = 360;
-   mConeOutsideAngle = 360;
-   mConeOutsideVolume = 1;
-   mRolloffFactor = -1.0f;
-   mScatterDistance = Point3F(0.f, 0.f, 0.f);
-   mPriority = 1.0f;
+   mProfileDesc->mPitch = 1;
+   mProfileDesc->mVolume = 1;
+   mProfileDesc->mIs3D = false;
+   mProfileDesc->mIsLooping = false;
+   mProfileDesc->mIsStreaming = false;
+   mProfileDesc->mUseHardware = false;
+   mProfileDesc->mMinDistance = 1;
+   mProfileDesc->mMaxDistance = 100;
+   mProfileDesc->mConeInsideAngle = 360;
+   mProfileDesc->mConeOutsideAngle = 360;
+   mProfileDesc->mConeOutsideVolume = 1;
+   mProfileDesc->mRolloffFactor = -1.0f;
+   mProfileDesc->mScatterDistance = Point3F(0.f, 0.f, 0.f);
+   mProfileDesc->mPriority = 1.0f;
+   mProfileDesc->mSourceGroup = NULL;
+   mSFXProfile = NULL;
 
 }
 
@@ -144,22 +146,22 @@ void SoundAsset::initPersistFields()
    addProtectedField("soundFile", TypeAssetLooseFilePath, Offset(mSoundFile, SoundAsset),
       &setSoundFile, &getSoundFile, "Path to the sound file.");
 
-   addField("pitchAdjust", TypeF32, Offset(mPitchAdjust, SoundAsset), "Adjustment of the pitch value 1 is default.");
-   addField("volumeAdjust", TypeF32, Offset(mVolumeAdjust, SoundAsset), "Adjustment to the volume.");
-   addField("is3D", TypeBool, Offset(mVolumeAdjust, SoundAsset), "Set this sound to 3D.");
-   addField("isLooping", TypeBool, Offset(mLoop, SoundAsset), "Does this sound loop.");
-   addField("useHardware", TypeBool, Offset(mUseHardware, SoundAsset), "Use hardware mixing for this sound.");
+   addField("pitchAdjust", TypeF32, Offset(mProfileDesc->mPitch, SoundAsset), "Adjustment of the pitch value 1 is default.");
+   addField("volumeAdjust", TypeF32, Offset(mProfileDesc->mVolume, SoundAsset), "Adjustment to the volume.");
+   addField("is3D", TypeBool, Offset(mProfileDesc->mIs3D, SoundAsset), "Set this sound to 3D.");
+   addField("isLooping", TypeBool, Offset(mProfileDesc->mIsLooping, SoundAsset), "Does this sound loop.");
+   addField("useHardware", TypeBool, Offset(mProfileDesc->mUseHardware, SoundAsset), "Use hardware mixing for this sound.");
    // if streaming, a default packet size should be chosen for all sounds.
-   addField("isStreaming", TypeBool, Offset(mIsStreaming, SoundAsset), "Use streaming.");
+   addField("isStreaming", TypeBool, Offset(mProfileDesc->mIsStreaming, SoundAsset), "Use streaming.");
    //....why?
-   addField("minDistance", TypeF32, Offset(mMinDistance, SoundAsset), "Minimum distance for sound.");
+   addField("minDistance", TypeF32, Offset(mProfileDesc->mMinDistance, SoundAsset), "Minimum distance for sound.");
    // more like it.
-   addField("maxDistance", TypeF32, Offset(mMaxDistance, SoundAsset), "Max distance for sound.");
-   addField("scatterDistance", TypePoint3F, Offset(mScatterDistance, SoundAsset), "Randomization to the spacial position of the sound.");
-   addField("coneInsideAngle", TypeS32, Offset(mConeInsideAngle, SoundAsset), "Cone inside angle.");
-   addField("coneOutsideAngle", TypeS32, Offset(mConeOutsideAngle, SoundAsset), "Cone outside angle.");
-   addField("coneOutsideVolume", TypeS32, Offset(mConeOutsideVolume, SoundAsset), "Cone outside volume.");
-   addField("rolloffFactor", TypeF32, Offset(mRolloffFactor, SoundAsset), "Rolloff factor.");
+   addField("maxDistance", TypeF32, Offset(mProfileDesc->mMaxDistance, SoundAsset), "Max distance for sound.");
+   addField("scatterDistance", TypePoint3F, Offset(mProfileDesc->mScatterDistance, SoundAsset), "Randomization to the spacial position of the sound.");
+   addField("coneInsideAngle", TypeS32, Offset(mProfileDesc->mConeInsideAngle, SoundAsset), "Cone inside angle.");
+   addField("coneOutsideAngle", TypeS32, Offset(mProfileDesc->mConeOutsideAngle, SoundAsset), "Cone outside angle.");
+   addField("coneOutsideVolume", TypeS32, Offset(mProfileDesc->mConeOutsideVolume, SoundAsset), "Cone outside volume.");
+   addField("rolloffFactor", TypeF32, Offset(mProfileDesc->mRolloffFactor, SoundAsset), "Rolloff factor.");
 
 }
 
@@ -213,15 +215,20 @@ void SoundAsset::onAssetRefresh(void)
 
 bool SoundAsset::loadSound()
 {
-   mSoundResource = ResourceManager::get().load(mSoundPath);
-
-   if (!mSoundResource)
+   if (mSoundPath)
    {
-      Con::errorf("SoundAsset::loadShape : failed to load sound file %s (%s)!", getAssetName(), mSoundPath);
-      mLoadedState = BadFileReference;
-      return false; //if it failed to load, bail out
-   }
+      if (!Platform::isFile(mSoundPath))
+      {
+         Con::errorf("SoundAsset::initializeAsset: Attempted to load file %s but it was not valid!", mSoundFile);
+         mLoadedState = BadFileReference;
+         return;
+      }
+      else
+      {
+         mSFXProfile = new SFXProfile(mProfileDesc, mSoundFile, mPreload);
+      }
 
+   }
    mChangeSignal.trigger();
    mLoadedState = Ok;
    return true;
