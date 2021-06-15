@@ -224,7 +224,7 @@ bool SoundAsset::loadSound()
       {
          Con::errorf("SoundAsset::initializeAsset: Attempted to load file %s but it was not valid!", mSoundFile);
          mLoadedState = BadFileReference;
-         return;
+         return false;
       }
       else
       {
@@ -261,6 +261,31 @@ DefineEngineMethod(SoundAsset, getSoundPath, const char*, (), , "")
    return object->getSoundPath();
 }
 
+IMPLEMENT_CONOBJECT(GuiInspectorTypeSoundAssetPtr);
+
+ConsoleDocClass(GuiInspectorTypeSoundAssetPtr,
+   "@brief Inspector field type for Sounds\n\n"
+   "Editor use only.\n\n"
+   "@internal"
+);
+
+void GuiInspectorTypeSoundAssetPtr::consoleInit()
+{
+   Parent::consoleInit();
+
+   ConsoleBaseType::getType(TypeSoundAssetPtr)->setInspectorFieldType("GuiInspectorTypeSoundAssetPtr");
+}
+
+GuiControl * GuiInspectorTypeSoundAssetPtr::constructEditControl()
+{
+   return nullptr;
+}
+
+bool GuiInspectorTypeSoundAssetPtr::updateRects()
+{
+   return false;
+}
+
 IMPLEMENT_CONOBJECT(GuiInspectorTypeSoundAssetId);
 
 ConsoleDocClass(GuiInspectorTypeSoundAssetId,
@@ -274,22 +299,4 @@ void GuiInspectorTypeSoundAssetId::consoleInit()
    Parent::consoleInit();
 
    ConsoleBaseType::getType(TypeSoundAssetId)->setInspectorFieldType("GuiInspectorTypeSoundAssetId");
-}
-
-IMPLEMENT_CONOBJECT(GuiInspectorTypeSoundAssetPtr);
-
-ConsoleDocClass(GuiInspectorTypeSoundAssetPtr,
-   "@brief Inspector field type for Sounds\n\n"
-   "Editor use only.\n\n"
-   "@internal"
-);
-
-GuiControl * GuiInspectorTypeSoundAssetPtr::constructEditControl()
-{
-   return nullptr;
-}
-
-bool GuiInspectorTypeSoundAssetPtr::updateRects()
-{
-   return false;
 }
