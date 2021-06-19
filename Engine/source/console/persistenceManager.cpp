@@ -1416,11 +1416,12 @@ void PersistenceManager::updateObject(SimObject* object, ParsedObject* parentObj
                {
                   // TODO: This should be wrapped in a helper method... probably.
                   // Detect and collapse relative path information
-                  if (f->type == TypeFilename ||
-                     f->type == TypeStringFilename ||
-                     f->type == TypeImageFilename ||
-                     f->type == TypePrefabFilename ||
-                     f->type == TypeShapeFilename)
+                  if (f->type == TypeFilename       ||
+                      f->type == TypeStringFilename ||
+                      f->type == TypeImageFilename  ||
+                      f->type == TypePrefabFilename ||
+                      f->type == TypeShapeFilename  ||
+                      f->type == TypeSoundFilename )
                   {
                      char fnBuf[1024];
                      Con::collapseScriptFilename(fnBuf, 1024, value);
@@ -1502,11 +1503,12 @@ void PersistenceManager::updateObject(SimObject* object, ParsedObject* parentObj
             {
                // TODO: This should be wrapped in a helper method... probably.
                // Detect and collapse relative path information
-               if (f->type == TypeFilename ||
+               if (f->type == TypeFilename       ||
                    f->type == TypeStringFilename ||
-                   f->type == TypeImageFilename ||
+                   f->type == TypeImageFilename  ||
                    f->type == TypePrefabFilename ||
-                   f->type == TypeShapeFilename)
+                   f->type == TypeShapeFilename  ||
+                   f->type == TypeSoundFilename )
                {
                   char fnBuf[1024];
                   Con::collapseScriptFilename(fnBuf, 1024, value);

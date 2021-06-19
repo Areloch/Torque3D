@@ -23,6 +23,7 @@
 
 #include "sfx/sfxProvider.h"
 #include "sfx/openal/sfxALDevice.h"
+#include "sfx/openal/sfxALInputDevice.h"
 #include "sfx/openal/aldlist.h"
 #include "sfx/openal/LoadOAL.h"
 
@@ -52,6 +53,8 @@ protected:
 
 public:
    SFXDevice *createDevice( const String& deviceName, bool useHardware, S32 maxBuffers );
+
+   SFXInputDevice * createInputDevice(const String deviceName);
 
 };
 
@@ -140,8 +143,13 @@ SFXDevice *SFXALProvider::createDevice( const String& deviceName, bool useHardwa
       ( _findDeviceInfo( deviceName) );
 
    // Do we find one to create?
-   if ( info )
-      return new SFXALDevice( this, mOpenAL, info->name, useHardware, maxBuffers );
+   if (info)
+      return new SFXALDevice(this, mOpenAL, info->name, useHardware, maxBuffers);
 
    return NULL;
+}
+
+SFXInputDevice *SFXALProvider::createInputDevice(const String deviceName)
+{
+   return new SFXALInputDevice(this,mOpenAL,deviceName);
 }

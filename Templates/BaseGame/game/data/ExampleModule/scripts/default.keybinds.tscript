@@ -146,3 +146,24 @@ GlobalActionMap.bindCmd(keyboard, "alt k", "cls();","");
 GlobalActionMap.bindCmd(keyboard, "alt enter", "", "Canvas.toggleFullscreen();");
 GlobalActionMap.bindCmd(keyboard, "F1", "", "contextHelp();");
 ExampleMoveMap.bindCmd(keyboard, "n", "toggleNetGraph();", "");
+
+
+function startVoip(%val)
+{        
+	if(%val)
+	{
+        echo("key pressed");
+        if (!isObject(ServerConnection)) return;
+        if (!isObject(ServerConnection.getVoipClient()))
+            ServerConnection.createVoipClient();    
+        if (!isObject(ServerConnection.getVoipClient())) return;        
+		echo("voip started");
+		ServerConnection.startRecordingVoip();
+	}
+	else
+	{
+		echo("voip ended");
+	}
+}
+
+GlobalActionMap.bind(keyboard, "alt v", startVoip);
