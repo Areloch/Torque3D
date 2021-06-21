@@ -17,7 +17,6 @@
 #include "T3D/gameBase/VoipClient.h"
 #endif
 
-
 class VoipEvent : public NetEvent
 {
 public:
@@ -26,14 +25,14 @@ public:
 
 protected:
 
-   char mOutData[1024];
+   U8 mOutData[2048];
    U32 mFrames;
    U32 mLength;
 
 public:
 
    VoipEvent();
-   VoipEvent(const char* data, U32 frames, U32 length);
+   VoipEvent(U8* data, U32 frames, U32 length);
    void pack(NetConnection *conn, BitStream *bstream);
    void write(NetConnection *conn, BitStream *bstream);
    void unpack(NetConnection *conn, BitStream *bstream);

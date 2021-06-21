@@ -17,7 +17,6 @@
 #include "T3D/gameBase/voipEvent.h"
 #endif // !_VOIPEVENT_H_
 
-
 #ifndef _SFXSYSTEM_H_
 #include "sfx/sfxSystem.h"
 #endif // !_SFXSYSTEM_H_
@@ -28,10 +27,13 @@
 
 #include "platform/threads/threadPool.h"
 
-#include <speex/speex.h>
+#include <opus.h>
 
 class VoipEvent;
 class GameConnection;
+
+#define FRAME_SIZE 160
+#define MAX_FRAME_SIZE 6*160
 
 class VoipClient : public NetObject
 {
@@ -58,70 +60,65 @@ protected:
 
    struct CompressJob : public ThreadPool::WorkItem
    {
-      void *mSpeexEncoder;
+      void *mOpusEncoder;
       U32 mFrameSize;
-      SpeexBits mEncoderBits;
       SFXInputDevice *mClientDev;
       GameConnection *mConnection;
 
-      CompressJob(void* spxEncoder, U32 frSize, SpeexBits encBits, SFXInputDevice *clientDev, GameConnection *conn)
-         : mSpeexEncoder(spxEncoder), mFrameSize(frSize), mEncoderBits(encBits), mClientDev(clientDev), mConnection(conn) {}
+      CompressJob(void* opsEncoder, U32 frSize, SFXInputDevice *clientDev, GameConnection *conn)
+         : mOpusEncoder(opsEncoder), mFrameSize(frSize), mClientDev(clientDev), mConnection(conn) {}
 
    protected:
       virtual void execute()
       {
-         rawCompress(mSpeexEncoder, mFrameSize, mEncoderBits, mClientDev, mConnection);
+         rawCompress(mOpusEncoder, mFrameSize, mClientDev, mConnection);
       }
 
-      void rawCompress(void* spxEncoder, U32 frSize, SpeexBits encBits, SFXInputDevice *clientDev, GameConnection *conn);
+      void rawCompress(void* opsEncoder, U32 frSize, SFXInputDevice *clientDev, GameConnection *conn);
    };
 
-   void voiceCompress(void* spxEncoder, U32 frSize, SpeexBits encBits, SFXInputDevice *clientDev, GameConnection *conn)
+   void voiceCompress(void* opsEncoder, U32 frSize, SFXInputDevice *clientDev, GameConnection *conn)
    {
       ThreadPool* pThreadPool = &ThreadPool::GLOBAL();
-      ThreadSafeRef<CompressJob> item(new CompressJob(spxEncoder, frSize, encBits, clientDev, conn));
+      ThreadSafeRef<CompressJob> item(new CompressJob(opsEncoder, frSize, clientDev, conn));
       pThreadPool->queueWorkItem(item);
    }
 
    struct DeCompressJob : public ThreadPool::WorkItem
    {
-      void *mSpeexDecoder;
+      void *mOpusDecoder;
       U32 mFrames;
       U32 mSampleRate;
       U32 mLength;
-      SpeexBits mDecoderBits;
       SFXInputDevice *mClientDev;
       GameConnection *mConn;
-      const char *mData;
+      U8 *mData;
 
-      DeCompressJob(void* spxDecoder, U32 frames, U32 smpRate, U32 length, SpeexBits decBits, SFXInputDevice *clientDev, GameConnection *conn, const char *data)
-         : mSpeexDecoder(spxDecoder), mFrames(frames), mSampleRate(smpRate), mLength(length), mDecoderBits(decBits), mClientDev(clientDev), mConn(conn), mData(data) {}
+      DeCompressJob(void* opsDecoder, U32 frames, U32 smpRate, U32 length, SFXInputDevice *clientDev, GameConnection *conn, U8 *data)
+         : mOpusDecoder(opsDecoder), mFrames(frames), mSampleRate(smpRate), mLength(length), mClientDev(clientDev), mConn(conn), mData(data) {}
 
    protected:
       virtual void execute()
       {
-         rawDeCompress(mSpeexDecoder, mFrames, mSampleRate,mLength, mDecoderBits, mClientDev,mConn, mData);
+         rawDeCompress(mOpusDecoder, mFrames, mSampleRate,mLength, mClientDev,mConn, mData);
       }
 
-      void rawDeCompress(void *spxDecoder, U32 frames, U32 smpRate, U32 length, SpeexBits decBits, SFXInputDevice *clientDev, GameConnection *conn, const char *data);
+      void rawDeCompress(void *opsDecoder, U32 frames, U32 smpRate, U32 length, SFXInputDevice *clientDev, GameConnection *conn, U8 *data);
    };
 
-   void voiceDeCompress(void *spxDecoder, U32 frames, U32 smpRate, U32 length, SpeexBits decBits, SFXInputDevice *clientDev, GameConnection *conn, const char *data)
+   void voiceDeCompress(void *opsDecoder, U32 frames, U32 smpRate, U32 length,  SFXInputDevice *clientDev, GameConnection *conn, U8 *data)
    {
       ThreadPool* pThreadPool = &ThreadPool::GLOBAL();
-      ThreadSafeRef<DeCompressJob> item(new DeCompressJob(spxDecoder, frames, smpRate, length, decBits, clientDev, conn, data));
+      ThreadSafeRef<DeCompressJob> item(new DeCompressJob(opsDecoder, frames, smpRate, length, clientDev, conn, data));
       pThreadPool->queueWorkItem(item);
    }
 
    GameConnection *mConnection;
-   // probably not a good idea to host voip on a server that can have 126 people.... 
-   SpeexBits decoderBits;
-   SpeexBits encoderBits;
    U32 frameSize;
    U32 sampleRate;
 
-   void *speexDecoder;
-   void *speexEncoder;
+   void *opusDecoder;
+   void *opusEncoder;
 
    SFXInputDevice *mClientDev;
 
@@ -138,8 +135,7 @@ public:
    void setClient(GameConnection *connection) { mConnection = connection; }
 
    void clientWriteVoip();
-   void clientReadVoip(const char *data, U32 frames, U32 length);
-
+   void clientReadVoip(U8 *data, U32 frames, U32 length);
 
 };
 

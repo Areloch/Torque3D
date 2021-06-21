@@ -1,5 +1,6 @@
 #include "T3D/gameBase/voipEvent.h"
 #include "T3D/gameBase/gameConnection.h"
+#include "T3D/gameBase/VoipClient.h"
 
 IMPLEMENT_CO_NETEVENT_V1(VoipEvent);
 
@@ -7,13 +8,13 @@ VoipEvent::VoipEvent()
 {
    mSourceId = -1;
    mGuaranteeType = Guaranteed;
-   dMemset(mOutData, 0, 1024);
+   dMemset(mOutData, 0, MAX_FRAME_SIZE);
    mFrames = 0;
    mLength = 0;
    //Con::printf("Should not be used! create with VoipEvent(const char* data, U32 frames, U32 length)!");
 }
 
-VoipEvent::VoipEvent(const char* data, U32 frames, U32 length)
+VoipEvent::VoipEvent(U8* data, U32 frames, U32 length)
 {
    mSourceId = -1;
    mGuaranteeType = Guaranteed;
@@ -29,7 +30,8 @@ void VoipEvent::pack(NetConnection *conn, BitStream *bstream)
 {
    bstream->writeInt(mLength, 32);
    bstream->writeInt(mFrames, 32);
-   bstream->writeLongString(mLength, mOutData);
+   bstream->writeLongString(mLength, (const char*)mOutData);
+   //bstream->writeLine(mOutData);
 }
 
 void VoipEvent::write(NetConnection *conn, BitStream *bstream)
@@ -43,7 +45,8 @@ void VoipEvent::unpack(NetConnection *conn, BitStream *bstream)
    mLength = bstream->readInt(32);
    mFrames = bstream->readInt(32);
    dMemset(mOutData, 0, mLength);
-   bstream->readLongString(mLength, mOutData);
+   bstream->readLongString(mLength, (char*)mOutData);
+   //bstream->readLine(mOutData, mLength);
 
 }
 
