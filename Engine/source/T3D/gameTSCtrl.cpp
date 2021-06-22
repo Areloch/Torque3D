@@ -21,6 +21,7 @@
 //-----------------------------------------------------------------------------
 
 #include "T3D/gameTSCtrl.h"
+#include "math/mathUtils.h"
 #include "console/consoleTypes.h"
 #include "T3D/gameBase/gameBase.h"
 #include "T3D/gameBase/gameConnection.h"
@@ -59,6 +60,13 @@ bool GameTSCtrl::onAdd()
 }
 
 //---------------------------------------------------------------------------
+
+bool GameTSCtrl::unproject(const Point3F &pt, Point3F *dest) const
+{
+   MathUtils::mProjectScreenToWorld(pt, dest, mSaveViewport, mSaveModelview, mSaveProjection, mLastCameraQuery.farPlane, mLastCameraQuery.nearPlane);
+   return true;
+}
+
 bool GameTSCtrl::processCameraQuery(CameraQuery *camq)
 {
    GameUpdateCameraFov();
