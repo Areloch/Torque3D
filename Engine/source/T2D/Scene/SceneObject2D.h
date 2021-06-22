@@ -53,6 +53,7 @@ public:
       MountedMask = BIT(3),
       NextFreeMask = BIT(4)
    };
+
 protected:
 
    SimObjectPtr< SceneObject2D > mAfterObject;
