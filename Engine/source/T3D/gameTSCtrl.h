@@ -47,8 +47,6 @@ public:
    DECLARE_CONOBJECT(GameTSCtrl);
    DECLARE_DESCRIPTION( "A control that renders a 3D view from the current control object." );
 
-   bool unproject(const Point3F & pt, Point3F * dest) const;
-
    bool processCameraQuery(CameraQuery *query);
    void renderWorld(const RectI &updateRect);
 

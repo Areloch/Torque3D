@@ -61,12 +61,6 @@ bool GameTSCtrl::onAdd()
 
 //---------------------------------------------------------------------------
 
-bool GameTSCtrl::unproject(const Point3F &pt, Point3F *dest) const
-{
-   MathUtils::mProjectScreenToWorld(pt, dest, mSaveViewport, mSaveModelview, mSaveProjection, mLastCameraQuery.farPlane, mLastCameraQuery.nearPlane);
-   return true;
-}
-
 bool GameTSCtrl::processCameraQuery(CameraQuery *camq)
 {
    GameUpdateCameraFov();
