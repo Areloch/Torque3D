@@ -67,8 +67,8 @@ class SoundAsset : public AssetBase
 protected:
    StringTableEntry        mSoundFile;
    StringTableEntry        mSoundPath;
-   SFXProfile              *mSFXProfile = new SFXProfile();
-   SFXDescription          *mProfileDesc = new SFXDescription();
+   SFXProfile              mSFXProfile;
+   SFXDescription          mProfileDesc;
    // subtitles
    StringTableEntry        mSubtitleString;
    bool                    mPreload;
@@ -107,7 +107,7 @@ public:
    virtual void copyTo(SimObject* object);
 
    //SFXResource* getSound() { return mSoundResource; }
-   Resource<SFXResource> getSoundResource() { return mSFXProfile->getResource(); }
+   Resource<SFXResource> getSoundResource() { return mSFXProfile.getResource(); }
 
    /// Declare Console Object.
    DECLARE_CONOBJECT(SoundAsset);
@@ -116,11 +116,11 @@ public:
    bool loadSound();
    inline StringTableEntry getSoundFile(void) const { return mSoundFile; };
    inline StringTableEntry getSoundPath(void) const { return mSoundPath; };
-   SFXProfile* getSfxProfile() { return mSFXProfile; }
-   SFXDescription* getSfxDescription() { return mProfileDesc; }
+   SFXProfile* getSfxProfile() { return &mSFXProfile; }
+   SFXDescription* getSfxDescription() { return &mProfileDesc; }
 
-   bool isLoop() { return mProfileDesc->mIsLooping; }
-   bool is3D() { return mProfileDesc->mIs3D; }
+   bool isLoop() { return mProfileDesc.mIsLooping; }
+   bool is3D() { return mProfileDesc.mIs3D; }
 
 
 protected:

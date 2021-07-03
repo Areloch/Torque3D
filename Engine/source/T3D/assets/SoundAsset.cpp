@@ -112,21 +112,21 @@ SoundAsset::SoundAsset()
    mPreload = false;
    // SFX description inits
    // reverb is useless here, reverb is inacted on listener.
-   mProfileDesc->mPitch = 1;
-   mProfileDesc->mVolume = 1;
-   mProfileDesc->mIs3D = false;
-   mProfileDesc->mIsLooping = false;
-   mProfileDesc->mIsStreaming = false;
-   mProfileDesc->mUseHardware = false;
-   mProfileDesc->mMinDistance = 1;
-   mProfileDesc->mMaxDistance = 100;
-   mProfileDesc->mConeInsideAngle = 360;
-   mProfileDesc->mConeOutsideAngle = 360;
-   mProfileDesc->mConeOutsideVolume = 1;
-   mProfileDesc->mRolloffFactor = -1.0f;
-   mProfileDesc->mScatterDistance = Point3F(0.f, 0.f, 0.f);
-   mProfileDesc->mPriority = 1.0f;
-   mProfileDesc->mSourceGroup = NULL;
+   mProfileDesc.mPitch = 1;
+   mProfileDesc.mVolume = 1;
+   mProfileDesc.mIs3D = false;
+   mProfileDesc.mIsLooping = false;
+   mProfileDesc.mIsStreaming = false;
+   mProfileDesc.mUseHardware = false;
+   mProfileDesc.mMinDistance = 1;
+   mProfileDesc.mMaxDistance = 100;
+   mProfileDesc.mConeInsideAngle = 360;
+   mProfileDesc.mConeOutsideAngle = 360;
+   mProfileDesc.mConeOutsideVolume = 1;
+   mProfileDesc.mRolloffFactor = -1.0f;
+   mProfileDesc.mScatterDistance = Point3F(0.f, 0.f, 0.f);
+   mProfileDesc.mPriority = 1.0f;
+   mProfileDesc.mSourceGroup = NULL;
 
 }
 
@@ -134,8 +134,6 @@ SoundAsset::SoundAsset()
 
 SoundAsset::~SoundAsset()
 {
-   delete(mSFXProfile);
-   delete(mProfileDesc);
 }
 
 //-----------------------------------------------------------------------------
@@ -148,23 +146,23 @@ void SoundAsset::initPersistFields()
    addProtectedField("soundFile", TypeAssetLooseFilePath, Offset(mSoundFile, SoundAsset),
       &setSoundFile, &getSoundFile, "Path to the sound file.");
 
-   addField("pitchAdjust", TypeF32, Offset(mProfileDesc->mPitch, SoundAsset), "Adjustment of the pitch value 1 is default.");
-   addField("volumeAdjust", TypeF32, Offset(mProfileDesc->mVolume, SoundAsset), "Adjustment to the volume.");
-   addField("is3D", TypeBool, Offset(mProfileDesc->mIs3D, SoundAsset), "Set this sound to 3D.");
-   addField("isLooping", TypeBool, Offset(mProfileDesc->mIsLooping, SoundAsset), "Does this sound loop.");
+   addField("pitchAdjust", TypeF32, Offset(mProfileDesc.mPitch, SoundAsset), "Adjustment of the pitch value 1 is default.");
+   addField("volumeAdjust", TypeF32, Offset(mProfileDesc.mVolume, SoundAsset), "Adjustment to the volume.");
+   addField("is3D", TypeBool, Offset(mProfileDesc.mIs3D, SoundAsset), "Set this sound to 3D.");
+   addField("isLooping", TypeBool, Offset(mProfileDesc.mIsLooping, SoundAsset), "Does this sound loop.");
    // if streaming, a default packet size should be chosen for all sounds.
-   addField("isStreaming", TypeBool, Offset(mProfileDesc->mIsStreaming, SoundAsset), "Use streaming.");
+   addField("isStreaming", TypeBool, Offset(mProfileDesc.mIsStreaming, SoundAsset), "Use streaming.");
    //....why?
-   addField("useHardware", TypeBool, Offset(mProfileDesc->mUseHardware, SoundAsset), "Use hardware mixing for this sound.");
-   addField("minDistance", TypeF32, Offset(mProfileDesc->mMinDistance, SoundAsset), "Minimum distance for sound.");
+   addField("useHardware", TypeBool, Offset(mProfileDesc.mUseHardware, SoundAsset), "Use hardware mixing for this sound.");
+   addField("minDistance", TypeF32, Offset(mProfileDesc.mMinDistance, SoundAsset), "Minimum distance for sound.");
    // more like it.
-   addField("maxDistance", TypeF32, Offset(mProfileDesc->mMaxDistance, SoundAsset), "Max distance for sound.");
-   addField("coneInsideAngle", TypeS32, Offset(mProfileDesc->mConeInsideAngle, SoundAsset), "Cone inside angle.");
-   addField("coneOutsideAngle", TypeS32, Offset(mProfileDesc->mConeOutsideAngle, SoundAsset), "Cone outside angle.");
-   addField("coneOutsideVolume", TypeS32, Offset(mProfileDesc->mConeOutsideVolume, SoundAsset), "Cone outside volume.");
-   addField("rolloffFactor", TypeF32, Offset(mProfileDesc->mRolloffFactor, SoundAsset), "Rolloff factor.");
-   addField("scatterDistance", TypePoint3F, Offset(mProfileDesc->mScatterDistance, SoundAsset), "Randomization to the spacial position of the sound.");
-   addField("sourceGroup", TypeSFXSourceName, Offset(mProfileDesc->mSourceGroup, SoundAsset), "Group that sources playing with this description should be put into.");
+   addField("maxDistance", TypeF32, Offset(mProfileDesc.mMaxDistance, SoundAsset), "Max distance for sound.");
+   addField("coneInsideAngle", TypeS32, Offset(mProfileDesc.mConeInsideAngle, SoundAsset), "Cone inside angle.");
+   addField("coneOutsideAngle", TypeS32, Offset(mProfileDesc.mConeOutsideAngle, SoundAsset), "Cone outside angle.");
+   addField("coneOutsideVolume", TypeS32, Offset(mProfileDesc.mConeOutsideVolume, SoundAsset), "Cone outside volume.");
+   addField("rolloffFactor", TypeF32, Offset(mProfileDesc.mRolloffFactor, SoundAsset), "Rolloff factor.");
+   addField("scatterDistance", TypePoint3F, Offset(mProfileDesc.mScatterDistance, SoundAsset), "Randomization to the spacial position of the sound.");
+   addField("sourceGroup", TypeSFXSourceName, Offset(mProfileDesc.mSourceGroup, SoundAsset), "Group that sources playing with this description should be put into.");
 
 }
 
@@ -227,8 +225,10 @@ bool SoundAsset::loadSound()
          return false;
       }
       else
-      {
-         mSFXProfile = new SFXProfile(mProfileDesc, mSoundFile, mPreload);
+      {// = new SFXProfile(mProfileDesc, mSoundFile, mPreload);
+         mSFXProfile.setDescription(&mProfileDesc);
+         mSFXProfile.setSoundFileName(mSoundFile);
+         mSFXProfile.setPreload(mPreload);
       }
 
    }
