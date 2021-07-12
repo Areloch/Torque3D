@@ -57,6 +57,8 @@ protected:
 
    static Vector<GuiTS2DCtrl*> smAwakeTS2DCtrls;
 
+   F32 mReflectPriority;
+
    MatrixF     mSaveModelview;
    MatrixF     mSaveProjection;
    RectI       mSaveViewport;
@@ -74,11 +76,14 @@ public:
 
    void onPreRender();
    void _internalRender(RectI guiViewPort, RectI renderViewport, Frustum &frustum);
+   F32 calculateViewDistance(F32 radius);
    void onRender(Point2I offset, const RectI &updateRect);
    virtual bool processCameraQuery(CameraQuery *query);
 
    /// subclasses can override this to perform 2D rendering. 
    virtual void renderWorld(const RectI &updateRect);
+
+   F32 projectRadius(F32 dist, F32 radius) const;
 
    /// Subclasses can override this to perform 2D rendering.   
    virtual void renderGui(Point2I offset, const RectI &updateRect) {}

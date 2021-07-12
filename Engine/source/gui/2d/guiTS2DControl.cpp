@@ -39,15 +39,14 @@ Vector<GuiTS2DCtrl*> GuiTS2DCtrl::smAwakeTS2DCtrls;
 
 GuiTS2DCtrl::GuiTS2DCtrl()
 {
+   mReflectPriority = 1.0f;
+
    mSaveModelview.identity();
    mSaveProjection.identity();
    mSaveViewport.set(0, 0, 10, 10);
    mSaveWorldToScreenScale.set(0, 0);
 
    mLastCameraQuery.cameraMatrix.identity();
-   mLastCameraQuery.cameraMatrix.setColumn(0, Point3F(1.0, 0.0, 0.0));
-   mLastCameraQuery.cameraMatrix.setColumn(1, Point3F(0.0, 0.0, -1.0));
-   mLastCameraQuery.cameraMatrix.setColumn(2, Point3F(0.0, 1.0, 0.0));
 
    mLastCameraQuery.mSourceArea = RectF(0.0f, 0.0f, 10.0f, 10.0f);
    mLastCameraQuery.mCameraZoom = 1.0f;
@@ -63,6 +62,14 @@ GuiTS2DCtrl::GuiTS2DCtrl()
 
 void GuiTS2DCtrl::renderWorld(const RectI & updateRect)
 {
+}
+
+F32 GuiTS2DCtrl::projectRadius(F32 dist, F32 radius) const
+{
+   // Fixup any negative or zero distance so we
+   // don't get a divide by zero.
+   dist = dist > 0.0f ? dist : 0.001f;
+   return (radius / dist) * mSaveWorldToScreenScale.y;
 }
 
 void GuiTS2DCtrl::initPersistFields()
@@ -156,18 +163,24 @@ void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frust
    Point2I renderSize = renderViewport.extent;
    GFXTarget *origTarget = GFX->getActiveRenderTarget();
 
-   mLastCameraQuery.cameraMatrix.identity();
-   mLastCameraQuery.cameraMatrix.setColumn(0, Point3F(1.0, 0.0, 0.0));
-   mLastCameraQuery.cameraMatrix.setColumn(1, Point3F(0.0, 0.0, -1.0));
-   mLastCameraQuery.cameraMatrix.setColumn(2, Point3F(0.0, 1.0, 0.0));
-
    if (mLastCameraQuery.mCameraAngle)
    {
       MatrixF rotMat(EulerF(0, 0, mDegToRad(mLastCameraQuery.mCameraAngle)));
       mLastCameraQuery.cameraMatrix.mul(rotMat);
    }
 
-   REFLECTMGR->update(1.0f, renderSize, mLastCameraQuery);
+   if (mReflectPriority > 0)
+   {
+      // Get the total reflection priority.
+      F32 totalPriority = 0;
+      for (U32 i = 0; i < smAwakeTS2DCtrls.size(); i++)
+         if (smAwakeTS2DCtrls[i]->isVisible())
+            totalPriority += smAwakeTS2DCtrls[i]->mReflectPriority;
+
+      REFLECTMGR->update(mReflectPriority / totalPriority,
+         renderSize,
+         mLastCameraQuery);
+   }
 
    GFX->setActiveRenderTarget(origTarget);
    GFX->setViewport(renderViewport);
@@ -178,6 +191,10 @@ void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frust
    mSaveProjection = GFX->getProjectionMatrix();
 
    gClientSceneGraph->setDisplayTargetResolution(renderSize);
+
+   mLastCameraQuery.cameraMatrix.setColumn(0, Point3F(1.0, 0.0, 0.0));
+   mLastCameraQuery.cameraMatrix.setColumn(1, Point3F(0.0, 0.0, -1.0));
+   mLastCameraQuery.cameraMatrix.setColumn(2, Point3F(0.0, 1.0, 0.0));
 
    MatrixF worldToCamera = mLastCameraQuery.cameraMatrix;
    worldToCamera.inverse();
@@ -201,6 +218,40 @@ void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frust
    saver.restore();
 
 }
+
+F32 GuiTS2DCtrl::calculateViewDistance(F32 radius)
+{
+   F32 fov = mLastCameraQuery.fov;
+   F32 wwidth;
+   F32 wheight;
+   F32 renderWidth =  F32(getWidth());
+   F32 renderHeight = F32(getHeight());
+   F32 aspectRatio = renderWidth / renderHeight;
+
+   // Use the FOV to calculate the viewport height scale
+   // then generate the width scale from the aspect ratio.
+   if (!mLastCameraQuery.ortho)
+   {
+      wheight = mLastCameraQuery.nearPlane * mTan(mLastCameraQuery.fov / 2.0f);
+      wwidth = aspectRatio * wheight;
+   }
+   else
+   {
+      wheight = mLastCameraQuery.fov;
+      wwidth = aspectRatio * wheight;
+   }
+
+   // Now determine if we should use the width 
+   // fov or height fov.
+   //
+   // If the window is taller than it is wide, use the 
+   // width fov to keep the object completely in view.
+   if (wheight > wwidth)
+      fov = mAtan(wwidth / mLastCameraQuery.nearPlane) * 2.0f;
+
+   return radius / mTan(fov / 2.0f);
+}
+
 
 void GuiTS2DCtrl::onRender(Point2I offset, const RectI & updateRect)
 {
@@ -229,6 +280,8 @@ void GuiTS2DCtrl::onRender(Point2I offset, const RectI & updateRect)
    // Set up the appropriate render style
    Point2I renderSize = getExtent();
    Frustum frustum;
+
+   mLastCameraQuery.currentEye = -1;
 
    // set up the camera and viewport stuff:
    F32 wwidth;
@@ -273,3 +326,42 @@ void GuiTS2DCtrl::onRender(Point2I offset, const RectI & updateRect)
 
 }
 
+DefineEngineMethod(GuiTS2DCtrl, project, Point3F, (Point3F worldPosition), ,
+   "Transform world-space coordinates to screen-space (x, y, depth) coordinates.\n"
+   "@param worldPosition The world-space position to transform to screen-space.\n"
+   "@return The ")
+{
+   Point3F screenPos;
+   object->project(worldPosition, &screenPos);
+   return screenPos;
+}
+
+//-----------------------------------------------------------------------------
+
+DefineEngineMethod(GuiTS2DCtrl, getWorldToScreenScale, Point2F, (), ,
+   "Get the ratio between world-space units and pixels.\n"
+   "@return The amount of world-space units covered by the extent of a single pixel.")
+{
+   return object->getWorldToScreenScale();
+}
+
+//-----------------------------------------------------------------------------
+
+DefineEngineMethod(GuiTS2DCtrl, calculateViewDistance, F32, (F32 radius), ,
+   "Given the camera's current FOV, get the distance from the camera's viewpoint at which the given radius will fit in the render area.\n"
+   "@param radius Radius in world-space units which should fit in the view.\n"
+   "@return The distance from the viewpoint at which the given radius would be fully visible.")
+{
+   return object->calculateViewDistance(radius);
+}
+
+DefineEngineMethod(GuiTS2DCtrl, unproject, Point3F, (Point3F screenPosition), ,
+   "Transform 3D screen-space coordinates (x, y, depth) to world space.\n"
+   "This method can be, for example, used to find the world-space position relating to the current mouse cursor position.\n"
+   "@param screenPosition The x/y position on the screen plus the depth from the screen-plane outwards.\n"
+   "@return The world-space position corresponding to the given screen-space coordinates.")
+{
+   Point3F worldPos;
+   object->unproject(screenPosition, &worldPos);
+   return worldPos;
+}
