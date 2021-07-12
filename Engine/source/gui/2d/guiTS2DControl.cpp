@@ -155,6 +155,8 @@ void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frust
       mLastCameraQuery.cameraMatrix.mul(rotMat);
    }
 
+   REFLECTMGR->update(1.0f, renderSize, mLastCameraQuery);
+
    GFX->setActiveRenderTarget(origTarget);
    GFX->setViewport(renderViewport);
    // Clear the zBuffer so GUI doesn't hose object rendering accidentally
@@ -194,6 +196,8 @@ void GuiTS2DCtrl::onRender(Point2I offset, const RectI & updateRect)
    GFXTransformSaver saver;
    bool renderingToTarget = false;
 
+   mLastCameraQuery.displayDevice = NULL;
+
    if (!processCameraQuery(&mLastCameraQuery))
    {
       // We have no camera, but render the GUI children 
@@ -201,6 +205,10 @@ void GuiTS2DCtrl::onRender(Point2I offset, const RectI & updateRect)
       // controls easier in the GuiEditor.
       renderChildControls(offset, updateRect);
       return;
+   }
+   if (mLastCameraQuery.displayDevice)
+   {
+      mLastCameraQuery.displayDevice->setDrawMode(GFXDevice::RS_Standard);
    }
 
    GFXTargetRef origTarget = GFX->getActiveRenderTarget();

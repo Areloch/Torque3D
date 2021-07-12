@@ -319,6 +319,7 @@ addPath("${srcDir}/ts")
 addPath("${srcDir}/ts/arch")
 addPath("${srcDir}/physics")
 addPath("${srcDir}/gui/3d")
+addPath("${srcDir}/gui/2d")
 addPath("${srcDir}/postFx")
 
 addPath("${srcDir}/T3D")
@@ -337,6 +338,10 @@ addPath("${srcDir}/T3D/lighting")
 addPath("${srcDir}/T3D/gameObjects")
 addPathRec("${srcDir}/T3D/components/")
 addPathRec("${srcDir}/T3D/systems")
+
+addPath("${srcDir}/T2D")
+addPath("${srcDir}/T2D/Math2D")
+addPath("${srcDir}/T2D/Scene")
 
 addPath("${srcDir}/main/")
 addPath("${srcDir}/assets")
