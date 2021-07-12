@@ -5,15 +5,15 @@
 #include "app/game.h"
 #endif
 #ifndef _GUITSCONTROL_H_
-#include "gui/3d/guiTSControl.h"
+#include "gui/2d/guiTS2DControl.h"
 #endif
 
 class GameBase;
 
-class Game2DCtrl : public GuiTSCtrl
+class Game2DCtrl : public GuiTS2DCtrl
 {
 private:
-   typedef GuiTSCtrl Parent;
+   typedef GuiTS2DCtrl Parent;
 
    void makeScriptCall(const char *func, const GuiEvent &evt)  const;
 

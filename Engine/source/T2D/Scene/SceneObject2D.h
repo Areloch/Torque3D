@@ -17,7 +17,6 @@
 #include "core/bitSet.h"
 #endif
 
-
 #ifndef _GAME2DCTRL_H_
 #include "T2D/game2DCtrl.h"
 #endif // !_GAME2DCTRL_H_
@@ -57,6 +56,17 @@ public:
 protected:
 
    SimObjectPtr< SceneObject2D > mAfterObject;
+   SimObjectPtr< Scene2D > mpScene;
+   SimObjectPtr< Scene2D > mpTargetScene;
+
+   /// Lifetime.
+   F32                     mLifetime;
+   bool                    mLifetimeActive;
+
+   /// Scene layers.
+   U32                     mSceneLayer;
+   U32                     mSceneLayerMask;
+   F32                     mSceneLayerDepth;
 
 public:
    SceneObject2D();

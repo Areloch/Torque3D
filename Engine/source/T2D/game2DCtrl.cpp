@@ -27,7 +27,7 @@ void Game2DCtrl::makeScriptCall(const char * func, const GuiEvent & evt) const
    char *wp = Con::getArgBuffer(32);
    Point3F camPos;
    mLastCameraQuery.cameraMatrix.getColumn(3, &camPos);
-   dSprintf(wp, 32, "%g %g %g", camPos.x, camPos.y, camPos.z);
+   dSprintf(wp, 32, "%g %g", camPos.x, camPos.y);
 
    // write click vector
    char *vec = Con::getArgBuffer(32);
@@ -56,15 +56,6 @@ bool Game2DCtrl::onAdd()
 
 bool Game2DCtrl::processCameraQuery(CameraQuery * query)
 {
-   query->ortho = true;
-   MatrixF cameraMatrix(true);
-   cameraMatrix.setColumn(0, Point4F(1, 0, 0, 0));
-   cameraMatrix.setColumn(1, Point4F(0, 1, 0, 0));
-   cameraMatrix.setColumn(2, Point4F(0, 0, -1, 0));
-   cameraMatrix.setColumn(3, Point4F(0, 0, 0, 1));
-
-   query->cameraMatrix = cameraMatrix;
-
    GameUpdateCameraFov();
    return GameProcessCameraQuery(query);
 }
@@ -118,7 +109,19 @@ void Game2DCtrl::onMiddleMouseUp(const GuiEvent &evt)
 
 void Game2DCtrl::onMouseMove(const GuiEvent &evt)
 {
-
+   MatrixF mat;
+   Point3F vel;
+   if (GameGetCameraTransform(&mat, &vel))
+   {
+      Point3F pos;
+      mat.getColumn(3, &pos);
+      Point3F screenPoint((F32)evt.mousePoint.x, (F32)evt.mousePoint.y, -1.0f);
+      Point3F worldPoint;
+      if (unproject(screenPoint, &worldPoint)) {
+         Point3F vec = worldPoint - pos;
+         vec.normalizeSafe();
+      }
+   }
 }
 
 void Game2DCtrl::onRender(Point2I offset, const RectI &updateRect)

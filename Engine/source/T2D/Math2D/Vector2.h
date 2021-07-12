@@ -9,7 +9,6 @@
 #include "console/consoleTypes.h"
 #endif // !_CONSOLETYPES_H_
 
-
 #ifndef _MMATHFN2D_H_
 #include "T2D/Math2D/mMathFN2D.h"
 #endif
@@ -37,6 +36,15 @@ public:
    Vector2(const Point2I & point);
    Vector2(const Point2F & point);
    Vector2(const Point2D & point);
+   void convolve(const Vector2&);
+   void convolveInverse(const Vector2&);
+   F32  len() const;
+
+   void setMin(const Vector2 & _test);
+   void setMax(const Vector2 & _test);
+
+   void set(F32 _x, F32 _y);
+   void set(const Vector2 & copy);
 
    /// Operators.
    inline Vector2& operator /= (const F32 s) { x /= s; y /= s; return *this; }
@@ -58,6 +66,11 @@ public:
    inline Vector2 operator = (const Point2I &p) { x = F32(p.x); y = F32(p.y); return *this; }
    inline operator Point2F () { return Point2F(x, y); }
    inline Point2F ToPoint2F(void) const { return Point2F(x, y); }
+
+   inline F32& operator[](U32);
+   inline const F32& operator[](U32) const;
+   F32& operator[](S32 i) { return operator[](U32(i)); }
+   const F32& operator[](S32 i) const { return operator[](U32(i)); }
 
    /// Operator 'b2Vec2' Support (Assignment/Conversions).
    inline Vector2 operator = (const b2Vec2 &p) { x = p.x; y = p.y; return *this; }
@@ -124,6 +137,205 @@ inline Vector2::Vector2(const b2Vec2& vec2) : b2Vec2(vec2) {}
 inline Vector2::Vector2(const Point2I& point) : b2Vec2(F32(point.x), F32(point.y)) {}
 inline Vector2::Vector2(const Point2F& point) : b2Vec2(point.x, point.y) {}
 inline Vector2::Vector2(const Point2D& point) : b2Vec2(F32(point.x), F32(point.y)) {}
+
+inline F32& Vector2::operator[](U32 index)
+{
+   // we only have 2 in a vector2, safety required.
+   if (index > 1)
+   {
+      // they want to return something set it to 1
+      index = 1;
+   }
+
+   if (index == 0)
+      return x;
+
+   if (index == 1)
+      return y;
+}
+
+inline const F32& Vector2::operator[](U32 index) const
+{
+   // we only have 2 in a vector2, safety required.
+   if (index > 1)
+   {
+      // they want to return something set it to 1
+      index = 1;
+   }
+
+   if (index == 0)
+      return x;
+
+   if (index == 1)
+      return y;
+}
+
+inline void Vector2::convolve(const Vector2& c)
+{
+   x *= c.x;
+   y *= c.y;
+}
+
+inline void Vector2::convolveInverse(const Vector2& c)
+{
+   x /= c.x;
+   y /= c.y;
+}
+
+inline F32 Vector2::len() const
+{
+   return mSqrt(F32(x*x + y*y));
+}
+
+inline void Vector2::setMin(const Vector2& _test)
+{
+   x = (_test.x < x) ? _test.x : x;
+   y = (_test.y < y) ? _test.y : y;
+}
+
+inline void Vector2::setMax(const Vector2& _test)
+{
+   x = (_test.x > x) ? _test.x : x;
+   y = (_test.y > y) ? _test.y : y;
+}
+
+inline void Vector2::set(F32 _x, F32 _y)
+{
+   x = _x;
+   y = _y;
+}
+
+inline void Vector2::set(const Vector2& copy)
+{
+   x = copy.x;
+   y = copy.y;
+}
+
+class BoxVec2
+{
+public:
+   Vector2 minExtents;
+   Vector2 maxExtents;
+   BoxVec2() {}
+   BoxVec2(const Vector2& in_rMin, const Vector2& in_rMax, const bool in_overrideCheck = false);
+   BoxVec2(const F32 &xMin, const F32 &ymin,
+           const F32 &xMax, const F32 &ymax);
+
+   BoxVec2(F32 boxSize);
+
+   void set(const Vector2& in_rMin, const Vector2& in_rMax);
+   void set(const F32 &xMin, const F32 &ymin,
+            const F32 &xMax, const F32 &ymax);
+   void set(const Vector2& in_Length);
+   void setCenter(const Vector2& center);
+   bool isContained(const Vector2& in_rContained) const;
+   bool isOverlapped(const BoxVec2& in_rOverlap) const;
+   bool isContained(const BoxVec2& in_rContain) const;
+
+   /// Returns the length of the x extent.
+   F32 len_x() const { return maxExtents.x - minExtents.x; }
+
+   /// Returns the length of the y extent.
+   F32 len_y() const { return maxExtents.y - minExtents.y; }
+
+   /// Returns the minimum box extent.
+   F32 len_min() const { return getMin(len_x(), len_y()); }
+
+   /// Returns the maximum box extent.
+   F32 len_max() const { return getMax(len_x(), len_y()); }
+
+   /// Returns the diagonal box length.
+   F32 len() const { return (maxExtents - minExtents).len(); }
+
+   /// Returns the length of extent by axis index.
+   ///
+   /// @param axis The axis index of 0 for x, 1 for y
+   ///
+   F32 len(S32 axis) const { return maxExtents[axis] - minExtents[axis]; }
+
+   bool isEmpty() const { return len_x() <= 0.0f || len_y() <= 0.0f; }
+
+   Vector2 getExtents() const { return maxExtents - minExtents; }
+
+
+};
+
+inline BoxVec2::BoxVec2(const Vector2& in_rMin, const Vector2& in_rMax, const bool in_overrideCheck)
+   : minExtents(in_rMin),
+     maxExtents(in_rMax)
+{
+   if (in_overrideCheck == false) {
+      minExtents.setMin(in_rMax);
+      maxExtents.setMax(in_rMin);
+   }
+}
+
+inline BoxVec2::BoxVec2(const F32 &xMin, const F32 &yMin,
+   const F32 &xMax, const F32 &yMax)
+   : minExtents(xMin, yMin),
+     maxExtents(xMax, yMax)
+{
+}
+
+inline BoxVec2::BoxVec2(F32 boxSize)
+   : minExtents(-0.5f * boxSize, -0.5f * boxSize),
+     maxExtents(0.5f * boxSize, 0.5f * boxSize)
+{
+}
+
+inline void BoxVec2::set(const Vector2& in_rMin, const Vector2& in_rMax)
+{
+   minExtents.set(in_rMin);
+   maxExtents.set(in_rMax);
+}
+
+inline void BoxVec2::set(const F32 &xMin, const F32 &yMin,
+                         const F32 &xMax, const F32 &yMax)
+{
+   minExtents.set(xMin, yMin);
+   maxExtents.set(xMax, yMax);
+}
+
+inline void BoxVec2::set(const Vector2& in_Length)
+{
+   minExtents.set(-in_Length.x * 0.5f, -in_Length.y * 0.5f);
+   maxExtents.set(in_Length.x * 0.5f, in_Length.y * 0.5f);
+}
+
+inline void BoxVec2::setCenter(const Vector2& center)
+{
+   F32 halflenx = len_x() * 0.5f;
+   F32 halfleny = len_y() * 0.5f;
+
+   minExtents.set(center.x - halflenx, center.y - halfleny);
+   maxExtents.set(center.x + halflenx, center.y + halfleny);
+}
+
+inline bool BoxVec2::isContained(const Vector2& in_rContained) const
+{
+   return (in_rContained.x >= minExtents.x && in_rContained.x < maxExtents.x) &&
+          (in_rContained.y >= minExtents.y && in_rContained.y < maxExtents.y);
+}
+
+inline bool BoxVec2::isOverlapped(const BoxVec2& in_rOverlap) const
+{
+   if (in_rOverlap.minExtents.x > maxExtents.x ||
+      in_rOverlap.minExtents.y > maxExtents.y)
+      return false;
+   if (in_rOverlap.maxExtents.x < minExtents.x ||
+      in_rOverlap.maxExtents.y < minExtents.y)
+      return false;
+   return true;
+}
+
+inline bool BoxVec2::isContained(const BoxVec2& in_rContained) const
+{
+   return (minExtents.x <= in_rContained.minExtents.x) &&
+          (minExtents.y <= in_rContained.minExtents.y) &&
+          (maxExtents.x >= in_rContained.maxExtents.x) &&
+          (maxExtents.y >= in_rContained.maxExtents.y);
+}
+
 
 #endif // !_VECTOR2_H_
 
