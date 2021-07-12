@@ -23,7 +23,7 @@ IMPLEMENT_CONOBJECT(GuiTS2DCtrl);
 ConsoleDocClass(GuiTS2DCtrl,
    "@brief Abstract base class for controls that render 2D scenes.\n\n"
 
-   "GuiTSCtrl is the base class for controls that render 2D camera views in Torque.  The class itself "
+   "GuiTS2DCtrl is the base class for controls that render 2D camera views in Torque.  The class itself "
    "does not implement a concrete scene rendering.  Use GuiObjectView to display invidiual shapes in "
    "the Gui and GameTS2DCtrl to render full scenes.\n\n"
 
@@ -45,13 +45,20 @@ GuiTS2DCtrl::GuiTS2DCtrl()
    mSaveWorldToScreenScale.set(0, 0);
 
    mLastCameraQuery.cameraMatrix.identity();
+   mLastCameraQuery.cameraMatrix.setColumn(0, Point3F(1.0, 0.0, 0.0));
+   mLastCameraQuery.cameraMatrix.setColumn(1, Point3F(0.0, 0.0, -1.0));
+   mLastCameraQuery.cameraMatrix.setColumn(2, Point3F(0.0, 1.0, 0.0));
+
    mLastCameraQuery.mSourceArea = RectF(0.0f, 0.0f, 10.0f, 10.0f);
    mLastCameraQuery.mCameraZoom = 1.0f;
-   mLastCameraQuery.mCameraAngle = 0.0f;
+   mLastCameraQuery.mCameraAngle = 0;
    mLastCameraQuery.fov = 45.0f;
-   mLastCameraQuery.mSceneMin = Point2F(0.0f, 0.0f);
-   mLastCameraQuery.mSceneMax = Point2F(10.0f, 10.0f);
-   mLastCameraQuery.mSceneWindowScale = Point2F(1.0f, 1.0f);
+   mLastCameraQuery.object = NULL;
+   mLastCameraQuery.ortho = true;
+   mLastCameraQuery.farPlane = 32.0f;
+   mLastCameraQuery.nearPlane = 0.01f;
+   mLastCameraQuery.hasFovPort = false;
+   mLastCameraQuery.hasStereoTargets = false;
 }
 
 void GuiTS2DCtrl::renderWorld(const RectI & updateRect)
@@ -100,7 +107,7 @@ bool GuiTS2DCtrl::project(const Point3F & pt, Point3F * dest) const
 
 bool GuiTS2DCtrl::unproject(const Point3F & pt, Point3F * dest) const
 {
-   MathUtils::mProjectScreenToWorld(pt, dest, mSaveViewport, mSaveModelview, mSaveProjection, 32.0f, 0.0f);
+   MathUtils::mProjectScreenToWorld(pt, dest, mSaveViewport, mSaveModelview, mSaveProjection, mLastCameraQuery.farPlane, mLastCameraQuery.nearPlane);
    return true;
 }
 
@@ -143,11 +150,16 @@ static FovPort CalculateFovPortForCanvas(const RectI viewport, const CameraQuery
 
 }
 
-void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frustum & frustum)
+void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frustum &frustum)
 {
    GFXTransformSaver saver;
    Point2I renderSize = renderViewport.extent;
    GFXTarget *origTarget = GFX->getActiveRenderTarget();
+
+   mLastCameraQuery.cameraMatrix.identity();
+   mLastCameraQuery.cameraMatrix.setColumn(0, Point3F(1.0, 0.0, 0.0));
+   mLastCameraQuery.cameraMatrix.setColumn(1, Point3F(0.0, 0.0, -1.0));
+   mLastCameraQuery.cameraMatrix.setColumn(2, Point3F(0.0, 1.0, 0.0));
 
    if (mLastCameraQuery.mCameraAngle)
    {
@@ -194,7 +206,6 @@ void GuiTS2DCtrl::onRender(Point2I offset, const RectI & updateRect)
 {
 
    GFXTransformSaver saver;
-   bool renderingToTarget = false;
 
    mLastCameraQuery.displayDevice = NULL;
 
@@ -206,6 +217,7 @@ void GuiTS2DCtrl::onRender(Point2I offset, const RectI & updateRect)
       renderChildControls(offset, updateRect);
       return;
    }
+
    if (mLastCameraQuery.displayDevice)
    {
       mLastCameraQuery.displayDevice->setDrawMode(GFXDevice::RS_Standard);
@@ -236,7 +248,7 @@ void GuiTS2DCtrl::onRender(Point2I offset, const RectI & updateRect)
    F32 top = wheight - vscale * (updateRect.point.y - offset.y);
    F32 bottom = wheight - vscale * (updateRect.point.y + updateRect.extent.y - offset.y);
 
-   frustum.set(true, left, right, top, bottom, 0.0f, 32.0f);
+   frustum.set(mLastCameraQuery.ortho, left, right, top, bottom, mLastCameraQuery.nearPlane, mLastCameraQuery.farPlane);
 
    // Manipulate the frustum for tiled screenshots
    const bool screenShotMode = gScreenShot && gScreenShot->isPending();

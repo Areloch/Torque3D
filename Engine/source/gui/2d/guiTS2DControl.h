@@ -21,20 +21,31 @@ class GuiOffscreenCanvas;
 
 struct CameraQuery
 {
-   SimObject* object;
-   RectF mSourceArea;
-   F32 fov;
-   F32 mCameraZoom;
-   F32 mCameraAngle;
-
-   Point2F mSceneMin;
-   Point2F mSceneMax;
-   Point2F mSceneWindowScale;
-
-   MatrixF cameraMatrix;
+   SimObject*  object;
+   F32         nearPlane;
+   F32         farPlane;
+   F32         fov;
+   /// 2d camera vars
+   F32         mCameraAngle;
+   F32         mCameraZoom;
+   RectF         mSourceArea;
+   /// ---- 
+   FovPort     fovPort[2]; // fov for each eye
+   Point3F     eyeOffset[2];
+   MatrixF     eyeTransforms[2];
+   bool        ortho;
+   bool        hasFovPort;
+   bool        hasStereoTargets;
+   MatrixF     cameraMatrix;
+   MatrixF     headMatrix; // center matrix (for HMDs)
+   S32         currentEye;
+   RectI       stereoViewports[2]; // destination viewports
+   GFXTextureTarget* stereoTargets[2];
+   GuiCanvas* drawCanvas; // Canvas we are drawing to. Needed for VR
 
    IDisplayDevice* displayDevice;
 };
+
 
 class GuiTS2DCtrl : public GuiContainer
 {
@@ -105,6 +116,8 @@ public:
    /// Returns the world space point for X, Y and Z.  The ouput
    /// z coord is depth, from 0 to 1
    bool unproject(const Point3F &pt, Point3F *dest) const;
+
+   static const U32& getFrameCount() { return smFrameCount; }
 
    DECLARE_CONOBJECT(GuiTS2DCtrl);
    DECLARE_CATEGORY("Gui 2D");

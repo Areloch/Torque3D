@@ -56,6 +56,7 @@ bool Game2DCtrl::onAdd()
 
 bool Game2DCtrl::processCameraQuery(CameraQuery * query)
 {
+
    GameUpdateCameraFov();
    return GameProcessCameraQuery(query);
 }
