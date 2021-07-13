@@ -25,11 +25,6 @@ struct CameraQuery
    F32         nearPlane;
    F32         farPlane;
    F32         fov;
-   /// 2d camera vars
-   F32         mCameraAngle;
-   F32         mCameraZoom;
-   RectF         mSourceArea;
-   /// ---- 
    FovPort     fovPort[2]; // fov for each eye
    Point3F     eyeOffset[2];
    MatrixF     eyeTransforms[2];
@@ -54,10 +49,13 @@ class GuiTS2DCtrl : public GuiContainer
 protected:
    static U32 smFrameCount;
    static bool smUseLatestDisplayTransform;
-
+   F32            mCameraZRot;
    static Vector<GuiTS2DCtrl*> smAwakeTS2DCtrls;
 
    F32 mReflectPriority;
+
+   F32         mOrthoWidth;
+   F32         mOrthoHeight;
 
    MatrixF     mSaveModelview;
    MatrixF     mSaveProjection;

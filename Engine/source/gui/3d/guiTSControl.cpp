@@ -362,6 +362,10 @@ void GuiTSCtrl::_internalRender(RectI guiViewport, RectI renderViewport, Frustum
    GFXTarget *origTarget = GFX->getActiveRenderTarget();
    S32 origStereoTarget = GFX->getCurrentStereoTarget();
 
+   mLastCameraQuery.cameraMatrix.setColumn(0, Point3F(1.0, 0.0, 0.0));
+   mLastCameraQuery.cameraMatrix.setColumn(1, Point3F(0.0, 0.0, -1.0));
+   mLastCameraQuery.cameraMatrix.setColumn(2, Point3F(0.0, 1.0, 0.0));
+
    if (mForceFOV != 0)
       mLastCameraQuery.fov = mDegToRad(mForceFOV);
 

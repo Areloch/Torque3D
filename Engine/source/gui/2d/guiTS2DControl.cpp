@@ -39,6 +39,7 @@ Vector<GuiTS2DCtrl*> GuiTS2DCtrl::smAwakeTS2DCtrls;
 
 GuiTS2DCtrl::GuiTS2DCtrl()
 {
+   mCameraZRot = 0;
    mReflectPriority = 1.0f;
 
    mSaveModelview.identity();
@@ -48,16 +49,18 @@ GuiTS2DCtrl::GuiTS2DCtrl()
 
    mLastCameraQuery.cameraMatrix.identity();
 
-   mLastCameraQuery.mSourceArea = RectF(0.0f, 0.0f, 10.0f, 10.0f);
-   mLastCameraQuery.mCameraZoom = 1.0f;
-   mLastCameraQuery.mCameraAngle = 0;
    mLastCameraQuery.fov = 45.0f;
    mLastCameraQuery.object = NULL;
-   mLastCameraQuery.ortho = true;
+   
    mLastCameraQuery.farPlane = 32.0f;
    mLastCameraQuery.nearPlane = 0.01f;
+
    mLastCameraQuery.hasFovPort = false;
    mLastCameraQuery.hasStereoTargets = false;
+
+   mLastCameraQuery.ortho = true;
+   mOrthoWidth = 0.1f;
+   mOrthoHeight = 0.1f;
 }
 
 void GuiTS2DCtrl::renderWorld(const RectI & updateRect)
@@ -136,8 +139,16 @@ static FovPort CalculateFovPortForCanvas(const RectI viewport, const CameraQuery
    F32 renderHeight = viewport.extent.y;
    F32 aspectRatio = renderWidth / renderHeight;
 
-   wheight = cameraQuery.fov;
-   wwidth = aspectRatio * wheight;
+   if (!cameraQuery.ortho)
+   {
+      wheight = /*cameraQuery.nearPlane * */ mTan(cameraQuery.fov / 2.0f);
+      wwidth = aspectRatio * wheight;
+   }
+   else
+   {
+      wheight = cameraQuery.fov;
+      wwidth = aspectRatio * wheight;
+   }
 
    F32 hscale = wwidth * 2.0f / renderWidth;
    F32 vscale = wheight * 2.0f / renderHeight;
@@ -162,10 +173,15 @@ void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frust
    GFXTransformSaver saver;
    Point2I renderSize = renderViewport.extent;
    GFXTarget *origTarget = GFX->getActiveRenderTarget();
+   S32 origStereoTarget = GFX->getCurrentStereoTarget();
 
-   if (mLastCameraQuery.mCameraAngle)
+   mLastCameraQuery.cameraMatrix.setColumn(0, Point3F(1.0, 0.0, 0.0));
+   mLastCameraQuery.cameraMatrix.setColumn(1, Point3F(0.0, 0.0, -1.0));
+   mLastCameraQuery.cameraMatrix.setColumn(2, Point3F(0.0, 1.0, 0.0));
+
+   if (mCameraZRot)
    {
-      MatrixF rotMat(EulerF(0, 0, mDegToRad(mLastCameraQuery.mCameraAngle)));
+      MatrixF rotMat(EulerF(0, 0, mDegToRad(mCameraZRot)));
       mLastCameraQuery.cameraMatrix.mul(rotMat);
    }
 
@@ -183,6 +199,7 @@ void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frust
    }
 
    GFX->setActiveRenderTarget(origTarget);
+   GFX->setCurrentStereoTarget(origStereoTarget);
    GFX->setViewport(renderViewport);
    // Clear the zBuffer so GUI doesn't hose object rendering accidentally
    GFX->clear(GFXClearZBuffer, ColorI(20, 20, 20), 1.0f, 0);
@@ -190,11 +207,13 @@ void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frust
    GFX->setFrustum(frustum);
    mSaveProjection = GFX->getProjectionMatrix();
 
-   gClientSceneGraph->setDisplayTargetResolution(renderSize);
+   if (mLastCameraQuery.ortho)
+   {
+      mOrthoWidth = frustum.getWidth();
+      mOrthoHeight = frustum.getHeight();
+   }
 
-   mLastCameraQuery.cameraMatrix.setColumn(0, Point3F(1.0, 0.0, 0.0));
-   mLastCameraQuery.cameraMatrix.setColumn(1, Point3F(0.0, 0.0, -1.0));
-   mLastCameraQuery.cameraMatrix.setColumn(2, Point3F(0.0, 1.0, 0.0));
+   gClientSceneGraph->setDisplayTargetResolution(renderSize);
 
    MatrixF worldToCamera = mLastCameraQuery.cameraMatrix;
    worldToCamera.inverse();
@@ -253,7 +272,7 @@ F32 GuiTS2DCtrl::calculateViewDistance(F32 radius)
 }
 
 
-void GuiTS2DCtrl::onRender(Point2I offset, const RectI & updateRect)
+void GuiTS2DCtrl::onRender(Point2I offset, const RectI &updateRect)
 {
 
    GFXTransformSaver saver;
@@ -272,6 +291,12 @@ void GuiTS2DCtrl::onRender(Point2I offset, const RectI & updateRect)
    if (mLastCameraQuery.displayDevice)
    {
       mLastCameraQuery.displayDevice->setDrawMode(GFXDevice::RS_Standard);
+
+      mLastCameraQuery.displayDevice->getStereoViewports(mLastCameraQuery.stereoViewports);
+      mLastCameraQuery.displayDevice->getStereoTargets(mLastCameraQuery.stereoTargets);
+
+      mLastCameraQuery.hasStereoTargets = mLastCameraQuery.stereoTargets[0];
+
    }
 
    GFXTargetRef origTarget = GFX->getActiveRenderTarget();
@@ -290,8 +315,16 @@ void GuiTS2DCtrl::onRender(Point2I offset, const RectI & updateRect)
    F32 renderHeight = F32(renderSize.y);
    F32 aspectRatio = renderWidth / renderHeight;
 
-   wheight = mLastCameraQuery.fov;
-   wwidth = aspectRatio * wheight;
+   if (!mLastCameraQuery.ortho)
+   {
+      wheight = mLastCameraQuery.nearPlane * mTan(mLastCameraQuery.fov / 2.0f);
+      wwidth = aspectRatio * wheight;
+   }
+   else
+   {
+      wheight = mLastCameraQuery.fov;
+      wwidth = aspectRatio * wheight;
+   }
 
    F32 hscale = wwidth * 2.0f / renderWidth;
    F32 vscale = wheight * 2.0f / renderHeight;

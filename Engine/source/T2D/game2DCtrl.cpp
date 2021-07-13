@@ -27,7 +27,7 @@ void Game2DCtrl::makeScriptCall(const char * func, const GuiEvent & evt) const
    char *wp = Con::getArgBuffer(32);
    Point3F camPos;
    mLastCameraQuery.cameraMatrix.getColumn(3, &camPos);
-   dSprintf(wp, 32, "%g %g", camPos.x, camPos.y);
+   dSprintf(wp, 32, "%g %g %g", camPos.x, camPos.y, camPos.z);
 
    // write click vector
    char *vec = Con::getArgBuffer(32);
@@ -56,7 +56,6 @@ bool Game2DCtrl::onAdd()
 
 bool Game2DCtrl::processCameraQuery(CameraQuery * query)
 {
-
    GameUpdateCameraFov();
    return GameProcessCameraQuery(query);
 }
