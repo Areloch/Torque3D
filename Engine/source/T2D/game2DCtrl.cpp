@@ -62,6 +62,8 @@ bool Game2DCtrl::processCameraQuery(CameraQuery * query)
 
 void Game2DCtrl::renderWorld(const RectI & updateRect)
 {
+   /// this is where we hijack this call for 2d scene rendering.
+   /// remove gameRenderWorld for a different render stack for 2dScenes.
    GameRenderWorld();
 }
 

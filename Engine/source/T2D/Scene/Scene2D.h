@@ -19,25 +19,30 @@
 
 ///-----------------------------------------------------------------------------
 
+class SceneObject2D;
+class Game2DCtrl;
+
+///-----------------------------------------------------------------------------
+
 struct TickContact
 {
    TickContact()
    {
-      initialize(NULL, NULL, NULL); //NULL, NULL);
+      initialize(NULL, NULL, NULL, NULL, NULL);
    }
 
    void initialize(
       b2Contact*      pContact,
-      //SceneObject*    pSceneObjectA,
-      //SceneObject*    pSceneObjectB,
+      SceneObject2D*  pSceneObjectA,
+      SceneObject2D*  pSceneObjectB,
       b2Fixture*      pFixtureA,
       b2Fixture*      pFixtureB)
    {
-      mpContact = pContact;
-      //mpSceneObjectA = pSceneObjectA;
-      //mpSceneObjectB = pSceneObjectB;
-      mpFixtureA = pFixtureA;
-      mpFixtureB = pFixtureB;
+      mpContact      = pContact;
+      mpSceneObjectA = pSceneObjectA;
+      mpSceneObjectB = pSceneObjectB;
+      mpFixtureA     = pFixtureA;
+      mpFixtureB     = pFixtureB;
 
       // Get world manifold. 
       if (mpContact != NULL)
@@ -58,10 +63,10 @@ struct TickContact
       }
    }
 
-   //inline SceneObject* getCollideWith(SceneObject* pMe) const
-   //{
-   //   return pMe == mpSceneObjectA ? mpSceneObjectB : mpSceneObjectA;
-   //}
+   inline SceneObject2D* getCollideWith(SceneObject2D* pMe) const
+   {
+      return pMe == mpSceneObjectA ? mpSceneObjectB : mpSceneObjectA;
+   }
 
    inline b2Fixture* getCollideWithFixture(b2Fixture* pMe) const
    {
@@ -69,8 +74,8 @@ struct TickContact
    }
 
    b2Contact*      mpContact;
-   //SceneObject*    mpSceneObjectA;
-   //SceneObject*    mpSceneObjectB;
+   SceneObject2D*  mpSceneObjectA;
+   SceneObject2D*  mpSceneObjectB;
    b2Fixture*      mpFixtureA;
    b2Fixture*      mpFixtureB;
    U32             mPointCount;
@@ -99,6 +104,7 @@ public:
    Scene2D();
    ~Scene2D();
 
+   /// SimObject
    virtual bool   onAdd();
    virtual void   onRemove();
    virtual void   onDeleteNotify(SimObject* object);
