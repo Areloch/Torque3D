@@ -17,9 +17,9 @@ IMPLEMENT_CONOBJECT(BehaviorTemplate);
 //-----------------------------------------------------------------------------
 
 BehaviorTemplate::BehaviorTemplate() :
-   mFriendlyName(StringTable->EmptyString),
-   mDescription(StringTable->EmptyString),
-   mBehaviorType(StringTable->EmptyString)
+   mFriendlyName(StringTable->EmptyString()),
+   mDescription(StringTable->EmptyString()),
+   mBehaviorType(StringTable->EmptyString())
 {
 }
 
@@ -136,7 +136,7 @@ bool BehaviorTemplate::addBehaviorInput(const char* name, const char* label, con
    return true;
 }
 
-DefineEngineMethod(BehaviorTemplate, createInstance, U32, (), ,
+DefineEngineMethod(BehaviorTemplate, createInstance, S32, (), ,
    "Creates a behavior instance from this template")
 {
    BehaviorInstance* inst = object->createInstance();
@@ -157,48 +157,48 @@ DefineEngineStringlyVariadicMethod(BehaviorTemplate, addBehvaiorFeld, bool, 5, 7
    return object->addBehaviorField(argv[2], argv[3], argv[4], defValue, typeInfo);
 }
 
-DefineEngineMethod(BehaviorTemplate, getBehaviorFieldCount, U32, (), ,
+DefineEngineMethod(BehaviorTemplate, getBehaviorFieldCount, S32, (), ,
    "Return number of fields in this Template.\n")
 {
    return object->getBehaviorFieldCount();
 }
 
-DefineEngineMethod(BehaviorTemplate, getBehaviorField, char*, (U32 id), ,
+DefineEngineMethod(BehaviorTemplate, getBehaviorField, const char*, (U32 id), ,
    "Returns the field for this index.\n")
 {
    BehaviorTemplate::BehaviorField* pField = object->getBehaviorField(id);
    if (!pField)
    {
       Con::warnf("getBehaviorField() - index out of range");
-      return StringTable->EmptyString;
+      return StringTable->EmptyString();
    }
 
-   char* buff = Con::getReturnBuffer(1024);
+   char* buff;
    dSprintf(buff, 1024, "%s %s %s", pField->mName, pField->mType, pField->mDefaultValue);
    return buff;
 }
 
-DefineEngineMethod(BehaviorTemplate, getBehaviorFieldUserData, String, (U32 id), ,
+DefineEngineMethod(BehaviorTemplate, getBehaviorFieldUserData, const char*, (U32 id), ,
    "Return user data for particular field.\n")
 {
    BehaviorTemplate::BehaviorField* pField = object->getBehaviorField(id);
    if (!pField)
    {
       Con::warnf("getBehaviorField() - index out of range");
-      return StringTable->EmptyString;
+      return StringTable->EmptyString();
    }
 
    return pField->mUserData;
 }
 
-DefineEngineMethod(BehaviorTemplate, getBehaviorFieldDescription, String, (U32 id), ,
+DefineEngineMethod(BehaviorTemplate, getBehaviorFieldDescription, const char*, (U32 id), ,
    "Return description for particular field.\n")
 {
    BehaviorTemplate::BehaviorField* pField = object->getBehaviorField(id);
    if (!pField)
    {
       Con::warnf("getBehaviorField() - index out of range");
-      return StringTable->EmptyString;
+      return StringTable->EmptyString();
    }
 
    return pField->mDescription ? pField->mDescription : "no description set" ;
@@ -211,23 +211,23 @@ DefineEngineStringlyVariadicMethod(BehaviorTemplate, addBehaviorOutput, bool, 5,
    return object->addBehaviorOutput(argv[2], argv[3], argv[4]);
 }
 
-DefineEngineMethod(BehaviorTemplate, getBehaviorOutputCount, U32, (), ,
+DefineEngineMethod(BehaviorTemplate, getBehaviorOutputCount, S32, (), ,
    "Return number of outputs in this Template.\n")
 {
    return object->getBehaviorOutputCount();
 }
 
-DefineEngineMethod(BehaviorTemplate, getBehaviorOutput, char*, (U32 id), ,
+DefineEngineMethod(BehaviorTemplate, getBehaviorOutput, const char*, (U32 id), ,
    "Returns the output for this index.\n")
 {
    BehaviorTemplate::BehaviorPortOutput* pOut = object->getBehaviourOutput(id);
    if (!pOut)
    {
       Con::warnf("getBehaviorOutput() - index out of range");
-      return StringTable->EmptyString;
+      return StringTable->EmptyString();
    }
 
-   char* buff = Con::getReturnBuffer(1024);
+   char* buff;
    dSprintf(buff, 1024, "%s %s %s", pOut->mName, pOut->mLabel, pOut->mDescription);
    return buff;
 }
@@ -245,23 +245,23 @@ DefineEngineStringlyVariadicMethod(BehaviorTemplate, addBehaviorInput, bool, 5, 
    return object->addBehaviorInput(argv[2], argv[3], argv[4]);
 }
 
-DefineEngineMethod(BehaviorTemplate, getBehaviorInputCount, U32, (), ,
+DefineEngineMethod(BehaviorTemplate, getBehaviorInputCount, S32, (), ,
    "Return number of inputs in this Template.\n")
 {
    return object->getBehaviorInputCount();
 }
 
-DefineEngineMethod(BehaviorTemplate, getBehaviorInput, char*, (U32 id), ,
+DefineEngineMethod(BehaviorTemplate, getBehaviorInput, const char*, (U32 id), ,
    "Returns the input for this index.\n")
 {
    BehaviorTemplate::BehaviorPortInput* pIn = object->getBehaviourInput(id);
    if (!pIn)
    {
       Con::warnf("getBehaviorInput() - index out of range");
-      return StringTable->EmptyString;
+      return StringTable->EmptyString();
    }
 
-   char* buff = Con::getReturnBuffer(1024);
+   char* buff;
    dSprintf(buff, 1024, "%s %s %s", pIn->mName, pIn->mLabel, pIn->mDescription);
    return buff;
 }
@@ -440,7 +440,7 @@ bool BehaviorComponent::addBehavior(BehaviorInstance* bi)
    bi->setBehaviorId(mMasterBehaviorId++);
 
    if (bi->isMethod("onBehaviorAdd"))
-      Con::executef(bi, 1, "onBehaviorAdd");
+      Con::executef(bi, "onBehaviorAdd");
 
    return true;
 }
@@ -457,7 +457,7 @@ bool BehaviorComponent::removeBehavior(BehaviorInstance *bi, bool deleteBehavior
 
          // Perform callback if allowed.
          if (bi->isProperlyAdded() && bi->isMethod("onBehaviorRemove"))
-            Con::executef(bi, 1, "onBehaviorRemove");
+            Con::executef(bi, "onBehaviorRemove");
 
          // Destroy any output connections.
          destroyBehaviorOutputConnections(bi);
@@ -925,7 +925,7 @@ bool BehaviorComponent::raise(BehaviorInstance* pOutputBehavior, StringTableEntr
 
    // Execute a callback for the output.
    // NOTE: This callback should not delete behaviors otherwise strange things can happen!
-   Con::executef(this, 2, pOutputName, pOutputBehavior->getIdString());
+   Con::executef(this, pOutputName, pOutputBehavior->getIdString());
 
    // Find behavior instance connections.
    typeInstanceConnectionHash::iterator instanceItr = mBehaviorConnections.find(pOutputBehavior->getId());
@@ -972,7 +972,7 @@ bool BehaviorComponent::raise(BehaviorInstance* pOutputBehavior, StringTableEntr
 #endif
       // Execute a callback for the input.
       // NOTE: This callback should not delete behaviors otherwise strange things can happen!
-      Con::executef(pInputBehavior, 3, pInputName, pOutputBehavior->getIdString(), pOutputName);
+      Con::executef(pInputBehavior, pInputName, pOutputBehavior->getIdString(), pOutputName);
    }
 
    return true;
@@ -1309,18 +1309,19 @@ DefineEngineMethod(BehaviorComponent, removeBehavior, bool, (BehaviorInstance* b
 }
 
 DefineEngineMethod(BehaviorComponent, clearBehaviors, void, (), ,
-   "Clear behaviors from this component")
+   "Clear behaviors from this component.\n")
 {
    object->clearBehaviors();
 }
 
-DefineEngineMethod(BehaviorComponent, getBehaviorCount, U32, (), ,
+DefineEngineMethod(BehaviorComponent, getBehaviorCount, S32,(),,
    "Return behavior count for this component.\n")
 {
    return object->getBehaviorCount();
 }
 
-DefineEngineMethod(BehaviorComponent, getBehavior, U32, (StringTableEntry btName), ,
+
+DefineEngineMethod(BehaviorComponent, getBehavior, S32, (StringTableEntry btName), ,
    "Return the BehaviorInstance ID with (name).\n")
 {
    BehaviorInstance* pBinst = object->getBehavior(btName);
@@ -1328,13 +1329,14 @@ DefineEngineMethod(BehaviorComponent, getBehavior, U32, (StringTableEntry btName
    return pBinst ? pBinst->getId() : -1;
 }
 
-DefineEngineMethod(BehaviorComponent, getBehaviorByID, U32, (U32 id), ,
+DefineEngineMethod(BehaviorComponent, getBehaviorByID, S32, (U32 id), ,
    "Return the BehaviorInstance ID by (ID).\n")
 {
    BehaviorInstance* pBinst = object->getBehavior(id);
 
    return pBinst ? pBinst->getId() : -1;
 }
+
 
 DefineEngineMethod(BehaviorComponent, connect, bool, (U32 outputId, U32 inputId, StringTableEntry outputName, StringTableEntry inputName), ,
    "Connects (outputName) on Behavior(outputID) to Behavior(inputId) (inputname).\n")
@@ -1398,7 +1400,8 @@ DefineEngineMethod(BehaviorComponent, raise, bool, (U32 outputId, StringTableEnt
 
 }
 
-DefineEngineMethod(BehaviorComponent, getBehaviorConnectionCount, U32, (U32 outputId, StringTableEntry outputName), ,
+
+DefineEngineMethod(BehaviorComponent, getBehaviorConnectionCount, S32, (U32 outputId, StringTableEntry outputName), ,
    "Returns output count for behavior(outputID) output(outputName).\n")
 {
    BehaviorInstance* pOutBeh = dynamic_cast<BehaviorInstance*>(Sim::findObject(outputId));
@@ -1412,14 +1415,14 @@ DefineEngineMethod(BehaviorComponent, getBehaviorConnectionCount, U32, (U32 outp
 
 }
 
-DefineEngineMethod(BehaviorComponent, getBehaviorConnection, char*, (U32 outputId, StringTableEntry outputName, U32 id), ,
+DefineEngineMethod(BehaviorComponent, getBehaviorConnection, const char*, (U32 outputId, StringTableEntry outputName, U32 id), ,
    "Returns output count for behavior(outputID) output(outputName).\n")
 {
    BehaviorInstance* pOutBeh = dynamic_cast<BehaviorInstance*>(Sim::findObject(outputId));
    if (!pOutBeh)
    {
       Con::warnf("getBehaviorConnection - Could not find output behavior id");
-      return StringTable->EmptyString;
+      return StringTable->EmptyString();
    }
 
    const BehaviorComponent::BehaviorPortConnection* pBehConn = object->getBehaviorConnection(pOutBeh, outputName, id);
@@ -1427,10 +1430,10 @@ DefineEngineMethod(BehaviorComponent, getBehaviorConnection, char*, (U32 outputI
    if (!pBehConn)
    {
       Con::warnf("getBehaviorConnection - Could not find connection id");
-      return StringTable->EmptyString;
+      return StringTable->EmptyString();
    }
 
-   char* buff = Con::getReturnBuffer(1024);
+   char* buff;
    dSprintf(buff, 1024, "%d %d %s %s",
       pBehConn->mOutputInstance->getId(),
       pBehConn->mInputInstance->getId(),
@@ -1518,11 +1521,11 @@ const char* BehaviorInstance::getTemplate(void* obj, const char* data)
    return static_cast<BehaviorInstance*>(obj)->getTemplate()->getIdString();
 }
 
-DefineEngineMethod(BehaviorInstance, getTemplateName, char, (), ,
+DefineEngineMethod(BehaviorInstance, getTemplateName, const char*, (), ,
    "Returns template name this BehaviorInstance is using.\n")
 {
    const char* nName = object->getTemplateName();
-   return nName ? nName : StringTable->EmptyString;
+   return nName ? nName : StringTable->EmptyString();
 }
 
 DefineEngineFunction(copyBehaviorToComponent, bool, (U32 bId, U32 cId), ,
@@ -1559,4 +1562,5 @@ DefineEngineFunction(copyBehaviorToComponent, bool, (U32 bId, U32 cId), ,
    return true;
 
 }
+
 

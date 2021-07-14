@@ -31,13 +31,22 @@ class BehaviorTemplate : public SimObject
 public:
    struct BehaviorField
    {
+      BehaviorField()
+      {
+         mName = StringTable->EmptyString();
+         mDescription = StringTable->EmptyString();
+         mType = StringTable->EmptyString();
+         mDefaultValue = StringTable->EmptyString();
+         mUserData = StringTable->EmptyString();
+      }
+
       BehaviorField(const char* name, const char* description, const char* type, const char* defaultValue, const char* userData)
       {
-         mName = name ? StringTable->insert(name) : StringTable->EmptyString;;
-         mDescription = description ? StringTable->insert(description) : StringTable->EmptyString;
-         mType = type ? StringTable->insert(type) : StringTable->EmptyString;
-         mDefaultValue = defaultValue ? StringTable->insert(defaultValue) : StringTable->EmptyString;
-         mUserData = userData ? StringTable->insert(userData) : StringTable->EmptyString;
+         mName = name ? StringTable->insert(name) : StringTable->EmptyString();
+         mDescription = description ? StringTable->insert(description) : StringTable->EmptyString();
+         mType = type ? StringTable->insert(type) : StringTable->EmptyString();
+         mDefaultValue = defaultValue ? StringTable->insert(defaultValue) : StringTable->EmptyString();
+         mUserData = userData ? StringTable->insert(userData) : StringTable->EmptyString();
       }
 
       StringTableEntry mName;
@@ -52,9 +61,9 @@ public:
    {
       BehaviorPort(const char* name, const char* label, const char* description)
       {
-         mName = name ? StringTable->insert(name) : StringTable->EmptyString;
-         mLabel = label ? StringTable->insert(label) : StringTable->EmptyString;
-         mDescription = description ? StringTable->insert(description) : StringTable->EmptyString;
+         mName = name ? StringTable->insert(name) : StringTable->EmptyString();
+         mLabel = label ? StringTable->insert(label) : StringTable->EmptyString();
+         mDescription = description ? StringTable->insert(description) : StringTable->EmptyString();
       }
 
       StringTableEntry mName;
@@ -65,15 +74,26 @@ public:
    /// A behavior port that accepts input.
    struct BehaviorPortInput : public BehaviorPort
    {
-      BehaviorPortInput(const char* name, const char* label, const char* description) :
-         BehaviorPort(name, label, description)
+      BehaviorPortInput()
+         : BehaviorPort(StringTable->EmptyString(), StringTable->EmptyString(), StringTable->EmptyString())
       {
       }
+
+      BehaviorPortInput(const char* name, const char* label, const char* description)
+         : BehaviorPort(name, label, description)
+      {
+      }
+
    };
 
    /// A behavior port that raises an output.
    struct BehaviorPortOutput : public BehaviorPort
    {
+      BehaviorPortOutput()
+         : BehaviorPort(StringTable->EmptyString(), StringTable->EmptyString(), StringTable->EmptyString())
+      {
+      }
+
       BehaviorPortOutput(const char* name, const char* label, const char* description) :
          BehaviorPort(name, label, description)
       {
@@ -166,7 +186,7 @@ protected:
    Vector<BehaviorPortInput> mPortInputs;
    Vector<BehaviorPortOutput> mPortOutputs;
 
-   static bool setDescription(void *obj, const char *array, const char *data) { static_cast<BehaviorTemplate *>(obj)->mDescription = data ? StringTable->insert(data) : StringTable->EmptyString; return false; }
+   static bool setDescription(void *obj, const char *array, const char *data) { static_cast<BehaviorTemplate *>(obj)->mDescription = data ? StringTable->insert(data) : StringTable->EmptyString(); return false; }
    static const char* getDescription(void *obj, const char *data) { return static_cast<BehaviorTemplate *>(obj)->getDescription(); }
 
 };
@@ -187,6 +207,14 @@ public:
    /// A behavior port connection.
    struct BehaviorPortConnection
    {
+      BehaviorPortConnection()
+      {
+         mOutputInstance = NULL;
+         mInputInstance = NULL;
+         mOutputName = StringTable->EmptyString();
+         mInputName = StringTable->EmptyString();
+      }
+
       BehaviorPortConnection(
          BehaviorInstance* pOutputBehavior,
          BehaviorInstance* pInputBehavior,

@@ -9,6 +9,10 @@
 #include "console/sim.h"
 #endif
 
+#ifndef _SIMBASE_H_
+#include "console/simBase.h"
+#endif
+
 #ifndef _STREAM_H_
 #include "core/stream/stream.h"
 #endif // !_STREAM_H_
@@ -55,9 +59,6 @@ protected:
    }
 
 public:
-
-   bool onComponentAdd(SimComponent * target);
-   void onComponentRemove(SimComponent * target);
 
    SimComponent();
    virtual ~SimComponent();

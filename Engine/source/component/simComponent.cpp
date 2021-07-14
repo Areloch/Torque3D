@@ -2,6 +2,8 @@
 #include "console/sim.h"
 #include "console/engineAPI.h"
 #include "console/consoleTypes.h"
+#include "console/console.h"
+#include "console/simDictionary.h"
 #include "component/simComponent.h"
 #include "core/stream/stream.h"
 
@@ -13,7 +15,7 @@ IMPLEMENT_CONOBJECT(SimComponent);
 
 bool SimComponent::onComponentAdd(SimComponent *target)
 {
-   Con::executef(this, 2, "onComponentAdd", Con::getIntArg(target->getId()));
+   Con::executef(this, "onComponentAdd", Con::getIntArg(target->getId()));
    return true;
 }
 
@@ -21,7 +23,7 @@ bool SimComponent::onComponentAdd(SimComponent *target)
 
 void SimComponent::onComponentRemove(SimComponent *target)
 {
-   Con::executef(this, 2, "onComponentRemove", Con::getIntArg(target->getId()));
+   Con::executef(this, "onComponentRemove", Con::getIntArg(target->getId()));
 }
 
 //-----------------------------------------------------------------------------
@@ -345,7 +347,7 @@ DefineEngineMethod(SimComponent, removeComponent, void, (SimComponent* sCom), ,
 
 }
 
-DefineEngineMethod(SimComponent, getComponentCount, U32, (), ,
+DefineEngineMethod(SimComponent, getComponentCount, S32, (), ,
    "Get the component count.\n")
 {
    return object->getComponentCount();
