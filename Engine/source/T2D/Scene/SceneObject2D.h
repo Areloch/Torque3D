@@ -23,7 +23,12 @@
 
 #ifndef _ASSET_PTR_H_
 #include "assets/assetPtr.h"
-#endif 
+#endif
+
+#ifndef _BEHAVIORCOMPONENT_H_
+#include "component/behaviors/behaviorComponent.h"
+#endif
+
 
 #ifndef _PROCESSLIST_H_
 #include "T3D/gameBase/processList.h"
@@ -35,13 +40,11 @@ typedef VectorPtr<b2FixtureDef*> typeCollisionFixtureDefVector;
 typedef VectorPtr<b2Fixture*> typeCollisionFixtureVector;
 
 extern EnumTable bodyTypeTable;
-extern EnumTable srcBlendFactorTable;
-extern EnumTable dstBlendFactorTable;
 
-class SceneObject2D : public NetObject, public ProcessObject
+class SceneObject2D : public BehaviorComponent
 {
 public:
-   typedef NetObject Parent;
+   typedef BehaviorComponent Parent;
 
    /// Networking dirty mask.
    enum SceneObject2DMasks
@@ -49,50 +52,94 @@ public:
       InitialUpdateMask = BIT(0),
       ScaleMask = BIT(1),
       FlagMask = BIT(2),
-      MountedMask = BIT(3),
+      MoveMask = BIT(3),
       NextFreeMask = BIT(4)
    };
 
-protected:
+public:
 
-   SimObjectPtr< SceneObject2D > mAfterObject;
-   SimObjectPtr< Scene2D > mpScene;
-   SimObjectPtr< Scene2D > mpTargetScene;
-
+   /// these need to be accessed by other classes
    /// Lifetime.
+   Scene2D* mpScene;
    F32                     mLifetime;
    bool                    mLifetimeActive;
 
+   /// Collision handling
+   b2Body*                 mpBody;
+   b2BodyDef               mpBodyDef;
+   bool                    mCollisionSuppress;
+   bool                    mCollisionOneWay;
+   U32                     mCollisionMask;
+
+   Vector2                 mPosition;
+   F32                     mAng;
+
+   ///
+   MatrixF                 mObjToWorld;
+   MatrixF                 mWorldToObj;
+   MatrixF                 mRenderObjToWorld;
+   MatrixF                 mRenderWorldToObj;
+   Vector2                 mObjScale;
+   BoxVec2                 mObjBox;
+   BoxVec2                 mWorldBox;
+   BoxVec2                 mRenderWorldBox;
    /// Scene layers.
    U32                     mSceneLayer;
    U32                     mSceneLayerMask;
    F32                     mSceneLayerDepth;
 
-public:
    SceneObject2D();
    virtual ~SceneObject2D();
 
-   // ProcessObject,
-   ProcessList* getProcessList() const;
-   virtual void processAfter(ProcessObject *obj);
-   virtual void clearProcessAfter();
-   virtual ProcessObject* getAfterObject() const { return mAfterObject; }
-   virtual void setProcessTick(bool t);
+   void addToScene();
+   void removeFromScene();
+
+   Scene2D* getScene() const { return mpScene; }
+
+   virtual bool onScene2DAdd();
+   virtual void onSceneRemove();
+
+   virtual void prepRenderImage() {};
 
    // NetObject.
    virtual U32 packUpdate(NetConnection* conn, U32 mask, BitStream* stream);
    virtual void unpackUpdate(NetConnection* conn, BitStream* stream);
+
    virtual void onCameraScopeQuery(NetConnection* connection, CameraScopeQuery* query);
 
    // SimObject.
    virtual bool onAdd();
+   
    virtual void onRemove();
    virtual void onDeleteNotify(SimObject *object);
    virtual void inspectPostApply();
    virtual bool writeField(StringTableEntry fieldName, const char* value);
 
+   /// scene ticking
+   /// updates sent from scene.
+   virtual void   interpolateTick(F32 delta);
+   virtual void   processTick();
+   virtual void   advanceTime(F32 timeDelta) {};
+
+   virtual void prepRenderImage(SceneRenderState *state) {}
+
    static void initPersistFields();
 
+   const BoxVec2& getObjBox() const { return mObjBox; }
+   const BoxVec2& getWorldBox() const { return mWorldBox; }
+   virtual const MatrixF& getTransform() const { return mObjToWorld; }
+
+   void resetWorldBox();
+   void resetRenderWorldBox();
+   void resetObjectBox();
+
+   void setPosition(const Vector2 &pos);
+   void setAngle(const F32 &ang);
+   void setScale(const Vector2 &scale);
+
+   void setTransform(const MatrixF& mat);
+   void setRenderTransform(const MatrixF & mat);
+   
 
    DECLARE_CONOBJECT(SceneObject2D);
 };

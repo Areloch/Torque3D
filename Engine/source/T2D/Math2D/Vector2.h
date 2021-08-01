@@ -232,6 +232,9 @@ public:
    bool isOverlapped(const BoxVec2& in_rOverlap) const;
    bool isContained(const BoxVec2& in_rContain) const;
 
+   bool isValidBox2D() const { return  (minExtents.x <= maxExtents.x) &&
+                                       (minExtents.y <= maxExtents.y); }
+   
    /// Returns the length of the x extent.
    F32 len_x() const { return maxExtents.x - minExtents.x; }
 

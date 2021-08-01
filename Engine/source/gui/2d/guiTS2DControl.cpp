@@ -3,11 +3,13 @@
 #include "gui/core/guiOffscreenCanvas.h"
 #include "console/engineAPI.h"
 #include "scene/sceneManager.h"
+#include "T2D/Scene/Scene2D.h"
 #include "lighting/lightManager.h"
 #include "gfx/sim/debugDraw.h"
 #include "gfx/gfxTransformSaver.h"
 #include "gfx/screenshot.h"
 #include "math/mathUtils.h"
+#include "T2D/Math2D/Vector2.h"
 #include "gui/core/guiCanvas.h"
 #include "scene/reflectionManager.h"
 #include "postFx/postEffectManager.h"
@@ -31,7 +33,6 @@ ConsoleDocClass(GuiTS2DCtrl,
    "@see GuiObjectView\n"
    "@ingroup Gui2D\n"
 );
-
 
 U32 GuiTS2DCtrl::smFrameCount = 0;
 bool GuiTS2DCtrl::smUseLatestDisplayTransform = true;
@@ -59,6 +60,9 @@ GuiTS2DCtrl::GuiTS2DCtrl()
    mLastCameraQuery.hasStereoTargets = false;
 
    mLastCameraQuery.ortho = true;
+   mLastCameraQuery.mCamSize.set(16.0f, 9.0f);
+   mLastCameraQuery.mCamArea.set(0.0f, 0.0f, 0.0f, 0.0f);
+
    mOrthoWidth = 0.1f;
    mOrthoHeight = 0.1f;
 }
@@ -82,9 +86,9 @@ void GuiTS2DCtrl::initPersistFields()
 
 void GuiTS2DCtrl::consoleInit()
 {
-   Con::addVariable("$TSControl::frameCount", TypeS32, &smFrameCount, "The number of frames that have been rendered since this control was created.\n"
+   Con::addVariable("$TS2DControl::frameCount", TypeS32, &smFrameCount, "The number of frames that have been rendered since this control was created.\n"
       "@ingroup Rendering\n");
-   Con::addVariable("$TSControl::useLatestDisplayTransform", TypeBool, &smUseLatestDisplayTransform, "Use the latest view transform when rendering stereo instead of the one calculated by the last move.\n"
+   Con::addVariable("$TS2DControl::useLatestDisplayTransform", TypeBool, &smUseLatestDisplayTransform, "Use the latest view transform when rendering stereo instead of the one calculated by the last move.\n"
       "@ingroup Rendering\n");
 }
 
@@ -213,7 +217,8 @@ void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frust
       mOrthoHeight = frustum.getHeight();
    }
 
-   gClientSceneGraph->setDisplayTargetResolution(renderSize);
+   /// not needed
+   //gClientSceneGraph->setDisplayTargetResolution(renderSize);
 
    MatrixF worldToCamera = mLastCameraQuery.cameraMatrix;
    worldToCamera.inverse();
@@ -226,7 +231,8 @@ void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frust
    mSaveFrustum = GFX->getFrustum();
    mSaveFrustum.setTransform(mLastCameraQuery.cameraMatrix);
 
-   gClientSceneGraph->setNonClipProjection(mSaveProjection);
+   /// not needed
+   //gClientSceneGraph->setNonClipProjection(mSaveProjection);
    PFXMGR->setFrameMatrices(mSaveModelview, mSaveProjection);
 
    renderWorld(guiViewPort);

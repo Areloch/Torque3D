@@ -8,6 +8,10 @@
 #include "math/mMath.h"
 #endif
 
+#ifndef _VECTOR2_H_
+#include "T2D/Math2D/Vector2.h"
+#endif // !_VECTOR2_H_
+
 #ifndef _MATTEXTURETARGET_H_
 #include "materials/matTextureTarget.h"
 #endif
@@ -18,6 +22,17 @@
 
 class IDisplayDevice;
 class GuiOffscreenCanvas;
+
+//-----------------------------------------------------------------------------
+// Miscellaneous Defines.
+//-----------------------------------------------------------------------------
+/// Seems as good a place as any for these, keeps them out of 3d
+
+#define MASK_ALL                        (U32_MAX)
+#define MASK_BITCOUNT                   (32)
+#define MAX_LAYERS_SUPPORTED            (32)
+
+//-----------------------------------------------------------------------------
 
 struct CameraQuery
 {
@@ -37,6 +52,10 @@ struct CameraQuery
    RectI       stereoViewports[2]; // destination viewports
    GFXTextureTarget* stereoTargets[2];
    GuiCanvas* drawCanvas; // Canvas we are drawing to. Needed for VR
+
+   /// 2d specifics
+   RectF       mCamArea;
+   Vector2     mCamSize;
 
    IDisplayDevice* displayDevice;
 };

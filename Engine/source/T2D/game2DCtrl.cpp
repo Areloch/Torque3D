@@ -4,6 +4,7 @@
 #include "T3D/gameBase/gameConnection.h"
 #include "T3D/gameFunctions.h"
 #include "console/engineAPI.h"
+#include "T2D/Scene/Scene2D.h"
 
 #include "game2DCtrl_ScriptBinding.h"
 
@@ -54,17 +55,25 @@ bool Game2DCtrl::onAdd()
 }
 
 
-bool Game2DCtrl::processCameraQuery(CameraQuery * query)
+bool Game2DCtrl::processCameraQuery(CameraQuery *query)
 {
    GameUpdateCameraFov();
    return GameProcessCameraQuery(query);
 }
 
-void Game2DCtrl::renderWorld(const RectI & updateRect)
+void Game2DCtrl::renderWorld(const RectI &updateRect)
 {
+   PROFILE_START(Game2DRenderWorld);
    /// this is where we hijack this call for 2d scene rendering.
    /// remove gameRenderWorld for a different render stack for 2dScenes.
-   GameRenderWorld();
+   gClientScene2DGraph->sceneRender2D();
+
+   GFX->updateStates();
+
+   FrameAllocator::setWaterMark(0);
+   //GameRenderWorld();
+
+   PROFILE_END();
 }
 
 void Game2DCtrl::onMouseDown(const GuiEvent &evt)

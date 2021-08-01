@@ -13,11 +13,15 @@
 #include "console/simBase.h"
 #endif
 
+#ifndef _NETOBJECT_H_
+#include "sim/netObject.h"
+#endif
+
 #ifndef _STREAM_H_
 #include "core/stream/stream.h"
 #endif // !_STREAM_H_
 
-class SimComponent : public SimObject
+class SimComponent : public NetObject
 {
    typedef SimObject Parent;
 

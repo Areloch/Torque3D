@@ -342,6 +342,8 @@ addPathRec("${srcDir}/T3D/systems")
 addPath("${srcDir}/T2D")
 addPath("${srcDir}/T2D/Math2D")
 addPath("${srcDir}/T2D/Scene")
+addPath("${srcDir}/component")
+addPath("${srcDir}/component/behaviors")
 
 addPath("${srcDir}/main/")
 addPath("${srcDir}/assets")
