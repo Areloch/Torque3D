@@ -74,6 +74,24 @@ void Scene2D::initPersistFields()
 
 }
 
+bool Scene2D::ShouldCollide(b2Fixture * pFixtureA, b2Fixture * pFixtureB)
+{
+   /// only scene objects can collide.
+   SceneObject2D* pSceneObjectA = static_cast<SceneObject2D*>(pFixtureA->GetBody()->GetUserData().pointer);
+   SceneObject2D* pSceneObjectB = static_cast<SceneObject2D*>(pFixtureB->GetBody()->GetUserData().pointer);
+
+   if (pSceneObjectA->mCollisionSuppress || pSceneObjectB->mCollisionSuppress)
+      return false;
+
+   if ((pSceneObjectA->mCollisionMask & pSceneObjectB->mCollisionMask) != 0)
+      return true;
+
+   if ((pSceneObjectB->mCollisionMask & pSceneObjectA->mCollisionMask) != 0)
+      return true;
+
+   return false;
+}
+
 bool Scene2D::onAdd()
 {
    // Parent first

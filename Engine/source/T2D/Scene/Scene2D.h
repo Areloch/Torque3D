@@ -57,6 +57,11 @@
 #include "core/iTickable.h"
 #endif
 
+#ifndef BOX2D_H
+#include "Box2D/Box2D.h"
+#endif
+
+
 ///-----------------------------------------------------------------------------
 
 class SceneObject2D;
@@ -66,33 +71,6 @@ class RenderPassManager;
 class LightManager;
 class SceneRenderState;
 class SceneCameraState;
-
-///-----------------------------------------------------------------------------
-
-/*class ContactFilter : public b2ContactFilter
-{
-   virtual bool ShouldCollide(b2Fixture* pFixtureA, b2Fixture* pFixtureB)
-   {
-      void* bodyUserDataA = pFixtureA->GetBody()->GetUserData();
-      void* bodyUserDataB = pFixtureB->GetBody()->GetUserData();
-
-      SceneObject2D* pSceneObjectA = static_cast<SceneObject2D*>(bodyUserDataA);
-      SceneObject2D* pSceneObjectB = static_cast<SceneObject2D*>(bodyUserDataB);
-
-      if (pSceneObjectA->mCollisionSuppress || pSceneObjectB->mCollisionSuppress)
-         return false;
-
-      if ((pSceneObjectA->mCollisionMask & pSceneObjectB->mCollisionMask) != 0)
-         return true;
-
-      if ((pSceneObjectB->mCollisionMask & pSceneObjectA->mCollisionMask) != 0)
-         return true;
-
-      return false;
-
-   }
-
-};*/
 
 ///-----------------------------------------------------------------------------
 
@@ -162,6 +140,7 @@ class Scene2D :
    public BehaviorComponent,
    public b2ContactListener,
    public b2DestructionListener,
+   public b2ContactFilter,
    public virtual ITickable
 {
    typedef BehaviorComponent Parent;
@@ -228,6 +207,10 @@ public:
    /// Destruction Listener
    virtual void   SayGoodbye(b2Joint* pJoint) {}
    virtual void   SayGoodbye(b2Fixture* pFixture) {}
+
+   /// contact filter callback.
+   /// makes sense the scene handling these too.
+   virtual bool ShouldCollide(b2Fixture* pFixtureA, b2Fixture* pFixtureB);
 
    /// Contact processing Box2D
    //virtual void   PreSolve(b2Contact* pContact, const b2Manifold* pOldManifold);
