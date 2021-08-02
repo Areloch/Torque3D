@@ -46,6 +46,8 @@ endif()
 ###############################################################################
 # modules
 ###############################################################################
+option(TORQUE_BOX2D "Box2D Physics" ON)
+mark_as_advanced(TORQUE_BOX2D)
 option(TORQUE_SFX_VORBIS "Vorbis Sound" ON)
 mark_as_advanced(TORQUE_SFX_VORBIS)
 option(TORQUE_THEORA "Theora Video Support" ON)
@@ -72,6 +74,8 @@ if(WIN32)
     
     add_subdirectory( ${libDir}/openal-soft ${CMAKE_CURRENT_BINARY_DIR}/openal-soft)
 endif()
+
+add_subdirectory( ${libDir}/Box2D ${CMAKE_CURRENT_BINARY_DIR}/Box2D)
 
 if(TORQUE_SFX_OPENAL)
     #Hide some unnecessary fields as advanced
@@ -342,6 +346,8 @@ addPathRec("${srcDir}/T3D/systems")
 addPath("${srcDir}/T2D")
 addPath("${srcDir}/T2D/Math2D")
 addPath("${srcDir}/T2D/Scene")
+addPath("${srcDir}/T2D/objects")
+addPath("${srcDir}/T2D/assets")
 addPath("${srcDir}/component")
 addPath("${srcDir}/component/behaviors")
 
@@ -663,6 +669,7 @@ endif()
 addLib(lpng)
 addLib(ljpeg)
 addLib(zlib)
+addLib(box2d)
 addLib(tinyxml)
 addLib(opcode)
 addLib(squish)
@@ -849,6 +856,8 @@ addInclude("${libDir}/tinyxml")
 addInclude("${libDir}/squish")
 addInclude("${libDir}/convexDecomp")
 addInclude("${libDir}/libogg/include")
+addInclude("${libDir}/Box2D")
+addInclude("${libDir}/Box2D/include")
 addInclude("${libDir}/opcode")
 addInclude("${libDir}/collada/include")
 addInclude("${libDir}/collada/include/1.4")

@@ -1,11 +1,12 @@
 #include "platform/platform.h"
+#include "console/console.h"
+
 #include "T2D/Scene/Scene2D.h"
-#include "math/mMath.h"
 #include "sim/netConnection.h"
 #include "lighting/lightManager.h"
 #include "renderInstance/renderPassManager.h"
 #include "scene/sceneManager.h"
-#include "console/console.h"
+
 #include "gfx/gfxDevice.h"
 #include "gfx/gfxDrawUtil.h"
 #include "gfx/gfxDebugEvent.h"
@@ -32,8 +33,9 @@ MODULE_END;
 
 bool Scene2D::smRenderBoundingRects;
 
+Scene2D* gClientScene2DGraph;
+
 Scene2D::Scene2D() :
-   mIsClient(false),
    mpWorld(NULL),
    mpWorldGravity(0.0f, -20.0f),
    mVelocityIterations(8),
@@ -42,9 +44,11 @@ Scene2D::Scene2D() :
    mAmbientColor(1.0, 1.0, 1.0, 1.0),
    mScenePause(false)
 {
+
    VECTOR_SET_ASSOCIATION(mObjectList);
    VECTOR_SET_ASSOCIATION(mRenderedObjectList);
    VECTOR_SET_ASSOCIATION(mServerObjectList);
+
 }
 
 Scene2D::~Scene2D()
@@ -76,19 +80,10 @@ bool Scene2D::onAdd()
    if(!Parent::onAdd())
       return false;
 
-   if (this->isClientObject())
-   {
-      mIsClient = true;
-      gClientScene2DGraph = this;
-   }
-   else
-   {
-      mIsClient = false;
-      gServerScene2DGraph = this;
-   }
+   gClientScene2DGraph = this;
 
    // Box2D (LiquidFun) world with grav
-   mpWorld = new b2World(mpWorldGravity);
+   mpWorld = new b2World((b2Vec2)mpWorldGravity);
 
    // Start ticking
    setProcessTicks(true);
@@ -98,12 +93,38 @@ bool Scene2D::onAdd()
 
 }
 
+void Scene2D::onRemove()
+{
+   setProcessTicks(false);
+
+   while (mObjectList.size() > 0)
+   {
+      SceneObject2D* obj = mObjectList[0];
+      removeObjectFromScene(obj);
+   }
+
+   delete mpWorld;
+   mpWorld = NULL;
+
+   Parent::onRemove();
+}
+
+void Scene2D::onDeleteNotify(SimObject * object)
+{
+
+   Parent::onDeleteNotify(object);
+}
+
+
 bool Scene2D::addObjectToScene(SceneObject2D* obj)
 {
    obj->mpScene = this;
 
    /// takes on the functionality of the scenecontainer
-   mObjectList.push_back(obj);
+   if (obj->isClientObject())
+      mObjectList.push_back(obj);
+   else
+      mServerObjectList.push_back(obj);
 
    return obj->onScene2DAdd();
 }
@@ -112,7 +133,7 @@ void Scene2D::removeObjectFromScene(SceneObject2D* obj)
 {
    obj->onSceneRemove();
 
-   if (mIsClient)
+   if (obj->isClientObject())
       mObjectList.remove(obj);
    else
       mServerObjectList.remove(obj);
@@ -125,6 +146,7 @@ void Scene2D::processTick()
 
    PROFILE_SCOPE(Scene2D_ProcessTick);
 
+   /// keep track of total time.
    mSceneTime += TickSec;
 
    /// step the physics
@@ -133,9 +155,9 @@ void Scene2D::processTick()
    /// update sceneobjects
    for (S32 i = 0; i < mObjectList.size(); ++i)
    {
-      mObjectList[i]->processTick();
+      if(mObjectList[i]->isEnabled())
+         mObjectList[i]->processTick();
    }
-
 
    PROFILE_END();
 
@@ -143,15 +165,14 @@ void Scene2D::processTick()
 
 void Scene2D::interpolateTick(F32 delta)
 {
-   if (mScenePause)
-      return;
 
    PROFILE_SCOPE(Scene2D_InterpolateTick);
 
    /// update sceneobjects
    for (S32 i = 0; i < mObjectList.size(); ++i)
    {
-      mObjectList[i]->interpolateTick(delta);
+      if (mObjectList[i]->isEnabled())
+         mObjectList[i]->interpolateTick(delta);
    }
 
    PROFILE_END();
@@ -162,8 +183,6 @@ void Scene2D::sceneRender2D()
 {
    SceneCameraState cameraState = SceneCameraState::fromGFX();
 
-   SceneManager *temp = new SceneManager(true);
-
    SceneRenderState renderState(NULL, SPT_Diffuse, cameraState);
 
    sceneRender2D(&renderState);
@@ -172,9 +191,9 @@ void Scene2D::sceneRender2D()
 
 void Scene2D::sceneRender2D(SceneRenderState* renderState)
 {
-   PROFILE_START(Scene2D_registerLights);
-   LIGHTMGR->registerGlobalLights(&renderState->getCullingFrustum(), false, true);
-   PROFILE_END();
+   /// 2D needs to register its own lights on
+   /// a per frame basis.
+   ///LIGHTMGR->registerGlobalLight(light info, object);
 
    renderState->setAmbientLightColor(mAmbientColor);
 
@@ -184,9 +203,16 @@ void Scene2D::sceneRender2D(SceneRenderState* renderState)
       mCurrentRenderState = NULL;
    PROFILE_END();
 
-   for (S32 i = 0; i < mObjectList.size(); ++i)
+   for (U32 layer = MAX_LAYERS_SUPPORTED - 1; layer >= 0; layer--)
    {
-      mObjectList[i]->prepRenderImage(renderState);
+      for (S32 i = 0; i < mObjectList.size(); ++i)
+      {
+         Box3F box = renderState->getCullingFrustum().getBounds();
+         SceneObject2D* obj = mObjectList[i];
+         if(obj->mSceneLayer == layer)
+            obj->prepRenderImage(renderState);
+
+      }
    }
 
    if (smRenderBoundingRects)
@@ -198,7 +224,9 @@ void Scene2D::sceneRender2D(SceneRenderState* renderState)
 
          const BoxVec2 worldBox = obj->getWorldBox();
 
-         RectF rect((Point2F&)worldBox.minExtents, (Point2F&)worldBox.maxExtents);
+         Point2F min(worldBox.minExtents.x, worldBox.minExtents.y);
+
+         RectF rect(Point2F(worldBox.minExtents.x, worldBox.minExtents.y), Point2F(worldBox.getExtents().x, worldBox.getExtents().y));
 
          GFX->getDrawUtil()->drawRect(rect, ColorI::WHITE);
 
@@ -212,6 +240,7 @@ void Scene2D::sceneRender2D(SceneRenderState* renderState)
       mCurrentRenderState = NULL;
    PROFILE_END();
 
+   /// 2d lights should not effect 3d scenes
    PROFILE_START(Scene2D_unregisterLights);
       LIGHTMGR->unregisterAllLights();
    PROFILE_END();
@@ -219,22 +248,16 @@ void Scene2D::sceneRender2D(SceneRenderState* renderState)
 
 void Scene2D::scopeScene(CameraScopeQuery* query, NetConnection* netConnection)
 {
-   if (mIsClient)
+   for (U32 i = 0; i < mRenderedObjectList.size(); i++)
    {
-      for (U32 i = 0; i < mRenderedObjectList.size(); i++)
-      {
-         netConnection->objectInScope(mRenderedObjectList[i]);
-      }
+      netConnection->objectInScope(mRenderedObjectList[i]);
    }
-   else
+   for (U32 i = 0; i < mServerObjectList.size(); i++)
    {
-      for (U32 i = 0; i < mObjectList.size(); i++)
-      {
-         SceneObject2D* obj = mObjectList[i];
+      SceneObject2D* obj = mServerObjectList[i];
 
-         if(obj->isScopeable())
-            netConnection->objectInScope(obj);
+      if(obj->isScopeable())
+         netConnection->objectInScope(obj);
 
-      }
    }
 }

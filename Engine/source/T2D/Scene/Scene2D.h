@@ -69,7 +69,7 @@ class SceneCameraState;
 
 ///-----------------------------------------------------------------------------
 
-class ContactFilter : public b2ContactFilter
+/*class ContactFilter : public b2ContactFilter
 {
    virtual bool ShouldCollide(b2Fixture* pFixtureA, b2Fixture* pFixtureB)
    {
@@ -92,7 +92,7 @@ class ContactFilter : public b2ContactFilter
 
    }
 
-};
+};*/
 
 ///-----------------------------------------------------------------------------
 
@@ -171,7 +171,6 @@ class Scene2D :
 protected:
 
    static Scene2D* smRootScene;
-   bool mIsClient;
 
    SceneRenderState* mCurrentRenderState;
 
@@ -194,6 +193,7 @@ public:
 
    typedef Signal< void(Scene2D*, const SceneRenderState*) > RenderSignal;
    typedef Vector<SceneObject2D*> SceneObjectList;
+
    SceneObjectList   mObjectList;
    SceneObjectList   mRenderedObjectList;
    SceneObjectList   mServerObjectList;
@@ -225,17 +225,15 @@ public:
    virtual void   onDeleteNotify(SimObject* object);
    static void    initPersistFields();
 
-   bool isClientScene() { return mIsClient; }
-
    /// Destruction Listener
-   virtual void   SayGoodbye(b2Joint* pJoint);
+   virtual void   SayGoodbye(b2Joint* pJoint) {}
    virtual void   SayGoodbye(b2Fixture* pFixture) {}
 
    /// Contact processing Box2D
-   virtual void   PreSolve(b2Contact* pContact, const b2Manifold* pOldManifold);
-   virtual void   PostSolve(b2Contact* pContact, const b2ContactImpulse* pImpulse);
-   virtual void   BeginContact(b2Contact* pContact);
-   virtual void   EndContact(b2Contact* pContact);
+   //virtual void   PreSolve(b2Contact* pContact, const b2Manifold* pOldManifold);
+   //virtual void   PostSolve(b2Contact* pContact, const b2ContactImpulse* pImpulse);
+   //virtual void   BeginContact(b2Contact* pContact);
+   //virtual void   EndContact(b2Contact* pContact);
 
    /// scene ticking
    virtual void   interpolateTick(F32 delta);
@@ -247,18 +245,16 @@ public:
    void           sceneRender2D(SceneRenderState * renderState);
 
    ///Networking
-   U32            packUpdate(NetConnection *conn, U32 mask, BitStream *stream);
-   void           unpackUpdate(NetConnection *conn, BitStream *stream);
+   //U32            packUpdate(NetConnection *conn, U32 mask, BitStream *stream);
+   //void           unpackUpdate(NetConnection *conn, BitStream *stream);
    /// scope scene
    void scopeScene(CameraScopeQuery* query, NetConnection* netConnection);
-
 
    inline b2World*         getWorld(void) const { return mpWorld; }
    
 };
 
 extern Scene2D* gClientScene2DGraph;
-extern Scene2D* gServerScene2DGraph;
 
 
 #endif // !_SCENE2D_H_

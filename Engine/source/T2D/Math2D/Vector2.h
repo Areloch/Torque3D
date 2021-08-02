@@ -18,7 +18,11 @@
 #endif // !_SIM_H_
 
 #ifndef BOX2D_H
-#include "Box2D/Box2D.h"
+#include "box2D/Box2D.h"
+#endif
+
+#ifndef B2_COLLISION_H
+#include "box2D/b2Collision.h"
 #endif
 
 ///-----------------------------------------------------------------------------

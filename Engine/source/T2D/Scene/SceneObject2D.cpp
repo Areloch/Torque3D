@@ -2,12 +2,15 @@
 #include "console/consoleTypes.h"
 #include "console/engineAPI.h"
 #include "T2D/Scene/SceneObject2D.h"
+#include "scene/sceneRenderState.h"
 #include "core/stream/bitStream.h"
 #include "sim/netConnection.h"
 #include "T3D/gameBase/gameConnection.h"
 #include "scene/sceneRenderState.h"
 
 #include "T2D/Scene/Scene2D.h"
+
+IMPLEMENT_CONOBJECT(SceneObject2D);
 
 SceneObject2D::SceneObject2D() :
    mpScene(NULL),
@@ -21,7 +24,6 @@ SceneObject2D::SceneObject2D() :
    mCollisionOneWay(false)
 {
 
-   mpBodyDef.userData = this;
    mpBodyDef.position.Set(0.0f, 0.0f);
    mpBodyDef.angle = 0.0f;
    mpBodyDef.linearVelocity.Set(0.0f, 0.0f);
@@ -33,7 +35,7 @@ SceneObject2D::SceneObject2D() :
    mpBodyDef.fixedRotation = false;
    mpBodyDef.bullet = false;
    mpBodyDef.type = b2_dynamicBody;
-   mpBodyDef.active = true;
+   mpBodyDef.enabled = true;
    mpBodyDef.gravityScale = 1.0f;
 
    mObjScale.set(1, 1);
@@ -50,6 +52,14 @@ SceneObject2D::SceneObject2D() :
    mWorldBox = BoxVec2(Vector2(0.0f, 0.0f), Vector2(0.0f, 0.0f));
 }
 
+SceneObject2D::~SceneObject2D()
+{
+
+   if(mpScene)
+      removeFromScene();
+      
+}
+
 bool SceneObject2D::onAdd()
 {
    if (!Parent::onAdd())
@@ -61,6 +71,17 @@ bool SceneObject2D::onAdd()
 
    setRenderTransform(mObjToWorld);
 
+   return true;
+}
+
+void SceneObject2D::onRemove()
+{
+   
+   if(mpScene)
+      removeFromScene();
+
+   Parent::onRemove();
+
 }
 
 void SceneObject2D::addToScene()
@@ -68,10 +89,7 @@ void SceneObject2D::addToScene()
    if (mpScene)
       return;
 
-   if (isClientObject())
-      gClientScene2DGraph->addObjectToScene(this);
-   else
-      gServerScene2DGraph->addObjectToScene(this);
+   gClientScene2DGraph->addObjectToScene(this);
 }
 
 void SceneObject2D::removeFromScene()
@@ -88,6 +106,8 @@ bool SceneObject2D::onScene2DAdd()
       return false;
 
    mpBody = mpScene->getWorld()->CreateBody(&mpBodyDef);
+
+   mpBody->GetUserData().pointer = this;
 
    return true;
 
@@ -183,6 +203,16 @@ void SceneObject2D::setRenderTransform(const MatrixF& mat)
    resetRenderWorldBox();
 }
 
+void SceneObject2D::onDeleteNotify(SimObject * object)
+{
+   Parent::onDeleteNotify(object);
+}
+
+void SceneObject2D::inspectPostApply()
+{
+   Parent::inspectPostApply();
+}
+
 bool SceneObject2D::writeField(StringTableEntry fieldName, const char * value)
 {
    if(!Parent::writeField(fieldName, value))
@@ -226,6 +256,11 @@ void SceneObject2D::processTick()
 
 }
 
+void SceneObject2D::initPersistFields()
+{
+   Parent::initPersistFields();
+}
+
 U32 SceneObject2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 {
    U32 retMask = Parent::packUpdate(conn, mask, stream);
@@ -267,9 +302,6 @@ void SceneObject2D::onCameraScopeQuery(NetConnection * connection, CameraScopeQu
    if (this->isScopeable())
       connection->objectInScope(this);
 
-   if (mpScene->isClientScene())
-      mpScene->scopeScene(query, connection);
-   else
-      gServerScene2DGraph->scopeScene(query, connection);
+   mpScene->scopeScene(query, connection);
 
 }

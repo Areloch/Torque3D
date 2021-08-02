@@ -4,7 +4,6 @@
 #include "T3D/gameBase/gameConnection.h"
 #include "T3D/gameFunctions.h"
 #include "console/engineAPI.h"
-#include "T2D/Scene/Scene2D.h"
 
 #include "game2DCtrl_ScriptBinding.h"
 

@@ -5,6 +5,10 @@
 #include "T2D/Scene/Scene2D.h"
 #endif // !_SCENE2D_H_
 
+#ifndef _SCENERENDERSTATE_H_
+#include "scene/sceneRenderState.h"
+#endif // !_SCENERENDERSTATE_H_
+
 #ifndef _NETOBJECT_H_
 #include "sim/netObject.h"
 #endif
@@ -43,8 +47,10 @@ extern EnumTable bodyTypeTable;
 
 class SceneObject2D : public BehaviorComponent
 {
-public:
    typedef BehaviorComponent Parent;
+
+public:
+   friend class Scene2D;
 
    /// Networking dirty mask.
    enum SceneObject2DMasks
@@ -60,7 +66,7 @@ public:
 
    /// these need to be accessed by other classes
    /// Lifetime.
-   Scene2D* mpScene;
+   Scene2D*                mpScene;
    F32                     mLifetime;
    bool                    mLifetimeActive;
 
@@ -83,6 +89,7 @@ public:
    BoxVec2                 mObjBox;
    BoxVec2                 mWorldBox;
    BoxVec2                 mRenderWorldBox;
+
    /// Scene layers.
    U32                     mSceneLayer;
    U32                     mSceneLayerMask;
@@ -109,7 +116,6 @@ public:
 
    // SimObject.
    virtual bool onAdd();
-   
    virtual void onRemove();
    virtual void onDeleteNotify(SimObject *object);
    virtual void inspectPostApply();
@@ -128,6 +134,7 @@ public:
    const BoxVec2& getObjBox() const { return mObjBox; }
    const BoxVec2& getWorldBox() const { return mWorldBox; }
    virtual const MatrixF& getTransform() const { return mObjToWorld; }
+   const MatrixF& getRenderTransform() const { return mRenderObjToWorld; }
 
    void resetWorldBox();
    void resetRenderWorldBox();

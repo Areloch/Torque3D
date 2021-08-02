@@ -23,8 +23,9 @@
 #endif
 #ifndef _ASSET_PTR_H_
 #include "assets/assetPtr.h"
-#endif 
+#endif
 
+#include "gui/editor/guiInspectorTypes.h"
 #include "gfx/bitmap/gBitmap.h"
 #include "gfx/gfxTextureHandle.h"
 
@@ -220,6 +221,9 @@ public:
 
    bool isValid() { return mIsValidSprite; }
 
+   /// Public asset accessor
+   static bool getAssetById(StringTableEntry assetId, AssetPtr<SpriteAsset>* shapeAsset);
+
 protected:
    virtual void initializeAsset(void);
    virtual void onAssetRefresh(void);
@@ -232,8 +236,31 @@ protected:
    bool getAssetByFilename(StringTableEntry fileName, AssetPtr<SpriteAsset>* spriteAsset);
 };
 
-DefineConsoleType(TypeSpriteAssetPtr, SpriteAsset)
+DefineConsoleType(TypeSpriteAssetPtr, S32)
+DefineConsoleType(TypeSpriteAssetId, String)
 
+class GuiInspectorTypeSpriteAssetPtr : public GuiInspectorTypeFileName
+{
+   typedef GuiInspectorTypeFileName Parent;
+
+public:
+
+   GuiBitmapButtonCtrl *mSpriteEdButton;
+   DECLARE_CONOBJECT(GuiInspectorTypeSpriteAssetPtr);
+   static void consoleInit();
+
+   virtual GuiControl* constructEditControl();
+   virtual bool updateRects();
+
+};
+
+class GuiInspectorTypeSpriteAssetId : public GuiInspectorTypeSpriteAssetPtr
+{
+   typedef GuiInspectorTypeSpriteAssetPtr Parent;
+public:
+   DECLARE_CONOBJECT(GuiInspectorTypeSpriteAssetId);
+   static void consoleInit();
+};
 
 #endif // !_SPRITE_ASSET_H_
 

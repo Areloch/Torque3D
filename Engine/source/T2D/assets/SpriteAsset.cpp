@@ -24,7 +24,7 @@
 //-----------------------------------------------------------------------------
 
 IMPLEMENT_CONOBJECT(SpriteAsset);
-ConsoleType(SpriteAssetPtr, TypeSpriteAssetPtr, String, ASSET_ID_FIELD_PREFIX)
+ConsoleType(assetIdString, TypeSpriteAssetPtr, String, ASSET_ID_FIELD_PREFIX)
 
 ConsoleGetType(TypeSpriteAssetPtr)
 {
@@ -51,6 +51,35 @@ ConsoleSetType(TypeSpriteAssetPtr)
 
    // Warn.
    Con::warnf("(TypeSpriteAssetPtr) - Cannot set multiple args to a single asset.");
+}
+
+ConsoleType(assetIdString, TypeSpriteAssetId, String, ASSET_ID_FIELD_PREFIX)
+
+ConsoleGetType(TypeSpriteAssetId)
+{
+   // Fetch asset Id.
+   return *((const char**)(dptr));
+}
+
+ConsoleSetType(TypeSpriteAssetId)
+{
+   // Was a single argument specified?
+   if (argc == 1)
+   {
+      // Yes, so fetch field value.
+      const char* pFieldValue = argv[0];
+
+      // Fetch asset Id.
+      StringTableEntry* assetId = (StringTableEntry*)(dptr);
+
+      // Update asset value.
+      *assetId = StringTable->insert(pFieldValue);
+
+      return;
+   }
+
+   // Warn.
+   Con::warnf("(TypeSpriteAssetId) - Cannot set multiple args to a single asset.");
 }
 
 //-----------------------------------------------------------------------------
@@ -144,6 +173,17 @@ void SpriteAsset::loadSprite()
 
    mIsValidSprite = false;
 
+}
+
+bool SpriteAsset::getAssetById(StringTableEntry assetId, AssetPtr<SpriteAsset>* spriteAsset)
+{
+   (*spriteAsset) = assetId;
+
+   if (!spriteAsset->isNull())
+      return true;
+
+
+   return false;
 }
 
 void SpriteAsset::initializeAsset()
@@ -351,7 +391,7 @@ void SpriteAsset::setCellHeight(const S32 cellHeight)
 
 GFXTexHandle SpriteAsset::getSprite(GFXTextureProfile reqProfile)
 {
-   if (mResourceMap.contains(reqProfile))
+   /*if (mResourceMap.contains(reqProfile))
    {
       return mResourceMap.find(reqProfile)->value;
    }
@@ -359,8 +399,9 @@ GFXTexHandle SpriteAsset::getSprite(GFXTextureProfile reqProfile)
    {
       GFXTexHandle tempSprite;
       tempSprite.set(mSpriteFileName, &reqProfile, avar("%s() - mSprite (line %d)", __FUNCTION__, __LINE__));
+      mResourceMap.insert(reqProfile, tempSprite);
       return tempSprite;
-   }
+   }*/
 
    return nullptr;
 
@@ -554,3 +595,101 @@ DefineEngineMethod(SpriteAsset, getSpriteInfo, const char*, (), ,
    return object->getSpriteInfo();
 }
 
+//-----------------------------------------------------------------------------
+// GuiInspectorTypeSpriteAssetPtr
+//-----------------------------------------------------------------------------
+
+IMPLEMENT_CONOBJECT(GuiInspectorTypeSpriteAssetPtr);
+
+ConsoleDocClass(GuiInspectorTypeSpriteAssetPtr,
+   "@brief Inspector field for sprite asset\n\n"
+   "Editor Use only.\n\n"
+   "@internal");
+
+void GuiInspectorTypeSpriteAssetPtr::consoleInit()
+{
+   Parent::consoleInit();
+
+   ConsoleBaseType::getType(TypeSpriteAssetPtr)->setInspectorFieldType("GuiInspectorTypeSpriteAssetPtr");
+}
+
+GuiControl * GuiInspectorTypeSpriteAssetPtr::constructEditControl()
+{
+   GuiControl *retCtrl = Parent::constructEditControl();
+   if(retCtrl == NULL)
+      return retCtrl;
+
+   // Change filespec
+   char szBuffer[512];
+   dSprintf(szBuffer, sizeof(szBuffer), "AssetBrowser.showDialog(\"ShapeAsset\", \"AssetBrowser.changeAsset\", %s, %s);",
+      mInspector->getInspectObject()->getIdString(), mCaption);
+   mBrowseButton->setField("Command", szBuffer);
+
+   const char* id = mInspector->getInspectObject()->getIdString();
+
+   setDataField(StringTable->insert("targetObject"), NULL, mInspector->getInspectObject()->getIdString());
+
+   // Create "Open in ShapeEditor" button
+   mSpriteEdButton = new GuiBitmapButtonCtrl();
+
+   //---------------------
+   //TODO: coming soon ;)
+   //---------------------
+   //dSprintf(szBuffer, sizeof(szBuffer), "SpriteEditorPlugin.openSpriteAssetId(%d.getText());", retCtrl->getId());
+   //mSpriteEdButton->setField("Command", szBuffer);
+
+   /// just use shape editor button for now cos it exists.
+   char bitmapName[512] = "tools/worldEditor/images/toolbar/shape-editor";
+   mSpriteEdButton->setBitmap(bitmapName);
+
+   mSpriteEdButton->setDataField(StringTable->insert("Profile"), NULL, "GuiButtonProfile");
+   mSpriteEdButton->setDataField(StringTable->insert("tooltipprofile"), NULL, "GuiToolTipProfile");
+   mSpriteEdButton->setDataField(StringTable->insert("hovertime"), NULL, "1000");
+   mSpriteEdButton->setDataField(StringTable->insert("tooltip"), NULL, "Open this file in the Sprite Editor");
+
+   mSpriteEdButton->registerObject();
+   addObject(mSpriteEdButton);
+
+   return retCtrl;
+
+}
+
+bool GuiInspectorTypeSpriteAssetPtr::updateRects()
+{
+   S32 dividerPos, dividerMargin;
+   mInspector->getDivider(dividerPos, dividerMargin);
+   Point2I fieldExtent = getExtent();
+   Point2I fieldPos = getPosition();
+
+   mCaptionRect.set(0, 0, fieldExtent.x - dividerPos - dividerMargin, fieldExtent.y);
+   mEditCtrlRect.set(fieldExtent.x - dividerPos + dividerMargin, 1, dividerPos - dividerMargin - 34, fieldExtent.y);
+
+   bool resized = mEdit->resize(mEditCtrlRect.point, mEditCtrlRect.extent);
+   if (mBrowseButton != NULL)
+   {
+      mBrowseRect.set(fieldExtent.x - 32, 2, 14, fieldExtent.y - 4);
+      resized |= mBrowseButton->resize(mBrowseRect.point, mBrowseRect.extent);
+   }
+
+   if (mSpriteEdButton != NULL)
+   {
+      RectI shapeEdRect(fieldExtent.x - 16, 2, 14, fieldExtent.y - 4);
+      resized |= mSpriteEdButton->resize(shapeEdRect.point, shapeEdRect.extent);
+   }
+
+   return resized;
+}
+
+IMPLEMENT_CONOBJECT(GuiInspectorTypeSpriteAssetId);
+
+ConsoleDocClass(GuiInspectorTypeSpriteAssetId,
+   "@brief Inspector field for sprite asset\n\n"
+   "Editor Use only.\n\n"
+   "@internal");
+
+void GuiInspectorTypeSpriteAssetId::consoleInit()
+{
+   Parent::consoleInit();
+
+   ConsoleBaseType::getType(TypeSpriteAssetId)->setInspectorFieldType("GuiInspectorTypeSpriteAssetId");
+}
