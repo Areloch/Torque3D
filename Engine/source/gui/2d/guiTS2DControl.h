@@ -55,7 +55,10 @@ struct CameraQuery
 
    /// 2d specifics
    RectF       mCamArea;
-   Vector2     mCamSize;
+   Point2F     mSceneMin;
+   Point2F     mSceneMax;
+   Point2F     mCameraScale;
+   Point2F     mCameraSize;
 
    IDisplayDevice* displayDevice;
 };

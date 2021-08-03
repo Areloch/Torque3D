@@ -40,6 +40,7 @@ Scene2D::Scene2D() :
    mpWorldGravity(0.0f, -20.0f),
    mVelocityIterations(8),
    mPositionIterations(3),
+   mCameraSize(16.0f, 0.0f),
    mSceneTime(0.0f),
    mAmbientColor(1.0, 1.0, 1.0, 1.0),
    mScenePause(false)
@@ -76,7 +77,7 @@ void Scene2D::initPersistFields()
 
 bool Scene2D::ShouldCollide(b2Fixture * pFixtureA, b2Fixture * pFixtureB)
 {
-   /// only scene objects can collide.
+   /// only scene objects can collide, all objects in a scene are sceneobjects
    SceneObject2D* pSceneObjectA = static_cast<SceneObject2D*>(pFixtureA->GetBody()->GetUserData().pointer);
    SceneObject2D* pSceneObjectB = static_cast<SceneObject2D*>(pFixtureB->GetBody()->GetUserData().pointer);
 
@@ -100,8 +101,12 @@ bool Scene2D::onAdd()
 
    gClientScene2DGraph = this;
 
-   // Box2D (LiquidFun) world with grav
+   // Box2D 2.4.1 world with gravity
+   // and set up our listeners.
    mpWorld = new b2World((b2Vec2)mpWorldGravity);
+   mpWorld->SetContactFilter(this);
+   mpWorld->SetContactListener(this);
+   mpWorld->SetDestructionListener(this);
 
    // Start ticking
    setProcessTicks(true);
@@ -179,6 +184,14 @@ void Scene2D::processTick()
 
    PROFILE_END();
 
+}
+
+void Scene2D::BeginContact(b2Contact * pContact)
+{
+}
+
+void Scene2D::EndContact(b2Contact * pContact)
+{
 }
 
 void Scene2D::interpolateTick(F32 delta)

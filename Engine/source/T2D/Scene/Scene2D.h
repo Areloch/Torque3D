@@ -150,12 +150,12 @@ class Scene2D :
 protected:
 
    static Scene2D* smRootScene;
-
    SceneRenderState* mCurrentRenderState;
-
    typedef InterpolatedChangeProperty< LinearColorF > AmbientLightInterpolator;
    LightManager* mLightManager;
    AmbientLightInterpolator mAmbientLightColor;
+   Point2F mCameraSize;
+
 
 private:
 
@@ -203,6 +203,8 @@ public:
    virtual void   onRemove();
    virtual void   onDeleteNotify(SimObject* object);
    static void    initPersistFields();
+   Point2F getCameraSize() { return mCameraSize; }
+   void setCameraSize(Point2F camSize) { mCameraSize = camSize; }
 
    /// Destruction Listener
    virtual void   SayGoodbye(b2Joint* pJoint) {}
@@ -215,8 +217,8 @@ public:
    /// Contact processing Box2D
    //virtual void   PreSolve(b2Contact* pContact, const b2Manifold* pOldManifold);
    //virtual void   PostSolve(b2Contact* pContact, const b2ContactImpulse* pImpulse);
-   //virtual void   BeginContact(b2Contact* pContact);
-   //virtual void   EndContact(b2Contact* pContact);
+   virtual void   BeginContact(b2Contact* pContact);
+   virtual void   EndContact(b2Contact* pContact);
 
    /// scene ticking
    virtual void   interpolateTick(F32 delta);

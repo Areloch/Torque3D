@@ -50,18 +50,26 @@ GuiTS2DCtrl::GuiTS2DCtrl()
 
    mLastCameraQuery.cameraMatrix.identity();
 
-   mLastCameraQuery.fov = 45.0f;
+   /// useless fov is useless.
+   mLastCameraQuery.fov = 50.0f;
    mLastCameraQuery.object = NULL;
-   
-   mLastCameraQuery.farPlane = 32.0f;
+   mLastCameraQuery.farPlane = MAX_LAYERS_SUPPORTED;
    mLastCameraQuery.nearPlane = 0.01f;
-
    mLastCameraQuery.hasFovPort = false;
    mLastCameraQuery.hasStereoTargets = false;
-
    mLastCameraQuery.ortho = true;
-   mLastCameraQuery.mCamSize.set(16.0f, 9.0f);
-   mLastCameraQuery.mCamArea.set(0.0f, 0.0f, 0.0f, 0.0f);
+
+   /// these are going to be overwritten by the scene.
+   mLastCameraQuery.mSceneMin.set(0.0f, 0.0f);
+   mLastCameraQuery.mSceneMax.set(16.0f, 9.0f);
+   mLastCameraQuery.mCameraSize.set(16.0f, 9.0f);
+   mLastCameraQuery.mCameraScale.set(1.0f, 1.0f);
+
+   /// setup a default cam area so we are actually rendering something.
+   mLastCameraQuery.mCamArea = RectF(0.0f - (mLastCameraQuery.mCameraSize.x * 0.5f),
+                                     0.0f - (mLastCameraQuery.mCameraSize.y * 0.5f),
+                                     mLastCameraQuery.mCameraSize.x,
+                                     mLastCameraQuery.mCameraSize.y);
 
    mOrthoWidth = 0.1f;
    mOrthoHeight = 0.1f;
@@ -208,7 +216,7 @@ void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frust
    // Clear the zBuffer so GUI doesn't hose object rendering accidentally
    GFX->clear(GFXClearZBuffer, ColorI(20, 20, 20), 1.0f, 0);
 
-   GFX->setFrustum(frustum);
+   //GFX->setFrustum(frustum);
    mSaveProjection = GFX->getProjectionMatrix();
 
    if (mLastCameraQuery.ortho)
@@ -310,38 +318,45 @@ void GuiTS2DCtrl::onRender(Point2I offset, const RectI &updateRect)
 
    // Set up the appropriate render style
    Point2I renderSize = getExtent();
+   F32 aspectRatio = renderSize.x / renderSize.y;
    Frustum frustum;
 
    mLastCameraQuery.currentEye = -1;
 
    // set up the camera and viewport stuff:
-   F32 wwidth;
-   F32 wheight;
-   F32 renderWidth = F32(renderSize.x);
-   F32 renderHeight = F32(renderSize.y);
-   F32 aspectRatio = renderWidth / renderHeight;
+   const RectI& bounds = getBounds();
 
-   if (!mLastCameraQuery.ortho)
-   {
-      wheight = mLastCameraQuery.nearPlane * mTan(mLastCameraQuery.fov / 2.0f);
-      wwidth = aspectRatio * wheight;
-   }
-   else
-   {
-      wheight = mLastCameraQuery.fov;
-      wwidth = aspectRatio * wheight;
-   }
+   mLastCameraQuery.mSceneMin.x = mLastCameraQuery.mCamArea.point.x;
+   mLastCameraQuery.mSceneMin.y = mLastCameraQuery.mCamArea.point.y;
+   mLastCameraQuery.mSceneMax.x = mLastCameraQuery.mSceneMin.x + mLastCameraQuery.mCamArea.len_x();
+   mLastCameraQuery.mSceneMax.y = mLastCameraQuery.mSceneMin.y + mLastCameraQuery.mCamArea.len_y();
 
-   F32 hscale = wwidth * 2.0f / renderWidth;
-   F32 vscale = wheight * 2.0f / renderHeight;
+   mLastCameraQuery.mCameraScale.x = (mLastCameraQuery.mSceneMax.x - mLastCameraQuery.mSceneMin.x) / bounds.len_x();
+   mLastCameraQuery.mCameraScale.y = (mLastCameraQuery.mSceneMax.y - mLastCameraQuery.mSceneMin.y) / bounds.len_y();
 
-   F32 left = (updateRect.point.x - offset.x) * hscale - wwidth;
-   F32 right = (updateRect.point.x + updateRect.extent.x - offset.x) * hscale - wwidth;
-   F32 top = wheight - vscale * (updateRect.point.y - offset.y);
-   F32 bottom = wheight - vscale * (updateRect.point.y + updateRect.extent.y - offset.y);
+   const Point2I globalTopLeft(updateRect.point.x, updateRect.point.y);
+   const Point2I localTopLeft = globalToLocalCoord(globalTopLeft);
+   const Point2I globalBottomRight(updateRect.point.x + updateRect.extent.x, updateRect.point.y + updateRect.extent.y);
+   const Point2I localBottomRight = globalToLocalCoord(globalBottomRight);
 
-   frustum.set(mLastCameraQuery.ortho, left, right, top, bottom, mLastCameraQuery.nearPlane, mLastCameraQuery.farPlane);
+   const Point2F& cameraScale = mLastCameraQuery.mCameraScale;
+   Point2F sceneMin = mLastCameraQuery.mSceneMin;
+   Point2F sceneMax = mLastCameraQuery.mSceneMax;
 
+   if (localTopLeft.y > 0)
+      sceneMax.y -= localTopLeft.y * cameraScale.y;
+
+   if (localTopLeft.x > 0)
+      sceneMin.x += localTopLeft.x * cameraScale.x;
+
+   if (localBottomRight.y < bounds.extent.y)
+      sceneMin.y += (bounds.extent.y - localBottomRight.y) * cameraScale.y;
+
+   if (localBottomRight.x < bounds.extent.x)
+      sceneMax.x -= (bounds.extent.x - localBottomRight.x) * cameraScale.x;
+
+   frustum.set(mLastCameraQuery.ortho, sceneMin.x, sceneMax.x, sceneMax.y, sceneMin.y, mLastCameraQuery.nearPlane, mLastCameraQuery.farPlane);
+   GFX->setOrtho(sceneMin.x, sceneMax.x, sceneMin.y, sceneMax.y, 0.00f, mLastCameraQuery.farPlane);
    // Manipulate the frustum for tiled screenshots
    const bool screenShotMode = gScreenShot && gScreenShot->isPending();
    if (screenShotMode)

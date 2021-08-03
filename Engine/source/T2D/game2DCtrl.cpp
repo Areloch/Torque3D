@@ -56,12 +56,46 @@ bool Game2DCtrl::onAdd()
 
 bool Game2DCtrl::processCameraQuery(CameraQuery *query)
 {
-   GameUpdateCameraFov();
-   return GameProcessCameraQuery(query);
+   //GameUpdateCameraFov();
+   //return GameProcessCameraQuery(query);
+   GameConnection* conn = GameConnection::getConnectionToServer();
+   if (conn && conn->getControlCameraTransform(0.032f, &query->cameraMatrix))
+   {
+      query->object = dynamic_cast<GameBase*>(conn->getCameraObject());
+
+      query->eyeTransforms[0] = query->cameraMatrix;
+      query->eyeTransforms[1] = query->cameraMatrix;
+      query->headMatrix = query->cameraMatrix;
+
+      F32 cameraFov = 0.0f;
+      // Use the connection's FOV settings if requried
+      if (!conn->getControlCameraFov(&cameraFov))
+      {
+         return false;
+      }
+
+      query->fov = mDegToRad(cameraFov);
+
+      /// change the camera pos to a 2d position
+      Point2F pos(query->cameraMatrix.getPosition().x, query->cameraMatrix.getPosition().y);
+
+      /// pass camera size off to query.
+      query->mCameraSize = gClientScene2DGraph->getCameraSize();
+
+      /// set camera area 
+      query->mCamArea = RectF(pos.x -(query->mCameraSize.x * 0.5f),
+                              pos.y - (query->mCameraSize.y *0.5f),
+                              query->mCameraSize.x, query->mCameraSize.y);
+
+      return true;
+   }
+
+   return false;
 }
 
 void Game2DCtrl::renderWorld(const RectI &updateRect)
 {
+   
    PROFILE_START(Game2DRenderWorld);
    /// this is where we hijack this call for 2d scene rendering.
    /// remove gameRenderWorld for a different render stack for 2dScenes.
@@ -70,9 +104,10 @@ void Game2DCtrl::renderWorld(const RectI &updateRect)
    GFX->updateStates();
 
    FrameAllocator::setWaterMark(0);
-   //GameRenderWorld();
+   
 
    PROFILE_END();
+   
 }
 
 void Game2DCtrl::onMouseDown(const GuiEvent &evt)
