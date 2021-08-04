@@ -149,6 +149,8 @@ class Scene2D :
 
    S32 mScene2DId;
 
+   StringTableEntry mGameModeName;
+
 protected:
 
    static Scene2D* smRootScene;
