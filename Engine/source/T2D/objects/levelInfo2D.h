@@ -45,6 +45,8 @@ public:
    LevelInfo2D();
    virtual ~LevelInfo2D();
 
+   
+
    virtual bool onAdd();
    virtual void onRemove();
    virtual void inspectPostApply();
@@ -56,8 +58,8 @@ public:
       UpdateMask = BIT(0)
    };
 
-   virtual U32 packUpdate(NetConnection *conn, U32 mask, BitStream *stream);
-   virtual void unpackUpdate(NetConnection *conn, BitStream *stream);
+   U32 packUpdate(NetConnection *conn, U32 mask, BitStream *stream);
+   void unpackUpdate(NetConnection *conn, BitStream *stream);
 
    DECLARE_CONOBJECT(LevelInfo2D);
 

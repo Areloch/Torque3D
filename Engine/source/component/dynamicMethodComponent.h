@@ -25,6 +25,8 @@ public:
    virtual bool handlesConsoleMethod(const char * fname, S32 * routingId);
    virtual const char* callOnBehaviors(U32 argc, const char *argv[]);
 
+
+
    DECLARE_CONOBJECT(DynamicMethodComponent);
    DECLARE_DESCRIPTION("The Builds a method for behavior components.");
 };

@@ -216,7 +216,7 @@ void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frust
    // Clear the zBuffer so GUI doesn't hose object rendering accidentally
    GFX->clear(GFXClearZBuffer, ColorI(20, 20, 20), 1.0f, 0);
 
-   //GFX->setFrustum(frustum);
+   GFX->setFrustum(frustum);
    mSaveProjection = GFX->getProjectionMatrix();
 
    if (mLastCameraQuery.ortho)
@@ -243,6 +243,7 @@ void GuiTS2DCtrl::_internalRender(RectI guiViewPort, RectI renderViewport, Frust
    //gClientSceneGraph->setNonClipProjection(mSaveProjection);
    PFXMGR->setFrameMatrices(mSaveModelview, mSaveProjection);
 
+   Con::printf("guiTS2D call gameRenderWorld");
    renderWorld(guiViewPort);
 
    DebugDrawer* debugDraw = DebugDrawer::get();
@@ -288,7 +289,7 @@ F32 GuiTS2DCtrl::calculateViewDistance(F32 radius)
 
 void GuiTS2DCtrl::onRender(Point2I offset, const RectI &updateRect)
 {
-
+   Con::printf("GuiTS2DCtrl on render start");
    GFXTransformSaver saver;
 
    mLastCameraQuery.displayDevice = NULL;
@@ -301,6 +302,8 @@ void GuiTS2DCtrl::onRender(Point2I offset, const RectI &updateRect)
       renderChildControls(offset, updateRect);
       return;
    }
+
+   Con::printf("GuiTS2DCtrl after processCameraQuery");
 
    if (mLastCameraQuery.displayDevice)
    {
@@ -366,6 +369,7 @@ void GuiTS2DCtrl::onRender(Point2I offset, const RectI &updateRect)
    }
 
    RectI tempRect = updateRect;
+   Con::printf("guiTS2D call internalRender");
    _internalRender(tempRect, tempRect, frustum);
 
    // Allow subclasses to render 2D elements.

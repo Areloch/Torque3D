@@ -6,6 +6,7 @@
 #include "console/simDictionary.h"
 #include "component/simComponent.h"
 #include "core/stream/stream.h"
+#include "sim/netConnection.h"
 
 //-----------------------------------------------------------------------------
 

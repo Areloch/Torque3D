@@ -45,9 +45,9 @@ typedef VectorPtr<b2Fixture*> typeCollisionFixtureVector;
 
 extern EnumTable bodyTypeTable;
 
-class SceneObject2D : public BehaviorComponent
+class SceneObject2D : public NetObject
 {
-   typedef BehaviorComponent Parent;
+   typedef NetObject Parent;
 
 public:
    friend class Scene2D;
@@ -61,6 +61,18 @@ public:
       MoveMask = BIT(3),
       NextFreeMask = BIT(4)
    };
+
+   enum SceneObject2DFlags
+   {
+      RenderEnabledFlag = BIT(0),
+      NextFreeFlag = BIT(1)
+   };
+
+protected:
+
+   BitSet32 mObjectFlags;
+
+   virtual U32 getObjectFlagMax() const { return NextFreeFlag - 1; }
 
 public:
 
@@ -106,8 +118,6 @@ public:
    virtual bool onScene2DAdd();
    virtual void onSceneRemove();
 
-   virtual void prepRenderImage() {};
-
    // NetObject.
    virtual U32 packUpdate(NetConnection* conn, U32 mask, BitStream* stream);
    virtual void unpackUpdate(NetConnection* conn, BitStream* stream);
@@ -117,6 +127,9 @@ public:
    // SimObject.
    virtual bool onAdd();
    virtual void onRemove();
+
+   DECLARE_CONOBJECT(SceneObject2D);
+
    virtual void onDeleteNotify(SimObject *object);
    virtual void inspectPostApply();
    virtual bool writeField(StringTableEntry fieldName, const char* value);
@@ -127,7 +140,7 @@ public:
    virtual void   processTick();
    virtual void   advanceTime(F32 timeDelta) {};
 
-   virtual void prepRenderImage(SceneRenderState *state) {}
+   virtual void prepRenderImage(SceneCameraState* cam) {}
 
    static void initPersistFields();
 
@@ -147,8 +160,6 @@ public:
    void setTransform(const MatrixF& mat);
    void setRenderTransform(const MatrixF & mat);
    
-
-   DECLARE_CONOBJECT(SceneObject2D);
 };
 
 #endif // !_SCENEOBJECT2D_H_

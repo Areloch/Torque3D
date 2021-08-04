@@ -6,7 +6,6 @@
 #include "lighting/lightManager.h"
 #include "renderInstance/renderPassManager.h"
 #include "scene/sceneManager.h"
-
 #include "gfx/gfxDevice.h"
 #include "gfx/gfxDrawUtil.h"
 #include "gfx/gfxDebugEvent.h"
@@ -35,6 +34,11 @@ bool Scene2D::smRenderBoundingRects;
 
 Scene2D* gClientScene2DGraph;
 
+Scene2D * Scene2D::smRootScene = nullptr;
+Vector<Scene2D*> Scene2D::smScene2DList;
+
+IMPLEMENT_CO_NETOBJECT_V1(Scene2D);
+
 Scene2D::Scene2D() :
    mpWorld(NULL),
    mpWorldGravity(0.0f, -20.0f),
@@ -43,13 +47,15 @@ Scene2D::Scene2D() :
    mCameraSize(16.0f, 0.0f),
    mSceneTime(0.0f),
    mAmbientColor(1.0, 1.0, 1.0, 1.0),
-   mScenePause(false)
+   mScenePause(false),
+   mScene2DId(-1)
 {
 
    VECTOR_SET_ASSOCIATION(mObjectList);
    VECTOR_SET_ASSOCIATION(mRenderedObjectList);
    VECTOR_SET_ASSOCIATION(mServerObjectList);
 
+   mGameModeName = StringTable->EmptyString();
 }
 
 Scene2D::~Scene2D()
@@ -72,6 +78,10 @@ void Scene2D::initPersistFields()
 
    addField("AmbientLightColor", TypeColorF, Offset(mAmbientColor, Scene2D),
       "Scene ambient light color.");
+
+   addGroup("Gameplay");
+   addField("gameModeName", TypeString, Offset(mGameModeName, Scene2D), "The name of the gamemode that this scene utilizes");
+   endGroup("Gameplay");
 
 }
 
@@ -99,6 +109,10 @@ bool Scene2D::onAdd()
    if(!Parent::onAdd())
       return false;
 
+   smScene2DList.push_back(this);
+   mScene2DId = smScene2DList.size() - 1;
+
+   /// this could end up being useful for streaming scenes.
    gClientScene2DGraph = this;
 
    // Box2D 2.4.1 world with gravity
@@ -119,6 +133,9 @@ bool Scene2D::onAdd()
 void Scene2D::onRemove()
 {
    setProcessTicks(false);
+
+   smScene2DList.remove(this);
+   mScene2DId = -1;
 
    while (mObjectList.size() > 0)
    {
@@ -167,8 +184,6 @@ void Scene2D::removeObjectFromScene(SceneObject2D* obj)
 void Scene2D::processTick()
 {
 
-   PROFILE_SCOPE(Scene2D_ProcessTick);
-
    /// keep track of total time.
    mSceneTime += TickSec;
 
@@ -178,11 +193,8 @@ void Scene2D::processTick()
    /// update sceneobjects
    for (S32 i = 0; i < mObjectList.size(); ++i)
    {
-      if(mObjectList[i]->isEnabled())
          mObjectList[i]->processTick();
    }
-
-   PROFILE_END();
 
 }
 
@@ -197,53 +209,39 @@ void Scene2D::EndContact(b2Contact * pContact)
 void Scene2D::interpolateTick(F32 delta)
 {
 
-   PROFILE_SCOPE(Scene2D_InterpolateTick);
-
    /// update sceneobjects
    for (S32 i = 0; i < mObjectList.size(); ++i)
    {
-      if (mObjectList[i]->isEnabled())
          mObjectList[i]->interpolateTick(delta);
    }
-
-   PROFILE_END();
 
 }
 
 void Scene2D::sceneRender2D()
 {
+
+   Con::printf("setup render state");
+
    SceneCameraState cameraState = SceneCameraState::fromGFX();
 
-   SceneRenderState renderState(NULL, SPT_Diffuse, cameraState);
-
-   sceneRender2D(&renderState);
+   sceneRender2D(&cameraState);
 
 }
 
-void Scene2D::sceneRender2D(SceneRenderState* renderState)
+void Scene2D::sceneRender2D(SceneCameraState* renderState)
 {
    /// 2D needs to register its own lights on
    /// a per frame basis.
    ///LIGHTMGR->registerGlobalLight(light info, object);
+   Con::printf("Render Scene");
 
-   renderState->setAmbientLightColor(mAmbientColor);
-
-   PROFILE_START(Scene2D_preRenderSignal);
-      mCurrentRenderState = renderState;
-      getPreRenderSignal().trigger(this, renderState);
-      mCurrentRenderState = NULL;
-   PROFILE_END();
-
-   for (U32 layer = MAX_LAYERS_SUPPORTED - 1; layer >= 0; layer--)
+   for (S32 i = 0; i < mObjectList.size(); ++i)
    {
-      for (S32 i = 0; i < mObjectList.size(); ++i)
-      {
-         Box3F box = renderState->getCullingFrustum().getBounds();
-         SceneObject2D* obj = mObjectList[i];
-         if(obj->mSceneLayer == layer)
-            obj->prepRenderImage(renderState);
+      //Box3F box = renderState->getCullingFrustum().getBounds();
 
-      }
+      SceneObject2D* obj = mObjectList[i];
+      obj->prepRenderImage(renderState);
+
    }
 
    if (smRenderBoundingRects)
@@ -265,16 +263,23 @@ void Scene2D::sceneRender2D(SceneRenderState* renderState)
 
    }
 
-   PROFILE_START(Scene2DRender_postRenderSignal);
-      mCurrentRenderState = renderState;
-      getPostRenderSignal().trigger(this, renderState);
-      mCurrentRenderState = NULL;
-   PROFILE_END();
-
    /// 2d lights should not effect 3d scenes
-   PROFILE_START(Scene2D_unregisterLights);
-      LIGHTMGR->unregisterAllLights();
-   PROFILE_END();
+   //PROFILE_START(Scene2D_unregisterLights);
+   //   LIGHTMGR->unregisterAllLights();
+   //PROFILE_END();
+}
+
+U32 Scene2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
+{
+   U32 retMask = Parent::packUpdate(conn, mask, stream);
+   Con::printf("Scene2D pack");
+   return retMask;
+
+}
+
+void Scene2D::unpackUpdate(NetConnection *conn, BitStream *stream)
+{
+   Con::printf("Scene2D unpack");
 }
 
 void Scene2D::scopeScene(CameraScopeQuery* query, NetConnection* netConnection)
@@ -283,6 +288,7 @@ void Scene2D::scopeScene(CameraScopeQuery* query, NetConnection* netConnection)
    {
       netConnection->objectInScope(mRenderedObjectList[i]);
    }
+
    for (U32 i = 0; i < mServerObjectList.size(); i++)
    {
       SceneObject2D* obj = mServerObjectList[i];
@@ -292,3 +298,23 @@ void Scene2D::scopeScene(CameraScopeQuery* query, NetConnection* netConnection)
 
    }
 }
+
+
+DefineEngineFunction(getScene2D, Scene2D*, (U32 sceneId), (0),
+   "Get the root Scene object that is loaded.\n"
+   "@return The id of the Root Scene. Will be 0 if no root scene is loaded")
+{
+   if (Scene2D::smScene2DList.empty() || sceneId >= Scene2D::smScene2DList.size())
+      return nullptr;
+
+   return Scene2D::smScene2DList[sceneId];
+}
+
+DefineEngineFunction(getScene2DCount, S32, (), ,
+   "Get the number of active Scene objects that are loaded.\n"
+   "@return The number of active scenes")
+{
+   return Scene2D::smScene2DList.size();
+}
+
+

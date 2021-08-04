@@ -24,6 +24,8 @@ SceneObject2D::SceneObject2D() :
    mCollisionOneWay(false)
 {
 
+   mNetFlags.set(Ghostable | ScopeAlways);
+
    mpBodyDef.position.Set(0.0f, 0.0f);
    mpBodyDef.angle = 0.0f;
    mpBodyDef.linearVelocity.Set(0.0f, 0.0f);
@@ -265,13 +267,10 @@ U32 SceneObject2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 {
    U32 retMask = Parent::packUpdate(conn, mask, stream);
 
-   if (stream->writeFlag(mask & MoveMask))
-   {
-      Point3F pos;
-      getTransform().getColumn(3, &pos);
-      stream->writeCompressedPoint(pos);
-      stream->writeFloat(mAng / M_2PI_F, 7);
-   }
+   Con::printf(" SceneObject pack");
+
+   if (stream->writeFlag(mask & FlagMask))
+      stream->writeRangedU32((U32)mObjectFlags, 0, getObjectFlagMax());
 
    return retMask;
 
@@ -279,18 +278,11 @@ U32 SceneObject2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 
 void SceneObject2D::unpackUpdate(NetConnection *conn, BitStream *stream)
 {
+   Con::printf(" SceneObject unpack");
    Parent::unpackUpdate(conn, stream);
 
-   ///MoveMask
    if (stream->readFlag())
-   {
-      Point3F pos, rot;
-      stream->readCompressedPoint(&pos);
-      rot.z = stream->readFloat(7) * M_2PI_F;
-
-      setPosition(Vector2(pos.x, pos.y));
-      setAngle(rot.z);
-   }
+      mObjectFlags = stream->readRangedU32(0, getObjectFlagMax());
 
 }
 
@@ -300,8 +292,8 @@ void SceneObject2D::onCameraScopeQuery(NetConnection * connection, CameraScopeQu
    GameConnection* conn = dynamic_cast<GameConnection*> (connection);
 
    if (this->isScopeable())
-      connection->objectInScope(this);
+      conn->objectInScope(this);
 
-   mpScene->scopeScene(query, connection);
+   mpScene->scopeScene(query, conn);
 
 }

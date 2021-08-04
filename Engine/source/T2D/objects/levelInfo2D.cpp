@@ -155,7 +155,7 @@ void LevelInfo2D::initPersistFields()
 U32 LevelInfo2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 {
    U32 retMask = Parent::packUpdate(conn, mask, stream);
-
+   Con::printf("Level info pack");
    /// these need to be read out separately for some reason =/ 
    stream->write(mCameraSize.x);
    stream->write(mCameraSize.y);
@@ -171,7 +171,7 @@ U32 LevelInfo2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 void LevelInfo2D::unpackUpdate(NetConnection *conn, BitStream *stream)
 {
    Parent::unpackUpdate(conn, stream);
-
+   Con::printf("Level info unpack");
    /// the aforementioned shitty read out separately stuff
    stream->read(&mCameraSize.x);
    stream->read(&mCameraSize.y);

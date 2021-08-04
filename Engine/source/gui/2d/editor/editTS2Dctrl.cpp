@@ -1,0 +1,17 @@
+#include "platform/platform.h"
+#include"gui/2d/editor/editTS2Dctrl.h"
+
+#include "console/consoleTypes.h"
+#include "console/engineAPI.h"
+#include "T3D/gameBase/gameConnection.h"
+#include "gui/worldEditor/editor.h"
+#include "gui/core/guiCanvas.h"
+#include "gfx/primBuilder.h"
+#include "gfx/gfxDrawUtil.h"
+#include "gfx/gfxTransformSaver.h"
+#include "gfx/gfxDebugEvent.h"
+#include "scene/sceneManager.h"
+#include "scene/sceneRenderState.h"
+#include "renderInstance/renderBinManager.h"
+
+#include "T2D/Scene/Scene2D.h"

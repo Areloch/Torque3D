@@ -137,15 +137,17 @@ struct TickContact
 ///-----------------------------------------------------------------------------
 
 class Scene2D :
-   public BehaviorComponent,
+   public NetObject,
    public b2ContactListener,
    public b2DestructionListener,
    public b2ContactFilter,
    public virtual ITickable
 {
-   typedef BehaviorComponent Parent;
+   typedef NetObject Parent;
 
    bool mIsSubScene;
+
+   S32 mScene2DId;
 
 protected:
 
@@ -156,6 +158,7 @@ protected:
    AmbientLightInterpolator mAmbientLightColor;
    Point2F mCameraSize;
 
+   MatrixSet *mMatrixSet;
 
 private:
 
@@ -194,8 +197,12 @@ public:
    Scene2D();
    ~Scene2D();
 
+   RenderPassManager * getDefaultRenderPass() const;
+
    /// SimObject
    virtual bool   onAdd();
+
+   
 
    bool addObjectToScene(SceneObject2D * obj);
    void removeObjectFromScene(SceneObject2D * obj);
@@ -227,15 +234,28 @@ public:
 
    /// scene render
    void           sceneRender2D();
-   void           sceneRender2D(SceneRenderState * renderState);
+   void           sceneRender2D(SceneCameraState * renderState);
 
    ///Networking
-   //U32            packUpdate(NetConnection *conn, U32 mask, BitStream *stream);
-   //void           unpackUpdate(NetConnection *conn, BitStream *stream);
+   U32            packUpdate(NetConnection *conn, U32 mask, BitStream *stream);
+   void           unpackUpdate(NetConnection *conn, BitStream *stream);
+
+   DECLARE_CONOBJECT(Scene2D);
    /// scope scene
    void scopeScene(CameraScopeQuery* query, NetConnection* netConnection);
 
    inline b2World*         getWorld(void) const { return mpWorld; }
+
+   static Scene2D *getRootScene2D()
+   {
+      if (Scene2D::smScene2DList.empty())
+         return nullptr;
+
+      return Scene2D::smScene2DList[0];
+   }
+
+   static Vector<Scene2D*> smScene2DList;
+
    
 };
 

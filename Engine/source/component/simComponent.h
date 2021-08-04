@@ -21,7 +21,7 @@
 #include "core/stream/stream.h"
 #endif // !_STREAM_H_
 
-class SimComponent : public NetObject
+class SimComponent : public SimObject
 {
    typedef SimObject Parent;
 

@@ -22,11 +22,20 @@ class SpriteObject : public SceneObject2D
 {
    typedef SceneObject2D Parent;
 
+   enum
+   {
+      TransformMask = Parent::NextFreeMask << 0,
+      AssetUpdateMask = Parent::NextFreeMask << 1,
+      FrameUpdateMask = Parent::NextFreeMask << 2,
+      NextFreeMask = Parent::NextFreeMask << 3
+   };
+
 private:
 
    bool mFlipX;
    bool mFlipY;
    Vector2 mSize;
+   GFXStateBlockRef  nsb;
 
 protected:
 
@@ -37,21 +46,32 @@ protected:
    bool setFrame(const U32 frame);
 
 public:
+
+   GFXTexHandle txr;
+
    SpriteObject();
    virtual ~SpriteObject();
-
-   DECLARE_CONOBJECT(SpriteObject);
 
    static bool _setSpriteAsset(void *obj, const char* index, const char* data);
    static bool _setFieldFrame(void *obj, const char* index, const char* data);
    
    static void initPersistFields();
+   virtual void inspectPostApply();
 
    /// sim
    virtual bool onAdd();
    virtual void onRemove();
 
-   virtual void prepRenderImage(SceneRenderState *state);
+   
+   /// rendering
+   void prepRenderImage(SceneCameraState* cam);
+
+   /// NetObject
+   U32 packUpdate(NetConnection* conn, U32 mask, BitStream* stream);
+   void unpackUpdate(NetConnection* conn, BitStream* stream);
+
+   DECLARE_CONOBJECT(SpriteObject);
+   
 
 };
 

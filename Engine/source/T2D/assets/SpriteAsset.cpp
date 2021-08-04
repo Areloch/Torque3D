@@ -22,8 +22,18 @@
 #include "platform/profiler.h"
 
 //-----------------------------------------------------------------------------
+static StringTableEntry customCellsNode   = StringTable->insert("CustomCells");
+static StringTableEntry cellNodeName      = StringTable->insert("Cell");
+static StringTableEntry cellRegionName    = StringTable->insert("RegionName");
+static StringTableEntry cellOffsetName    = StringTable->insert("Offset");
+static StringTableEntry cellOffsetXName   = StringTable->insert("OffsetX");
+static StringTableEntry cellOffsetYName   = StringTable->insert("OffsetY");
+static StringTableEntry cellWidthName     = StringTable->insert("Width");
+static StringTableEntry cellHeightName    = StringTable->insert("Height");
+static StringTableEntry cellNameEntryName = StringTable->insert("Name");
+//-----------------------------------------------------------------------------
 
-IMPLEMENT_CONOBJECT(SpriteAsset);
+//IMPLEMENT_CONOBJECT(SpriteAsset);
 ConsoleType(assetIdString, TypeSpriteAssetPtr, String, ASSET_ID_FIELD_PREFIX)
 
 ConsoleGetType(TypeSpriteAssetPtr)
@@ -101,7 +111,7 @@ SpriteAsset::SpriteAsset() :
 {
    // Set Vector Associations.
    VECTOR_SET_ASSOCIATION(mFrames);
-   VECTOR_SET_ASSOCIATION(mExplicitFrames);
+   VECTOR_SET_ASSOCIATION(mCustomFrames);
 }
 
 SpriteAsset::~SpriteAsset()
@@ -113,18 +123,18 @@ void SpriteAsset::initPersistFields()
    // Parent
    Parent::initPersistFields();
 
-   addProtectedField("ImageFile", TypeAssetLooseFilePath, Offset(mSpriteFileName, SpriteAsset), &setSpriteFileName, &getSpriteFileName, &defaultProtectedWriteFn,
+   addProtectedField("spriteFile", TypeAssetLooseFilePath, Offset(mSpriteFileName, SpriteAsset), &setSpriteFileName, &getSpriteFileName, &defaultProtectedWriteFn,
       "Path to the sprite.");
 
-   addField("CellRowOrder", TypeBool, Offset(mCellRowOrder, SpriteAsset), "");
-   addField("CellOffsetX", TypeS32, Offset(mCellOffsetX, SpriteAsset), "");
-   addField("CellOffsetY", TypeS32, Offset(mCellOffsetY, SpriteAsset), "");
-   addField("CellStrideX", TypeS32, Offset(mCellStrideX, SpriteAsset), "");
-   addField("CellStrideY", TypeS32, Offset(mCellStrideY, SpriteAsset), "");
-   addField("CellCountX", TypeS32, Offset(mCellCountX, SpriteAsset), "");
-   addField("CellCountY", TypeS32, Offset(mCellCountY, SpriteAsset), "");
-   addField("CellWidth", TypeS32, Offset(mCellWidth, SpriteAsset), "");
-   addField("CellHeight", TypeS32, Offset(mCellHeight, SpriteAsset), "");
+   addField("cellRowOrder", TypeBool, Offset(mCellRowOrder, SpriteAsset), "");
+   addField("cellOffsetX", TypeS32, Offset(mCellOffsetX, SpriteAsset), "");
+   addField("cellOffsetY", TypeS32, Offset(mCellOffsetY, SpriteAsset), "");
+   addField("cellStrideX", TypeS32, Offset(mCellStrideX, SpriteAsset), "");
+   addField("cellStrideY", TypeS32, Offset(mCellStrideY, SpriteAsset), "");
+   addField("cellCountX", TypeS32, Offset(mCellCountX, SpriteAsset), "");
+   addField("cellCountY", TypeS32, Offset(mCellCountY, SpriteAsset), "");
+   addField("cellWidth", TypeS32, Offset(mCellWidth, SpriteAsset), "");
+   addField("cellHeight", TypeS32, Offset(mCellHeight, SpriteAsset), "");
 
 }
 
@@ -163,7 +173,7 @@ void SpriteAsset::loadSprite()
          return;
       }
 
-      mSprite.set(mSpriteFileName, &GFXStaticTextureSRGBProfile, avar("%s() - mSprite (line %d)", __FUNCTION__, __LINE__));
+      mSprite.set(mSpriteFileName, &GFXStaticTextureProfile, avar("%s() - mSprite (line %d)", __FUNCTION__, __LINE__));
       if (mSprite)
       {
          mIsValidSprite = true;
@@ -208,6 +218,48 @@ void SpriteAsset::setSpriteFileName(const char* pScriptFile)
    AssertFatal(pScriptFile != NULL, "Cannot use a null sprite file.");
 
    mSpriteFileName = StringTable->insert(pScriptFile);
+
+}
+
+void SpriteAsset::addCustomFrame(const S32 cellOffX, const S32 cellOffY, const S32 cellWidth, const S32 cellHeight, const char* regionName)
+{
+   /// calculate texel scale.
+   const F32 texWScale = 1.0f / (F32)mSprite->getWidth();
+   const F32 texHScale = 1.0f / (F32)mSprite->getHeight();
+
+   /// original bitmap dimension
+   const U32 spriteWidth = mSprite->getBitmapWidth();
+   const U32 spriteHeight = mSprite->getBitmapHeight();
+
+   FrameArea frameArea(0, 0, spriteWidth, spriteHeight, texWScale, texHScale);
+
+   if (regionName == NULL)
+   {
+      Con::warnf("SpriteAsset::addCustomFrame() - Cell name of '%s' is invalid or was not set.", regionName);
+
+      U32 currentIndex = mCustomFrames.size();
+      Con::warnf("- Setting to the next index in the frame list: '%i'", currentIndex);
+
+      dSscanf(regionName, "%i", currentIndex);
+   }
+
+   if (cellOffX < 0 || cellOffY < 0 || cellOffX > spriteWidth || cellOffY > spriteHeight)
+   {
+      Con::warnf("SpriteAsset::addCustomFrame() - Cell offset of '(%d,%d)' is invalid or was not set.", cellOffX, cellOffY);
+   }
+
+   if (cellWidth <= 0 || cellWidth > spriteWidth)
+   {
+      Con::warnf("SpriteAsset::addCustomFrame() - Cell width of '%d' is invalid or was not set.", cellWidth);
+   }
+
+   if (cellHeight <= 0 || cellHeight > spriteHeight)
+   {
+      Con::warnf("SpriteAsset::addCustomFrame() - Cell height of '%d' is invalid or was not set.", cellHeight);
+   }
+
+   frameArea.setArea(cellOffX, cellOffY, cellWidth, cellHeight, texWScale, texHScale, regionName);
+   mCustomFrames.push_back(frameArea);
 
 }
 
@@ -409,11 +461,17 @@ GFXTexHandle SpriteAsset::getSprite(GFXTextureProfile reqProfile)
 
 const char* SpriteAsset::getSpriteInfo()
 {
+   Con::printf("get sprite info");
    if (mIsValidSprite)
    {
       static const U32 bufSize = 2048;
       char* returnBuffer = Con::getReturnBuffer(bufSize);
-      dSprintf(returnBuffer, bufSize, "%s %d %d %d", GFXStringTextureFormat[mSprite.getFormat()], mSprite.getHeight(), mSprite.getWidth(), mSprite.getDepth());
+      dSprintf(returnBuffer, bufSize, "%s %d %d %d %d",
+               GFXStringTextureFormat[mSprite.getFormat()],
+               mSprite.getHeight(),
+               mSprite.getWidth(),
+               getFrameCount(),
+               mCustomFrames.size());
 
       return returnBuffer;
    }
@@ -425,19 +483,15 @@ const char* SpriteAsset::getSpriteInfo()
 void SpriteAsset::calculateSprite()
 {
    /// Debug profile
-   PROFILE_SCOPE(SpriteAsset_CalculateSprite);
 
    mFrames.clear();
 
    calculateImplicit();
 
-   PROFILE_END();
-
 }
 
 void SpriteAsset::calculateImplicit()
 {
-   PROFILE_SCOPE(SpriteAsset_CalculateImplicit);
 
    /// calculate texel scale.
    const F32 texWScale = 1.0f / (F32)mSprite->getWidth();
@@ -515,14 +569,14 @@ void SpriteAsset::calculateImplicit()
    if (cellFinalPositionX < 0)
    {
       // Warn.
-      Con::warnf("ImageAsset::calculateImage() - Invalid Cell OffsetX(%d)/Width(%d)/CountX(%d); off image left-hand-side.", mCellOffsetX, mCellWidth, mCellCountX);
+      Con::warnf("SpriteAsset::calculateImage() - Invalid Cell OffsetX(%d)/Width(%d)/CountX(%d); off image left-hand-side.", mCellOffsetX, mCellWidth, mCellCountX);
       return;
    }
    // Off Right?
    else if (cellFinalPositionX > spriteWidth)
    {
       // Warn.
-      Con::warnf("ImageAsset::calculateImage() - Invalid Cell OffsetX(%d)/Width(%d)/CountX(%d); off image right-hand-side.", mCellOffsetX, mCellWidth, mCellCountX);
+      Con::warnf("SpriteAsset::calculateImage() - Invalid Cell OffsetX(%d)/Width(%d)/CountX(%d); off image right-hand-side.", mCellOffsetX, mCellWidth, mCellCountX);
       return;
    }
 
@@ -532,14 +586,14 @@ void SpriteAsset::calculateImplicit()
    if (cellFinalPositionY < 0)
    {
       // Warn.
-      Con::warnf("ImageAsset::calculateImage() - Invalid Cell OffsetY(%d)/Height(%d)/CountY(%d); off image top-side.", mCellOffsetY, mCellHeight, mCellCountY);
+      Con::warnf("SpriteAsset::calculateImage() - Invalid Cell OffsetY(%d)/Height(%d)/CountY(%d); off image top-side.", mCellOffsetY, mCellHeight, mCellCountY);
       return;
    }
    // Off Bottom?
    else if (cellFinalPositionY > spriteHeight)
    {
       // Warn.
-      Con::warnf("ImageAsset::calculateImage() - Invalid Cell OffsetY(%d)/Height(%d)/CountY(%d); off image bottom-side.", mCellOffsetY, mCellHeight, mCellCountY);
+      Con::warnf("SpriteAsset::calculateImage() - Invalid Cell OffsetY(%d)/Height(%d)/CountY(%d); off image bottom-side.", mCellOffsetY, mCellHeight, mCellCountY);
       return;
    }
 
@@ -578,8 +632,210 @@ void SpriteAsset::calculateImplicit()
       }
    }
 
-   PROFILE_END();
 }
+
+
+void SpriteAsset::onTamlCustomWrite(TamlCustomNodes & customNodes)
+{
+   Parent::onTamlCustomWrite(customNodes);
+
+   if (mCustomFrames.size() > 0)
+   {
+      TamlCustomNode* pCustomCellNode = customNodes.addNode(customCellsNode);
+      for (typeFrameAreaVector::iterator Itr = mCustomFrames.begin(); Itr != mCustomFrames.end(); ++Itr)
+      {
+         const FrameArea& frameArea = *Itr;
+
+         TamlCustomNode* pCellNode = pCustomCellNode->addNode(cellNodeName);
+
+         pCellNode->addField(cellRegionName,    frameArea.mPixelArea.mRegionName);
+         pCellNode->addField(cellOffsetName,    frameArea.mPixelArea.mPixelOffset);
+         pCellNode->addField(cellWidthName,     frameArea.mPixelArea.mPixelWidth);
+         pCellNode->addField(cellHeightName ,   frameArea.mPixelArea.mPixelHeight);
+      }
+   }
+   else
+      return;
+
+}
+
+void SpriteAsset::onTamlCustomRead(TamlCustomNodes & customNodes)
+{
+   Parent::onTamlCustomRead(customNodes);
+
+   const TamlCustomNode* pCustomCellNode = customNodes.findNode(customCellsNode);
+   if (pCustomCellNode != NULL)
+   {
+      /// calculate texel scale.
+      const F32 texWScale = 1.0f / (F32)mSprite->getWidth();
+      const F32 texHScale = 1.0f / (F32)mSprite->getHeight();
+
+      /// original bitmap dimension
+      const U32 spriteWidth = mSprite->getBitmapWidth();
+      const U32 spriteHeight = mSprite->getBitmapHeight();
+
+      FrameArea frameArea(0, 0, spriteWidth, spriteHeight, texWScale, texHScale);
+
+      mCustomFrames.clear();
+
+      const TamlCustomNodeVector& cellNodes = pCustomCellNode->getChildren();
+
+      for (TamlCustomNodeVector::const_iterator cellNodeItr = cellNodes.begin(); cellNodeItr != cellNodes.end(); ++cellNodeItr)
+      {
+         TamlCustomNode* pCellNode = *cellNodeItr;
+
+         StringTableEntry nodeName = pCellNode->getNodeName();
+
+         if (nodeName != cellNodeName)
+         {
+            Con::warnf("SpriteAsset::onTamlCustomRead() - Encountered an unknown custom name of '%s'.  Only '%s' is valid.", nodeName, cellNodeName);
+            continue;
+         }
+
+         Point2I cellOffset(0, 0);
+         S32 cellWidth = 0;
+         S32 cellHeight = 0;
+         const char* regionName = NULL;
+
+         const TamlCustomFieldVector& fields = pCellNode->getFields();
+
+         for (TamlCustomFieldVector::const_iterator fieldItr = fields.begin(); fieldItr != fields.end(); ++fieldItr)
+         {
+            const TamlCustomField* pField = *fieldItr;
+
+            StringTableEntry fieldName = pField->getFieldName();
+
+            if (fieldName == cellRegionName)
+            {
+               regionName = pField->getFieldValue();
+            }
+            else if (fieldName == cellOffsetName)
+            {
+               pField->getFieldValue(cellOffset);
+            }
+            else if (fieldName == cellOffsetXName)
+            {
+               pField->getFieldValue(cellOffset.x);
+            }
+            else if (fieldName == cellOffsetYName)
+            {
+               pField->getFieldValue(cellOffset.y);
+            }
+            else if (fieldName == cellWidthName)
+            {
+               pField->getFieldValue(cellWidth);
+            }
+            else if (fieldName == cellHeightName)
+            {
+               pField->getFieldValue(cellHeight);
+            }
+            else
+            {
+               Con::warnf("SpriteAsset::onTamlCustomRead() - Encountered an unknown custom field name of '%s'.", fieldName);
+               continue;
+            }
+         }
+
+         if (regionName == NULL)
+         {
+            Con::warnf("SpriteAsset::onTamlCustomRead() - Cell name of '%s' is invalid or was not set.", regionName);
+
+            U32 currentIndex = mCustomFrames.size();
+            Con::warnf("- Setting to the next index in the frame list: '%i'", currentIndex);
+
+            dSscanf(regionName, "%i", currentIndex);
+         }
+
+         if (cellOffset.x < 0 || cellOffset.y < 0 || cellOffset.x > spriteWidth || cellOffset.y > spriteHeight)
+         {
+            Con::warnf("SpriteAsset::onTamlCustomRead() - Cell offset of '(%d,%d)' is invalid or was not set.", cellOffset.x, cellOffset.y);
+            continue;
+         }
+
+         if (cellWidth <= 0 || cellWidth > spriteWidth)
+         {
+            Con::warnf("SpriteAsset::onTamlCustomRead() - Cell width of '%d' is invalid or was not set.", cellWidth);
+            continue;
+         }
+
+         if (cellHeight <= 0 || cellHeight > spriteHeight)
+         {
+            Con::warnf("SpriteAsset::onTamlCustomRead() - Cell height of '%d' is invalid or was not set.", cellHeight);
+            continue;
+         }
+
+         frameArea.setArea(cellOffset.x, cellOffset.y, cellWidth, cellHeight, texWScale, texHScale, regionName);
+         mCustomFrames.push_back(frameArea);
+         
+      }
+
+   }
+
+}
+
+static void WriteCustomTamlSchema(const AbstractClassRep* pClassRep, TiXmlElement* pParentElement)
+{
+   AssertFatal(pClassRep != NULL, "SpriteAsset::WriteCustomTamlSchema() - ClassRep cannot be NULL.");
+   AssertFatal(pParentElement != NULL, "SpriteAsset::WriteCustomTamlSchema() - Parent Element cannot be NULL.");
+
+   char buffer[1024];
+
+   // Create ImageAsset node element.
+   TiXmlElement* pSpriteAssetNodeElement = new TiXmlElement("xs:element");
+   dSprintf(buffer, sizeof(buffer), "%s.%s", pClassRep->getClassName(), customCellsNode);
+   pSpriteAssetNodeElement->SetAttribute("name", buffer);
+   pSpriteAssetNodeElement->SetAttribute("minOccurs", 0);
+   pSpriteAssetNodeElement->SetAttribute("maxOccurs", 1);
+   pParentElement->LinkEndChild(pSpriteAssetNodeElement);
+
+   // Create complex type.
+   TiXmlElement* pSpriteAssetNodeComplexTypeElement = new TiXmlElement("xs:complexType");
+   pSpriteAssetNodeElement->LinkEndChild(pSpriteAssetNodeComplexTypeElement);
+
+   // Create choice element.
+   TiXmlElement* pSpriteAssetNodeChoiceElement = new TiXmlElement("xs:choice");
+   pSpriteAssetNodeChoiceElement->SetAttribute("minOccurs", 0);
+   pSpriteAssetNodeChoiceElement->SetAttribute("maxOccurs", "unbounded");
+   pSpriteAssetNodeComplexTypeElement->LinkEndChild(pSpriteAssetNodeChoiceElement);
+
+   // Create ImageAsset element.
+   TiXmlElement* pSpriteAssetElement = new TiXmlElement("xs:element");
+   pSpriteAssetElement->SetAttribute("name", cellNodeName);
+   pSpriteAssetElement->SetAttribute("minOccurs", 0);
+   pSpriteAssetElement->SetAttribute("maxOccurs", 1);
+   pSpriteAssetNodeChoiceElement->LinkEndChild(pSpriteAssetElement);
+
+   // Create complex type Element.
+   TiXmlElement* pSpriteAssetComplexTypeElement = new TiXmlElement("xs:complexType");
+   pSpriteAssetElement->LinkEndChild(pSpriteAssetComplexTypeElement);
+
+   // Create "RegionName" attribute.
+   TiXmlElement* pSpriteAssetRegionName = new TiXmlElement("xs:attribute");
+   pSpriteAssetRegionName->SetAttribute("name", cellRegionName);
+   pSpriteAssetRegionName->SetAttribute("type", "xs:string");
+   pSpriteAssetComplexTypeElement->LinkEndChild(pSpriteAssetRegionName);
+
+   // Create "Offset" attribute.
+   TiXmlElement* pSpriteAssetOffset = new TiXmlElement("xs:attribute");
+   pSpriteAssetOffset->SetAttribute("name", cellOffsetName);
+   pSpriteAssetOffset->SetAttribute("type", "Point2I_ConsoleType");
+   pSpriteAssetComplexTypeElement->LinkEndChild(pSpriteAssetOffset);
+
+   // Create "Width" attribute.
+   TiXmlElement* pSpriteAssetWidth = new TiXmlElement("xs:attribute");
+   pSpriteAssetWidth->SetAttribute("name", cellWidthName);
+   pSpriteAssetWidth->SetAttribute("type", "xs:unsignedInt");
+   pSpriteAssetComplexTypeElement->LinkEndChild(pSpriteAssetWidth);
+
+   // Create "Height" attribute.
+   TiXmlElement* pSpriteAssetHeight = new TiXmlElement("xs:attribute");
+   pSpriteAssetHeight->SetAttribute("name", cellHeightName);
+   pSpriteAssetHeight->SetAttribute("type", "xs:unsignedInt");
+   pSpriteAssetComplexTypeElement->LinkEndChild(pSpriteAssetHeight);
+
+}
+
+IMPLEMENT_CONOBJECT_SCHEMA(SpriteAsset, WriteCustomTamlSchema);
 
 DefineEngineMethod(SpriteAsset, getSpriteFileName, const char*, (), ,
    "Creates an instance of the given GameObject given the asset definition.\n"
@@ -594,6 +850,25 @@ DefineEngineMethod(SpriteAsset, getSpriteInfo, const char*, (), ,
 {
    return object->getSpriteInfo();
 }
+
+DefineEngineMethod(SpriteAsset, getCellCountX, S32, (), ,
+   "")
+{
+   return object->getCellCountX();
+}
+
+DefineEngineMethod(SpriteAsset, getCellCountY, S32, (), ,
+   "")
+{
+   return object->getCellCountY();
+}
+
+DefineEngineMethod(SpriteAsset, getFrameCount, S32, (), ,
+   "")
+{
+   return object->getFrameCount();
+}
+
 
 //-----------------------------------------------------------------------------
 // GuiInspectorTypeSpriteAssetPtr
@@ -621,34 +896,9 @@ GuiControl * GuiInspectorTypeSpriteAssetPtr::constructEditControl()
 
    // Change filespec
    char szBuffer[512];
-   dSprintf(szBuffer, sizeof(szBuffer), "AssetBrowser.showDialog(\"ShapeAsset\", \"AssetBrowser.changeAsset\", %s, %s);",
+   dSprintf(szBuffer, sizeof(szBuffer), "AssetBrowser.showDialog(\"SpriteAsset\", \"AssetBrowser.changeAsset\", %s, %s);",
       mInspector->getInspectObject()->getIdString(), mCaption);
    mBrowseButton->setField("Command", szBuffer);
-
-   const char* id = mInspector->getInspectObject()->getIdString();
-
-   setDataField(StringTable->insert("targetObject"), NULL, mInspector->getInspectObject()->getIdString());
-
-   // Create "Open in ShapeEditor" button
-   mSpriteEdButton = new GuiBitmapButtonCtrl();
-
-   //---------------------
-   //TODO: coming soon ;)
-   //---------------------
-   //dSprintf(szBuffer, sizeof(szBuffer), "SpriteEditorPlugin.openSpriteAssetId(%d.getText());", retCtrl->getId());
-   //mSpriteEdButton->setField("Command", szBuffer);
-
-   /// just use shape editor button for now cos it exists.
-   char bitmapName[512] = "tools/worldEditor/images/toolbar/shape-editor";
-   mSpriteEdButton->setBitmap(bitmapName);
-
-   mSpriteEdButton->setDataField(StringTable->insert("Profile"), NULL, "GuiButtonProfile");
-   mSpriteEdButton->setDataField(StringTable->insert("tooltipprofile"), NULL, "GuiToolTipProfile");
-   mSpriteEdButton->setDataField(StringTable->insert("hovertime"), NULL, "1000");
-   mSpriteEdButton->setDataField(StringTable->insert("tooltip"), NULL, "Open this file in the Sprite Editor");
-
-   mSpriteEdButton->registerObject();
-   addObject(mSpriteEdButton);
 
    return retCtrl;
 
@@ -671,11 +921,11 @@ bool GuiInspectorTypeSpriteAssetPtr::updateRects()
       resized |= mBrowseButton->resize(mBrowseRect.point, mBrowseRect.extent);
    }
 
-   if (mSpriteEdButton != NULL)
-   {
-      RectI shapeEdRect(fieldExtent.x - 16, 2, 14, fieldExtent.y - 4);
-      resized |= mSpriteEdButton->resize(shapeEdRect.point, shapeEdRect.extent);
-   }
+   //if (mSpriteEdButton != NULL)
+   //{
+   //   RectI shapeEdRect(fieldExtent.x - 16, 2, 14, fieldExtent.y - 4);
+   //   resized |= mSpriteEdButton->resize(shapeEdRect.point, shapeEdRect.extent);
+   //}
 
    return resized;
 }

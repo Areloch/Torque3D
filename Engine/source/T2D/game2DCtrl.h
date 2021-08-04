@@ -8,11 +8,6 @@
 #include "gui/2d/guiTS2DControl.h"
 #endif
 
-#ifndef _SCENE2D_H_
-#include "T2D/Scene/Scene2D.h"
-#endif // !_SCENE2D_H_
-
-
 class GameBase;
 
 class Game2DCtrl : public GuiTS2DCtrl

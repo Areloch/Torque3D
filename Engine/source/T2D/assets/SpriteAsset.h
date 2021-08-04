@@ -143,7 +143,6 @@ public:
 private:
 
    typedef Vector<FrameArea> typeFrameAreaVector;
-   typedef Vector<FrameArea::PixelArea> typeExplicitFrameAreaVector;
 
    bool           mCellRowOrder;
    S32            mCellOffsetX;
@@ -157,7 +156,7 @@ private:
    GFXTexHandle   mSprite;
 
    typeFrameAreaVector         mFrames;
-   typeExplicitFrameAreaVector mExplicitFrames;
+   typeFrameAreaVector         mCustomFrames;
 
    inline void clampFrame(U32& frame) const { const U32 totalFrames = getFrameCount(); if (frame >= totalFrames) frame = (totalFrames == 0 ? 0 : totalFrames - 1); };
    void calculateSprite();
@@ -189,6 +188,10 @@ public:
    inline S32              getSpriteWidth(void) const { return mSprite.getWidth(); }
    inline S32              getSpriteHeight(void) const { return mSprite.getHeight(); }
    inline U32              getFrameCount(void) const { return (U32)mFrames.size(); };
+
+   void                    addCustomFrame(const S32 cellOffX, const S32 cellOffY,
+                                          const S32 cellWidth, const S32 cellHeight,
+                                          const char* regionName);
 
    void                    setCellRowOrder(const bool cellRowOrder);
    inline bool             getCellRowOrder(void) const { return mCellRowOrder; }
@@ -232,6 +235,9 @@ protected:
    static const char* getSpriteFileName(void* obj, const char* data) { return static_cast<SpriteAsset*>(obj)->getSpriteFileName(); }
 
    void loadSprite();
+
+   virtual void onTamlCustomWrite(TamlCustomNodes& customNodes);
+   virtual void onTamlCustomRead(TamlCustomNodes& customNodes);
 
    bool getAssetByFilename(StringTableEntry fileName, AssetPtr<SpriteAsset>* spriteAsset);
 };
