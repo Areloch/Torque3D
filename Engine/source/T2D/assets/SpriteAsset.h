@@ -5,10 +5,13 @@
 #include "assets/assetBase.h"
 #endif
 
+#ifndef _MMATH_H_
+#include "math/mMath.h"
+#endif
+
 #ifndef _VECTOR2_H_
 #include "T2D/Math2D/Vector2.h"
 #endif // !_VECTOR2_H_
-
 
 #ifndef _ASSET_DEFINITION_H_
 #include "assets/assetDefinition.h"
@@ -65,6 +68,7 @@ public:
             mPixelOffset.set(pixelFrameOffsetX, pixelFrameOffsetY);
             mPixelWidth = pixelFrameWidth;
             mPixelHeight = pixelFrameHeight;
+
          };
          inline void setArea(const S32 pixelFrameOffsetX, const S32 pixelFrameOffsetY, const U32 pixelFrameWidth, const U32 pixelFrameHeight, const char* regionName)
          {
@@ -72,6 +76,7 @@ public:
             mPixelWidth = pixelFrameWidth;
             mPixelHeight = pixelFrameHeight;
             mRegionName = StringTable->insert(regionName);
+
          };
 
          Point2I mPixelOffset;
@@ -86,17 +91,20 @@ public:
       {
       public:
          TexelArea() {}
-         TexelArea(const PixelArea& pixelArea, const F32 texelWidthScale, const F32 texelHeightScale)
+         TexelArea(const Point2I& pixelOffset, const U32 pixelFrameWidth, const U32 pixelFrameHeight, const F32 texelWidthScale, const F32 texelHeightScale)
          {
-            setArea(pixelArea, texelWidthScale, texelHeightScale);
+            setArea(pixelOffset, pixelFrameWidth, pixelFrameHeight, texelWidthScale, texelHeightScale);
          }
 
-         void setArea(const PixelArea& pixelArea, const F32 texelWidthScale, const F32 texelHeightScale)
+         void setArea(const Point2I& pixelOffset, const U32 pixelFrameWidth, const U32 pixelFrameHeight, const F32 texelWidthScale, const F32 texelHeightScale)
          {
-            mTexelLower.Set(pixelArea.mPixelOffset.x * texelWidthScale, pixelArea.mPixelOffset.y * texelHeightScale);
-            mTexelWidth = pixelArea.mPixelWidth * texelWidthScale;
-            mTexelHeight = pixelArea.mPixelHeight * texelHeightScale;
-            mTexelUpper.Set(mTexelLower.x + mTexelWidth, mTexelLower.y + mTexelHeight);
+            mTexelLower.x = pixelOffset.x * texelWidthScale;
+            mTexelLower.y = pixelOffset.y * texelHeightScale;
+            mTexelWidth = pixelFrameWidth * texelWidthScale;
+            mTexelHeight = pixelFrameHeight * texelHeightScale;
+            mTexelUpper.x = mTexelLower.x + mTexelWidth;
+            mTexelUpper.y = mTexelLower.y + mTexelHeight;
+
          }
 
          void setFlip(const bool flipX, const bool flipY)
@@ -128,12 +136,12 @@ public:
       void setArea(const S32 pixelFrameOffsetX, const S32 pixelFrameOffsetY, const U32 pixelFrameWidth, const U32 pixelFrameHeight, const F32 texelWidthScale, const F32 texelHeightScale)
       {
          mPixelArea.setArea(pixelFrameOffsetX, pixelFrameOffsetY, pixelFrameWidth, pixelFrameHeight);
-         mTexelArea.setArea(mPixelArea, texelWidthScale, texelHeightScale);
+         mTexelArea.setArea(mPixelArea.mPixelOffset, pixelFrameWidth, pixelFrameHeight, texelWidthScale, texelHeightScale);
       }
       void setArea(const S32 pixelFrameOffsetX, const S32 pixelFrameOffsetY, const U32 pixelFrameWidth, const U32 pixelFrameHeight, const F32 texelWidthScale, const F32 texelHeightScale, const char* regionName)
       {
          mPixelArea.setArea(pixelFrameOffsetX, pixelFrameOffsetY, pixelFrameWidth, pixelFrameHeight, regionName);
-         mTexelArea.setArea(mPixelArea, texelWidthScale, texelHeightScale);
+         mTexelArea.setArea(mPixelArea.mPixelOffset, pixelFrameWidth, pixelFrameHeight, texelWidthScale, texelHeightScale);
       }
 
       PixelArea mPixelArea;

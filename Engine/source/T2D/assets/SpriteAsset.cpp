@@ -8,6 +8,10 @@
 #include "console/consoleTypes.h"
 #endif
 
+#ifndef _MMATH_H_
+#include "math/mMath.h"
+#endif
+
 #ifndef _TAML_
 #include "persistence/taml/taml.h"
 #endif
@@ -477,14 +481,14 @@ void SpriteAsset::calculateSprite()
 void SpriteAsset::calculateImplicit()
 {
    /// calculate texel scale.
-   GFXTextureObject* texObj = ((GFXTextureObject*)mSprite);
+   GFXTextureObject* texObj = mSprite;
 
    const F32 texWScale = 1.0f / ((F32)texObj->getWidth());
    const F32 texHScale = 1.0f / ((F32)texObj->getHeight());
 
    /// original bitmap dimension
-   const U32 spriteWidth = mSprite->getBitmapWidth();
-   const U32 spriteHeight = mSprite->getBitmapHeight();
+   const U32 spriteWidth = texObj->getBitmapWidth();
+   const U32 spriteHeight = texObj->getBitmapHeight();
 
    /// default frame.
    FrameArea frameArea(0, 0, spriteWidth, spriteHeight, texWScale, texHScale);

@@ -46,7 +46,7 @@ Scene2D::Scene2D() :
    mPositionIterations(3),
    mCameraSize(16.0f, 0.0f),
    mSceneTime(0.0f),
-   mAmbientColor(1.0, 1.0, 1.0, 1.0),
+   mAmbientColor(0.0, 0.0, 0.0, 1.0),
    mScenePause(false),
    mScene2DId(-1)
 {
@@ -193,13 +193,13 @@ void Scene2D::processTick()
    mSceneTime += TickSec;
 
    /// step the physics
-   //mpWorld->Step(TickSec, mVelocityIterations, mPositionIterations);
+   mpWorld->Step(TickSec, mVelocityIterations, mPositionIterations);
 
    /// update sceneobjects
-   //for (S32 i = 0; i < mObjectList.size(); ++i)
-  // {
-   //      mObjectList[i]->processTick();
-   //}
+   for (S32 i = 0; i < mObjectList.size(); ++i)
+   {
+      mObjectList[i]->processTick();
+   }
 
 }
 
@@ -215,10 +215,10 @@ void Scene2D::interpolateTick(F32 delta)
 {
 
    /// update sceneobjects
-   //for (S32 i = 0; i < mObjectList.size(); ++i)
-   //{
-   //      mObjectList[i]->interpolateTick(delta);
-   //}
+   for (S32 i = 0; i < mObjectList.size(); ++i)
+   {
+      mObjectList[i]->interpolateTick(delta);
+   }
 
 }
 
@@ -237,6 +237,8 @@ void Scene2D::sceneRender2D(SceneCameraState* renderState)
    /// a per frame basis.
    ///LIGHTMGR->registerGlobalLight(light info, object);
 
+   GFX->setGlobalAmbientColor(mAmbientColor);
+
    for (S32 i = 0; i < mObjectList.size(); ++i)
    {
       //Box3F box = renderState->getCullingFrustum().getBounds();
@@ -245,20 +247,6 @@ void Scene2D::sceneRender2D(SceneCameraState* renderState)
       obj->prepRenderImage(renderState);
 
    }
-
-   /*for (S32 i = 0; i < mObjectList.size(); ++i)
-   {
-      SceneObject2D* obj = mObjectList[i];
-
-      const BoxVec2 worldBox = obj->getWorldBox();
-
-      Point2F min(worldBox.minExtents.x, worldBox.minExtents.y);
-
-      RectF rect(Point2F(worldBox.minExtents.x, worldBox.minExtents.y), Point2F(worldBox.getExtents().x, worldBox.getExtents().y));
-
-      GFX->getDrawUtil()->drawRect(rect, ColorI::WHITE);
-
-   }*/
 
 
    /// 2d lights should not effect 3d scenes

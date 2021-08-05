@@ -135,7 +135,7 @@ DefineConsoleType(TypeVector2, Vector2)
 
 /// Constructors.
 inline Vector2::Vector2():x(0.0f), y(0.0f){}
-inline Vector2::Vector2(const Vector2& _copy) : b2Vec2((_copy.x), (_copy.y)){}
+inline Vector2::Vector2(const Vector2& _copy) : b2Vec2((_copy.x), (_copy.y)), x(_copy.x), y(_copy.y){}
 inline Vector2::Vector2(const F32 x, const F32 y) : b2Vec2(x, y) {}
 inline Vector2::Vector2(const b2Vec2& vec2) : b2Vec2(vec2) {}
 inline Vector2::Vector2(const Point2I& point) : b2Vec2(F32(point.x), F32(point.y)) {}

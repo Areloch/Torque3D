@@ -194,7 +194,6 @@ void SceneObject2D::setTransform(const MatrixF& mat)
    resetWorldBox();
 
    setRenderTransform(mat);
-   setMaskBits(MoveMask);
 }
 
 void SceneObject2D::setRenderTransform(const MatrixF& mat)
@@ -225,32 +224,7 @@ bool SceneObject2D::writeField(StringTableEntry fieldName, const char * value)
 
 void SceneObject2D::interpolateTick(F32 delta)
 {
-   if (delta < 1.0f)
-   {
-      /// render pos
-      Vector2 pos = mPosition;
-      /// body pos
-      Vector2 bPos = mpBody->GetPosition();
-
-      Vector2 posDelta = bPos - pos;
-
-      posDelta *= delta;
-
-      /// setRender positon.
-      setPosition(bPos - posDelta);
-
-      F32 bAng = mpBody->GetAngle();
-
-      F32 rel = bAng - mAng;
-
-      if (rel > M_PI_F)
-         rel -= M_2PI_F;
-      else if (rel < -M_PI_F)
-         rel += M_2PI_F;
-
-      /// set render angle
-      setAngle(bAng-(rel * delta));
-   }
+   
 }
 
 void SceneObject2D::processTick()

@@ -53,7 +53,7 @@ bool SpriteObject::setSpriteAsset(const StringTableEntry spriteAssetId)
       return false;
    }
 
-   txr.set(mSpriteAsset->getSpriteFileName(), &GFXDefaultGUIProfile, avar("%s() - txr (line %d)", __FUNCTION__, __LINE__));
+   txr.set(mSpriteAsset->getSpriteFileName(), &GFXStaticTextureSRGBProfile, avar("%s() - txr (line %d)", __FUNCTION__, __LINE__));
 
    return true;
 
@@ -73,8 +73,6 @@ bool SpriteObject::setFrame(const U32 frame)
    }
 
    mFrame = frame;
-
-   setMaskBits(FrameUpdateMask);
 
    return true;
 
@@ -107,6 +105,15 @@ void SpriteObject::inspectPostApply()
 
 }
 
+void SpriteObject::interpolateTick(F32 delta)
+{
+
+}
+
+void SpriteObject::processTick()
+{
+}
+
 bool SpriteObject::onAdd()
 {
    if(!Parent::onAdd())
@@ -119,7 +126,11 @@ bool SpriteObject::onAdd()
 
    addToScene();
 
-   setMaskBits(AssetUpdateMask);
+   if (!setSpriteAsset(mSpriteAssetId))
+   {
+      Con::printf("Error setting sprite asset %s",mSpriteAssetId);
+      return false;
+   }
 
    return true;
 
@@ -130,6 +141,13 @@ void SpriteObject::onRemove()
    removeFromScene();
 
    Parent::onRemove();
+}
+
+void SpriteObject::setTransform(const MatrixF & mat)
+{
+   Parent::setTransform(mat);
+
+   setMaskBits(TransformMask);
 }
 
 U32 SpriteObject::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
@@ -170,9 +188,8 @@ void SpriteObject::unpackUpdate(NetConnection *conn, BitStream *stream)
    if (stream->readFlag()) // TransformMask
    {
       MatrixF mat;
-      mathRead(*stream, &mat);
-      setTransform(mat);
-      setRenderTransform(mat);
+      mathRead(*stream, &mObjToWorld);
+      setTransform(mObjToWorld);
    }
 
    if (stream->readFlag()) // ScaleMask
@@ -184,18 +201,20 @@ void SpriteObject::unpackUpdate(NetConnection *conn, BitStream *stream)
 
    if (stream->readFlag()) // Asset update Flag
    {
+      Con::printf("Asset unpack");
       Point2F size;
       mathRead(*stream, &size);
       mSize = Vector2(size.x, size.y);
       char buffer[256];
       stream->readString(buffer);
-      setSpriteAsset(StringTable->insert(buffer));
+      mSpriteAssetId = StringTable->insert(buffer);
+      Con::printf("AssetID %s", mSpriteAssetId);
    }
 
    if (stream->readFlag()) // update frame flag
    {
       stream->read(&mFrame);
-      setFrame(mFrame);
+      Con::printf("Unpack frame: %d", mFrame);
    }
 
    mFlipX = stream->readFlag();
@@ -206,28 +225,22 @@ void SpriteObject::unpackUpdate(NetConnection *conn, BitStream *stream)
 void SpriteObject::prepRenderImage(SceneCameraState* state)
 {
 
-   SpriteAsset::FrameArea texelArea = mSpriteAsset->getSpriteFrameArea(mFrame);
+   SpriteAsset::FrameArea::TexelArea texelArea = mSpriteAsset->getSpriteFrameArea(mFrame).mTexelArea;
 
-   texelArea.mTexelArea.setFlip(mFlipX, mFlipY);
+   texelArea.setFlip(mFlipX, mFlipY);
 
-   const Vector2& texLower = texelArea.mTexelArea.mTexelLower;
-   const Vector2& texUpper = texelArea.mTexelArea.mTexelUpper;
-   Con::printf("TexLower.x: %d, TexLower.y: %d, TexUpper.x: %d, TexUpper.y: %d",
-      texLower.x,
-      texLower.y,
-      texUpper.x,
-      texUpper.y);
+   const F32 texLowerX = texelArea.mTexelLower.x;
+   const F32 texLowerY = texelArea.mTexelLower.y;
+   const F32 texUpperX = texelArea.mTexelUpper.x;
+   const F32 texUpperY = texelArea.mTexelUpper.y;
 
    GFXStateBlockDesc desc;
    desc.setCullMode(GFXCullNone);
    desc.setZReadWrite(true,false);
    desc.setBlend(true, GFXBlendSrcAlpha, GFXBlendInvSrcAlpha);
-   desc.setColorWrites(true, true, true, true);
+   desc.setColorWrites(true, true, true, false);
    desc.samplersDefined = true;
    desc.samplers[0] = GFXSamplerStateDesc::getClampLinear();
-   desc.samplers[0].minFilter = GFXTextureFilterPoint;
-   desc.samplers[0].mipFilter = GFXTextureFilterPoint;
-   desc.samplers[0].magFilter = GFXTextureFilterPoint;
    nsb = GFX->createStateBlock(desc);
 
    GFXVertexBufferHandle<GFXVertexPCT> verts(GFX, 4, GFXBufferTypeVolatile);
@@ -241,12 +254,10 @@ void SpriteObject::prepRenderImage(SceneCameraState* state)
    verts[2].point.set(-width, -height, 0.0f);
    verts[3].point.set(width, -height, 0.0f);
 
-   verts[0].color = verts[1].color = verts[2].color = verts[3].color = GFXVertexColor(ColorI(255,255,255,255));
-   
-   verts[0].texCoord.set(texLower.x, texUpper.y);
-   verts[1].texCoord.set(texUpper.x, texUpper.y);
-   verts[2].texCoord.set(texLower.x, texLower.y);
-   verts[3].texCoord.set(texUpper.x, texLower.y);
+   verts[0].texCoord.set(texLowerX, texUpperY);
+   verts[1].texCoord.set(texUpperX, texUpperY);
+   verts[2].texCoord.set(texLowerX, texLowerY);
+   verts[3].texCoord.set(texUpperX, texLowerY);
 
    verts.unlock();
 
@@ -263,7 +274,7 @@ void SpriteObject::prepRenderImage(SceneCameraState* state)
    GFX->setStateBlock(nsb);
 
    GFX->setTexture(0, txr);
-   GFX->setupGenericShaders(GFXDevice::GSAddColorTexture);
+   GFX->setupGenericShaders(GFXDevice::GSTexture);
    GFX->drawPrimitive(GFXTriangleStrip, 0, 2);
 
    GFX->popWorldMatrix();

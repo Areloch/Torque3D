@@ -58,11 +58,14 @@ public:
    static void initPersistFields();
    virtual void inspectPostApply();
 
+   virtual void interpolateTick(F32 delta);
+   virtual void processTick();
+
    /// sim
    virtual bool onAdd();
    virtual void onRemove();
 
-   
+   virtual void setTransform(const MatrixF& mat);
    /// rendering
    void prepRenderImage(SceneCameraState* cam);
 

@@ -157,7 +157,7 @@ public:
    void setAngle(const F32 &ang);
    void setScale(const Vector2 &scale);
 
-   void setTransform(const MatrixF& mat);
+   virtual void setTransform(const MatrixF& mat);
    void setRenderTransform(const MatrixF & mat);
    
 };
