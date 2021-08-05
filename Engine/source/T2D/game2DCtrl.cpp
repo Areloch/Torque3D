@@ -100,7 +100,6 @@ void Game2DCtrl::renderWorld(const RectI &updateRect)
    PROFILE_START(Game2DRenderWorld);
    /// this is where we hijack this call for 2d scene rendering.
    /// remove gameRenderWorld for a different render stack for 2dScenes.
-   Con::printf("render world call");
    gClientScene2DGraph->sceneRender2D();
 
    GFX->updateStates();

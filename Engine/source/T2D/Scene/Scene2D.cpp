@@ -113,7 +113,18 @@ bool Scene2D::onAdd()
    mScene2DId = smScene2DList.size() - 1;
 
    /// this could end up being useful for streaming scenes.
-   gClientScene2DGraph = this;
+   if (smRootScene == nullptr)
+   {
+      //we're the first scene, so we're the root. woo!
+      smRootScene = this;
+      gClientScene2DGraph = this;
+   }
+   else
+   {
+      mIsSubScene = true;
+      smRootScene->mSubScenes.push_back(this);
+   }
+   
 
    // Box2D 2.4.1 world with gravity
    // and set up our listeners.
@@ -161,10 +172,7 @@ bool Scene2D::addObjectToScene(SceneObject2D* obj)
    obj->mpScene = this;
 
    /// takes on the functionality of the scenecontainer
-   if (obj->isClientObject())
-      mObjectList.push_back(obj);
-   else
-      mServerObjectList.push_back(obj);
+   mObjectList.push_back(obj);
 
    return obj->onScene2DAdd();
 }
@@ -173,10 +181,7 @@ void Scene2D::removeObjectFromScene(SceneObject2D* obj)
 {
    obj->onSceneRemove();
 
-   if (obj->isClientObject())
-      mObjectList.remove(obj);
-   else
-      mServerObjectList.remove(obj);
+   mObjectList.remove(obj);
 
    obj->mpScene = NULL;
 }
@@ -188,13 +193,13 @@ void Scene2D::processTick()
    mSceneTime += TickSec;
 
    /// step the physics
-   mpWorld->Step(TickSec, mVelocityIterations, mPositionIterations);
+   //mpWorld->Step(TickSec, mVelocityIterations, mPositionIterations);
 
    /// update sceneobjects
-   for (S32 i = 0; i < mObjectList.size(); ++i)
-   {
-         mObjectList[i]->processTick();
-   }
+   //for (S32 i = 0; i < mObjectList.size(); ++i)
+  // {
+   //      mObjectList[i]->processTick();
+   //}
 
 }
 
@@ -210,17 +215,15 @@ void Scene2D::interpolateTick(F32 delta)
 {
 
    /// update sceneobjects
-   for (S32 i = 0; i < mObjectList.size(); ++i)
-   {
-         mObjectList[i]->interpolateTick(delta);
-   }
+   //for (S32 i = 0; i < mObjectList.size(); ++i)
+   //{
+   //      mObjectList[i]->interpolateTick(delta);
+   //}
 
 }
 
 void Scene2D::sceneRender2D()
 {
-
-   Con::printf("setup render state");
 
    SceneCameraState cameraState = SceneCameraState::fromGFX();
 
@@ -233,7 +236,6 @@ void Scene2D::sceneRender2D(SceneCameraState* renderState)
    /// 2D needs to register its own lights on
    /// a per frame basis.
    ///LIGHTMGR->registerGlobalLight(light info, object);
-   Con::printf("Render Scene");
 
    for (S32 i = 0; i < mObjectList.size(); ++i)
    {
@@ -244,24 +246,20 @@ void Scene2D::sceneRender2D(SceneCameraState* renderState)
 
    }
 
-   if (smRenderBoundingRects)
+   /*for (S32 i = 0; i < mObjectList.size(); ++i)
    {
+      SceneObject2D* obj = mObjectList[i];
 
-      for (S32 i = 0; i < mObjectList.size(); ++i)
-      {
-         SceneObject2D* obj = mObjectList[i];
+      const BoxVec2 worldBox = obj->getWorldBox();
 
-         const BoxVec2 worldBox = obj->getWorldBox();
+      Point2F min(worldBox.minExtents.x, worldBox.minExtents.y);
 
-         Point2F min(worldBox.minExtents.x, worldBox.minExtents.y);
+      RectF rect(Point2F(worldBox.minExtents.x, worldBox.minExtents.y), Point2F(worldBox.getExtents().x, worldBox.getExtents().y));
 
-         RectF rect(Point2F(worldBox.minExtents.x, worldBox.minExtents.y), Point2F(worldBox.getExtents().x, worldBox.getExtents().y));
+      GFX->getDrawUtil()->drawRect(rect, ColorI::WHITE);
 
-         GFX->getDrawUtil()->drawRect(rect, ColorI::WHITE);
+   }*/
 
-      }
-
-   }
 
    /// 2d lights should not effect 3d scenes
    //PROFILE_START(Scene2D_unregisterLights);
@@ -272,30 +270,25 @@ void Scene2D::sceneRender2D(SceneCameraState* renderState)
 U32 Scene2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 {
    U32 retMask = Parent::packUpdate(conn, mask, stream);
-   Con::printf("Scene2D pack");
+
    return retMask;
 
 }
 
 void Scene2D::unpackUpdate(NetConnection *conn, BitStream *stream)
 {
-   Con::printf("Scene2D unpack");
+   Parent::unpackUpdate(conn, stream);
 }
 
 void Scene2D::scopeScene(CameraScopeQuery* query, NetConnection* netConnection)
 {
-   for (U32 i = 0; i < mRenderedObjectList.size(); i++)
+   for (U32 i = 0; i < mObjectList.size(); i++)
    {
-      netConnection->objectInScope(mRenderedObjectList[i]);
-   }
-
-   for (U32 i = 0; i < mServerObjectList.size(); i++)
-   {
-      SceneObject2D* obj = mServerObjectList[i];
-
-      if(obj->isScopeable())
-         netConnection->objectInScope(obj);
-
+      if (mObjectList[i]->isClientObject())
+         netConnection->objectInScope(mRenderedObjectList[i]);
+      else if (mObjectList[i]->isScopeable())
+         netConnection->objectInScope(mObjectList[i]);
+         
    }
 }
 

@@ -70,6 +70,7 @@ void LevelInfo2D::_onLMActivate(const char * lm, bool enable)
 
 LevelInfo2D::LevelInfo2D()
    :  mCameraSize(16.0f, 9.0f),
+      mCanvasClearColor(0, 0, 0, 255),
       mSoundAmbience(NULL),
       mSoundscape(NULL),
       mSoundDistanceModel(SFXDistanceModelLinear)
@@ -154,8 +155,8 @@ void LevelInfo2D::initPersistFields()
 
 U32 LevelInfo2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 {
-   U32 retMask = Parent::packUpdate(conn, mask, stream);
    Con::printf("Level info pack");
+   U32 retMask = Parent::packUpdate(conn, mask, stream);
    /// these need to be read out separately for some reason =/ 
    stream->write(mCameraSize.x);
    stream->write(mCameraSize.y);
@@ -170,8 +171,8 @@ U32 LevelInfo2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 
 void LevelInfo2D::unpackUpdate(NetConnection *conn, BitStream *stream)
 {
-   Parent::unpackUpdate(conn, stream);
    Con::printf("Level info unpack");
+   Parent::unpackUpdate(conn, stream);
    /// the aforementioned shitty read out separately stuff
    stream->read(&mCameraSize.x);
    stream->read(&mCameraSize.y);

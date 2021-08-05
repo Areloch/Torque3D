@@ -45,9 +45,9 @@ typedef VectorPtr<b2Fixture*> typeCollisionFixtureVector;
 
 extern EnumTable bodyTypeTable;
 
-class SceneObject2D : public NetObject
+class SceneObject2D : public BehaviorComponent
 {
-   typedef NetObject Parent;
+   typedef BehaviorComponent Parent;
 
 public:
    friend class Scene2D;

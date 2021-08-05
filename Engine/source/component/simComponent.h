@@ -21,9 +21,9 @@
 #include "core/stream/stream.h"
 #endif // !_STREAM_H_
 
-class SimComponent : public SimObject
+class SimComponent : public NetObject
 {
-   typedef SimObject Parent;
+   typedef NetObject Parent;
 
 private:
    VectorPtr<SimComponent*> mComponentList;

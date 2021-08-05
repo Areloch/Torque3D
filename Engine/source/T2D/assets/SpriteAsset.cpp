@@ -173,7 +173,7 @@ void SpriteAsset::loadSprite()
          return;
       }
 
-      mSprite.set(mSpriteFileName, &GFXStaticTextureProfile, avar("%s() - mSprite (line %d)", __FUNCTION__, __LINE__));
+      mSprite.set(mSpriteFileName, &GFXDefaultGUIProfile, avar("%s() - mSprite (line %d)", __FUNCTION__, __LINE__));
       if (mSprite)
       {
          mIsValidSprite = true;
@@ -441,24 +441,6 @@ void SpriteAsset::setCellHeight(const S32 cellHeight)
 
 }
 
-GFXTexHandle SpriteAsset::getSprite(GFXTextureProfile reqProfile)
-{
-   /*if (mResourceMap.contains(reqProfile))
-   {
-      return mResourceMap.find(reqProfile)->value;
-   }
-   else
-   {
-      GFXTexHandle tempSprite;
-      tempSprite.set(mSpriteFileName, &reqProfile, avar("%s() - mSprite (line %d)", __FUNCTION__, __LINE__));
-      mResourceMap.insert(reqProfile, tempSprite);
-      return tempSprite;
-   }*/
-
-   return nullptr;
-
-}
-
 const char* SpriteAsset::getSpriteInfo()
 {
    Con::printf("get sprite info");
@@ -483,8 +465,10 @@ const char* SpriteAsset::getSpriteInfo()
 void SpriteAsset::calculateSprite()
 {
    /// Debug profile
-
    mFrames.clear();
+
+   /// lets just make sure we are set.
+   mSprite.set(mSpriteFileName, &GFXDefaultGUIProfile, avar("%s() - mSprite (line %d)", __FUNCTION__, __LINE__));
 
    calculateImplicit();
 
@@ -492,10 +476,11 @@ void SpriteAsset::calculateSprite()
 
 void SpriteAsset::calculateImplicit()
 {
-
    /// calculate texel scale.
-   const F32 texWScale = 1.0f / (F32)mSprite->getWidth();
-   const F32 texHScale = 1.0f / (F32)mSprite->getHeight();
+   GFXTextureObject* texObj = ((GFXTextureObject*)mSprite);
+
+   const F32 texWScale = 1.0f / ((F32)texObj->getWidth());
+   const F32 texHScale = 1.0f / ((F32)texObj->getHeight());
 
    /// original bitmap dimension
    const U32 spriteWidth = mSprite->getBitmapWidth();

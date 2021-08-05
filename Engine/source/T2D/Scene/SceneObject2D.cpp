@@ -267,8 +267,6 @@ U32 SceneObject2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 {
    U32 retMask = Parent::packUpdate(conn, mask, stream);
 
-   Con::printf(" SceneObject pack");
-
    if (stream->writeFlag(mask & FlagMask))
       stream->writeRangedU32((U32)mObjectFlags, 0, getObjectFlagMax());
 
@@ -278,7 +276,6 @@ U32 SceneObject2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 
 void SceneObject2D::unpackUpdate(NetConnection *conn, BitStream *stream)
 {
-   Con::printf(" SceneObject unpack");
    Parent::unpackUpdate(conn, stream);
 
    if (stream->readFlag())

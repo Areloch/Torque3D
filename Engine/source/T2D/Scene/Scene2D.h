@@ -137,15 +137,17 @@ struct TickContact
 ///-----------------------------------------------------------------------------
 
 class Scene2D :
-   public NetObject,
+   public BehaviorComponent,
    public b2ContactListener,
    public b2DestructionListener,
    public b2ContactFilter,
    public virtual ITickable
 {
-   typedef NetObject Parent;
+   typedef BehaviorComponent Parent;
 
    bool mIsSubScene;
+
+   Vector<Scene2D*> mSubScenes;
 
    S32 mScene2DId;
 

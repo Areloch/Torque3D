@@ -181,7 +181,7 @@ public:
    DECLARE_CONOBJECT(SpriteAsset);
 
    /// getters and setters
-   GFXTexHandle            getSprite(GFXTextureProfile requestProfile);
+   GFXTexHandle            getSprite() { return mSprite; }
    void                    setSpriteFileName(const char* pScriptFile);
    const char*             getSpriteInfo();
    inline StringTableEntry getSpriteFileName(void) const { return mSpriteFileName; };
