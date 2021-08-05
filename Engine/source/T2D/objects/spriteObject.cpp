@@ -110,8 +110,32 @@ void SpriteObject::interpolateTick(F32 delta)
 
 }
 
+void SpriteObject::writePacketData(GameConnection *connection, BitStream *stream)
+{
+   Parent::writePacketData(connection, stream);
+
+}
+
+void SpriteObject::readPacketData(GameConnection *connection, BitStream *stream)
+{
+   Parent::readPacketData(connection, stream);
+}
+
 void SpriteObject::processTick()
 {
+
+   const b2Vec2 pos = mpBody->GetPosition();
+   F32 ang = mpBody->GetAngle();
+
+   const Vector2 prePos = Vector2(mObjToWorld.getPosition().x, mObjToWorld.getPosition().y);
+
+   if (mAng != ang || pos != prePos)
+   {
+      Con::printf("transforms don't match");
+   }
+
+   Con::printf("pos: %4.2f %4.2f ang: %4.2f", pos.x, pos.y, ang);
+
 }
 
 bool SpriteObject::onAdd()
@@ -182,7 +206,6 @@ U32 SpriteObject::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 
 void SpriteObject::unpackUpdate(NetConnection *conn, BitStream *stream)
 {
-
    Parent::unpackUpdate(conn, stream);
 
    if (stream->readFlag()) // TransformMask

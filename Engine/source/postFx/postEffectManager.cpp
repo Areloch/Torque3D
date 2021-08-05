@@ -248,8 +248,10 @@ void PostEffectManager::renderEffects( const SceneRenderState *state,
 
    // Check the global render effect state as 
    // well as the 
-   if (  !smRenderEffects || 
-         ( state && !state->usePostEffects() ))
+   if (  !smRenderEffects )
+      return;
+
+   if (state && !state->usePostEffects())
       return;
 
    EffectVector *effects = NULL;

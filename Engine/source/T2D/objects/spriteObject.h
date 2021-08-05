@@ -69,6 +69,8 @@ public:
    /// rendering
    void prepRenderImage(SceneCameraState* cam);
 
+   virtual void writePacketData(GameConnection *, BitStream *);
+   virtual void readPacketData(GameConnection *, BitStream *);
    /// NetObject
    U32 packUpdate(NetConnection* conn, U32 mask, BitStream* stream);
    void unpackUpdate(NetConnection* conn, BitStream* stream);

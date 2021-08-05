@@ -237,6 +237,15 @@ void SceneObject2D::initPersistFields()
    Parent::initPersistFields();
 }
 
+void SceneObject2D::writePacketData(GameConnection*, BitStream*)
+{
+}
+
+void SceneObject2D::readPacketData(GameConnection*, BitStream*)
+{
+}
+
+
 U32 SceneObject2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 {
    U32 retMask = Parent::packUpdate(conn, mask, stream);

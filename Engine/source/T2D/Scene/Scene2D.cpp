@@ -1,6 +1,7 @@
 #include "platform/platform.h"
 #include "console/console.h"
-
+#include "math/mathIO.h"
+#include "core/stream/bitStream.h"
 #include "T2D/Scene/Scene2D.h"
 #include "sim/netConnection.h"
 #include "lighting/lightManager.h"
@@ -44,7 +45,7 @@ Scene2D::Scene2D() :
    mpWorldGravity(0.0f, -20.0f),
    mVelocityIterations(8),
    mPositionIterations(3),
-   mCameraSize(16.0f, 0.0f),
+   mCameraSize(16.0f, 9.0f),
    mSceneTime(0.0f),
    mAmbientColor(0.0, 0.0, 0.0, 1.0),
    mScenePause(false),
@@ -128,7 +129,7 @@ bool Scene2D::onAdd()
 
    // Box2D 2.4.1 world with gravity
    // and set up our listeners.
-   mpWorld = new b2World((b2Vec2)mpWorldGravity);
+   mpWorld = new b2World(mpWorldGravity);
    mpWorld->SetContactFilter(this);
    mpWorld->SetContactListener(this);
    mpWorld->SetDestructionListener(this);
@@ -248,6 +249,7 @@ void Scene2D::sceneRender2D(SceneCameraState* renderState)
 
    }
 
+   getPostRenderSignal().trigger(NULL, NULL);
 
    /// 2d lights should not effect 3d scenes
    //PROFILE_START(Scene2D_unregisterLights);
@@ -259,6 +261,9 @@ U32 Scene2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 {
    U32 retMask = Parent::packUpdate(conn, mask, stream);
 
+   stream->write(mpWorldGravity.x);
+   stream->write(mpWorldGravity.y);
+
    return retMask;
 
 }
@@ -266,6 +271,10 @@ U32 Scene2D::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 void Scene2D::unpackUpdate(NetConnection *conn, BitStream *stream)
 {
    Parent::unpackUpdate(conn, stream);
+
+   stream->read(&mpWorldGravity.x);
+   stream->read(&mpWorldGravity.y);
+
 }
 
 void Scene2D::scopeScene(CameraScopeQuery* query, NetConnection* netConnection)

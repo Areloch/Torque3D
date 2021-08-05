@@ -144,6 +144,9 @@ public:
 
    static void initPersistFields();
 
+   virtual void writePacketData(GameConnection *, BitStream *);
+   virtual void readPacketData(GameConnection *, BitStream *);
+
    const BoxVec2& getObjBox() const { return mObjBox; }
    const BoxVec2& getWorldBox() const { return mWorldBox; }
    virtual const MatrixF& getTransform() const { return mObjToWorld; }
