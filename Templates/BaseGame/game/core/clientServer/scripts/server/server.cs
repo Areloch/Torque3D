@@ -262,8 +262,9 @@ function onServerDestroyed()
 {
    physicsStopSimulation("server");
    
-   if (!isObject( getScene(0) ))
-      return;
+   if (!isObject( getScene2D(0)) )
+	   if(!isObject(getScene(0)) )
+		return;
 
    echo("*** ENDING MISSION");
    
@@ -280,7 +281,11 @@ function onServerDestroyed()
    }
    
    // Delete everything
-   getScene(0).delete();
+   if( !isObject(getScene2D(0)) )
+      getScene(0).delete();
+   else
+	  getScene2D(0).delete();
+  
    MissionCleanup.delete();
    
    clearServerPaths();

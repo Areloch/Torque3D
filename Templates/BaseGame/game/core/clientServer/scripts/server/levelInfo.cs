@@ -60,6 +60,8 @@ function buildLoadInfo( %mission )
 				%inInfoBlock = true;
          else if( %line $= "new LevelInfo(theLevelInfo) {" )
 				%inInfoBlock = true;
+		else if( %line $= "new LevelInfo2D(theLevelInfo) {" )
+				%inInfoBlock = true;
 			else if( %inInfoBlock && %line $= "};" ) {
 				%inInfoBlock = false;
 				%infoObject = %infoObject @ %line; 
@@ -115,7 +117,10 @@ function sendLoadInfoToClient( %client )
 function parseMissionGroup( %className, %childGroup )
 {
    if( getWordCount( %childGroup ) == 0)
-      %currentGroup = getScene(0);
+	   if(isObject(getScene2D(0)) )
+			%currentGroup = getScene2D(0);
+		else
+			%currentGroup = getScene(0);
    else
       %currentGroup = %childGroup;
       
@@ -136,7 +141,10 @@ function parseMissionGroup( %className, %childGroup )
 function parseMissionGroupForIds( %className, %childGroup )
 {
    if( getWordCount( %childGroup ) == 0)
-      %currentGroup = getScene(0);
+	   if(isObject(getScene2D(0)) )
+			%currentGroup = getScene2D(0);
+		else
+			%currentGroup = getScene(0);
    else
       %currentGroup = %childGroup;
       
@@ -172,6 +180,8 @@ function getLevelInfo( %missionFile )
 			if( %line $= "new ScriptObject(LevelInfo) {" )
 				%inInfoBlock = true;
          else if( %line $= "new LevelInfo(theLevelInfo) {" )
+				%inInfoBlock = true;
+		 else if( %line $= "new LevelInfo2D(theLevelInfo) {" )
 				%inInfoBlock = true;
 			else if( %inInfoBlock && %line $= "};" ) {
 				%inInfoBlock = false;

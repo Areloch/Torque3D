@@ -18,7 +18,10 @@ function Core_ClientServer::onCreate( %this )
    exec( "./scripts/client/client.cs" );
    exec( "./scripts/server/server.cs" );
 
-   $Game::MainScene = getScene(0);
+	if(isObject(getScene2D(0)))
+		$Game::MainScene = getScene2D(0);
+	else
+		$Game::MainScene = getScene(0);
    
    new ArrayObject(DatablockFilesList);
    
