@@ -105,7 +105,6 @@ void Game2DCtrl::renderWorld(const RectI &updateRect)
    GFX->updateStates();
 
    FrameAllocator::setWaterMark(0);
-   
 
    PROFILE_END();
    

@@ -30,6 +30,21 @@ class SpriteObject : public SceneObject2D
       NextFreeMask = Parent::NextFreeMask << 3
    };
 
+   // Client interpolation data
+   struct StateDelta {
+
+      Point2F pos;
+      Vector2 posVec;
+      F32 ang;
+      F32 angVec;
+      // Warp data
+      S32 warpTicks;                ///< Number of ticks to warp
+      S32 warpCount;                ///< Current pos in warp
+      Point3F warpOffset; 
+      F32 dt;
+   };
+   StateDelta mDelta;
+
 private:
 
    bool mFlipX;

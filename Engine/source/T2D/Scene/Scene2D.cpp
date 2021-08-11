@@ -187,40 +187,12 @@ void Scene2D::removeObjectFromScene(SceneObject2D* obj)
    obj->mpScene = NULL;
 }
 
-void Scene2D::processTick()
-{
-
-   /// keep track of total time.
-   mSceneTime += TickSec;
-
-   /// step the physics
-   mpWorld->Step(TickSec, mVelocityIterations, mPositionIterations);
-
-   /// update sceneobjects
-   for (S32 i = 0; i < mObjectList.size(); ++i)
-   {
-      mObjectList[i]->processTick();
-   }
-
-}
-
 void Scene2D::BeginContact(b2Contact * pContact)
 {
 }
 
 void Scene2D::EndContact(b2Contact * pContact)
 {
-}
-
-void Scene2D::interpolateTick(F32 delta)
-{
-
-   /// update sceneobjects
-   for (S32 i = 0; i < mObjectList.size(); ++i)
-   {
-      mObjectList[i]->interpolateTick(delta);
-   }
-
 }
 
 void Scene2D::sceneRender2D()
@@ -274,6 +246,34 @@ void Scene2D::unpackUpdate(NetConnection *conn, BitStream *stream)
 
    stream->read(&mpWorldGravity.x);
    stream->read(&mpWorldGravity.y);
+
+}
+
+void Scene2D::processTick()
+{
+
+   /// keep track of total time.
+   mSceneTime += TickSec;
+
+   /// step the physics
+   mpWorld->Step(TickSec, mVelocityIterations, mPositionIterations);
+
+   /// update sceneobjects
+   for (S32 i = 0; i < mObjectList.size(); ++i)
+   {
+      mObjectList[i]->processTick();
+   }
+
+}
+
+void Scene2D::interpolateTick(F32 delta)
+{
+
+   /// update sceneobjects
+   for (S32 i = 0; i < mObjectList.size(); ++i)
+   {
+      mObjectList[i]->interpolateTick(delta);
+   }
 
 }
 

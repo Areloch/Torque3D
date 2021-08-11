@@ -19,6 +19,12 @@ SpriteObject::SpriteObject()
    mNetFlags.set(Ghostable | ScopeAlways);
    mFrame = 0;
    mSize.set(1.0f, 1.0f);
+   mDelta.pos = Point2F(0, 0);
+   mDelta.posVec = Point2F(0, 0);
+   mDelta.warpOffset = Point3F::Zero;
+   mDelta.warpTicks = mDelta.warpCount = 0;
+   mDelta.dt = 1;
+   dMemset(&mDelta, 0, sizeof(StateDelta));
 }
 
 SpriteObject::~SpriteObject()
@@ -105,11 +111,6 @@ void SpriteObject::inspectPostApply()
 
 }
 
-void SpriteObject::interpolateTick(F32 delta)
-{
-
-}
-
 void SpriteObject::writePacketData(GameConnection *connection, BitStream *stream)
 {
    Parent::writePacketData(connection, stream);
@@ -119,23 +120,6 @@ void SpriteObject::writePacketData(GameConnection *connection, BitStream *stream
 void SpriteObject::readPacketData(GameConnection *connection, BitStream *stream)
 {
    Parent::readPacketData(connection, stream);
-}
-
-void SpriteObject::processTick()
-{
-
-   const b2Vec2 pos = mpBody->GetPosition();
-   F32 ang = mpBody->GetAngle();
-
-   const Vector2 prePos = Vector2(mObjToWorld.getPosition().x, mObjToWorld.getPosition().y);
-
-   if (mAng != ang || pos != prePos)
-   {
-      Con::printf("transforms don't match");
-   }
-
-   Con::printf("pos: %4.2f %4.2f ang: %4.2f", pos.x, pos.y, ang);
-
 }
 
 bool SpriteObject::onAdd()
@@ -149,6 +133,14 @@ bool SpriteObject::onAdd()
    mObjBox = BoxVec2(Vector2(-width, -height), Vector2(width, height));
 
    addToScene();
+
+   if (mpBody)
+   {
+      b2PolygonShape defBox;
+      defBox.SetAsBox(width, height);
+      // create fixture, and set default density.
+      mpBody->CreateFixture(&defBox, 1.0f);
+   }
 
    if (!setSpriteAsset(mSpriteAssetId))
    {
@@ -180,7 +172,8 @@ U32 SpriteObject::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
 
    if (stream->writeFlag(mask & TransformMask))
    {
-      mathWrite(*stream, getTransform());
+      mathWrite(*stream, mPosition);
+      stream->write(mAng);
    }
 
    if (stream->writeFlag(mask & ScaleMask))
@@ -210,9 +203,44 @@ void SpriteObject::unpackUpdate(NetConnection *conn, BitStream *stream)
 
    if (stream->readFlag()) // TransformMask
    {
-      MatrixF mat;
-      mathRead(*stream, &mObjToWorld);
-      setTransform(mObjToWorld);
+      Point2F pos;
+      F32 ang;
+      mathRead(*stream, &pos);
+      stream->read(&ang);
+
+      // Determin number of ticks to warp based on the average
+      // of the client and server velocities.
+      mDelta.warpOffset.x = pos.x - mDelta.pos.x;
+      mDelta.warpOffset.y = pos.y - mDelta.pos.y;
+      mDelta.warpOffset.z = ang - mDelta.ang; //purely for convienience
+
+      //Approximate of velocity since we have none here
+      F32 vel = (pos.len() + mDelta.pos.len()) * 0.5f * TickSec;
+      F32 dt = (vel > 0.00001f) ? mDelta.warpOffset.len() / vel : 3; //figure our dt. Max number of warpTicks is 3 here. Probably best as a static var
+      mDelta.warpTicks = (S32)((dt > 0.5)? getMax(mFloor(dt + 0.5f), 1.0f): 0.0f); //0.5 is our minimum warptick value, used to wheed out if we need to bother warping or not
+
+      if (mDelta.warpTicks)
+      {
+         // Setup the warp to start on the next tick, only the
+         // object's position is warped.
+         if (mDelta.warpTicks > 3)
+            mDelta.warpTicks = 3;
+         mDelta.warpOffset /= (F32)mDelta.warpTicks;
+      }
+      else
+      {
+         // Going to skip the warp, server and client are real close.
+         // Adjust the frame interpolation to move smoothly to the
+         // new position within the current tick.
+         Point2F cp = mDelta.pos + mDelta.posVec * mDelta.dt;
+         Vector2 vec = mDelta.pos - cp;
+         F32 vl = vec.len();
+         if (vl) {
+            F32 s = mDelta.posVec.len() / vl;
+            mDelta.posVec = (cp - pos) * s;
+         }
+			mDelta.pos = pos;
+      }
    }
 
    if (stream->readFlag()) // ScaleMask
@@ -243,6 +271,60 @@ void SpriteObject::unpackUpdate(NetConnection *conn, BitStream *stream)
    mFlipX = stream->readFlag();
    mFlipY = stream->readFlag();
 
+}
+
+void SpriteObject::processTick()
+{
+
+   const b2Vec2 pos = mpBody->GetPosition();
+   F32 ang = mpBody->GetAngle();
+
+   const Vector2 prePos = Vector2(mObjToWorld.getPosition().x, mObjToWorld.getPosition().y);
+
+   // Warp to catch up to server
+   if (mDelta.warpTicks > 0) 
+   {
+      mDelta.warpCount--;
+
+      //Set new pos
+      mDelta.pos.x = prePos.x;
+      mDelta.pos.y = prePos.y;
+      mDelta.pos += Point2F(mDelta.warpOffset.x, mDelta.warpOffset.y);
+
+      mAng = mDelta.angVec;
+
+      //Backstepping
+      mDelta.pos.x = -mDelta.warpOffset.x;
+      mDelta.pos.y = -mDelta.warpOffset.y;
+   } 
+   else
+   {
+      //Save current state
+      mDelta.posVec = prePos;
+
+      //Update whatever positional/angle stuff as part of the tick so we have our new data
+
+      //Set the new state
+      //Wrap up interpolation info
+      mDelta.pos.x = pos.x;
+      mDelta.pos.y = pos.y;
+      mDelta.posVec.x -= pos.x;
+      mDelta.posVec.y -= pos.y;
+      mDelta.ang = ang;
+   }
+
+}
+
+void SpriteObject::interpolateTick(F32 dt)
+{
+   Parent::interpolateTick(dt);
+
+   mDelta.dt = dt;
+   mPosition = mDelta.pos + mDelta.posVec * dt;
+   mAng = mDelta.ang + mDelta.angVec * dt;
+   MatrixF mat;
+   mat.set(EulerF(0, 0, mDelta.ang), Point3F(mDelta.pos.x, mDelta.pos.y, 0.0f));
+   setTransform(mat);
 }
 
 void SpriteObject::prepRenderImage(SceneCameraState* state)

@@ -188,6 +188,7 @@ void SceneObject2D::setScale(const Vector2 &scale)
 
 void SceneObject2D::setTransform(const MatrixF& mat)
 {
+
    mObjToWorld = mWorldToObj = mat;
    mWorldToObj.affineInverse();
 
@@ -198,6 +199,7 @@ void SceneObject2D::setTransform(const MatrixF& mat)
 
 void SceneObject2D::setRenderTransform(const MatrixF& mat)
 {
+
    mRenderObjToWorld = mRenderWorldToObj = mat;
    mRenderWorldToObj.affineInverse();
 
