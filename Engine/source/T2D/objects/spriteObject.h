@@ -9,8 +9,17 @@
 #include "scene/sceneRenderState.h"
 #endif // !_SCENERENDERSTATE_H_
 
+#ifndef _ANIMATION_CONTROLLER_H_
+#include "T2D/core/AnimationController.h"
+#endif // !_ANIMATION_CONTROLLER_H_
+
+
 #ifndef _PLATFORM_H_
 #include "platform/platform.h"
+#endif
+
+#ifndef _ANIMATION_ASSET_H_
+#include "T2D/assets/AnimationAsset.h"
 #endif
 
 #ifndef _SPRITE_ASSET_H_
@@ -24,10 +33,12 @@ class SpriteObject : public SceneObject2D
 
    enum
    {
-      TransformMask = Parent::NextFreeMask << 0,
-      AssetUpdateMask = Parent::NextFreeMask << 1,
-      FrameUpdateMask = Parent::NextFreeMask << 2,
-      NextFreeMask = Parent::NextFreeMask << 3
+      TransformMask        = Parent::NextFreeMask << 0,
+      AssetUpdateMask      = Parent::NextFreeMask << 1,
+      FrameUpdateMask      = Parent::NextFreeMask << 2,
+      AnimUpdateMask       = Parent::NextFreeMask << 3,
+      AnimFrameUpdateMask  = Parent::NextFreeMask << 4,
+      NextFreeMask         = Parent::NextFreeMask << 5
    };
 
    // Client interpolation data
@@ -54,11 +65,19 @@ private:
 
 protected:
 
-   U32 mFrame;
+   S32 mFrame;
    AssetPtr<SpriteAsset> mSpriteAsset;
    StringTableEntry mSpriteAssetId;
    bool setSpriteAsset(const StringTableEntry spriteAssetId);
-   bool setFrame(const U32 frame);
+   bool setFrame(const S32 frame);
+
+   AssetPtr<AnimationAsset> mAnimAsset;
+   StringTableEntry mAnimAssetId;
+   bool setAnimationAsset(const StringTableEntry animAssetId);
+   void setAnimationFrame(const S32 frame);
+   S32 mAnimFrame;
+
+   AnimationController mAnimController;
 
 public:
 
@@ -69,6 +88,7 @@ public:
 
    static bool _setSpriteAsset(void *obj, const char* index, const char* data);
    static bool _setFieldFrame(void *obj, const char* index, const char* data);
+   static bool _setAnimationAsset(void *obj, const char* index, const char* data);
    
    static void initPersistFields();
    virtual void inspectPostApply();
@@ -84,8 +104,6 @@ public:
    /// rendering
    void prepRenderImage(SceneCameraState* cam);
 
-   virtual void writePacketData(GameConnection *, BitStream *);
-   virtual void readPacketData(GameConnection *, BitStream *);
    /// NetObject
    U32 packUpdate(NetConnection* conn, U32 mask, BitStream* stream);
    void unpackUpdate(NetConnection* conn, BitStream* stream);

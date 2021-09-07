@@ -37,7 +37,6 @@ static StringTableEntry cellHeightName    = StringTable->insert("Height");
 static StringTableEntry cellNameEntryName = StringTable->insert("Name");
 //-----------------------------------------------------------------------------
 
-//IMPLEMENT_CONOBJECT(SpriteAsset);
 ConsoleType(assetIdString, TypeSpriteAssetPtr, String, ASSET_ID_FIELD_PREFIX)
 
 ConsoleGetType(TypeSpriteAssetPtr)
@@ -130,15 +129,15 @@ void SpriteAsset::initPersistFields()
    addProtectedField("spriteFile", TypeAssetLooseFilePath, Offset(mSpriteFileName, SpriteAsset), &setSpriteFileName, &getSpriteFileName, &defaultProtectedWriteFn,
       "Path to the sprite.");
 
-   addField("cellRowOrder", TypeBool, Offset(mCellRowOrder, SpriteAsset), "");
-   addField("cellOffsetX", TypeS32, Offset(mCellOffsetX, SpriteAsset), "");
-   addField("cellOffsetY", TypeS32, Offset(mCellOffsetY, SpriteAsset), "");
-   addField("cellStrideX", TypeS32, Offset(mCellStrideX, SpriteAsset), "");
-   addField("cellStrideY", TypeS32, Offset(mCellStrideY, SpriteAsset), "");
-   addField("cellCountX", TypeS32, Offset(mCellCountX, SpriteAsset), "");
-   addField("cellCountY", TypeS32, Offset(mCellCountY, SpriteAsset), "");
-   addField("cellWidth", TypeS32, Offset(mCellWidth, SpriteAsset), "");
-   addField("cellHeight", TypeS32, Offset(mCellHeight, SpriteAsset), "");
+   addField("cellRowOrder",   TypeBool, Offset(mCellRowOrder, SpriteAsset), "");
+   addField("cellOffsetX",    TypeS32, Offset(mCellOffsetX, SpriteAsset), "");
+   addField("cellOffsetY",    TypeS32, Offset(mCellOffsetY, SpriteAsset), "");
+   addField("cellStrideX",    TypeS32, Offset(mCellStrideX, SpriteAsset), "");
+   addField("cellStrideY",    TypeS32, Offset(mCellStrideY, SpriteAsset), "");
+   addField("cellCountX",     TypeS32, Offset(mCellCountX, SpriteAsset), "");
+   addField("cellCountY",     TypeS32, Offset(mCellCountY, SpriteAsset), "");
+   addField("cellWidth",      TypeS32, Offset(mCellWidth, SpriteAsset), "");
+   addField("cellHeight",     TypeS32, Offset(mCellHeight, SpriteAsset), "");
 
 }
 
@@ -215,6 +214,7 @@ void SpriteAsset::onAssetRefresh()
    setSpriteFileName(mSpriteFileName);
 
    calculateSprite();
+
 }
 
 void SpriteAsset::setSpriteFileName(const char* pScriptFile)

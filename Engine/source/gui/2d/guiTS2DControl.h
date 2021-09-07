@@ -142,6 +142,9 @@ public:
    /// z coord is depth, from 0 to 1
    bool unproject(const Point3F &pt, Point3F *dest) const;
 
+   void windowToScene(const Vector2& srcPt, Vector2& dstPt);
+   void sceneToWindow(const Vector2 & srcPt, Vector2 & dstPt);
+
    static const U32& getFrameCount() { return smFrameCount; }
 
    DECLARE_CONOBJECT(GuiTS2DCtrl);

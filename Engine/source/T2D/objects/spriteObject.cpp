@@ -14,7 +14,8 @@ IMPLEMENT_CO_NETOBJECT_V1(SpriteObject);
 SpriteObject::SpriteObject()
    :  mFlipX(false),
       mFlipY(false),
-      mSpriteAssetId(StringTable->EmptyString())
+      mSpriteAssetId(StringTable->EmptyString()),
+      mAnimAssetId(StringTable->EmptyString())
 {
    mNetFlags.set(Ghostable | ScopeAlways);
    mFrame = 0;
@@ -25,6 +26,7 @@ SpriteObject::SpriteObject()
    mDelta.warpTicks = mDelta.warpCount = 0;
    mDelta.dt = 1;
    dMemset(&mDelta, 0, sizeof(StateDelta));
+   mAnimFrame = 0;
 }
 
 SpriteObject::~SpriteObject()
@@ -42,6 +44,22 @@ bool SpriteObject::_setSpriteAsset(void * obj, const char * index, const char * 
 
 }
 
+bool SpriteObject::setSpriteAsset(const StringTableEntry spriteAssetId)
+{
+   if (!SpriteAsset::getAssetById(spriteAssetId, &mSpriteAsset))
+   {
+      Con::warnf("Error sprite asset id '%s' not found.", spriteAssetId);
+      return false;
+   }
+
+   /// wheres the money lebowski.
+   txr.set(mSpriteAsset->getSpriteFileName(), &GFXStaticTextureSRGBProfile, avar("%s() - txr (line %d)", __FUNCTION__, __LINE__));
+
+   setMaskBits(AssetUpdateMask);
+
+   return true;
+}
+
 bool SpriteObject::_setFieldFrame(void * obj, const char * index, const char * data)
 {
    SpriteObject* so = static_cast<SpriteObject*>(obj);
@@ -51,21 +69,7 @@ bool SpriteObject::_setFieldFrame(void * obj, const char * index, const char * d
    return so->setFrame(so->mFrame);
 }
 
-bool SpriteObject::setSpriteAsset(const StringTableEntry spriteAssetId)
-{
-   if (!SpriteAsset::getAssetById(spriteAssetId, &mSpriteAsset))
-   {
-      Con::warnf("Error sprite asset id '%s' not found.", spriteAssetId);
-      return false;
-   }
-
-   txr.set(mSpriteAsset->getSpriteFileName(), &GFXStaticTextureSRGBProfile, avar("%s() - txr (line %d)", __FUNCTION__, __LINE__));
-
-   return true;
-
-}
-
-bool SpriteObject::setFrame(const U32 frame)
+bool SpriteObject::setFrame(const S32 frame)
 {
    if (mSpriteAsset == NULL)
    {
@@ -84,12 +88,59 @@ bool SpriteObject::setFrame(const U32 frame)
 
 }
 
+bool SpriteObject::_setAnimationAsset(void * obj, const char * index, const char * data)
+{
+   SpriteObject* so = static_cast<SpriteObject*>(obj);
+
+   so->mAnimAssetId = StringTable->insert(data);
+
+   return so->setAnimationAsset(so->mAnimAssetId);
+}
+
+bool SpriteObject::setAnimationAsset(const StringTableEntry animAssetId)
+{
+   if (!AnimationAsset::getAssetById(animAssetId, &mAnimAsset))
+   {
+      Con::warnf("Error Animation asset id '%s' not found.", animAssetId);
+      return false;
+   }
+
+   mAnimController.setAnimation(animAssetId);
+
+   /// get our texture.
+   txr.set(mAnimAsset->getSpriteAsset()->getSpriteFileName(), &GFXStaticTextureSRGBProfile, avar("%s() - txr (line %d)", __FUNCTION__, __LINE__));
+
+   setMaskBits(AssetUpdateMask);
+   return true;
+}
+
+void SpriteObject::setAnimationFrame(const S32 frame)
+{
+
+   if (mAnimAsset == NULL)
+   {
+      Con::warnf("SpriteObject::setAnimationFrame() - cannot set frame without asset.");
+      return;
+   }
+
+   if (frame >= mAnimAsset->getAnimationLength())
+   {
+      Con::warnf("SpriteObject::setAnimationFrame() - Invalid Frame #%d.", frame);
+   }
+
+   mAnimFrame = frame;
+   setMaskBits(AnimFrameUpdateMask);
+}
+
 void SpriteObject::initPersistFields()
 {
    Parent::initPersistFields();
 
    addProtectedField("SpriteAsset", TypeSpriteAssetId, Offset(mSpriteAssetId, SpriteObject),&_setSpriteAsset,&defaultProtectedGetFn,
       "Add a sprite asset.");
+
+   addProtectedField("AnimationAsset", TypeAnimationAssetId, Offset(mAnimAssetId, SpriteObject), &_setAnimationAsset, &defaultProtectedGetFn,
+      "Add an animation asset.");
 
    addProtectedField("SpriteFrame", TypeS32, Offset(mFrame, SpriteObject),&_setFieldFrame, &defaultProtectedGetFn,
       "Set frame for this sprite to render.");
@@ -111,17 +162,6 @@ void SpriteObject::inspectPostApply()
 
 }
 
-void SpriteObject::writePacketData(GameConnection *connection, BitStream *stream)
-{
-   Parent::writePacketData(connection, stream);
-
-}
-
-void SpriteObject::readPacketData(GameConnection *connection, BitStream *stream)
-{
-   Parent::readPacketData(connection, stream);
-}
-
 bool SpriteObject::onAdd()
 {
    if(!Parent::onAdd())
@@ -131,6 +171,8 @@ bool SpriteObject::onAdd()
    F32 height = mSize.y * 0.5f;
 
    mObjBox = BoxVec2(Vector2(-width, -height), Vector2(width, height));
+
+   mpBodyDef.type = b2_staticBody;
 
    addToScene();
 
@@ -142,10 +184,16 @@ bool SpriteObject::onAdd()
       mpBody->CreateFixture(&defBox, 1.0f);
    }
 
-   if (!setSpriteAsset(mSpriteAssetId))
+   if (mSpriteAssetId != StringTable->EmptyString())
    {
-      Con::printf("Error setting sprite asset %s",mSpriteAssetId);
-      return false;
+      if(!setSpriteAsset(mSpriteAssetId))
+         return false;
+   }
+
+   if (mAnimAssetId != StringTable->EmptyString())
+   {
+      if (!setAnimationAsset(mAnimAssetId))
+         return false;
    }
 
    return true;
@@ -185,12 +233,14 @@ U32 SpriteObject::packUpdate(NetConnection *conn, U32 mask, BitStream *stream)
    {
       mathWrite(*stream, mSize);
       stream->writeString(mSpriteAsset.getAssetId());
+      stream->writeString(mAnimAsset.getAssetId());
    }
 
    if (stream->writeFlag(mask & FrameUpdateMask))
    {
       stream->write(mFrame);
    }
+
    stream->writeFlag(mFlipX);
    stream->writeFlag(mFlipY);
 
@@ -252,14 +302,24 @@ void SpriteObject::unpackUpdate(NetConnection *conn, BitStream *stream)
 
    if (stream->readFlag()) // Asset update Flag
    {
-      Con::printf("Asset unpack");
       Point2F size;
       mathRead(*stream, &size);
       mSize = Vector2(size.x, size.y);
+
+      /// set sprite asset.
       char buffer[256];
       stream->readString(buffer);
       mSpriteAssetId = StringTable->insert(buffer);
-      Con::printf("AssetID %s", mSpriteAssetId);
+      if(mSpriteAssetId != StringTable->EmptyString())
+         setSpriteAsset(mSpriteAssetId);
+
+      /// set animation asset.
+      char buffer2[256];
+      stream->readString(buffer2);
+      mAnimAssetId = StringTable->insert(buffer2);
+      if(mAnimAssetId != StringTable->EmptyString())
+         setAnimationAsset(mAnimAssetId);
+
    }
 
    if (stream->readFlag()) // update frame flag
@@ -275,6 +335,10 @@ void SpriteObject::unpackUpdate(NetConnection *conn, BitStream *stream)
 
 void SpriteObject::processTick()
 {
+   if (!mAnimAsset == NULL)
+   {
+      mAnimController.update(TickMs);
+   }
 
    const b2Vec2 pos = mpBody->GetPosition();
    F32 ang = mpBody->GetAngle();
@@ -303,7 +367,6 @@ void SpriteObject::processTick()
       mDelta.posVec = prePos;
 
       //Update whatever positional/angle stuff as part of the tick so we have our new data
-
       //Set the new state
       //Wrap up interpolation info
       mDelta.pos.x = pos.x;
@@ -329,8 +392,15 @@ void SpriteObject::interpolateTick(F32 dt)
 
 void SpriteObject::prepRenderImage(SceneCameraState* state)
 {
+   SpriteAsset::FrameArea::TexelArea texelArea;
 
-   SpriteAsset::FrameArea::TexelArea texelArea = mSpriteAsset->getSpriteFrameArea(mFrame).mTexelArea;
+   /// if sprite is not null, get it.
+   if (!mSpriteAsset == NULL)
+      texelArea = mSpriteAsset->getSpriteFrameArea(mFrame).mTexelArea;
+
+   /// if there is an animation, overwrite the sprite.
+   if (!mAnimAsset == NULL)
+      texelArea = mAnimController.getCurrentAnimationFrame().mTexelArea;
 
    texelArea.setFlip(mFlipX, mFlipY);
 
@@ -339,14 +409,17 @@ void SpriteObject::prepRenderImage(SceneCameraState* state)
    const F32 texUpperX = texelArea.mTexelUpper.x;
    const F32 texUpperY = texelArea.mTexelUpper.y;
 
-   GFXStateBlockDesc desc;
-   desc.setCullMode(GFXCullNone);
-   desc.setZReadWrite(true,false);
-   desc.setBlend(true, GFXBlendSrcAlpha, GFXBlendInvSrcAlpha);
-   desc.setColorWrites(true, true, true, false);
-   desc.samplersDefined = true;
-   desc.samplers[0] = GFXSamplerStateDesc::getClampLinear();
-   nsb = GFX->createStateBlock(desc);
+   if (!nsb)
+   {
+      GFXStateBlockDesc desc;
+      desc.setCullMode(GFXCullNone);
+      desc.setZReadWrite(true, false);
+      desc.setBlend(true, GFXBlendSrcAlpha, GFXBlendInvSrcAlpha);
+      desc.setColorWrites(true, true, true, false);
+      desc.samplersDefined = true;
+      desc.samplers[0] = GFXSamplerStateDesc::getClampLinear();
+      nsb = GFX->createStateBlock(desc);
+   }
 
    GFXVertexBufferHandle<GFXVertexPCT> verts(GFX, 4, GFXBufferTypeVolatile);
    verts.lock();

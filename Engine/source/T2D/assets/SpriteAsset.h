@@ -174,8 +174,9 @@ public:
 
    ///--------------------------------------------
    /// Very simple image asset for 2d Sprites
-   /// TODO: Add explicitly defined frames
-   /// and allow them to be named
+   /// TODO: Add custom defined frames
+   /// and allow them to be named.
+   /// TODO: add ability for multiple cell areas.
    ///--------------------------------------------
 
    SpriteAsset();
