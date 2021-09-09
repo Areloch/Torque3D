@@ -174,6 +174,16 @@ void SceneObject2D::setAngle(const F32 &ang)
    setTransform(tXfm);
 }
 
+F32 SceneObject2D::getAngle()
+{
+   VectorF vec = getTransform().getForwardVector();
+
+   Vector2 angVec(vec.x, vec.y);
+   F32 ang = angVec.getAngle();
+
+   return ang;
+}
+
 void SceneObject2D::setScale(const Vector2 &scale)
 {
    if (mObjScale.isEqual(scale))
@@ -184,6 +194,30 @@ void SceneObject2D::setScale(const Vector2 &scale)
    setTransform(mObjToWorld);
 
    setMaskBits(ScaleMask);
+}
+
+void SceneObject2D::getLocalPoint(Vector2 srcPoint, Vector2& outPoint)
+{
+   Point3F curPos = getTransform().getPosition();
+   F32 curAng = getAngle();
+
+   F32 px = srcPoint.x - curPos.x;
+   F32 py = srcPoint.y - curPos.y;
+   F32 outX = (mCos(curAng) * px + mSin(curAng) * py);
+   F32 outY = (-mSin(curAng) * px + mCos(curAng) * py);
+
+   outPoint = Vector2(outX, outY);
+}
+
+void SceneObject2D::getWorldPoint(Vector2 srcPoint, Vector2& outPoint)
+{
+   Point3F curPos = getTransform().getPosition();
+   F32 curAng = getAngle();
+
+   F32 outX = (mCos(curAng) * srcPoint.x - mSin(curAng) * srcPoint.y) + curPos.x;
+   F32 outY = (mSin(curAng) * srcPoint.x + mCos(curAng) * srcPoint.y) + curPos.y;
+
+   outPoint = Vector2(outX, outY);
 }
 
 void SceneObject2D::setTransform(const MatrixF& mat)

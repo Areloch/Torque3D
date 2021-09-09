@@ -158,7 +158,11 @@ public:
 
    void setPosition(const Vector2 &pos);
    void setAngle(const F32 &ang);
+   F32  getAngle();
    void setScale(const Vector2 &scale);
+
+   void getLocalPoint(Vector2 srcPoint, Vector2 & outPoint);
+   void getWorldPoint(Vector2 srcPoint, Vector2 & outPoint);
 
    virtual void setTransform(const MatrixF& mat);
    void setRenderTransform(const MatrixF & mat);
