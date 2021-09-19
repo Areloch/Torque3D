@@ -151,7 +151,7 @@ void GuiSpriteCtrl::onRender(Point2I offset, const RectI & updateRect)
       RectI dstRegion(offset, getBounds().extent);
 
       /// never wrap sprite.... may change for certain situations
-      GFX->getDrawUtil()->drawBitmapStretchSR(txr, dstRegion, srcRegion, GFXBitmapFlip_None, GFXTextureFilterLinear, false);
+      GFX->getDrawUtil()->drawBitmapStretchSR(txr, dstRegion, srcRegion, GFXBitmapFlip_None, GFXTextureFilterPoint, false);
 
    }
 

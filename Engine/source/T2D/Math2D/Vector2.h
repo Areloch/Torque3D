@@ -30,16 +30,16 @@
 struct Vector2 : b2Vec2
 {
 public:
-   F32 x;
-   F32 y;
-public:
-   Vector2();
-   Vector2(const Vector2 & _copy);
-   Vector2(const F32 x, const F32 y);
-   Vector2(const b2Vec2 & vec2);
-   Vector2(const Point2I & point);
-   Vector2(const Point2F & point);
-   Vector2(const Point2D & point);
+   /// unlike box2d we want a default constructor.
+   inline Vector2() : b2Vec2(0.0f, 0.0f) {}
+   inline Vector2(const Vector2 & _copy)     : b2Vec2(_copy.x, _copy.y) {}
+   inline Vector2(const F32 x, const F32 y)  : b2Vec2(x, y) {}
+   inline Vector2(const b2Vec2 & vec2)       : b2Vec2(vec2) {}
+   inline Vector2(const Point2I & point)     : b2Vec2( F32(point.x), F32(point.y) ) {}
+   inline Vector2(const Point2F & point)     : b2Vec2(point.x, point.y) {}
+   inline Vector2(const Point2D & point)     : b2Vec2(F32(point.x), F32(point.y)) {}
+
+
    void convolve(const Vector2&);
    void convolveInverse(const Vector2&);
    F32  len() const;
@@ -133,15 +133,6 @@ public:
 
 DefineConsoleType(TypeVector2, Vector2)
 
-/// Constructors.
-inline Vector2::Vector2():x(0.0f), y(0.0f){}
-inline Vector2::Vector2(const Vector2& _copy) : b2Vec2((_copy.x), (_copy.y)), x(_copy.x), y(_copy.y){}
-inline Vector2::Vector2(const F32 x, const F32 y) : b2Vec2(x, y) {}
-inline Vector2::Vector2(const b2Vec2& vec2) : b2Vec2(vec2) {}
-inline Vector2::Vector2(const Point2I& point) : b2Vec2(F32(point.x), F32(point.y)) {}
-inline Vector2::Vector2(const Point2F& point) : b2Vec2(point.x, point.y) {}
-inline Vector2::Vector2(const Point2D& point) : b2Vec2(F32(point.x), F32(point.y)) {}
-
 inline F32& Vector2::operator[](U32 index)
 {
    // we only have 2 in a vector2, safety required.
@@ -232,6 +223,8 @@ public:
             const F32 &xMax, const F32 &ymax);
    void set(const Vector2& in_Length);
    void setCenter(const Vector2& center);
+   Vector2 getCenter() const;
+   void getCenter(Vector2* center) const;
    bool isContained(const Vector2& in_rContained) const;
    bool isOverlapped(const BoxVec2& in_rOverlap) const;
    bool isContained(const BoxVec2& in_rContain) const;
@@ -316,6 +309,20 @@ inline void BoxVec2::setCenter(const Vector2& center)
 
    minExtents.set(center.x - halflenx, center.y - halfleny);
    maxExtents.set(center.x + halflenx, center.y + halfleny);
+}
+
+inline Vector2 BoxVec2::getCenter() const
+{
+   Vector2 center;
+   center.x = (minExtents.x + maxExtents.x) * 0.5f;
+   center.y = (minExtents.y + maxExtents.y) * 0.5f;
+   return center;
+}
+
+inline void BoxVec2::getCenter(Vector2* center) const
+{
+   center->x = (minExtents.x + maxExtents.x) * 0.5f;
+   center->y = (minExtents.y + maxExtents.y) * 0.5f;
 }
 
 inline bool BoxVec2::isContained(const Vector2& in_rContained) const

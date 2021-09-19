@@ -135,13 +135,13 @@ bool GuiTS2DCtrl::unproject(const Point3F & pt, Point3F * dest) const
 
 void GuiTS2DCtrl::windowToScene(const Vector2& srcPt, Vector2& dstPt)
 {
-   dstPt.Set( (srcPt.x * mLastCameraQuery.mCameraScale.x) + mLastCameraQuery.mSceneMin.x,
+   dstPt.set( (srcPt.x * mLastCameraQuery.mCameraScale.x) + mLastCameraQuery.mSceneMin.x,
                mLastCameraQuery.mSceneMax.y - (srcPt.y * mLastCameraQuery.mCameraScale.y) );
 }
 
 void GuiTS2DCtrl::sceneToWindow(const Vector2& srcPt, Vector2& dstPt)
 {
-   dstPt.Set( ( srcPt.x - mLastCameraQuery.mSceneMin.x ) / mLastCameraQuery.mCameraScale.x,
+   dstPt.set( ( srcPt.x - mLastCameraQuery.mSceneMin.x ) / mLastCameraQuery.mCameraScale.x,
               ( mLastCameraQuery.mSceneMax.y - srcPt.y ) / mLastCameraQuery.mCameraScale.y );
 }
 

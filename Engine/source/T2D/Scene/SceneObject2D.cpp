@@ -36,7 +36,8 @@ SceneObject2D::SceneObject2D() :
    mpBodyDef.awake = true;
    mpBodyDef.fixedRotation = false;
    mpBodyDef.bullet = false;
-   mpBodyDef.type = b2_dynamicBody;
+   /// default to static
+   mpBodyDef.type = b2_staticBody;
    mpBodyDef.enabled = true;
    mpBodyDef.gravityScale = 1.0f;
 

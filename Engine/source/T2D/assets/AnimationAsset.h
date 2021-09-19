@@ -52,6 +52,12 @@ private:
    bool                    mBounce;
 
 public:
+   //------------------------------
+   // TODO: Add multiple animations to 1 asset.
+   //       |- Controllable animation references.
+   //       if possible, transition blending anims.
+   //       Add sound triggers to animations.
+   //------------------------------
 
    AnimationAsset();
    virtual ~AnimationAsset();

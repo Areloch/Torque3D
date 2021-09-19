@@ -172,8 +172,6 @@ bool SpriteObject::onAdd()
 
    mObjBox = BoxVec2(Vector2(-width, -height), Vector2(width, height));
 
-   mpBodyDef.type = b2_staticBody;
-
    addToScene();
 
    if (mpBody)
@@ -417,7 +415,7 @@ void SpriteObject::prepRenderImage(SceneCameraState* state)
       desc.setBlend(true, GFXBlendSrcAlpha, GFXBlendInvSrcAlpha);
       desc.setColorWrites(true, true, true, false);
       desc.samplersDefined = true;
-      desc.samplers[0] = GFXSamplerStateDesc::getClampLinear();
+      desc.samplers[0] = GFXSamplerStateDesc::getClampPoint();
       nsb = GFX->createStateBlock(desc);
    }
 
@@ -432,10 +430,10 @@ void SpriteObject::prepRenderImage(SceneCameraState* state)
    verts[2].point.set(-width, -height, 0.0f);
    verts[3].point.set(width, -height, 0.0f);
 
-   verts[0].texCoord.set(texLowerX, texUpperY);
-   verts[1].texCoord.set(texUpperX, texUpperY);
-   verts[2].texCoord.set(texLowerX, texLowerY);
-   verts[3].texCoord.set(texUpperX, texLowerY);
+   verts[0].texCoord.set(texLowerX, texLowerY);
+   verts[1].texCoord.set(texUpperX, texLowerY);
+   verts[2].texCoord.set(texLowerX, texUpperY);
+   verts[3].texCoord.set(texUpperX, texUpperY);
 
    verts.unlock();
 

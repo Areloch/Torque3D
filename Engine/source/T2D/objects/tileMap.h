@@ -13,8 +13,6 @@
 #include "T2D/assets/SpriteAsset.h"
 #endif // !_SPRITE_ASSET_H_
 
-class TileLayer;
-
 class TileMap : public SceneObject2D
 {
    typedef SceneObject2D Parent;
@@ -32,8 +30,69 @@ private:
 
 public:
 
-   typedef Vector<TileLayer*> typeTileLayers;
-   typeTileLayers mTileLayerList;
+   struct TileObject
+   {
+      S32 mId;
+      S32 mFrame;
+      Point2F mPos;
+      TileObject()
+         :  mId(-1),
+            mFrame(-1)
+      {}
+
+      TileObject(S32 id, Point2F pos)
+         :  mId(id),
+            mFrame(-1),
+            mPos(pos)
+      {}
+      ~TileObject() {}
+
+      void setFrame(S32 frame) { mFrame = frame; }
+      S32 getFrame() { return mFrame; }
+      Point2F getPos() { return mPos; }
+   };
+
+   typedef Vector<TileObject*> typeTileObject;
+
+   struct TileLayer
+   {
+      S32 mId;
+      AssetPtr<SpriteAsset> mSpriteAsset;
+      StringTableEntry mSpriteAssetId;
+      S32 mObjId;
+      typeTileObject mTileObjectList;
+      typeTileObject mActiveList;
+      GFXTexHandle txr;
+      F32 nodeSize;
+
+      TileLayer()
+         : mId(-1)
+      {
+         VECTOR_SET_ASSOCIATION(mTileObjectList);
+         mObjId = 0;
+         nodeSize = 1.0f;
+      }
+      TileLayer(S32 id)
+         : mId(id)
+      {
+         mObjId = 0;
+      }
+
+      ~TileLayer();
+
+      bool setSpriteAsset(StringTableEntry spriteAssetId);
+      StringTableEntry getSpriteAssetId() { return mSpriteAssetId; }
+
+      void createTiles(S32 tileX, S32 tileY, F32 tileSize);
+      bool validateFrame(S32 id, S32 frame);
+      void activeCount();
+      void renderLayer();
+   };
+
+   typedef Vector<TileLayer*> typeTileLayer;
+   typeTileLayer mTileLayerList;
+
+   S32 mTileLayerId;
 
    TileMap();
    virtual ~TileMap();
@@ -42,70 +101,27 @@ public:
    virtual void onRemove();
 
    static void initPersistFields();
-   virtual void inspectPostApply();
-   void validate();
+   virtual void onInspect(GuiInspector * inspector);
+   virtual void onDynamicModified(const char * slotName, const char * newValue);
+   void setTileFrame(S32 layerId, S32 tileId, S32 frame);
+   //virtual void inspectPostApply();
+   //void validate();
+
+   void createLayer();
+   void createSpecifiedLayer(U32 slotNum, StringTableEntry spriteAssetId);
 
    /// NetObject
    U32 packUpdate(NetConnection* conn, U32 mask, BitStream* stream);
    void unpackUpdate(NetConnection* conn, BitStream* stream);
 
-   virtual void processTick();
-   virtual void interpolateTick(F32 dt);
+   //virtual void processTick();
+   //virtual void interpolateTick(F32 dt);
 
    /// rendering
    void prepRenderImage(SceneCameraState* cam);
 
    DECLARE_CONOBJECT(TileMap);
 
-};
-
-class TileLayer : public SceneObject2D
-{
-   typedef SceneObject2D Parent;
-private:
-   TileMap* mTileMap;
-   S32      mId;
-   S32      mSortLayer;
-
-protected:
-   AssetPtr<SpriteAsset> mSpriteAsset;
-   StringTableEntry mSpriteAssetId;
-   bool setSpriteAsset(const StringTableEntry spriteAssetId);
-
-public:
-   GFXTexHandle txr;
-
-   TileLayer();
-   TileLayer(TileMap* map, U32 id);
-   virtual ~TileLayer();
-
-   virtual bool onAdd();
-   virtual void onRemove();
-
-   static void initPersistFields();
-   virtual void inspectPostApply();
-
-   /// NetObject
-   /// we will let you pack your own updates for now.
-   U32 packUpdate(NetConnection* conn, U32 mask, BitStream* stream);
-   void unpackUpdate(NetConnection* conn, BitStream* stream);
-
-   void createLayout();
-   void sortLayer();
-   /// don't let this object update itself.
-   void renderLayer();
-
-   /// protected setters.
-   static bool _setSpriteAsset(void *obj, const char* index, const char* data);
-
-   /// setters
-   void setSortLayer(U32 sort) { mSortLayer = sort; }
-
-   /// getters
-   S32 getId() { return mId; }
-   S32 getSortLayer() { return mSortLayer; }
-
-   DECLARE_CONOBJECT(TileLayer);
 };
 
 #endif // !_TILEMAP_H_

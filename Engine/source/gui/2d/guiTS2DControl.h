@@ -133,6 +133,7 @@ public:
 
    /// Returns the last camera query set in onRender.
    const CameraQuery& getLastCameraQuery() const { return mLastCameraQuery; }
+   const RectF getCameraArea() const { return mLastCameraQuery.mCamArea; }
 
    /// Returns the screen space X,Y and Z for world space point.
   /// The input z coord is depth, from 0 to 1.
@@ -143,7 +144,7 @@ public:
    bool unproject(const Point3F &pt, Point3F *dest) const;
 
    void windowToScene(const Vector2& srcPt, Vector2& dstPt);
-   void sceneToWindow(const Vector2 & srcPt, Vector2 & dstPt);
+   void sceneToWindow(const Vector2& srcPt, Vector2& dstPt);
 
    static const U32& getFrameCount() { return smFrameCount; }
 
