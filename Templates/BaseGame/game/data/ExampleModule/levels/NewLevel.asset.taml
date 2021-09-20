@@ -1,0 +1,11 @@
+<LevelAsset
+    canSave="true"
+    canSaveDynamicFields="true"
+    AssetName="NewLevel"
+    LevelFile="@assetFile=NewLevel.mis"
+    PostFXPresetFile="@assetFile=NewLevel.postfxpreset.cs"
+    DecalsFile="@assetFile=NewLevel.mis.decals"
+    ForestFile="@assetFile=NewLevel.forest"
+    NavmeshFile="@assetFile=NewLevel.nav"
+    isSubScene="false"
+    VersionId="1" />

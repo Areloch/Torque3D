@@ -21,6 +21,7 @@
 //-----------------------------------------------------------------------------
 
 #include "T3D/gameTSCtrl.h"
+#include "math/mathUtils.h"
 #include "console/consoleTypes.h"
 #include "T3D/gameBase/gameBase.h"
 #include "T3D/gameBase/gameConnection.h"
@@ -59,6 +60,7 @@ bool GameTSCtrl::onAdd()
 }
 
 //---------------------------------------------------------------------------
+
 bool GameTSCtrl::processCameraQuery(CameraQuery *camq)
 {
    GameUpdateCameraFov();

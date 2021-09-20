@@ -1,0 +1,17 @@
+<SpriteAsset
+    canSave="true"
+    canSaveDynamicFields="true"
+    AssetName="Blocks"
+    AssetDescription="Test Asset"
+    spriteFile="@assetFile=M:/Github/Torque3D2D/My Projects/Torque2D/game/data/ExampleModule/test/Blocks.png"
+    cellRowOrder="true"
+    cellOffsetX="0"
+    cellOffsetY="0"
+    cellStrideX="0"
+    cellStrideY="0"
+    cellCountX="8"
+    cellCountY="7"
+    cellWidth="64"
+    cellHeight="64"
+    originalFilePath="Data/ExampleModule/test/Blocks.png"
+    VersionId="1" />

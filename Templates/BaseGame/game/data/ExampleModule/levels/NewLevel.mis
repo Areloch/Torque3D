@@ -1,0 +1,28 @@
+//--- OBJECT WRITE BEGIN ---
+new Scene2D(NewLevel) {
+canSave = "1";
+canSaveDynamicFields = "1";
+isSubScene = "0";
+Gravity = "0.0 -20.0";
+	gameModeName = "ExampleGameMode";
+
+	new LevelInfo2D(theLevelInfo) {
+	cameraSize = "32.0 18.0";
+	soundAmbience = "AudioAmbienceDefault";
+	soundDistanceModel = "Linear";
+	canSave = "1";
+	canSaveDynamicFields = "1";
+	advancedLightmapSupport = "0";
+	desc0 = "A blank room template that acts as a starting point.";
+	Enabled = "1";
+	LevelName = "Blank Room Template";
+	};
+	
+	new SpriteObject(TestSprite){
+	SpriteAsset = "ExampleModule:Blocks";
+	SpriteFrame = "1";
+	};
+	
+};
+//--- OBJECT WRITE END ---
+

@@ -97,10 +97,13 @@ function loadMissionStage2()
 
       // Exec the mission.  The MissionGroup (loaded components) is added to the ServerGroup
       exec(%file);
-
-      if( !isObject(getScene(0)) )
+	  
+      if( !isObject(getScene2D(0)) )
       {
-         $Server::LoadFailMsg = "No Scene found in level \"" @ %file @ "\".";
+		if(!isObject(getScene(0)))
+		{
+			$Server::LoadFailMsg = "No Scene found in level \"" @ %file @ "\".";
+		}
       }
    }
 
@@ -126,7 +129,7 @@ function loadMissionStage2()
    %hasGameMode = callGamemodeFunction("onCreateGame");
    
    // Construct MOD paths
-   pathOnMissionLoadDone();
+   //pathOnMissionLoadDone();
 
    // Mission loading done...
    echo("*** Mission loaded");
@@ -142,8 +145,9 @@ function loadMissionStage2()
 
 function endMission()
 {
-   if (!isObject( getScene(0) ))
-      return;
+   if (!isObject( getScene2D(0) ))
+	   if(!isObject(getScene(0)) )
+		return;
 
    echo("*** ENDING MISSION");
    
@@ -160,7 +164,11 @@ function endMission()
    }
    
    // Delete everything
-   getScene(0).delete();
+   if( !isObject(getScene2D(0)) )
+      getScene(0).delete();
+   else
+	  getScene2D(0).delete();
+  
    MissionCleanup.delete();
    
    clearServerPaths();

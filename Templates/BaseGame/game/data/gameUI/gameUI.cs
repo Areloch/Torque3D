@@ -16,6 +16,7 @@ function gameUI::initClient(%this)
 {
    //guis
    exec("./GUIs/playGui.gui");
+   exec("./GUIs/playGui2D.gui");
    exec("./GUIs/playGui.cs");
 }
 

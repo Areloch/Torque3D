@@ -2,13 +2,21 @@ function callGamemodeFunction(%gameModeFuncName, %arg0, %arg1, %arg2, %arg3, %ar
 {
    if(%data !$= "")
       %data = "\""@%data@"\"";
-      
-   %activeSceneCount = getSceneCount();
+    
+	// has to be a better way to join these into 1 call.
+	if(isObject(getScene2D(0)) )
+		%activeSceneCount = getScene2DCount();
+	else
+		%activeSceneCount = getSceneCount();
       
    %hasGameMode = 0;
    for(%i=0; %i < %activeSceneCount; %i++)
    {
-      %gamemodeName = getScene(%i).gameModeName;
+	  if(isObject(getScene2D(0)) )
+		%gamemodeName = getScene2D(%i).gameModeName;
+	  else
+		%gamemodeName = getScene(%i).gameModeName;
+	
       if(%gamemodeName !$= "")
       {
          //if the scene defines a game mode, go ahead and envoke it here

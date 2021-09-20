@@ -37,6 +37,7 @@ function initializeAssetBrowser()
       AssetFilterTypeList.add("GameObjectAsset");
       AssetFilterTypeList.add("GUIAsset");
       AssetFilterTypeList.add("ImageAsset");
+      AssetFilterTypeList.add("SpriteAsset");
       AssetFilterTypeList.add("LevelAsset");
       AssetFilterTypeList.add("MaterialAsset");
       AssetFilterTypeList.add("ParticleAsset");
@@ -89,6 +90,7 @@ function initializeAssetBrowser()
    exec("./scripts/assetTypes/gameObject.cs");   
    exec("./scripts/assetTypes/gui.cs");
    exec("./scripts/assetTypes/image.cs");  
+   exec("./scripts/assetTypes/sprite.cs");  
    exec("./scripts/assetTypes/level.cs"); 
    exec("./scripts/assetTypes/material.cs");   
    exec("./scripts/assetTypes/postFX.cs");

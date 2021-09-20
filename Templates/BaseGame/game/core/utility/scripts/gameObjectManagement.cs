@@ -48,10 +48,20 @@ function spawnGameObject(%name, %addToScene)
          %go.setScopeAlways();
          
          if(%addToMissionGroup == true) //save instance when saving level
-            getScene(0).add(%go);
-         else // clear instance on level exit
+		 {
+			if(isObject(getScene2D(0)))
+			{
+				getScene2D(0).add(%go);
+			}
+			else
+			{
+				getScene(0).add(%go);
+			}
+		 }
+         else
+		 {			 // clear instance on level exit
             MissionCleanup.add(%go);
-            
+		 }
          //remove from the object pool's list
          GameObjectPool.erase(%goIdx);
          
@@ -68,7 +78,11 @@ function spawnGameObject(%name, %addToScene)
       %newSGOObject = TamlRead(%gameObjectAsset.TAMLFilePath);
             
       if(%addToScene == true) //save instance when saving level
-         getScene(0).add(%newSGOObject);
+		if(isObject(getScene2D(0)) )
+			getScene2D(0).add(%newSGOObject);
+		else
+			getScene(0).add(%newSGOObject);
+		 
       else // clear instance on level exit
          MissionCleanup.add(%newSGOObject);
          

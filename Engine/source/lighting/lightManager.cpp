@@ -198,7 +198,7 @@ void LightManager::setSpecialLight( LightManager::SpecialLightTypesEnum type, Li
    registerGlobalLight( light, NULL );
 }
 
-void LightManager::registerGlobalLights( const Frustum *frustum, bool staticLighting, bool enableZoneLightCulling)
+void LightManager::registerGlobalLights( const Frustum *frustum, bool staticLighting, bool enableZoneLightCulling, bool is2Dscene)
 {
    PROFILE_SCOPE( LightManager_RegisterGlobalLights );
 
@@ -220,12 +220,16 @@ void LightManager::registerGlobalLights( const Frustum *frustum, bool staticLigh
    {
       // We're processing static lighting or want all the lights
       // in the container registerd...  so no culling.
-      getSceneManager()->getContainer()->findObjectList( lightMask, &activeLights );
+      // only do this if it is not a 2d scene, 2d does its own register.
+      if(!is2Dscene)
+         getSceneManager()->getContainer()->findObjectList( lightMask, &activeLights );
    }
    else
    {
       // Cull the lights using the frustum.
-      getSceneManager()->getContainer()->findObjectList(*frustum, lightMask, &activeLights);
+      // only do this if it is not a 2d scene, 2d does its own culling.
+      if (!is2Dscene)
+         getSceneManager()->getContainer()->findObjectList(*frustum, lightMask, &activeLights);
       /*
       for (U32 i = 0; i < activeLights.size(); ++i)
       {
