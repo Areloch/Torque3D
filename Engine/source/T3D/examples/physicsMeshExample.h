@@ -99,6 +99,10 @@ protected:
    PhysicsState mState;
    PhysicsState mRenderState[2];
 
+   /// The starting position to place the shape when
+   /// the level begins or is reset.
+   MatrixF mResetPos;
+
 public:
    PhysicsMeshExample();
    virtual ~PhysicsMeshExample();
@@ -157,6 +161,19 @@ public:
    //
    virtual void processTick(const Move* move);
    virtual void interpolateTick(F32 dt);
+
+   //
+   void _onPhysicsReset(PhysicsResetEvent reset);
+
+   /// Save the current transform as where we return to when a physics reset
+   /// event occurs. This is automatically set in onAdd but some manipulators
+   /// such as Prefab need to make use of this.
+   void storeRestorePos();
+
+   void restore();
+
+   //
+   virtual PhysicsBody* getPhysicsBody() { return mPhysicsRep; }
 };
 
 #endif // _PhysicsMeshExample_H_

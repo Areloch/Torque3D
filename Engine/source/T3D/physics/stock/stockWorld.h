@@ -8,12 +8,30 @@
 #ifndef _TVECTOR_H_
 #include "core/util/tVector.h"
 #endif
+#include "collision/boxConvex.h"
 
 class ProcessList;
 class PhysicsBody;
+class StockBody;
 
 class StockWorld : public PhysicsWorld
 {
+public:
+   struct UpdateWorkingSet
+   {
+      bool needsUpdate;
+      StockBody* mBody;
+      OrthoBoxConvex mConvexTester;
+
+      Box3F mWorkingQueryBox;
+
+      UpdateWorkingSet() :
+         needsUpdate(false),
+         mBody(NULL)
+      {
+      }
+   };
+
 protected:
    F32 mEditorTimeScale;
    bool mErrorReport;
@@ -28,6 +46,9 @@ protected:
    Vector<PhysicsBody*> mNonStaticBodies;
 
    void _destroy();
+
+   Vector<UpdateWorkingSet> mWorkingSets;
+   S32 findWorkingSet(PhysicsBody* body);
 
 public:
 
@@ -60,6 +81,9 @@ public:
    virtual void explosion(const Point3F &pos, F32 radius, F32 forceMagnitude) {}
 
    bool isServer() { return mIsServer; }
+
+   //WorkingSet stuff
+   void updateWorkingCollisionSet(UpdateWorkingSet* set);
 };
 
 

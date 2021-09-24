@@ -153,7 +153,7 @@ StockCollision::StockCollision() :
    mLocalXfm(true),
    mObject(NULL)
 {
-   mConvexList = new Convex;
+   //mConvexList = new Convex;
 }
 
 StockCollision::~StockCollision()
@@ -163,7 +163,7 @@ StockCollision::~StockCollision()
 
 void StockCollision::setObject(SceneObject* obj)
 {
-   mConvexList->setObject(obj);
+   /*mConvexList->setObject(obj);
 
    for (Convex* itr = mConvexList->getNext();
       itr != mConvexList;
@@ -171,31 +171,35 @@ void StockCollision::setObject(SceneObject* obj)
    {
       if (itr->getObject() != obj)
          itr->setObject(obj);
-   }
+   }*/
 }
 
 //
 void StockCollision::addPlane(const PlaneF& plane)
 {
    // Create a new convex.
-   BoxConvex* cp = new BoxConvex;
-   mConvexList->registerObject(cp);
-
-   cp->mCenter = plane.getPosition();
+   BoxConvex cp = BoxConvex();
+   cp.mCenter = plane.getPosition();
    F32 height = 0.1f;
-   cp->mCenter.z -= height / 2.0f;
-   cp->mSize = Point3F(F32_MAX / 2, F32_MAX / 2, height);
+   cp.mCenter.z -= height / 2.0f;
+   cp.mSize = Point3F(F32_MAX / 2, F32_MAX / 2, height);
+
+   mConvexes.push_back(cp);
+   //mConvexList->registerObject(&cp);
+   
 }
 
 void StockCollision::addBox(const Point3F& halfWidth, const MatrixF& localXfm)
 {
    // Create a new convex.
-   BoxConvex* cp = new BoxConvex;
-   mConvexList->registerObject(cp);
+   BoxConvex cp = BoxConvex();
+   cp.mCenter = localXfm.getPosition();
+   cp.mSize = halfWidth;
 
-   cp->mCenter = localXfm.getPosition();
+   mConvexes.push_back(cp);
+   //mConvexList->registerObject(&cp);
 
-   cp->mSize = halfWidth;
+   bool asdf = true;
 }
 
 void StockCollision::addSphere(F32 radius, const MatrixF& localXfm)
@@ -225,22 +229,20 @@ bool StockCollision::addConvex(const Point3F* points, U32 count, const MatrixF& 
       Point3F peak = ((a + b + c) / 3.0f) - (p * 0.15f);
 
       // Set up the convex...
-      PolysoupConvex* cp = new PolysoupConvex();
-
-      mConvexList->registerObject(cp);
+      PolysoupConvex cp = PolysoupConvex();
 
       //cp->mesh = this;
-      cp->idx = i;
-      cp->mObject = mObject;
-
-      cp->normal = p;
-      cp->verts[0] = a;
-      cp->verts[1] = b;
-      cp->verts[2] = c;
-      cp->verts[3] = peak;
+      cp.idx = i;
+      cp.mObject = mObject;
+        
+      cp.normal = p;
+      cp.verts[0] = a;
+      cp.verts[1] = b;
+      cp.verts[2] = c;
+      cp.verts[3] = peak;
 
       // Update the bounding box.
-      Box3F& bounds = cp->box;
+      Box3F& bounds = cp.box;
       bounds.minExtents.set(F32_MAX, F32_MAX, F32_MAX);
       bounds.maxExtents.set(-F32_MAX, -F32_MAX, -F32_MAX);
 
@@ -253,6 +255,10 @@ bool StockCollision::addConvex(const Point3F* points, U32 count, const MatrixF& 
       bounds.maxExtents.setMax(b);
       bounds.maxExtents.setMax(c);
       bounds.maxExtents.setMax(peak);
+      cp.box = bounds;
+
+      mConvexes.push_back(cp);
+      //mConvexList->registerObject(&cp);
    }
 
    return true;
@@ -266,4 +272,24 @@ bool StockCollision::addTriangleMesh(const Point3F* vert, U32 vertCount, const U
 bool StockCollision::addHeightfield(const U16* heights, const bool* holes, U32 blockSize, F32 metersPerSample, const MatrixF& localXfm)
 {
    return false;
+}
+
+Box3F StockCollision::getBoundingBox()
+{
+   Box3F bounds = Box3F::Zero;
+   for (U32 i = 0; i < mConvexes.size(); i++)
+   {
+      bounds.extend(mConvexes[i].getBoundingBox().minExtents);
+      bounds.extend(mConvexes[i].getBoundingBox().maxExtents);
+   }
+
+   return bounds;
+}
+
+void StockCollision::collectGarbage()
+{
+   for (U32 i = 0; i < getConvexCount(); i++)
+   {
+      getConvex(i)->collectGarbage();
+   }
 }

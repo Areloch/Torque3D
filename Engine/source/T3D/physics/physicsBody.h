@@ -32,7 +32,7 @@
 
 class PhysicsCollision;
 class SceneObject;
-
+class Convex;
 
 /// Simple physics object that represents a single rigid body.
 class PhysicsBody : public PhysicsObject
@@ -137,6 +137,7 @@ public:
 
    virtual bool isValid() = 0;
 
+   virtual void buildConvex(const Box3F& box, Convex* convex) = 0;
 };
 
 

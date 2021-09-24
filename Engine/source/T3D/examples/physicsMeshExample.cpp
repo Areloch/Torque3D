@@ -53,7 +53,8 @@ ConsoleDocClass( PhysicsMeshExample,
 //-----------------------------------------------------------------------------
 // Object setup and teardown
 //-----------------------------------------------------------------------------
-PhysicsMeshExample::PhysicsMeshExample()
+PhysicsMeshExample::PhysicsMeshExample() :
+   mResetPos(MatrixF::Identity)
 {
    // Flag this object so that it will always
    // be sent across the network to clients
@@ -117,6 +118,12 @@ bool PhysicsMeshExample::onAdd()
    // Refresh this object's material (if any)
    updateMaterial();
 
+   if (isServerObject())
+   {
+      storeRestorePos();
+      PhysicsPlugin::getPhysicsResetSignal().notify(this, &PhysicsMeshExample::_onPhysicsReset);
+   }
+
    return true;
 }
 
@@ -145,6 +152,37 @@ void PhysicsMeshExample::setTransform(const MatrixF & mat)
    // Dirty our network mask so that the new transform gets
    // transmitted to the client object
    setMaskBits( TransformMask );
+}
+
+void PhysicsMeshExample::storeRestorePos()
+{
+   mResetPos = getTransform();
+}
+
+void PhysicsMeshExample::_onPhysicsReset(PhysicsResetEvent reset)
+{
+   if (reset == PhysicsResetEvent_Store)
+      mResetPos = getTransform();
+
+   else if (reset == PhysicsResetEvent_Restore)
+   {
+      setTransform(mResetPos);
+
+      // Restore to un-destroyed state.
+      restore();
+
+      // Cheat and reset the client from here.
+      if (getClientObject())
+      {
+         PhysicsMeshExample* clientObj = (PhysicsMeshExample*)getClientObject();
+         clientObj->setTransform(mResetPos);
+         clientObj->restore();
+      }
+   }
+}
+
+void PhysicsMeshExample::restore()
+{
 }
 
 U32 PhysicsMeshExample::packUpdate( NetConnection *conn, U32 mask, BitStream *stream )
@@ -478,7 +516,7 @@ void PhysicsMeshExample::interpolateTick(F32 dt)
    // PATHSHAPE END
 }
 
-
+//
 //
 
 DefineEngineMethod( PhysicsMeshExample, postApply, void, (),,

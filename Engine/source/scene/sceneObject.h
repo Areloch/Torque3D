@@ -87,6 +87,7 @@ class SFXAmbience;
 
 struct ObjectRenderInst;
 struct Move;
+class PhysicsBody;
 
 
 /// A 3D object.
@@ -550,6 +551,9 @@ class SceneObject : public NetObject, private SceneContainer::Link, public Proce
       /// @param   box
       /// @param   convex   Convex mesh generated (out)
       virtual void buildConvex( const Box3F& box,Convex* convex ) {}
+
+      /// Gets the PhysicsBody for this object, if it exists
+      virtual PhysicsBody* getPhysicsBody() { return NULL; }
 
       /// Builds a list of polygons which intersect a bounding volume.
       ///

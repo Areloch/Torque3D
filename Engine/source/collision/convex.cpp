@@ -485,7 +485,7 @@ void Convex::updateWorkingList(const Box3F& box, const U32 colMask)
    SimpleQueryList sql;
    mObject->getContainer()->findObjects(box, colMask,SimpleQueryList::insertionCallback, &sql);
    for (U32 i = 0; i < sql.mList.size(); i++)
-      sql.mList[i]->buildConvex(box, this);
+         sql.mList[i]->buildConvex(box, this);
 }
 
 void Convex::clearWorkingList()

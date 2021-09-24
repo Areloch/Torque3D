@@ -12,9 +12,14 @@
 #ifndef _TVECTOR_H_
 #include "core/util/tVector.h"
 #endif
-
+#ifndef _CONVEX_H_
 #include "collision/convex.h"
+#endif
 #include "ts/tsMesh.h"
+
+/*#ifndef _T3D_STOCKBODY_H_
+#include "T3D/physics/stock/stockBody.h"
+#endif*/
 
 class PolysoupConvex : public Convex
 {
@@ -51,9 +56,12 @@ class StockCollision : public PhysicsCollision
 {
 protected:
 
+   //PhysicsBody* mBody;
    SceneObject* mObject;
 
-   Convex* mConvexList;
+  // Convex* mConvexList;
+
+   Vector<Convex> mConvexes;
 
    /// local transform is calculated here.
    MatrixF mLocalXfm;
@@ -78,9 +86,25 @@ public:
    virtual bool addTriangleMesh(const Point3F *vert, U32 vertCount, const U32 *index, U32 triCount, const MatrixF &localXfm);
    virtual bool addHeightfield(const U16 *heights, const bool *holes, U32 blockSize, F32 metersPerSample, const MatrixF &localXfm);
 
-   Convex* getConvexList() { return mConvexList; }
+   //Convex* getConvexList() { return mConvexList; }
+
+   Convex* getConvex(U32 idx) {
+      if (idx >= mConvexes.size())
+         return NULL;
+      else
+         return &mConvexes[idx];
+   }
+
+   U32 getConvexCount() {
+      return mConvexes.size();
+   }
 
    void setObject(SceneObject* obj);
+   SceneObject* getObject() { return mObject; }
+
+   Box3F getBoundingBox();
+
+   void collectGarbage();
 };
 
 #endif // !_T3D_STOCKCOLLISION_H_

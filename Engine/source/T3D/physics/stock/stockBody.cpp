@@ -36,7 +36,8 @@ StockBody::StockBody()
       mSleep(false),
       mLinFactor(1, 1, 1),
       mAngFactor(1, 1, 1),
-      mTimeoutList(NULL)
+      mTimeoutList(NULL),
+      mObject(NULL)
 {
    /// need to make sure this is OOBB.
    mAABB = Box3F(Point3F(0, 0, 0), Point3F(0, 0, 0));
@@ -79,6 +80,8 @@ bool StockBody::init(PhysicsCollision * shape, F32 mass, U32 bodyFlags, SceneObj
 
    mColShape = (StockCollision*)shape;
    mColShape->setObject(obj);
+
+   mObject = obj;
 
    //stockCollisionShape * stColShape = mColShape->getShape();
    MatrixF localXfm = mColShape->getLocalTransform();
@@ -160,6 +163,48 @@ void StockBody::setCMassTransform(const MatrixF & xfm)
    mCenterOfMass = xfm.getPosition();
 }
 
+//
+void StockBody::buildConvex(const Box3F& box, Convex* convex)
+{
+   mColShape->collectGarbage();
+
+   Box3F bounds = mColShape->getBoundingBox();
+   if (!box.isOverlapped(bounds))
+      return;
+
+   // See if we already have a convex in the working set.
+   bool exists = false;
+   CollisionWorkingList& wl = convex->getWorkingList();
+   CollisionWorkingList* itr = wl.wLink.mNext;
+   for (; itr != &wl; itr = itr->wLink.mNext)
+   {
+      if (itr->mConvex->getObject() == mColShape->getObject())
+      {
+         exists = true;
+         break;
+      }
+   }
+
+   if (!exists)
+   {
+      for (U32 i = 0; i < mColShape->getConvexCount(); i++)
+      {
+         convex->addToWorkingList(mColShape->getConvex(i));
+      }
+   }
+
+   // Update our convex to best match the queried box
+   /*if (boxConvex)
+   {
+      Point3F queryCenter = box.getCenter();
+
+      boxConvex->mCenter = Point3F(queryCenter.x, queryCenter.y, -GROUND_PLANE_BOX_HEIGHT_HALF);
+      boxConvex->mSize = Point3F(box.getExtents().x,
+         box.getExtents().y,
+         GROUND_PLANE_BOX_HEIGHT_HALF);
+   }*/
+}
+//
 /*void StockBody::setTransform(const MatrixF& xfm)
 {
    if (mCenterOfMass)
@@ -263,7 +308,7 @@ void StockBody::findContact(SceneObject** contactObject, VectorF* contactNormal,
 
    bodyTransform.getColumn(3, &pos);
 
-   Box3F mScaledBox = mColShape->getConvexList()->getBoundingBox();
+   Box3F mScaledBox = Box3F();//mColShape->getConvexList()->getBoundingBox();
 
    Box3F wBox;
    Point3F exp(0, 0, sTractionDistance);
@@ -295,7 +340,7 @@ void StockBody::findContact(SceneObject** contactObject, VectorF* contactNormal,
    wBox.maxExtents.z = pos.z + mScaledBox.maxExtents.z;*/
 
    // Build list from convex states here...
-   CollisionWorkingList& rList = mColShape->getConvexList()->getWorkingList();
+   /*CollisionWorkingList& rList = mColShape->getConvexList()->getWorkingList();
    CollisionWorkingList* pList = rList.wLink.mNext;
    while (pList != &rList)
    {
@@ -314,7 +359,7 @@ void StockBody::findContact(SceneObject** contactObject, VectorF* contactNormal,
          outOverlapObjects->push_back(pConvex->getObject());
 
       pList = pList->wLink.mNext;
-   }
+   }*/
 
    if (!polyList.isEmpty())
    {
@@ -342,80 +387,17 @@ void StockBody::moveKinematicTo(const MatrixF& xfm)
 
 bool StockBody::castRay(const Point3F& start, const Point3F& end, RayInfo* info)
 {
-   if (mColShape && mColShape->getConvexList())
+   /*if (mColShape && mColShape->getConvexList())
    {
       Convex* convexList = mColShape->getConvexList();
-   }
+   }*/
 
    return false;
 }
 
 void StockBody::updateWorkingCollisionSet()
 {
-   // It is assumed that we will never accelerate more than 10 m/s for gravity...
-   //
-   //Point3F scaledVelocity = mLinVelocity.len * dt;
-   
-
-   // Check to see if it is actually necessary to construct the new working list,
-   //  or if we can use the cached version from the last query.  We use the x
-   //  component of the min member of the mWorkingQueryBox, which is lame, but
-   //  it works ok.
    bool updateSet = false;
-   /// predicted transform
-   //F32 len = (mLinVelocity.len() + 50) * TickSec;
-   MatrixF transform;
-   getTransform(&transform);
-   transform.setPosition(transform.getPosition() + mLinVelocity * TickSec);
-   //Box3F convexBox = mColShape->getConvexList()->getBoundingBox(transform, mUserData.getObject()->getScale());
-   /// make convex box from shapes AABB.
-   Box3F convexBox = mAABB;
-   /// move it to the predicted position.
-   convexBox.setCenter(transform.getPosition());
-   //F32 l = (len * 1.1f) + 0.1f;  // from Convex::updateWorkingList
-   //const Point3F  lPoint(l, l, l);
-   //convexBox.minExtents -= lPoint;
-   //convexBox.maxExtents += lPoint;
-
-   // Check containment
-   if (mWorkingQueryBox.minExtents.x != -1e9f)
-   {
-      if (mWorkingQueryBox.isContained(convexBox) == false)
-         // Needed region is outside the cached region.  Update it.
-         updateSet = true;
-   }
-   else
-   {
-      // Must update
-      updateSet = true;
-   }
-   // Actually perform the query, if necessary
-   if (updateSet == true)
-   {
-      //const Point3F  twolPoint(2.0f * l, 2.0f * l, 2.0f * l);
-      mWorkingQueryBox = convexBox;
-      //mWorkingQueryBox.minExtents -= twolPoint;
-      //mWorkingQueryBox.maxExtents += twolPoint;
-
-      //disableCollision();
-
-      //We temporarily disable the collisions of anything mounted to us so we don't accidentally walk into things we've attached to us
-      /*for (SceneObject* ptr = mMount.list; ptr; ptr = ptr->getMountLink())
-      {
-         ptr->disableCollision();
-      }*/
-
-      mColShape->getConvexList()->updateWorkingList(mWorkingQueryBox, sCollisionMoveMask
-         /*isGhost() ? sClientCollisionContactMask : sServerCollisionContactMask*/);
-
-      //And now re-enable the collisions of the mounted things
-      /*for (SceneObject* ptr = mMount.list; ptr; ptr = ptr->getMountLink())
-      {
-         ptr->enableCollision();
-      }
-
-      enableCollision();*/
-   }
 }
 
 void StockBody::updateForces(F32 dt)
@@ -432,7 +414,7 @@ void StockBody::updateForces(F32 dt)
       setSleep();
 }
 
-void StockBody::updatePos(F32 dt)
+void StockBody::updatePos(StockWorld::UpdateWorkingSet* workingSet, F32 dt)
 {
    PROFILE_SCOPE(RigidShape_UpdatePos);
 
@@ -444,7 +426,7 @@ void StockBody::updatePos(F32 dt)
    bool collided = false;
    if (!mSleep && mIsEnabled)
    {
-      collided = updateCollision(dt);
+      collided = updateCollision(workingSet, dt);
 
       // Now that all the forces have been processed, lets
       // see if we're at rest.  Basically, if the kinetic energy of
@@ -539,20 +521,20 @@ void StockBody::updatePos(F32 dt)
    }*/
 }
 
-bool StockBody::updateCollision(F32 dt)
+bool StockBody::updateCollision(StockWorld::UpdateWorkingSet* workingSet, F32 dt)
 {
    // Update collision information
    MatrixF mat, cmat;
-   mat = mColShape->getConvexList()->getTransform();
+   mat = workingSet->mConvexTester.getTransform();
    getTransform(&mat);
-   cmat = mColShape->getConvexList()->getTransform();
+   cmat = workingSet->mConvexTester.getTransform();
 
    mCollisionList.clear();
-   CollisionState* state = mColShape->getConvexList()->findClosestState(cmat, mUserData.getObject()->getScale(), sCollisionTol);
+   CollisionState* state = workingSet->mConvexTester.findClosestState(cmat, getObject()->getScale(), sCollisionTol);
    if (state && state->mDist <= sCollisionTol)
    {
       //resolveDisplacement(ns,state,dt);
-      mColShape->getConvexList()->getCollisionInfo(cmat, mUserData.getObject()->getScale(), &mCollisionList, sCollisionTol);
+      workingSet->mConvexTester.getCollisionInfo(cmat, getObject()->getScale(), &mCollisionList, sCollisionTol);
    }
 
    // Resolve collisions

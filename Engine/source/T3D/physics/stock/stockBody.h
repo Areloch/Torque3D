@@ -19,7 +19,6 @@
 #ifndef _T3D_STOCKCOLLISION_H_
 #include "T3D/physics/stock/stockCollision.h"
 #endif
-#include "T3D/rigid.h"
 #include "collision/collision.h"
 
 class StockWorld;
@@ -29,6 +28,7 @@ class StockBody : public PhysicsBody
 {
    StockWorld *mWorld;
    StrongRefPtr<StockCollision> mColShape;
+   SceneObject* mObject;
    U32 mColMask;
    U32 mBodyFlags;
    /// holds the same (few more) as mRigid.
@@ -118,6 +118,8 @@ public:
    /// important for our stepworld.
    const U32 getBodyTypes() const { return mBodyFlags; }
 
+   SceneObject* getObject() { return mObject; }
+
    // PhysicsBody
    virtual bool init(PhysicsCollision *shape, F32 mass, U32 bodyFlags, SceneObject *obj, PhysicsWorld *world);
    virtual bool isDynamic() const { return mIsDynamic; }
@@ -136,6 +138,9 @@ public:
    virtual void applyCorrection(const MatrixF &xfm);
    void applyDamping(F32 delta);
    void setCMassTransform(const MatrixF& xfm);
+
+   Box3F getAABB() { return mAABB; }
+   Box3F getOOBB() { return mOOBB; }
 
    virtual void applyImpulse(const Point3F &origin, const Point3F &force);
    void applyTorqueImpulse(const Point3F & torque);
@@ -158,8 +163,8 @@ public:
    bool castRay(const Point3F& start, const Point3F& end, RayInfo* info);
    void updateWorkingCollisionSet();
    void updateForces(F32 dt);
-   void updatePos(F32 dt);
-   bool updateCollision(F32 dt);
+   void updatePos(StockWorld::UpdateWorkingSet* workingSet, F32 dt);
+   bool updateCollision(StockWorld::UpdateWorkingSet* workingSet, F32 dt);
    bool resolveCollision(CollisionList& cList);
    bool resolveContacts(CollisionList& cList, F32 dt);
    void checkTriggers();
@@ -200,6 +205,9 @@ public:
 
    MatrixF getTransform();
    //void setTransform(const MatrixF& mat);
+
+   //
+   virtual void buildConvex(const Box3F& box, Convex* convex);
 };
 
 
