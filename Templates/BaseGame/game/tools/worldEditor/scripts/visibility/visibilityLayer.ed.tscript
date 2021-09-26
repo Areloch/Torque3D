@@ -106,7 +106,7 @@ function setupEditorVisibilityMenu()
       item[ 5 ] = "Show Texel Density" TAB "" TAB "toggleTexelDensityViz();";
    };
    
-   %debugRenderpopup.enableItem(4, false);
+   //%debugRenderpopup.enableItem(4, false);
    %debugRenderpopup.enableItem(5, false);
    
    //
@@ -385,6 +385,9 @@ function EVisibility::addClassOptions( %this )
 
 function togglePhysicsDebugViz( %enable )
 {
+   if(%enable $= "")
+      %enable = !$PhysicsWorld::render;
+      
    $PhysicsWorld::render = %enable;
    
    if(physicsPluginPresent())

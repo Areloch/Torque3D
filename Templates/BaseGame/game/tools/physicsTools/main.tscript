@@ -26,13 +26,13 @@ function physicsToggleSimulation()
    %isEnabled = physicsSimulationEnabled();
    if ( %isEnabled )
    {
-      physicsStateText.setText( "Simulation is paused." );
+      //physicsStateText.setText( "Simulation is paused." );
       physicsStopSimulation( "client" );
       physicsStopSimulation( "server" );
    }
    else
    {
-      physicsStateText.setText( "Simulation is unpaused." );
+      //physicsStateText.setText( "Simulation is unpaused." );
       physicsStartSimulation( "client" );
       physicsStartSimulation( "server" );   
    }

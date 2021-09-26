@@ -205,6 +205,8 @@ public:
 
    MatrixF getTransform();
    //void setTransform(const MatrixF& mat);
+
+   Convex* getWorkingSetConvex() { return &mConvex; }
 };
 
 

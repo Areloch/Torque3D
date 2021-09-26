@@ -466,6 +466,26 @@ function EditorGui::buildMenus(%this)
    }
 }
 
+function togglePhysicsSim()
+{
+   physicsToggleSimulation();
+   
+   %enabled = physicsSimulationEnabled();
+   if(%enabled)
+   {
+      togglePhysicsSimToolbarBtn.setBitmap("ToolsModule:pause_image");
+   }
+   else
+   {
+      togglePhysicsSimToolbarBtn.setBitmap("ToolsModule:play_image");
+   }
+}
+
+function resetPhysicsSim()
+{
+   physicsRestoreState();
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 function WorldEditorMenubar::onResize(%this)

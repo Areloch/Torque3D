@@ -87,13 +87,26 @@ class PhysicsMeshExample : public SceneObject
 
    // Client interpolation data
    struct StateDelta {
+      F32 dt;                       ///< Last interpolation time
+      // Interpolation data
       Point3F pos;
-      VectorF posVec;
-      S32 warpTicks;
+      Point3F posVec;
+      QuatF rot[2];
+      // Warp data
+      S32 warpTicks;                ///< Number of ticks to warp
+      S32 warpCount;                ///< Current pos in warp
       Point3F warpOffset;
-      F32     dt;
+      QuatF warpRot[2];
    };
    StateDelta mDelta;
+
+   F32 mMass;
+   F32 mFriction;
+   F32 mStaticFriction;
+   F32 mRestitution;
+   F32 mBouyancy;
+   F32 mLinearDrag;
+   F32 mAngularDrag;
 
 protected:
    PhysicsState mState;
@@ -126,6 +139,9 @@ public:
 
    // Override this so that we can dirty the network flag when it is called
    void setTransform( const MatrixF &mat );
+
+   void setTransform(const Point3F& pos, const QuatF& rot);
+   void setRenderTransform(const Point3F& pos, const QuatF& rot);
 
    // This function handles sending the relevant data from the server
    // object to the client object

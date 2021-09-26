@@ -1,0 +1,8 @@
+<ImageAsset
+    canSave="true"
+    canSaveDynamicFields="true"
+    AssetName="pause_image"
+    imageFile="@assetFile=pause.png"
+    UseMips="true"
+    isHDRImage="false"
+    imageType="Albedo" />

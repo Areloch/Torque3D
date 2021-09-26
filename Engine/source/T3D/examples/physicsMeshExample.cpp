@@ -36,6 +36,8 @@
 #include "T3D/physics/physicsPlugin.h"
 #include "T3D/physics/physicsCollision.h"
 
+const S32 sMaxWarpTicks = 3;           // Max warp duration in ticks
+
 IMPLEMENT_CO_NETOBJECT_V1(PhysicsMeshExample);
 
 ConsoleDocClass( PhysicsMeshExample, 
@@ -66,6 +68,19 @@ PhysicsMeshExample::PhysicsMeshExample()
 
    mPhysicsRep = NULL;
    mMaterialInst = NULL;
+
+   mMass = 5;
+   mFriction = 0.4;
+   mStaticFriction = 0.5;
+   mRestitution = 0.8;
+   mBouyancy = 0.5;
+   mLinearDrag = 1;
+   mAngularDrag = 1;
+
+   mDelta.pos = Point3F(0, 0, 0);
+   mDelta.posVec = Point3F(0, 0, 0);
+   mDelta.warpTicks = mDelta.warpCount = 0;
+   mDelta.dt = 1;
 }
 
 PhysicsMeshExample::~PhysicsMeshExample()
@@ -85,6 +100,17 @@ void PhysicsMeshExample::initPersistFields()
    INITPERSISTFIELD_MATERIALASSET(Material, PhysicsMeshExample, "The material used to render the mesh.");
    endGroup( "Rendering" );
 
+   addGroup("Physics");
+   addField("mass", TypeF32, Offset(mMass, PhysicsMeshExample), "Mass");
+   addField("friction", TypeF32, Offset(mFriction, PhysicsMeshExample), "Friction");
+   addField("staticFriction", TypeF32, Offset(mStaticFriction, PhysicsMeshExample), "Static Friction");
+   addField("restitution", TypeF32, Offset(mRestitution, PhysicsMeshExample), "Restitution");
+   addField("bouyancy", TypeF32, Offset(mBouyancy, PhysicsMeshExample), "Bouyancy");
+
+   addField("linearDrag", TypeF32, Offset(mLinearDrag, PhysicsMeshExample), "Drag applied to positional movements");
+   addField("angularDrag", TypeF32, Offset(mAngularDrag, PhysicsMeshExample), "Drag applied to angular/rotational movements");
+   endGroup("Physics");
+
    // SceneObject already handles exposing the transform
    Parent::initPersistFields();
 }
@@ -96,6 +122,8 @@ void PhysicsMeshExample::inspectPostApply()
    // Flag the network mask to send the updates
    // to the client object
    setMaskBits( UpdateMask );
+
+   _createPhysics();
 }
 
 bool PhysicsMeshExample::onAdd()
@@ -110,6 +138,10 @@ bool PhysicsMeshExample::onAdd()
    resetWorldBox();
 
    _createPhysics();
+
+   mDelta.rot[1] = mDelta.rot[0] = mState.orientation;
+   mDelta.pos = mState.position;
+   mDelta.posVec = Point3F(0, 0, 0);
 
    // Add this object to the scene
    addToScene();
@@ -147,11 +179,28 @@ void PhysicsMeshExample::setTransform(const MatrixF & mat)
    {
       mPhysicsRep->setTransform(getTransform());
       mPhysicsRep->getState(&mState);
+      mPhysicsRep->setSleeping(false);
    }
 
    // Dirty our network mask so that the new transform gets
    // transmitted to the client object
    setMaskBits( TransformMask );
+}
+
+void PhysicsMeshExample::setTransform(const Point3F& pos, const QuatF& rot)
+{
+   MatrixF mat;
+   rot.setMatrix(&mat);
+   mat.setColumn(3, pos);
+   Parent::setTransform(mat);
+}
+
+void PhysicsMeshExample::setRenderTransform(const Point3F& pos, const QuatF& rot)
+{
+   MatrixF mat;
+   rot.setMatrix(&mat);
+   mat.setColumn(3, pos);
+   Parent::setRenderTransform(mat);
 }
 
 void PhysicsMeshExample::resetPhysicsState()
@@ -198,6 +247,15 @@ U32 PhysicsMeshExample::packUpdate( NetConnection *conn, U32 mask, BitStream *st
    if (stream->writeFlag(mask & UpdateMask))
    {
       PACK_MATERIALASSET(conn, Material);
+
+      stream->writeFloat(mMass, 8);
+      stream->writeFloat(mFriction, 8);
+      stream->writeFloat(mStaticFriction, 8);
+      stream->writeFloat(mRestitution, 8);
+      stream->writeFloat(mBouyancy, 8);
+
+      stream->writeFloat(mLinearDrag, 8);
+      stream->writeFloat(mAngularDrag, 8);
    }
 
    return retMask;
@@ -232,8 +290,63 @@ void PhysicsMeshExample::unpackUpdate(NetConnection *conn, BitStream *stream)
             mPhysicsRep->setAngVelocity(state.angVelocity);
          }
 
+         F32 speed = mState.linVelocity.len();
+         mDelta.warpRot[0] = mState.orientation;
+
          mPhysicsRep->getState(&mState);
-         setTransform(mState.getTransform());
+         //setTransform(mState.getTransform());
+
+         if (isProperlyAdded())
+         {
+            // Determine number of ticks to warp based on the average
+            // of the client and server velocities.
+            Point3F cp = mDelta.pos + mDelta.posVec * mDelta.dt;
+            mDelta.warpOffset = mState.position - cp;
+
+            // Calc the distance covered in one tick as the average of
+            // the old speed and the new speed from the server.
+            F32 dt, as = (speed + mState.linVelocity.len()) * 0.5 * TickSec;
+
+            // Cal how many ticks it will take to cover the warp offset.
+            // If it's less than what's left in the current tick, we'll just
+            // warp in the remaining time.
+            if (!as || (dt = mDelta.warpOffset.len() / as) > sMaxWarpTicks)
+               dt = mDelta.dt + sMaxWarpTicks;
+            else
+               dt = (dt <= mDelta.dt) ? mDelta.dt : mCeil(dt - mDelta.dt) + mDelta.dt;
+
+            // Adjust current frame interpolation
+            if (mDelta.dt) {
+               mDelta.pos = cp + (mDelta.warpOffset * (mDelta.dt / dt));
+               mDelta.posVec = (cp - mDelta.pos) / mDelta.dt;
+               QuatF cr;
+               cr.interpolate(mDelta.rot[1], mDelta.rot[0], mDelta.dt);
+               mDelta.rot[1].interpolate(cr, mState.orientation, mDelta.dt / dt);
+               mDelta.rot[0].extrapolate(mDelta.rot[1], cr, mDelta.dt);
+            }
+
+            // Calculated multi-tick warp
+            mDelta.warpCount = 0;
+            mDelta.warpTicks = (S32)(mFloor(dt));
+            if (mDelta.warpTicks)
+            {
+               mDelta.warpOffset = mState.position - mDelta.pos;
+               mDelta.warpOffset /= (F32)mDelta.warpTicks;
+               mDelta.warpRot[0] = mDelta.rot[1];
+               mDelta.warpRot[1] = mState.orientation;
+            }
+         }
+         else
+         {
+            // Set the vehicle to the server position
+            mDelta.dt = 0;
+            mDelta.pos = mState.position;
+            mDelta.posVec.set(0, 0, 0);
+            mDelta.rot[1] = mDelta.rot[0] = mState.orientation;
+            mDelta.warpCount = mDelta.warpTicks = 0;
+
+            setTransform(mState.position, mState.orientation);
+         }
       }
 
       if (!mPhysicsRep || !mPhysicsRep->isDynamic())
@@ -247,6 +360,17 @@ void PhysicsMeshExample::unpackUpdate(NetConnection *conn, BitStream *stream)
 
       if ( isProperlyAdded() )
          updateMaterial();
+
+      mMass = stream->readFloat(8);
+      mFriction = stream->readFloat(8);
+      mStaticFriction = stream->readFloat(8);
+      mRestitution = stream->readFloat(8);
+      mBouyancy = stream->readFloat(8);
+
+      mLinearDrag = stream->readFloat(8);
+      mAngularDrag = stream->readFloat(8);
+
+      _createPhysics();
    }
 }
 
@@ -434,7 +558,7 @@ void PhysicsMeshExample::_createPhysics()
    if (!PHYSICSMGR)
       return;
 
-   F32 mass = 10;
+   F32 mass = mMass;
 
    PhysicsCollision* colShape = PHYSICSMGR->createCollision();
    colShape->addBox(mObjBox.getExtents() * 0.5f, MatrixF::Identity);
@@ -443,6 +567,9 @@ void PhysicsMeshExample::_createPhysics()
    mPhysicsRep = PHYSICSMGR->createBody();
    mPhysicsRep->init(colShape, mass, PhysicsBody::BF_DYNAMIC, this, world);
    mPhysicsRep->setTransform(getTransform());
+
+   mPhysicsRep->setDamping(mLinearDrag, mAngularDrag);
+   mPhysicsRep->setMaterial(mRestitution, mFriction, mStaticFriction);
 }
 //
 
@@ -459,38 +586,76 @@ void PhysicsMeshExample::processTick(const Move* move)
    // Store the last render state.
    mRenderState[0] = mRenderState[1];
 
-   // If the last render state doesn't match the last simulation 
-   // state then we got a correction and need to 
-   Point3F errorDelta = mRenderState[1].position - mState.position;
-   const bool doSmoothing = !errorDelta.isZero();
-
-   const bool wasSleeping = mState.sleeping;
-
-   // Get the new physics state.
-   if (mPhysicsRep)
+   if (mDelta.warpCount < mDelta.warpTicks)
    {
-      mPhysicsRep->getState(&mState);
+      mDelta.warpCount++;
+
+      // Set new pos.
+      mObjToWorld.getColumn(3, &mDelta.pos);
+      mDelta.pos += mDelta.warpOffset;
+      mDelta.rot[0] = mDelta.rot[1];
+      mDelta.rot[1].interpolate(mDelta.warpRot[0], mDelta.warpRot[1], F32(mDelta.warpCount) / mDelta.warpTicks);
+      setTransform(mDelta.pos, mDelta.rot[1]);
+
+      // Pos backstepping
+      mDelta.posVec.x = -mDelta.warpOffset.x;
+      mDelta.posVec.y = -mDelta.warpOffset.y;
+      mDelta.posVec.z = -mDelta.warpOffset.z;
    }
    else
    {
-      /// put mdelta here i guess?
-   }
 
-   mRenderState[1] = mState;
-   if (doSmoothing)
-   {
-      F32 correction = mClampF(errorDelta.len() / 20.0f, 0.1f, 0.9f);
-      mRenderState[1].position.interpolate(mState.position, mRenderState[0].position, correction);
-      mRenderState[1].orientation.interpolate(mState.orientation, mRenderState[0].orientation, correction);
-   }
+      // If the last render state doesn't match the last simulation 
+      // state then we got a correction and need to 
+      Point3F errorDelta = mRenderState[1].position - mState.position;
+      const bool doSmoothing = !errorDelta.isZero();
 
-   if (!wasSleeping || !mState.sleeping)
-   {
-      setTransform(mState.getTransform());
+      const bool wasSleeping = mState.sleeping;
 
-      if (isServerObject() && mPhysicsRep && !PHYSICSMGR->isSinglePlayer())
-         setMaskBits(TransformMask);
+      // Get the new physics state.
+      if (mPhysicsRep)
+      {
+         mPhysicsRep->getState(&mState);
+      }
+      else
+      {
+         /// put mdelta here i guess?
+      }
 
+      // Save current rigid state interpolation
+      mDelta.posVec = mState.position;
+      mDelta.rot[0] = mState.orientation;
+
+      mRenderState[1] = mState;
+      if (doSmoothing)
+      {
+         F32 correction = mClampF(errorDelta.len() / 20.0f, 0.1f, 0.9f);
+         mRenderState[1].position.interpolate(mState.position, mRenderState[0].position, correction);
+         mRenderState[1].orientation.interpolate(mState.orientation, mRenderState[0].orientation, correction);
+      }
+
+      // Wrap up interpolation info
+      mDelta.pos = mState.position;
+      mDelta.posVec -= mState.position;
+      mDelta.rot[1] = mState.orientation;
+
+      //setTransform(mState.position, mState.orientation);
+      //setMaskBits(TransformMask);
+
+      if (PHYSICSMGR->isSimulationEnabled() && mPhysicsRep)
+      {
+         setTransform(mState.getTransform());
+
+         if (wasSleeping)
+         {
+            //if we were sleeping, put us back in that state after the transform update is completed
+            mState.sleeping = wasSleeping;
+            mPhysicsRep->setSleeping(wasSleeping);
+         }
+
+         if (isServerObject())
+            setMaskBits(TransformMask);
+      }
    }
 
 }
@@ -501,10 +666,21 @@ void PhysicsMeshExample::interpolateTick(F32 dt)
    if (isMounted())
       return;
 
-   PhysicsState state;
+   /*PhysicsState state;
    state.interpolate(mRenderState[1], mRenderState[0], dt);
 
-   setRenderTransform(state.getTransform());
+   setRenderTransform(state.getTransform());*/
+
+   if (dt == 0.0f)
+      setRenderTransform(mDelta.pos, mDelta.rot[1]);
+   else
+   {
+      QuatF rot;
+      rot.interpolate(mDelta.rot[1], mDelta.rot[0], dt);
+      Point3F pos = mDelta.pos + mDelta.posVec * dt;
+      setRenderTransform(pos, rot);
+   }
+   mDelta.dt = dt;
 
    // PATHSHAPE
    updateRenderChangesByParent();

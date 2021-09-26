@@ -46,7 +46,7 @@ public:
    void stepWorld(F32 elapsed, U32 steps, F32 stepTime);
    void getPhysicsResults();
 
-   virtual void onDebugDraw(const SceneRenderState *state) {}
+   virtual void onDebugDraw(const SceneRenderState* state);
    virtual void reset() {}
    virtual bool isEnabled() const { return mIsEnabled; }
 

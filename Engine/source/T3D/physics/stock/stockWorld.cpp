@@ -33,7 +33,7 @@ void StockWorld::addBody(PhysicsBody* body)
 
 void StockWorld::removeBody(PhysicsBody* body)
 {
-
+   mNonStaticBodies.remove(body);
 }
 
 bool StockWorld::initWorld(bool isServer, ProcessList *processList)
@@ -158,6 +158,9 @@ void StockWorld::setEnabled(bool enabled)
             continue;
 
          body->clearForces();
+
+         body->setLinVelocity(Point3F::Zero);
+         body->setAngVelocity(Point3F::Zero);
       }
    }
 }
@@ -171,3 +174,18 @@ PhysicsBody* StockWorld::castRay(const Point3F& start, const Point3F& end, U32 b
    return NULL;
 }
 
+void StockWorld::onDebugDraw(const SceneRenderState* state)
+{
+   GFX->enterDebugEvent(ColorI(255, 0, 255), "StockWorld::onDebugDraw()");
+
+   for (U32 j = 0; j < mNonStaticBodies.size(); j++)
+   {
+      StockBody* body = static_cast<StockBody*>(mNonStaticBodies[j]);
+      if (!body->isDynamic())
+         continue;
+
+      body->getWorkingSetConvex()->renderWorkingList();
+   }
+
+   GFX->leaveDebugEvent();
+}

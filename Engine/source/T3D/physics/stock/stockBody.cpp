@@ -60,6 +60,9 @@ StockBody::StockBody()
    mInvObjectInertia.identity();
    mRestitution = 0.3f;
    mFriction = 0.5f;
+
+   mDelta.warpTicks = 0;
+   mDelta.dt = 1;
 }
 
 StockBody::~StockBody()
@@ -163,10 +166,10 @@ Point3F StockBody::getCMassPosition() const
    return mCenterOfMass;
 }
 
-void StockBody::setMaterial(F32 mRestitution, F32 mFriction, F32 staticFriction)
+void StockBody::setMaterial(F32 restitution, F32 friction, F32 staticFriction)
 {
-   mRestitution = mRestitution;
-   mFriction = mFriction;
+   mRestitution = restitution;
+   mFriction = friction;
    mStaticFriction = staticFriction;
 }
 
@@ -195,7 +198,10 @@ MatrixF& StockBody::getTransform(MatrixF *outMatrix)
    /*if (mInvCenterOfMass)
       outMatrix->mul(*mInvCenterOfMass, *mWorldCenterOfMass);
    else*/
-   outMatrix->setPosition(mWorldCenterOfMass);
+   //outMatrix->setPosition(mWorldCenterOfMass);
+
+   mAngPosition.setMatrix(outMatrix);
+   outMatrix->setColumn(3, mLinPosition);
 
    return *outMatrix;
 }
@@ -440,8 +446,8 @@ void StockBody::updateWorkingCollisionSet()
 
 void StockBody::updateForces(F32 dt)
 {
-
    updateVelocity(dt);
+
    // If we're still mSleep, make sure we're not accumulating anything
    if (mSleep)
       setSleep();
@@ -607,7 +613,10 @@ bool StockBody::resolveCollision(CollisionList& cList)
                else
                   resolveCollision(cList[i].point, cList[i].normal);
             }
-            else resolveCollision(cList[i].point, cList[i].normal);
+            else
+            {
+               resolveCollision(cList[i].point, cList[i].normal);
+            }
             collided = true;
 
             // Keep track of objects we collide with
@@ -809,10 +818,40 @@ void StockBody::integrate(F32 delta)
 
 void StockBody::updateVelocity(F32 delta)
 {
+   F32 maxSpeed = 100;
+
    mLinVelocity += mForce * (mOneOverMass * delta);
    Point3F tTorque;
    mInvWorldInertia.mulV(mTorque * delta, &tTorque);
    mAngVelocity += tTorque;
+
+   //apply some caps/limits so we can't get going incomprehensibly fast
+   if (mLinVelocity.x > maxSpeed)
+      mLinVelocity.x = maxSpeed;
+   else if (mLinVelocity.x < -maxSpeed)
+      mLinVelocity.x = -maxSpeed;
+   if (mLinVelocity.y > maxSpeed)
+      mLinVelocity.y = maxSpeed;
+   else if (mLinVelocity.y < -maxSpeed)
+      mLinVelocity.y = -maxSpeed;
+   if (mLinVelocity.z > maxSpeed)
+      mLinVelocity.z = maxSpeed;
+   else if (mLinVelocity.z < -maxSpeed)
+      mLinVelocity.z = -maxSpeed;
+
+   if (mAngVelocity.x > maxSpeed)
+      mAngVelocity.x = maxSpeed;
+   else if (mAngVelocity.x < -maxSpeed)
+      mAngVelocity.x = -maxSpeed;
+   if (mAngVelocity.y > maxSpeed)
+      mAngVelocity.y = maxSpeed;
+   else if (mAngVelocity.y < -maxSpeed)
+      mAngVelocity.y = -maxSpeed;
+   if (mAngVelocity.z > maxSpeed)
+      mAngVelocity.z = maxSpeed;
+   else if (mAngVelocity.z < -maxSpeed)
+      mAngVelocity.z = -maxSpeed;
+
 }
 
 void StockBody::updateInertialTensor()
