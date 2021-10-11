@@ -1929,15 +1929,30 @@ void GuiCanvas::renderFrame(bool preRenderOnly, bool bufferSwap /* = true */)
 
    RectI updateUnion;
    buildUpdateUnion(&updateUnion);
+
+   F32 UIScalePercentage = 2;
+
+   //updateUnion.extent = screenRect.extent / UIScalePercentage;
+
    if (updateUnion.intersect(screenRect))
    {
+      GFX->setWorldMatrix(MatrixF::Identity);
+
+      MatrixF tileMat(true);
+      Point3F tilePos(-updateUnion.extent.x * 0.5, -updateUnion.extent.y * 0.5, 0);
+
+      tileMat.setPosition(tilePos);
+      tileMat.scale(Point3F(UIScalePercentage, UIScalePercentage, 0));
+
+      GFX->setViewMatrix(tileMat);
+
       // Render active GUI Dialogs
       for(iterator i = begin(); i != end(); i++)
       {
          // Get the control
          GuiControl *contentCtrl = static_cast<GuiControl*>(*i);
          
-         GFX->setClipRect( updateUnion );
+         GFX->setClipRect(updateUnion);
          GFX->setStateBlock(mDefaultGuiSB);
          
          contentCtrl->onRender(contentCtrl->getPosition(), updateUnion);
