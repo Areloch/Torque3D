@@ -235,7 +235,15 @@ typedef struct
 	LPALCISEXTENSIONPRESENT		alcIsExtensionPresent;
 	LPALCGETPROCADDRESS			alcGetProcAddress;
 	LPALCGETENUMVALUE			   alcGetEnumValue;
-    
+
+   // Voip changes
+   LPALCCAPTUREOPENDEVICE     alcCaptureOpenDevice;
+   LPALCCAPTURECLOSEDEVICE    alcCaptureCloseDevice;
+   LPALCCAPTURESTART          alcCaptureStart;
+   LPALCCAPTURESTOP           alcCaptureStop;
+   LPALCCAPTURESAMPLES        alcCaptureSamples;
+   // Voip changes end ---
+
 #if defined(AL_ALEXT_PROTOTYPES)
    LPALGENEFFECTS				   alGenEffects;
    LPALDELETEEFFECTS			   alDeleteEffects;

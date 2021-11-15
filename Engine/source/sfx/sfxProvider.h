@@ -29,7 +29,7 @@
 
 
 class SFXDevice;
-
+class SFXInputDevice;
 
 
 struct SFXDeviceInfo
@@ -94,6 +94,7 @@ class SFXProvider
       /// @return Returns the created device or NULL for failure.
       ///
       virtual SFXDevice* createDevice( const String& deviceName, bool useHardware, S32 maxBuffers ) = 0;
+      virtual SFXInputDevice* createInputDevice(const String deviceName) = 0;
 
    public:
 

@@ -484,6 +484,8 @@ bool SFXSystem::createDevice( const String& providerName, const String& deviceNa
    // Signal system.
 
    getEventSignal().trigger( SFXSystemEvent_CreateDevice );
+
+   mInputDevice = provider->createInputDevice(deviceName);
    
    return true;
 }

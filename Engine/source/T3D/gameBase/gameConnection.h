@@ -43,6 +43,10 @@
 #ifndef _BITVECTOR_H_
 #include "core/bitVector.h"
 #endif
+#ifndef _VOIPCLIENT_H_
+#include "T3D/gameBase/VoipClient.h"
+#endif
+
 
 enum GameConnectionConstants
 {
@@ -59,6 +63,7 @@ class MoveManager;
 class MoveList;
 struct Move;
 struct AuthInfo;
+class VoipClient;
 
 // To disable datablock caching, remove or comment out the AFX_CAP_DATABLOCK_CACHE define below.
 // Also, at a minimum, the following script preferences should be set to false:
@@ -112,6 +117,7 @@ private:
    bool  mAddPitchToAbsRot;      ///< Add relative pitch control to the absolute rotation calculation.  Only useful with mAbsoluteRotation.
    /// @}
 
+
 public:
 
    /// @name Protocol Versions
@@ -130,6 +136,12 @@ public:
    static const U32 CurrentProtocolVersion;
    static const U32 MinRequiredProtocolVersion;
    /// @}
+
+
+   /// Voip
+   bool mListenVoip;
+   bool isListening() { return mListenVoip; }
+   /// voip end---
 
    /// Configuration
    enum Constants {
@@ -197,6 +209,8 @@ protected:
 public:
 
    MoveList *mMoveList;
+   VoipClient *mVoipClient;
+   bool mVoipCreated;
 
 protected:
    bool        mAIControlled;
@@ -265,6 +279,8 @@ public:
    { 
       return dynamic_cast<GameConnection*>((NetConnection *) mLocalClientConnection); 
    }
+
+   VoipClient* getVoipClient() { return mVoipClient; }
 
    /// @name Control object
    /// @{
@@ -403,7 +419,8 @@ protected:
 public:   
    void          setRolloverObj(SceneObject*);   
    SceneObject*  getRolloverObj() { return  mRolloverObj; }   
-   void          setSelectedObj(SceneObject*, bool propagate_to_client=false);   
+   void          createVoipClient();
+   void          setSelectedObj(SceneObject*, bool propagate_to_client=false);
    SceneObject*  getSelectedObj() { return  mSelectedObj; }  
    void          setPreSelectedObjFromRollover();
    void          clearPreSelectedObj();

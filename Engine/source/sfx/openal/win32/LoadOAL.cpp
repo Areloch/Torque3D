@@ -439,6 +439,37 @@ ALboolean LoadOAL10Library(char *szOALFullPathName, LPOPENALFNTABLE lpOALFnTable
 		OutputDebugStringA("Failed to retrieve 'alcGetEnumValue' function address\n");
 		return AL_FALSE;
 	}
+   lpOALFnTable->alcCaptureOpenDevice = (LPALCCAPTUREOPENDEVICE)GetProcAddress(g_hOpenALDLL, "alcCaptureOpenDevice");
+   if (lpOALFnTable->alcCaptureOpenDevice == NULL)
+   {
+      OutputDebugStringA("Failed to retrieve 'alcCaptureOpenDevice' function address\n");
+      return AL_FALSE;
+   }
+   lpOALFnTable->alcCaptureCloseDevice = (LPALCCAPTURECLOSEDEVICE)GetProcAddress(g_hOpenALDLL, "alcCaptureCloseDevice");
+   if (lpOALFnTable->alcCaptureCloseDevice == NULL)
+   {
+      OutputDebugStringA("Failed to retrieve 'alcCaptureCloseDevice' function address\n");
+      return AL_FALSE;
+   }
+   lpOALFnTable->alcCaptureStart = (LPALCCAPTURESTART)GetProcAddress(g_hOpenALDLL, "alcCaptureStart");
+   if (lpOALFnTable->alcCaptureStart == NULL)
+   {
+      OutputDebugStringA("Failed to retrieve 'alcCaptureStart' function address\n");
+      return AL_FALSE;
+   }
+   lpOALFnTable->alcCaptureStop = (LPALCCAPTURESTOP)GetProcAddress(g_hOpenALDLL, "alcCaptureStop");
+   if (lpOALFnTable->alcCaptureStop == NULL)
+   {
+      OutputDebugStringA("Failed to retrieve 'alcCaptureStop' function address\n");
+      return AL_FALSE;
+   }
+   lpOALFnTable->alcCaptureSamples = (LPALCCAPTURESAMPLES)GetProcAddress(g_hOpenALDLL, "alcCaptureSamples");
+   if (lpOALFnTable->alcCaptureSamples == NULL)
+   {
+      OutputDebugStringA("Failed to retrieve 'alcCaptureSamples' function address\n");
+      return AL_FALSE;
+   }
+
 #if defined(AL_ALEXT_PROTOTYPES)
    lpOALFnTable->alGenEffects = (LPALGENEFFECTS)GetProcAddress(g_hOpenALDLL, "alGenEffects");
    if (lpOALFnTable->alGenEffects == NULL)

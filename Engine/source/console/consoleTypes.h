@@ -99,6 +99,11 @@ DefineConsoleType( TypePrefabFilename, String )
 /// custom InspectorField for this type.
 DefineConsoleType( TypeShapeFilename, String )
 
+/// TypeSoundFilename is exactly the same as TypeShapeFilename 
+/// it exists for the benefit of GuiInspector, which will provide a 
+/// custom InspectorField for this type.
+DefineConsoleType(TypeSoundFilename, String)
+
 /// TypeMaterialName is equivalent to TypeRealString in its usage,
 /// it exists for the benefit of GuiInspector, which will provide a 
 /// custom InspectorField for this type.
