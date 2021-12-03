@@ -209,14 +209,14 @@ void ShapeAsset::initializeAsset()
    mDiffuseImposterPath = getOwned() ? expandAssetFilePath(mDiffuseImposterFileName) : mDiffuseImposterFileName;
    if (mDiffuseImposterPath == StringTable->EmptyString())
    {
-      String diffusePath = String(mFilePath) + ".imposter.dds";
+      String diffusePath = String(mFilePath) + "_imposter.dds";
       mDiffuseImposterPath = StringTable->insert(diffusePath.c_str());
    }
 
    mNormalImposterPath = getOwned() ? expandAssetFilePath(mNormalImposterFileName) : mNormalImposterFileName;
    if (mNormalImposterPath == StringTable->EmptyString())
    {
-      String normalPath = String(mFilePath) + ".imposter_normals.dds";
+      String normalPath = String(mFilePath) + "_imposter_normals.dds";
       mNormalImposterPath = StringTable->insert(normalPath.c_str());
    }
 

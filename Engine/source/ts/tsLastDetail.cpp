@@ -86,8 +86,8 @@ TSLastDetail::TSLastDetail(   TSShape *shape,
    mCenter = mShape->center;
 
    mCachePath = cachePath;
-   mDiffusePath = mCachePath + ".imposter.dds";
-   mNormalPath = mCachePath + ".imposter_normals.dds";
+   mDiffusePath = mCachePath + "_imposter.dds";
+   mNormalPath = mCachePath + "_imposter_normals.dds";
 
    mMaterial = NULL;
    mMatInstance = NULL;
@@ -223,7 +223,8 @@ void TSLastDetail::update( bool forceUpdate )
 
    // Do we need to update the imposter?
    const String diffuseMapPath = _getDiffuseMapPath();
-   if (  forceUpdate || 
+   bool isFile = Platform::isFile(diffuseMapPath.c_str());
+   if (  forceUpdate || !Platform::isFile(diffuseMapPath.c_str()) ||
          Platform::compareModifiedTimes( diffuseMapPath, shapeFile ) <= 0 )
       _update();
 
