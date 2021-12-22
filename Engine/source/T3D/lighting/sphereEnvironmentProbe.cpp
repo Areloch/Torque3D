@@ -77,7 +77,7 @@ ConsoleDocClass(SphereEnvironmentProbe,
 SphereEnvironmentProbe::SphereEnvironmentProbe() : ReflectionProbe()
 {
    mCaptureMask = REFLECTION_PROBE_CAPTURE_TYPEMASK;
-   mProbeShapeType = ProbeRenderInst::Sphere;
+   mProbeShapeType = ProbeInfo::Sphere;
 }
 
 SphereEnvironmentProbe::~SphereEnvironmentProbe()
@@ -144,7 +144,7 @@ void SphereEnvironmentProbe::unpackUpdate(NetConnection *conn, BitStream *stream
 
 void SphereEnvironmentProbe::updateProbeParams()
 {
-   mProbeShapeType = ProbeRenderInst::Sphere;
+   mProbeShapeType = ProbeInfo::Sphere;
    Parent::updateProbeParams();
 }
 

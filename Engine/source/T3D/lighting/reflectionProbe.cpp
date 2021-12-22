@@ -73,8 +73,8 @@ ConsoleDocClass(ReflectionProbe,
 ImplementEnumType(ReflectProbeType,
    "Type of mesh data available in a shape.\n"
    "@ingroup gameObjects")
-{ ProbeRenderInst::Sphere, "Sphere", "Sphere shaped" },
-{ ProbeRenderInst::Box, "Box", "Box shape" }
+{ ReflectionProbe::ProbeInfo::Sphere, "Sphere", "Sphere shaped" },
+{ ReflectionProbe::ProbeInfo::Box, "Box", "Box shape" }
 EndImplementEnumType;
 
 ImplementEnumType(ReflectionModeEnum,
@@ -97,7 +97,7 @@ ReflectionProbe::ReflectionProbe()
 
    mTypeMask = LightObjectType | MarkerObjectType;
 
-   mProbeShapeType = ProbeRenderInst::Box;
+   mProbeShapeType = ProbeInfo::Box;
 
    mReflectionModeType = BakedCubemap;
 
@@ -239,7 +239,7 @@ bool ReflectionProbe::_setRadius(void *object, const char *index, const char *da
 {
    ReflectionProbe* probe = reinterpret_cast<ReflectionProbe*>(object);
 
-   if (probe->mProbeShapeType != ProbeRenderInst::Sphere)
+   if (probe->mProbeShapeType != ProbeInfo::Sphere)
       return false;
 
    probe->mObjScale = Point3F(probe->mRadius, probe->mRadius, probe->mRadius);
@@ -312,7 +312,7 @@ void ReflectionProbe::onRemove()
 {
    if (isClientObject())
    {
-      PROBEMGR->unregisterProbe(mProbeInfo.mProbeIdx);
+      PROBEMGR->unregisterProbe(&mProbeInfo);
    }
 
    // Remove this object from the scene
@@ -461,10 +461,10 @@ void ReflectionProbe::unpackUpdate(NetConnection *conn, BitStream *stream)
 
    if (stream->readFlag())  // StaticDataMask
    {
-      U32 shapeType = ProbeRenderInst::Sphere;
+      U32 shapeType = ProbeInfo::Sphere;
       stream->read(&shapeType);
 
-      mProbeShapeType = (ProbeRenderInst::ProbeShapeType)shapeType;
+      mProbeShapeType = (ProbeInfo::ProbeShapeType)shapeType;
 
       stream->read(&mRadius);
 
@@ -497,6 +497,8 @@ void ReflectionProbe::unpackUpdate(NetConnection *conn, BitStream *stream)
 //-----------------------------------------------------------------------------
 void ReflectionProbe::updateProbeParams()
 {
+   mProbeInfo.mObject = this;
+
    if (!mResourcesCreated)
    {
       if (!createClientResources())
@@ -507,12 +509,12 @@ void ReflectionProbe::updateProbeParams()
 
    mProbeInfo.mProbeShapeType = mProbeShapeType;
 
-   if (mProbeShapeType == ProbeRenderInst::Sphere)
+   if (mProbeShapeType == ProbeInfo::Sphere)
       mObjScale.set(mRadius, mRadius, mRadius);
 
    Box3F bounds;
 
-   if (mProbeShapeType == ProbeRenderInst::Skylight)
+   if (mProbeShapeType == ProbeInfo::Skylight)
    {
       mProbeInfo.mPosition = Point3F::Zero;
       mProbeInfo.mTransform = MatrixF::Identity;
@@ -564,8 +566,6 @@ void ReflectionProbe::updateProbeParams()
       else
          processDynamicCubemap();
    }
-
-   PROBEMGR->updateProbes();
 }
 
 void ReflectionProbe::processDynamicCubemap()
@@ -842,7 +842,7 @@ void ReflectionProbe::prepRenderImage(SceneRenderState *state)
 
    //mProbeInfo.mScore *= mMax(mAbs(mDot(vect, state->getCameraTransform().getForwardVector())),0.001f);
 
-   PROBEMGR->submitProbe(mProbeInfo);
+   PROBEMGR->submitProbe(&mProbeInfo);
 
 #ifdef TORQUE_TOOLS
    if (ReflectionProbe::smRenderPreviewProbes && gEditingMission && mPrefilterMap != nullptr)
@@ -938,7 +938,7 @@ void ReflectionProbe::_onRenderViz(ObjectRenderInst *ri,
    ColorI color = ColorI(255, 0, 255, 63);
 
    const MatrixF worldToObjectXfm = mObjToWorld;
-   if (mProbeShapeType == ProbeRenderInst::Sphere)
+   if (mProbeShapeType == ProbeInfo::Sphere)
    {
       draw->drawSphere(desc, mRadius, getPosition(), color);
    }
