@@ -301,7 +301,7 @@ void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* pro
       }
       else
       {
-         probeDataSet->skyLightIdx = i;
+         probeDataSet->skyLightIdx = curEntry.mCubemapIndex;
          mHasSkylight = true;
       }
    }
@@ -324,7 +324,7 @@ void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* pro
 
       Point3F probePos = curEntry.mProbeInfo->mObject->getPosition();
       Point3F refPos = probePos + curEntry.mProbeInfo->mProbeRefOffset * probeDataSet->refScaleArray[i].asPoint3F();
-      probeDataSet->probeWorldToObjArray[i] = curEntry.mProbeInfo->mObject->getTransform();
+      probeDataSet->probeWorldToObjArray[i] = curEntry.mProbeInfo->mTransform;
 
       probeDataSet->probePositionArray[i] = Point4F(probePos.x, probePos.y, probePos.z, 0);
       probeDataSet->probeRefPositionArray[i] = Point4F(refPos.x, refPos.y, refPos.z, 0);
@@ -445,7 +445,7 @@ void RenderProbeMgr::updateProbeTexture(ReflectionProbe::ProbeInfo* probeInfo)
    mIrradianceArray->updateTexture(probeInfo->mIrradianceCubemap, cubeIndex);
    mPrefilterArray->updateTexture(probeInfo->mPrefilterCubemap, cubeIndex);
 
-#ifdef TORQUE_DEBUGgetBest
+#ifdef TORQUE_DEBUG
    Con::warnf("UpdatedProbeTexture - probe id: %u on cubeIndex %u, Irrad validity: %d, Prefilter validity: %d", probeInfo->mObject->getId(), cubeIndex,
       probeInfo->mIrradianceCubemap->isInitialized(), probeInfo->mPrefilterCubemap->isInitialized());
 #endif
