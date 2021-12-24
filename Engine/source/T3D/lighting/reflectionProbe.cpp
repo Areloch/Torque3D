@@ -291,7 +291,7 @@ bool ReflectionProbe::onAdd()
       if (!mPersistentId)
          mPersistentId = getOrCreatePersistentId();
 
-      mProbeUniqueID = String::ToString(mPersistentId->getUUID().getHash());
+      mProbeUniqueID = mPersistentId->getUUID().toString();
    }
 
    // Refresh this object's material (if any)
