@@ -3003,7 +3003,7 @@ void ReflectionProbeFeatGLSL::processPix(Vector<ShaderComponent*>& componentList
    inRefPosArray->uniform = true;
    inRefPosArray->constSortPos = cspPotentialPrimitive;
 
-   Var * refScaleArray = new Var("inRefScale", "vec4");
+   Var * refScaleArray = new Var("inRefScaleArray", "vec4");
    refScaleArray->arraySize = MAX_FORWARD_PROBES;
    refScaleArray->uniform = true;
    refScaleArray->constSortPos = cspPotentialPrimitive;

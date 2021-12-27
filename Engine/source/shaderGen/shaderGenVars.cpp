@@ -80,11 +80,11 @@ const String ShaderGenVars::glowMul("$glowMul");
 
 //Reflection Probes - Forward lit. not to be confused with the deferred handwritten vars
 //change to parity once we've got the same arrays used for both routes
-const String ShaderGenVars::probePosition("$inProbePosArray");
-const String ShaderGenVars::probeRefPos("$inRefPosArray");
-const String ShaderGenVars::refScale("$inRefScale");
+const String ShaderGenVars::probePositionArray("$inProbePosArray");
+const String ShaderGenVars::probeRefPosArray("$inRefPosArray");
+const String ShaderGenVars::refScaleArray("$inRefScaleArray");
 const String ShaderGenVars::worldToObjArray("$inWorldToObjArray");
-const String ShaderGenVars::probeConfigData("$inProbeConfigData");
+const String ShaderGenVars::probeConfigDataArray("$inProbeConfigData");
 const String ShaderGenVars::specularCubemapAR("$inSpecularCubemapAR");
 const String ShaderGenVars::irradianceCubemapAR("$inIrradianceCubemapAR");
 const String ShaderGenVars::probeCount("$inNumProbes");

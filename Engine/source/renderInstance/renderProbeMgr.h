@@ -88,13 +88,13 @@ struct ProbeShaderConstants
    GFXShaderRef mShader;
    
    //Reflection Probes
-   GFXShaderConstHandle *mProbePositionSC;
-   GFXShaderConstHandle *mProbeRefPosSC;
-   GFXShaderConstHandle *mRefScaleSC;
+   GFXShaderConstHandle *mProbePositionArraySC;
+   GFXShaderConstHandle *mProbeRefPosArraySC;
+   GFXShaderConstHandle *mRefScaleArraySC;
    GFXShaderConstHandle *mWorldToObjArraySC;
-   GFXShaderConstHandle *mProbeConfigDataSC;
-   GFXShaderConstHandle *mProbeSpecularCubemapSC;
-   GFXShaderConstHandle *mProbeIrradianceCubemapSC;
+   GFXShaderConstHandle *mProbeConfigDataArraySC;
+   GFXShaderConstHandle *mProbeSpecularCubemapArraySC;
+   GFXShaderConstHandle *mProbeIrradianceCubemapArraySC;
    GFXShaderConstHandle *mProbeCountSC;
 
    GFXShaderConstHandle *mBRDFTextureMap;

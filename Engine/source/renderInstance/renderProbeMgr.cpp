@@ -89,12 +89,12 @@ void ProbeRenderInst::set(const ProbeRenderInst *probe)
 ProbeShaderConstants::ProbeShaderConstants()
    : mInit(false),
    mShader(NULL),
-   mProbePositionSC(NULL),
-   mProbeRefPosSC(NULL),
-   mRefScaleSC(NULL),
-   mProbeConfigDataSC(NULL),
-   mProbeSpecularCubemapSC(NULL),
-   mProbeIrradianceCubemapSC(NULL),
+   mProbePositionArraySC(NULL),
+   mProbeRefPosArraySC(NULL),
+   mRefScaleArraySC(NULL),
+   mProbeConfigDataArraySC(NULL),
+   mProbeSpecularCubemapArraySC(NULL),
+   mProbeIrradianceCubemapArraySC(NULL),
    mProbeCountSC(NULL),
    mBRDFTextureMap(NULL),
    mSkylightCubemapIdxSC(NULL),
@@ -123,13 +123,13 @@ void ProbeShaderConstants::init(GFXShader* shader)
    }
    
    //Reflection Probes
-   mProbePositionSC = shader->getShaderConstHandle(ShaderGenVars::probePosition);
-   mProbeRefPosSC = shader->getShaderConstHandle(ShaderGenVars::probeRefPos);
-   mRefScaleSC = shader->getShaderConstHandle(ShaderGenVars::refScale);
+   mProbePositionArraySC = shader->getShaderConstHandle(ShaderGenVars::probePositionArray);
+   mProbeRefPosArraySC = shader->getShaderConstHandle(ShaderGenVars::probeRefPosArray);
+   mRefScaleArraySC = shader->getShaderConstHandle(ShaderGenVars::refScaleArray);
    mWorldToObjArraySC = shader->getShaderConstHandle(ShaderGenVars::worldToObjArray);
-   mProbeConfigDataSC = shader->getShaderConstHandle(ShaderGenVars::probeConfigData);
-   mProbeSpecularCubemapSC = shader->getShaderConstHandle(ShaderGenVars::specularCubemapAR);
-   mProbeIrradianceCubemapSC = shader->getShaderConstHandle(ShaderGenVars::irradianceCubemapAR);
+   mProbeConfigDataArraySC = shader->getShaderConstHandle(ShaderGenVars::probeConfigDataArray);
+   mProbeSpecularCubemapArraySC = shader->getShaderConstHandle(ShaderGenVars::specularCubemapAR);
+   mProbeIrradianceCubemapArraySC = shader->getShaderConstHandle(ShaderGenVars::irradianceCubemapAR);
    mProbeCountSC = shader->getShaderConstHandle(ShaderGenVars::probeCount);
 
    mBRDFTextureMap = shader->getShaderConstHandle(ShaderGenVars::BRDFTextureMap);
@@ -141,11 +141,11 @@ void ProbeShaderConstants::init(GFXShader* shader)
 
 bool ProbeShaderConstants::isValid()
 {
-   if (mProbePositionSC->isValid() ||
-      mProbeConfigDataSC->isValid() ||
-      mRefScaleSC->isValid() ||
-      mProbeSpecularCubemapSC->isValid() ||
-      mProbeIrradianceCubemapSC->isValid())
+   if (mProbePositionArraySC->isValid() ||
+      mProbeConfigDataArraySC->isValid() ||
+      mRefScaleArraySC->isValid() ||
+      mProbeSpecularCubemapArraySC->isValid() ||
+      mProbeIrradianceCubemapArraySC->isValid())
       return true;
 
    return false;
@@ -732,23 +732,23 @@ void RenderProbeMgr::_update4ProbeConsts(const SceneData& sgData,
 
       shaderConsts->setSafe(probeShaderConsts->mProbeCountSC, (S32)probeSet.effectiveProbeCount);
 
-      shaderConsts->setSafe(probeShaderConsts->mProbePositionSC, probePositionAlignedArray);
-      shaderConsts->setSafe(probeShaderConsts->mProbeRefPosSC, probeRefPositionAlignedArray);
+      shaderConsts->setSafe(probeShaderConsts->mProbePositionArraySC, probePositionAlignedArray);
+      shaderConsts->setSafe(probeShaderConsts->mProbeRefPosArraySC, probeRefPositionAlignedArray);
 
       if (probeShaderConsts->isValid())
          shaderConsts->set(probeShaderConsts->mWorldToObjArraySC, probeSet.probeWorldToObjArray.address(), probeSet.effectiveProbeCount, GFXSCT_Float4x4);
 
-      shaderConsts->setSafe(probeShaderConsts->mRefScaleSC, refScaleAlignedArray);
-      shaderConsts->setSafe(probeShaderConsts->mProbeConfigDataSC, probeConfigAlignedArray);
+      shaderConsts->setSafe(probeShaderConsts->mRefScaleArraySC, refScaleAlignedArray);
+      shaderConsts->setSafe(probeShaderConsts->mProbeConfigDataArraySC, probeConfigAlignedArray);
 
       shaderConsts->setSafe(probeShaderConsts->mSkylightCubemapIdxSC, (float)probeSet.skyLightIdx);
       if (probeShaderConsts->mBRDFTextureMap->getSamplerRegister() != -1 && mBRDFTexture.isValid())
          GFX->setTexture(probeShaderConsts->mBRDFTextureMap->getSamplerRegister(), mBRDFTexture);
 
-      if (probeShaderConsts->mProbeSpecularCubemapSC->getSamplerRegister() != -1)
-         GFX->setCubeArrayTexture(probeShaderConsts->mProbeSpecularCubemapSC->getSamplerRegister(), mPrefilterArray);
-      if (probeShaderConsts->mProbeIrradianceCubemapSC->getSamplerRegister() != -1)
-         GFX->setCubeArrayTexture(probeShaderConsts->mProbeIrradianceCubemapSC->getSamplerRegister(), mIrradianceArray);
+      if (probeShaderConsts->mProbeSpecularCubemapArraySC->getSamplerRegister() != -1)
+         GFX->setCubeArrayTexture(probeShaderConsts->mProbeSpecularCubemapArraySC->getSamplerRegister(), mPrefilterArray);
+      if (probeShaderConsts->mProbeIrradianceCubemapArraySC->getSamplerRegister() != -1)
+         GFX->setCubeArrayTexture(probeShaderConsts->mProbeIrradianceCubemapArraySC->getSamplerRegister(), mIrradianceArray);
    }
 }
 

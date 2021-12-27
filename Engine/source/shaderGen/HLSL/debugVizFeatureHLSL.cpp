@@ -140,7 +140,7 @@ void DebugVizHLSL::processPix(Vector<ShaderComponent*>& componentList,
       Var* skylightCubemapIdx = (Var*)LangElement::find("inSkylightCubemapIdx");
       Var* inProbePosArray = (Var*)LangElement::find("inProbePosArray");
       Var* inRefPosArray = (Var*)LangElement::find("inRefPosArray");
-      Var* refScaleArray = (Var*)LangElement::find("inRefScale");
+      Var* refScaleArray = (Var*)LangElement::find("inRefScaleArray");
 
       Var* probeConfigData = (Var*)LangElement::find("inProbeConfigData");
       Var* worldToObjArray = (Var*)LangElement::find("inWorldToObjArray");
