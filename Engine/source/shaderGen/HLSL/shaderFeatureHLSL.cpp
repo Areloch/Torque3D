@@ -3081,7 +3081,7 @@ void ReflectionProbeFeatHLSL::processPix(Vector<ShaderComponent*> &componentList
    refScaleArray->uniform = true;
    refScaleArray->constSortPos = cspPotentialPrimitive;
 
-   Var *probeConfigData = new Var("inProbeConfigData", "float4");
+   Var *probeConfigData = new Var("inProbeConfigDataArray", "float4");
    probeConfigData->arraySize = MAX_FORWARD_PROBES;
    probeConfigData->uniform = true;
    probeConfigData->constSortPos = cspPotentialPrimitive;
@@ -3101,22 +3101,22 @@ void ReflectionProbeFeatHLSL::processPix(Vector<ShaderComponent*> &componentList
    BRDFTextureTex->texture = true;
    BRDFTextureTex->constNum = BRDFTexture->constNum;
 
-   Var *specularCubemapAR = new Var("inSpecularCubemapAR", "SamplerState");
+   Var *specularCubemapAR = new Var("SpecularCubemapAR", "SamplerState");
    specularCubemapAR->uniform = true;
    specularCubemapAR->sampler = true;
    specularCubemapAR->constNum = Var::getTexUnitNum();     // used as texture unit num here
 
-   Var *specularCubemapARTex = new Var("texture_inSpecularCubemapAR", "TextureCubeArray");
+   Var *specularCubemapARTex = new Var("texture_SpecularCubemapAR", "TextureCubeArray");
    specularCubemapARTex->uniform = true;
    specularCubemapARTex->texture = true;
    specularCubemapARTex->constNum = specularCubemapAR->constNum;
 
-   Var *irradianceCubemapAR = new Var("inIrradianceCubemapAR", "SamplerState");
+   Var *irradianceCubemapAR = new Var("IrradianceCubemapAR", "SamplerState");
    irradianceCubemapAR->uniform = true;
    irradianceCubemapAR->sampler = true;
    irradianceCubemapAR->constNum = Var::getTexUnitNum();     // used as texture unit num here
 
-   Var *irradianceCubemapARTex = new Var("texture_inIrradianceCubemapAR", "TextureCubeArray");
+   Var *irradianceCubemapARTex = new Var("texture_IrradianceCubemapAR", "TextureCubeArray");
    irradianceCubemapARTex->uniform = true;
    irradianceCubemapARTex->texture = true;
    irradianceCubemapARTex->constNum = irradianceCubemapAR->constNum;
@@ -3171,9 +3171,9 @@ void ReflectionProbeFeatHLSL::setTexData(Material::StageData &stageDat,
       passData.mSamplerNames[texIndex] = "BRDFTexture";
       passData.mTexType[texIndex++] = Material::Standard;
       // assuming here that it is a scenegraph cubemap
-      passData.mSamplerNames[texIndex] = "inSpecularCubemapAR";
+      passData.mSamplerNames[texIndex] = "SpecularCubemapAR";
       passData.mTexType[texIndex++] = Material::SGCube;
-      passData.mSamplerNames[texIndex] = "inIrradianceCubemapAR";
+      passData.mSamplerNames[texIndex] = "IrradianceCubemapAR";
       passData.mTexType[texIndex++] = Material::SGCube;
    }
 }

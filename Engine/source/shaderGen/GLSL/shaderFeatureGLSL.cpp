@@ -3008,7 +3008,7 @@ void ReflectionProbeFeatGLSL::processPix(Vector<ShaderComponent*>& componentList
    refScaleArray->uniform = true;
    refScaleArray->constSortPos = cspPotentialPrimitive;
 
-   Var * probeConfigData = new Var("inProbeConfigData", "vec4");
+   Var * probeConfigData = new Var("inProbeConfigDataArray", "vec4");
    probeConfigData->arraySize = MAX_FORWARD_PROBES;
    probeConfigData->uniform = true;
    probeConfigData->constSortPos = cspPotentialPrimitive;
@@ -3026,12 +3026,12 @@ void ReflectionProbeFeatGLSL::processPix(Vector<ShaderComponent*>& componentList
    BRDFTexture->sampler = true;
    BRDFTexture->constNum = Var::getTexUnitNum();     // used as texture unit num here
    
-   Var * specularCubemapAR = new Var("inSpecularCubemapAR", "samplerCubeArray");
+   Var * specularCubemapAR = new Var("SpecularCubemapAR", "samplerCubeArray");
    specularCubemapAR->uniform = true;
    specularCubemapAR->sampler = true;
    specularCubemapAR->constNum = Var::getTexUnitNum();
 
-   Var * irradianceCubemapAR = new Var("inIrradianceCubemapAR", "samplerCubeArray");
+   Var * irradianceCubemapAR = new Var("IrradianceCubemapAR", "samplerCubeArray");
    irradianceCubemapAR->uniform = true;
    irradianceCubemapAR->sampler = true;
    irradianceCubemapAR->constNum = Var::getTexUnitNum();
@@ -3078,9 +3078,9 @@ void ReflectionProbeFeatGLSL::setTexData(Material::StageData& stageDat,
       passData.mSamplerNames[texIndex] = "BRDFTexture";
       passData.mTexType[texIndex++] = Material::Standard;
       // assuming here that it is a scenegraph cubemap
-      passData.mSamplerNames[texIndex] = "inSpecularCubemapAR";
+      passData.mSamplerNames[texIndex] = "SpecularCubemapAR";
       passData.mTexType[texIndex++] = Material::SGCube;
-      passData.mSamplerNames[texIndex] = "inIrradianceCubemapAR";
+      passData.mSamplerNames[texIndex] = "IrradianceCubemapAR";
       passData.mTexType[texIndex++] = Material::SGCube;
    }
 }

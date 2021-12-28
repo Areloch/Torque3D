@@ -84,9 +84,9 @@ const String ShaderGenVars::probePositionArray("$inProbePosArray");
 const String ShaderGenVars::probeRefPosArray("$inRefPosArray");
 const String ShaderGenVars::refScaleArray("$inRefScaleArray");
 const String ShaderGenVars::worldToObjArray("$inWorldToObjArray");
-const String ShaderGenVars::probeConfigDataArray("$inProbeConfigData");
-const String ShaderGenVars::specularCubemapAR("$inSpecularCubemapAR");
-const String ShaderGenVars::irradianceCubemapAR("$inIrradianceCubemapAR");
+const String ShaderGenVars::probeConfigDataArray("$inProbeConfigDataArray");
+const String ShaderGenVars::specularCubemapAR("$SpecularCubemapAR");
+const String ShaderGenVars::irradianceCubemapAR("$IrradianceCubemapAR");
 const String ShaderGenVars::probeCount("$inNumProbes");
 
 const String ShaderGenVars::BRDFTextureMap("$BRDFTexture");
