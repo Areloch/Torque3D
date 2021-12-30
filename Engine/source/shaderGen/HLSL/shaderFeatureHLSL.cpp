@@ -844,69 +844,69 @@ Var* ShaderFeatureHLSL::addOutDetailTexCoord(   Vector<ShaderComponent*> &compon
 
 Var* ShaderFeatureHLSL::getSurface(Vector<ShaderComponent*>& componentList, MultiLine* meta, const MaterialFeatureData& fd)
 {
-   ShaderConnector* connectComp = dynamic_cast<ShaderConnector*>(componentList[C_CONNECTOR]);
-
-   Var* diffuseColor = (Var*)LangElement::find(getOutputTargetVarName(ShaderFeature::DefaultTarget));
-
-   Var* ormConfig = (Var*)LangElement::find("ORMConfig");
-   if (!ormConfig)
-   {
-      Var* metalness = (Var*)LangElement::find("metalness");
-      if (!metalness)
-      {
-         metalness = new Var("metalness", "float");
-         metalness->uniform = true;
-         metalness->constSortPos = cspPotentialPrimitive;
-      }
-
-      Var* roughness = (Var*)LangElement::find("roughness");
-      if (!roughness)
-      {
-         roughness = new Var("roughness", "float");
-         roughness->uniform = true;
-         roughness->constSortPos = cspPotentialPrimitive;
-      }
-
-      ormConfig = new Var("ORMConfig", "float4");
-      LangElement* colorDecl = new DecOp(ormConfig);
-      meta->addStatement(new GenOp("   @ = float4(0.0,1.0,@,@);\r\n", colorDecl, roughness, metalness)); //reconstruct matinfo, no ao darkening
-   }
-
-   Var* normal = (Var*)LangElement::find("normal");
-   if (!normal)
-   {
-      normal = new Var("normal", "float3");
-      meta->addStatement(new GenOp("  @;\r\n\n", new DecOp(normal)));
-
-      Var* wsNormal = (Var*)LangElement::find("wsNormal");
-      if (!fd.features[MFT_NormalMap])
-      {
-         if (!wsNormal)
-            wsNormal = getInWorldNormal(componentList);
-         meta->addStatement(new GenOp("  @ = normalize( @ );\r\n\n", normal, wsNormal));
-      }
-      else
-      {
-         meta->addStatement(new GenOp("   @ = normalize(  @ );\r\n", normal, wsNormal));
-      }      
-   }
-
-   Var* wsEyePos = (Var*)LangElement::find("eyePosWorld");
-
-   if (!wsEyePos)
-   {
-      wsEyePos = new Var("eyePosWorld", "float3");
-      wsEyePos->uniform = true;
-      wsEyePos->constSortPos = cspPass;
-   }
-
-   Var* wsPosition = getInWsPosition(componentList);
-   Var* wsView = getWsView(wsPosition, meta);
-
-   Var* surface = (Var*)LangElement::find("surface");
+   Var *surface = (Var *)LangElement::find("surface");
 
    if (!surface)
    {
+      Var *diffuseColor = (Var *)LangElement::find(getOutputTargetVarName(ShaderFeature::DefaultTarget));
+
+      Var *ormConfig = (Var *)LangElement::find("ORMConfig");
+      if (!ormConfig)
+      {
+         Var *metalness = (Var *)LangElement::find("metalness");
+         if (!metalness)
+         {
+            metalness = new Var("metalness", "float");
+            metalness->uniform = true;
+            metalness->constSortPos = cspPotentialPrimitive;
+         }
+
+         Var *roughness = (Var *)LangElement::find("roughness");
+         if (!roughness)
+         {
+            roughness = new Var("roughness", "float");
+            roughness->uniform = true;
+            roughness->constSortPos = cspPotentialPrimitive;
+         }
+
+         ormConfig = new Var("ORMConfig", "float4");
+         LangElement *colorDecl = new DecOp(ormConfig);
+         meta->addStatement(new GenOp("   @ = float4(0.0,1.0,@,@);\r\n", colorDecl, roughness, metalness)); //reconstruct matinfo, no ao darkening
+      }
+
+      Var *normal = (Var *)LangElement::find("normal");
+      if (!normal)
+      {
+         normal = new Var("normal", "float3");
+         meta->addStatement(new GenOp("  @;\r\n\n", new DecOp(normal)));
+
+         Var *wsNormal = (Var *)LangElement::find("wsNormal");
+         if (!wsNormal)
+            wsNormal = getInWorldNormal(componentList);
+
+         if (!fd.features[MFT_NormalMap])
+         {
+            Var *worldToTangent = getInWorldToTangent(componentList);
+            meta->addStatement(new GenOp("  @ = normalize(mul(@,float3(0,0,1.0f)));\r\n\n", normal, worldToTangent));
+         }
+         else
+         {
+            meta->addStatement(new GenOp("   @ = normalize(  @ );\r\n", normal, wsNormal));
+         }
+      }
+
+      Var *wsEyePos = (Var *)LangElement::find("eyePosWorld");
+
+      if (!wsEyePos)
+      {
+         wsEyePos = new Var("eyePosWorld", "float3");
+         wsEyePos->uniform = true;
+         wsEyePos->constSortPos = cspPass;
+      }
+
+      Var *wsPosition = getInWsPosition(componentList);
+      Var *wsView = getWsView(wsPosition, meta);
+
       surface = new Var("surface", "Surface");
       meta->addStatement(new GenOp("  @ = createForwardSurface(@,@,@,@,@,@);\r\n\n", new DecOp(surface), diffuseColor, normal, ormConfig,
          wsPosition, wsEyePos, wsView));
