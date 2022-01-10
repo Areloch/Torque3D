@@ -333,7 +333,7 @@ float defineSphereSpaceInfluence(float3 wsPosition, float3 wsProbePosition, floa
 {
    float3 L = wsProbePosition.xyz - wsPosition;
    float contribution = 1.0 - length(L) / radius;
-   return contribution;
+   return saturate(contribution);
 }
 
 float getDistBoxToPoint(float3 pt, float3 extents)
@@ -345,10 +345,9 @@ float getDistBoxToPoint(float3 pt, float3 extents)
 float defineBoxSpaceInfluence(float3 wsPosition, float4x4 worldToObj, float attenuation)
 {
    float3 surfPosLS = mul(worldToObj, float4(wsPosition, 1.0)).xyz;
-   float atten = 1.0 - attenuation;
    float baseVal = 0.25;
    float dist = getDistBoxToPoint(surfPosLS, float3(baseVal, baseVal, baseVal));
-   return saturate(smoothstep(baseVal + 0.0001, atten*baseVal, dist));
+   return saturate(smoothstep(baseVal, (baseVal-attenuation/2), dist));
 }
 
 // Box Projected IBL Lighting

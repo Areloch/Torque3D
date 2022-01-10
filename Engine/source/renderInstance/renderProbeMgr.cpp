@@ -871,6 +871,7 @@ void RenderProbeMgr::render( SceneRenderState *state )
    mProbeArrayEffect->setShaderConst("$worldToObjArray", mProbeData.probeWorldToObjArray);
    mProbeArrayEffect->setShaderConst("$refScaleArray", mProbeData.refScaleArray);
    mProbeArrayEffect->setShaderConst("$probeConfigData", mProbeData.probeConfigArray);
+   mProbeArrayEffect->setShaderConst("$probeDistanceMul", gClientSceneGraph->getVisibleDistance()/75);
 
    // Make sure the effect is gonna render.
    getProbeArrayEffect()->setSkip(false);

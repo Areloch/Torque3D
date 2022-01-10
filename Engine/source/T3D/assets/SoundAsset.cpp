@@ -257,7 +257,7 @@ StringTableEntry SoundAsset::getAssetIdByFileName(StringTableEntry fileName)
    if (fileName == StringTable->EmptyString())
       return StringTable->EmptyString();
 
-   StringTableEntry materialAssetId = "";
+   StringTableEntry materialAssetId = StringTable->EmptyString();
 
    AssetQuery query;
    U32 foundCount = AssetDatabase.findAssetType(&query, "SoundAsset");
