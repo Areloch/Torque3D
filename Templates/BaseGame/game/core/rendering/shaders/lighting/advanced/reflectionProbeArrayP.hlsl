@@ -14,7 +14,7 @@ uniform float4 vsFarPlane;
 uniform float4x4 cameraToWorld;
 uniform float3 eyePosWorld;
 
-uniform float probeDistanceMul;
+uniform float maxProbeDrawDistance;
 
 //cubemap arrays require all the same size. so shared mips# value
 uniform float cubeMips;
@@ -80,7 +80,7 @@ float4 main(PFXVertToPix IN) : SV_TARGET
       {
          contribution[i] = 0.0;
 
-         float atten = 1.0-(length(eyePosWorld-probePosArray[i].xyz)/probeDistanceMul/5);
+         float atten =1.0-(length(eyePosWorld-probePosArray[i].xyz)/maxProbeDrawDistance);
          if (probeConfigData[i].r == 0) //box
          {
             contribution[i] = defineBoxSpaceInfluence(surface.P, worldToObjArray[i], probeConfigData[i].b)*atten;
@@ -97,11 +97,6 @@ float4 main(PFXVertToPix IN) : SV_TARGET
 
          blendSum += contribution[i];
       }
-      // Weight0 = normalized NDF, inverted to have 1 at center, 0 at boundary.
-	   // And as we invert, we need to divide by Num-1 to stay normalized (else sum is > 1). 
-	   // respect constraint B.
-	   // Weight1 = normalized inverted NDF, so we have 1 at center, 0 at boundary
-	   // and respect constraint A.
       
        if (probehits > 1.0)//if we overlap
 	   {

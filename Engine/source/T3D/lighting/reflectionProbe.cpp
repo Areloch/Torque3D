@@ -121,8 +121,6 @@ ReflectionProbe::ReflectionProbe()
    mRefreshRateMS = 200;
    mDynamicLastBakeMS = 0;
 
-   mMaxDrawDistance = 75;
-
    mResourcesCreated = false;
    mPrefilterSize = 64;
    mPrefilterMipLevels = mLog2(F32(mPrefilterSize));
@@ -818,9 +816,9 @@ void ReflectionProbe::prepRenderImage(SceneRenderState *state)
    F32 dist = distVec.len();
 
    //Culling distance. Can be adjusted for performance options considerations via the scalar
-   if (dist > mMaxDrawDistance * Con::getFloatVariable("$pref::GI::ProbeDrawDistScale", 1.0))
+   if (dist > RenderProbeMgr::smMaxProbeDrawDistance * Con::getFloatVariable("$pref::GI::ProbeDrawDistScale", 1.0))
    {
-      mProbeInfo.mScore = mMaxDrawDistance;
+      mProbeInfo.mScore = RenderProbeMgr::smMaxProbeDrawDistance;
       return;
    }
 

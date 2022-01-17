@@ -254,7 +254,6 @@ protected:
    U32 mDynamicLastBakeMS;
    U32 mRefreshRateMS;
 
-   F32 mMaxDrawDistance;
 
    bool mResourcesCreated;
    U32 mCaptureMask;
