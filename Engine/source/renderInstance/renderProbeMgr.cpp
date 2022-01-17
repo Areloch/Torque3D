@@ -141,10 +141,10 @@ void ProbeShaderConstants::init(GFXShader* shader)
 
 bool ProbeShaderConstants::isValid()
 {
-   if (mProbePositionArraySC->isValid() ||
-      mProbeConfigDataArraySC->isValid() ||
-      mRefScaleArraySC->isValid() ||
-      mProbeSpecularCubemapArraySC->isValid() ||
+   if (mProbePositionArraySC->isValid() &&
+      mProbeConfigDataArraySC->isValid() &&
+      mRefScaleArraySC->isValid() &&
+      mProbeSpecularCubemapArraySC->isValid() &&
       mProbeIrradianceCubemapArraySC->isValid())
       return true;
 
