@@ -330,6 +330,7 @@ protected:
 
       return nullptr;
    }
+   bool _handleDeviceEvent(GFXDevice::GFXDeviceEventType evt);
 
 public:
    RenderProbeMgr();
