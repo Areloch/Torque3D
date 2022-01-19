@@ -141,10 +141,10 @@ void ProbeShaderConstants::init(GFXShader* shader)
 
 bool ProbeShaderConstants::isValid()
 {
-   if (mProbePositionArraySC->isValid() &&
-      mProbeConfigDataArraySC->isValid() &&
-      mRefScaleArraySC->isValid() &&
-      mProbeSpecularCubemapArraySC->isValid() &&
+   if (mProbePositionArraySC->isValid() ||
+      mProbeConfigDataArraySC->isValid() ||
+      mRefScaleArraySC->isValid() ||
+      mProbeSpecularCubemapArraySC->isValid() ||
       mProbeIrradianceCubemapArraySC->isValid())
       return true;
 
@@ -187,7 +187,6 @@ RenderProbeMgr::RenderProbeMgr()
 RenderProbeMgr::RenderProbeMgr(RenderInstType riType, F32 renderOrder, F32 processAddOrder)
  : RenderBinManager(riType, renderOrder, processAddOrder)
 {
-   GFXDevice::getDeviceEventSignal().notify(this, &RenderProbeMgr::_handleDeviceEvent);
    mCubeMapCount = 0;
    dMemset(mCubeMapSlots, false, sizeof(mCubeMapSlots));
    mCubeSlotCount = PROBE_ARRAY_SLOT_BUFFER_SIZE;
@@ -210,29 +209,6 @@ RenderProbeMgr::~RenderProbeMgr()
          SAFE_DELETE(i->value);
    }
    mConstantLookup.clear();
-   GFXDevice::getDeviceEventSignal().remove(this, &RenderProbeMgr::_handleDeviceEvent);
-}
-
-bool RenderProbeMgr::_handleDeviceEvent(GFXDevice::GFXDeviceEventType evt)
-{
-   switch (evt)
-   {
-   case GFXDevice::deStartOfFrame:
-   case GFXDevice::deStartOfField:
-      //Sort the active probes
-      mActiveProbes.sort(_probeScoreCmp);
-      break;
-
-   case GFXDevice::deDestroy:
-   case GFXDevice::dePostFrame:
-      mActiveProbes.clear();
-      break;
-
-   default:
-      break;
-   }
-
-   return true;
 }
 
 bool RenderProbeMgr::onAdd()
@@ -341,6 +317,10 @@ void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* pro
          continue;
 
       const ProbeRenderInst& curEntry = mActiveProbes[bestPickProbes[i]];
+      probeDataSet->probeConfigArray[i] = Point4F(curEntry.mProbeInfo->mProbeShapeType,
+         curEntry.mProbeInfo->mRadius,
+         curEntry.mProbeInfo->mAtten,
+         curEntry.mCubemapIndex);
 
       MatrixF p2A = curEntry.mProbeInfo->mTransform;
       probeDataSet->probeWorldToObjArray[i] = p2A;
@@ -353,10 +333,6 @@ void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* pro
       probeDataSet->probePositionArray[i] = Point4F(probePos.x, probePos.y, probePos.z, 0);
       probeDataSet->probeRefPositionArray[i] = Point4F(refPos.x, refPos.y, refPos.z, 0);
 
-      probeDataSet->probeConfigArray[i] = Point4F(curEntry.mProbeInfo->mProbeShapeType,
-         curEntry.mProbeInfo->mRadius,
-         curEntry.mProbeInfo->mAtten,
-         curEntry.mCubemapIndex);
    }
 }
 
@@ -792,10 +768,14 @@ void RenderProbeMgr::render( SceneRenderState *state )
 {
    if (getProbeArrayEffect() == nullptr)
    {
+      mActiveProbes.clear();
       return;
    }
 
    GFXDEBUGEVENT_SCOPE(RenderProbeMgr_render, ColorI::WHITE);
+
+   //Sort the active probes
+   mActiveProbes.sort(_probeScoreCmp);
 
    // Initialize and set the per-frame data
    _setupPerFrameParameters(state);
@@ -804,6 +784,7 @@ void RenderProbeMgr::render( SceneRenderState *state )
    if (!RenderProbeMgr::smRenderReflectionProbes || (!state->isDiffusePass() && !state->isReflectPass()) || (!mHasSkylight && mProbeData.effectiveProbeCount == 0))
    {
       getProbeArrayEffect()->setSkip(true);
+      mActiveProbes.clear();
       return;
    }
 
@@ -895,6 +876,7 @@ void RenderProbeMgr::render( SceneRenderState *state )
    // Make sure the effect is gonna render.
    getProbeArrayEffect()->setSkip(false);
 
+   mActiveProbes.clear();
 }
 
 //=============================================================================

@@ -182,7 +182,7 @@ public:
    static F32 smMaxProbeDrawDistance;
    static S32 smMaxProbesPerFrame;
    static S32 smProbeBakeResolution;
-
+   SceneRenderState *mState;
 private:
    /// <summary>
    /// List of registered probes. These are not necessarily rendered in a given frame
@@ -330,7 +330,6 @@ protected:
 
       return nullptr;
    }
-   bool _handleDeviceEvent(GFXDevice::GFXDeviceEventType evt);
 
 public:
    RenderProbeMgr();
