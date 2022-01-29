@@ -97,6 +97,9 @@ class GuiButtonBaseCtrl : public GuiControl
       void setDepressed( bool depressed ) { mDepressed = depressed; }
       void resetState() {mDepressed = false; mMouseOver = false;}
 
+      void setHighlighted(bool highlighted) { mMouseOver = highlighted; }
+      bool isHighlighted() { return mMouseOver; }
+
       void acceleratorKeyPress(U32 index);
       void acceleratorKeyRelease(U32 index);
 

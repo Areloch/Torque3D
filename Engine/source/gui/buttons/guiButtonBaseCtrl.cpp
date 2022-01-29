@@ -542,3 +542,17 @@ DefineEngineMethod( GuiButtonBaseCtrl, resetState, void, (),,
 {
    object->resetState();
 }
+
+DefineEngineMethod(GuiButtonBaseCtrl, setHighlighted, void, (bool highlighted), (false),
+   "Reset the mousing state of the button.\n\n"
+   "This method should not generally be called.")
+{
+   object->setHighlighted(highlighted);
+}
+
+DefineEngineMethod(GuiButtonBaseCtrl, isHighlighted, bool, (), ,
+   "Reset the mousing state of the button.\n\n"
+   "This method should not generally be called.")
+{
+   return object->isHighlighted();
+}
