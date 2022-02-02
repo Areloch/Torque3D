@@ -240,15 +240,15 @@ float3 evaluateStandardBRDF(Surface surface, SurfaceToLight surfaceToLight)
 
 float3 getDirectionalLight(Surface surface, SurfaceToLight surfaceToLight, float3 lightColor, float lightIntensity, float shadow)
 {
-   float3 factor = lightColor * max(surfaceToLight.NdotL* shadow * lightIntensity, 0.0f) ;
-   return evaluateStandardBRDF(surface,surfaceToLight);
+   float3 factor = lightColor * max(surfaceToLight.NdotL* shadow * lightIntensity*(1.0-surface.metalness), 0.0f) ;
+   return evaluateStandardBRDF(surface,surfaceToLight) * factor;
 }
 
 float3 getPunctualLight(Surface surface, SurfaceToLight surfaceToLight, float3 lightColor, float lightIntensity, float radius, float shadow)
 {
    float attenuation = getDistanceAtt(surfaceToLight.Lu, radius);
-   float3 factor = lightColor * max(surfaceToLight.NdotL* shadow * lightIntensity * attenuation, 0.0f) ;
-   return evaluateStandardBRDF(surface,surfaceToLight);
+   float3 factor = lightColor * max(surfaceToLight.NdotL* shadow * lightIntensity * attenuation*(1.0-surface.metalness), 0.0f) ;
+   return evaluateStandardBRDF(surface,surfaceToLight) * factor;
 }
 
 float computeSpecOcclusion( float NdotV , float AO , float roughness )
