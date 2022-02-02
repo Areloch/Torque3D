@@ -24,6 +24,9 @@
 #include "./brdf.hlsl"
 #include "./shaderModelAutoGen.hlsl"
 
+//globals
+uniform float3 eyePosWorld;
+uniform float maxProbeDrawDistance;
 #ifndef TORQUE_SHADERGEN
 
 // These are the uniforms used by most lighting shaders.
@@ -37,6 +40,7 @@ uniform float4 inLightColor[4];
    uniform float4 inLightSpotAngle;
    uniform float4 inLightSpotFalloff;
 #endif
+
 
 uniform float4 ambient;
 uniform float roughness;
@@ -52,10 +56,6 @@ uniform float4 albedo;
 #define MAX_FORWARD_PROBES 4
 
 #define MAX_FORWARD_LIGHT 4
-
-#ifndef CAPTURING
-#define CAPTURING 0
-#endif
 
 #ifndef DEBUGVIZ_ATTENUATION
 #define DEBUGVIZ_ATTENUATION 0
@@ -230,9 +230,8 @@ float3 evaluateStandardBRDF(Surface surface, SurfaceToLight surfaceToLight)
    float Vis = V_SmithGGXCorrelated(surface.NdotV, surfaceToLight.NdotL, surface.linearRoughnessSq);
    float D = D_GGX(surfaceToLight.NdotH, surface.linearRoughnessSq);
    float3 Fr = D * F * Vis;
-   
-#ifdef CAPTURING
-    return saturate(lerp(Fd + Fr,surface.f0,surface.metalness));
+#if CAPTURING == 1
+    return float3(1,0,0);//saturate(lerp(Fd + Fr,surface.f0,surface.metalness));
 #else
    return saturate(Fd + Fr);
 #endif
@@ -241,15 +240,15 @@ float3 evaluateStandardBRDF(Surface surface, SurfaceToLight surfaceToLight)
 
 float3 getDirectionalLight(Surface surface, SurfaceToLight surfaceToLight, float3 lightColor, float lightIntensity, float shadow)
 {
-   float3 factor = lightColor * max(surfaceToLight.NdotL* shadow * lightIntensity*(1.0-surface.metalness), 0.0f) ;
-   return evaluateStandardBRDF(surface,surfaceToLight) * factor;
+   float3 factor = lightColor * max(surfaceToLight.NdotL* shadow * lightIntensity, 0.0f) ;
+   return evaluateStandardBRDF(surface,surfaceToLight);
 }
 
 float3 getPunctualLight(Surface surface, SurfaceToLight surfaceToLight, float3 lightColor, float lightIntensity, float radius, float shadow)
 {
    float attenuation = getDistanceAtt(surfaceToLight.Lu, radius);
-   float3 factor = lightColor * max(surfaceToLight.NdotL* shadow * lightIntensity * attenuation*(1.0-surface.metalness), 0.0f) ;
-   return evaluateStandardBRDF(surface,surfaceToLight) * factor;
+   float3 factor = lightColor * max(surfaceToLight.NdotL* shadow * lightIntensity * attenuation, 0.0f) ;
+   return evaluateStandardBRDF(surface,surfaceToLight);
 }
 
 float computeSpecOcclusion( float NdotV , float AO , float roughness )
@@ -369,8 +368,8 @@ float3 boxProject(float3 wsPosition, float3 wsReflectVec, float4x4 worldToObj, f
 }
 
 float4 computeForwardProbes(Surface surface,
-    float cubeMips, int numProbes, float4x4 worldToObjArray[MAX_FORWARD_PROBES], float4 probeConfigData[MAX_FORWARD_PROBES], 
-    float4 inProbePosArray[MAX_FORWARD_PROBES], float4 refScaleArray[MAX_FORWARD_PROBES], float4 inRefPosArray[MAX_FORWARD_PROBES],
+    float cubeMips, int numProbes, float4x4 inWorldToObjArray[MAX_FORWARD_PROBES], float4 inProbeConfigData[MAX_FORWARD_PROBES], 
+    float4 inProbePosArray[MAX_FORWARD_PROBES], float4 inRefScaleArray[MAX_FORWARD_PROBES], float4 inRefPosArray[MAX_FORWARD_PROBES],
     float skylightCubemapIdx, TORQUE_SAMPLER2D(BRDFTexture), 
 	 TORQUE_SAMPLERCUBEARRAY(irradianceCubemapAR), TORQUE_SAMPLERCUBEARRAY(specularCubemapAR))
 {
@@ -383,50 +382,41 @@ float4 computeForwardProbes(Surface surface,
    float probehits = 0;
    //Set up our struct data
    float contribution[MAX_FORWARD_PROBES];
-  for (i = 0; i < numProbes; ++i)
-  {
-      contribution[i] = 0;
-
-      if (probeConfigData[i].r == 0) //box
-      {
-         contribution[i] = defineBoxSpaceInfluence(surface.P, worldToObjArray[i], probeConfigData[i].b);
-         if (contribution[i] > 0.0)
-            probehits++;
-      }
-      else if (probeConfigData[i].r == 1) //sphere
-      {
-         contribution[i] = defineSphereSpaceInfluence(surface.P, inProbePosArray[i].xyz, probeConfigData[i].g);
-         if (contribution[i] > 0.0)
-            probehits++;
-      }
-
-      contribution[i] = max(contribution[i], 0);
-
-      blendSum += contribution[i];
-      invBlendSum += (1.0f - contribution[i]);
-   }
-
-   if (probehits > 1.0)
+   //Process prooooobes
+   for (i = 0; i < numProbes; ++i)
    {
+      contribution[i] = 0.0;
+      float atten =1.0-(length(eyePosWorld-inProbePosArray[i].xyz)/maxProbeDrawDistance);
+      if (inProbeConfigData[i].r == 0) //box
+      {
+         contribution[i] = defineBoxSpaceInfluence(surface.P, inWorldToObjArray[i], inProbeConfigData[i].b)*atten;
+      }
+      else if (inProbeConfigData[i].r == 1) //sphere
+      {
+         contribution[i] = defineSphereSpaceInfluence(surface.P, inProbePosArray[i].xyz, inProbeConfigData[i].g)*atten;
+      }
+
+      if (contribution[i]>0.0)
+         probehits++;
+      else
+         contribution[i] = 0.0;
+
+         blendSum += contribution[i];
+   }
+      
+   if (probehits > 1.0)//if we overlap
+   {
+      invBlendSum = (probehits - blendSum)/(probehits-1); //grab the remainder 
       for (i = 0; i < numProbes; i++)
       {
-         blendFactor[i] = ((contribution[i] / blendSum)) / probehits;
-         blendFactor[i] *= ((contribution[i]) / invBlendSum);
-         blendFactor[i] = saturate(blendFactor[i]);
-         blendFacSum += blendFactor[i];
-      }
+         blendFactor[i] = contribution[i]/blendSum; //what % total is this instance
+         blendFactor[i] *= blendFactor[i] / invBlendSum;  //what should we add to sum to 1
+         blendFacSum += blendFactor[i]; //running tally of results
+         }
 
-      // Normalize blendVal
-      if (blendFacSum == 0.0f) // Possible with custom weight
-      {
-         blendFacSum = 1.0f;
-      }
-
-      float invBlendSumWeighted = 1.0f / blendFacSum;
       for (i = 0; i < numProbes; ++i)
       {
-         blendFactor[i] *= invBlendSumWeighted;
-         contribution[i] *= blendFactor[i];
+         contribution[i] *= blendFactor[i]/blendFacSum; //normalize
       }
    }
 
@@ -473,8 +463,8 @@ float4 computeForwardProbes(Surface surface,
       float contrib = contribution[i];
       if (contrib > 0.0f)
       {
-         int cubemapIdx = probeConfigData[i].a;
-         float3 dir = boxProject(surface.P, surface.R, worldToObjArray[i], refScaleArray[i].xyz, inRefPosArray[i].xyz);
+         int cubemapIdx = inProbeConfigData[i].a;
+         float3 dir = boxProject(surface.P, surface.R, inWorldToObjArray[i], inRefScaleArray[i].xyz, inRefPosArray[i].xyz);
 
          irradiance += TORQUE_TEXCUBEARRAYLOD(irradianceCubemapAR, dir, cubemapIdx, 0).xyz * contrib;
          specular += TORQUE_TEXCUBEARRAYLOD(specularCubemapAR, dir, cubemapIdx, lod).xyz * contrib;
@@ -511,8 +501,8 @@ float4 computeForwardProbes(Surface surface,
 }
 
 float4 debugVizForwardProbes(Surface surface,
-    float cubeMips, int numProbes, float4x4 worldToObjArray[MAX_FORWARD_PROBES], float4 probeConfigData[MAX_FORWARD_PROBES], 
-    float4 inProbePosArray[MAX_FORWARD_PROBES], float4 refScaleArray[MAX_FORWARD_PROBES], float4 inRefPosArray[MAX_FORWARD_PROBES],
+    float cubeMips, int numProbes, float4x4 inWorldToObjArray[MAX_FORWARD_PROBES], float4 inProbeConfigData[MAX_FORWARD_PROBES], 
+    float4 inProbePosArray[MAX_FORWARD_PROBES], float4 inRefScaleArray[MAX_FORWARD_PROBES], float4 inRefPosArray[MAX_FORWARD_PROBES],
     float skylightCubemapIdx, TORQUE_SAMPLER2D(BRDFTexture), 
 	 TORQUE_SAMPLERCUBEARRAY(irradianceCubemapAR), TORQUE_SAMPLERCUBEARRAY(specularCubemapAR), int showAtten, int showContrib, int showSpec, int showDiff)
 {
@@ -529,15 +519,15 @@ float4 debugVizForwardProbes(Surface surface,
   {
       contribution[i] = 0;
 
-      if (probeConfigData[i].r == 0) //box
+      if (inProbeConfigData[i].r == 0) //box
       {
-         contribution[i] = defineBoxSpaceInfluence(surface.P, worldToObjArray[i], probeConfigData[i].b);
+         contribution[i] = defineBoxSpaceInfluence(surface.P, inWorldToObjArray[i], inProbeConfigData[i].b);
          if (contribution[i] > 0.0)
             probehits++;
       }
-      else if (probeConfigData[i].r == 1) //sphere
+      else if (inProbeConfigData[i].r == 1) //sphere
       {
-         contribution[i] = defineSphereSpaceInfluence(surface.P, inProbePosArray[i].xyz, probeConfigData[i].g);
+         contribution[i] = defineSphereSpaceInfluence(surface.P, inProbePosArray[i].xyz, inProbeConfigData[i].g);
          if (contribution[i] > 0.0)
             probehits++;
       }
@@ -622,8 +612,8 @@ float4 debugVizForwardProbes(Surface surface,
       float contrib = contribution[i];
       if (contrib > 0.0f)
       {
-         int cubemapIdx = probeConfigData[i].a;
-         float3 dir = boxProject(surface.P, surface.R, worldToObjArray[i], refScaleArray[i].xyz, inRefPosArray[i].xyz);
+         int cubemapIdx = inProbeConfigData[i].a;
+         float3 dir = boxProject(surface.P, surface.R, inWorldToObjArray[i], inRefScaleArray[i].xyz, inRefPosArray[i].xyz);
 
          irradiance += TORQUE_TEXCUBEARRAYLOD(irradianceCubemapAR, dir, cubemapIdx, 0).xyz * contrib;
          specular += TORQUE_TEXCUBEARRAYLOD(specularCubemapAR, dir, cubemapIdx, lod).xyz * contrib;

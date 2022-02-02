@@ -67,7 +67,6 @@ uniform float4x4 worldToLightProj;
 uniform float4 lightParams;
 
 uniform float shadowSoftness;
-uniform float3 eyePosWorld;
 
 uniform float4x4 cameraToWorld;
 uniform float4x4 worldToCamera;

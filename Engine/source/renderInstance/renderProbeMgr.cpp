@@ -552,9 +552,7 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe)
    const GFXFormat oldRefFmt = REFLECTMGR->getReflectFormat();
    REFLECTMGR->setReflectFormat(reflectFormat);
 
-   mProbeArrayEffect->setShaderConst("$CAPTURING", true);
    cubeRefl.updateReflection(reflParams, clientProbe->getTransform().getPosition() + clientProbe->mProbeRefOffset);
-   mProbeArrayEffect->setShaderConst("$CAPTURING", false);
 
    //Now, save out the maps
    //create irridiance cubemap
@@ -781,7 +779,7 @@ void RenderProbeMgr::render( SceneRenderState *state )
    _setupPerFrameParameters(state);
 
    // Early out if nothing to draw.
-   if (!RenderProbeMgr::smRenderReflectionProbes || (!state->isDiffusePass() && !state->isReflectPass()) || (!mHasSkylight && mProbeData.effectiveProbeCount == 0))
+   if (!RenderProbeMgr::smRenderReflectionProbes || (!mHasSkylight && mProbeData.effectiveProbeCount == 0))
    {
       getProbeArrayEffect()->setSkip(true);
       mActiveProbes.clear();
@@ -811,6 +809,8 @@ void RenderProbeMgr::render( SceneRenderState *state )
    String probePerFrame = Con::getVariable("$pref::MaxProbesPerFrame", "8");
    mProbeArrayEffect->setShaderMacro("MAX_PROBES", probePerFrame);
 
+   String probeCapturing = Con::getVariable("$Probes::Capturing", "0");
+   mProbeArrayEffect->setShaderMacro("CAPTURING", probeCapturing);
    //ssao mask
    if (AdvancedLightBinManager::smUseSSAOMask)
    {

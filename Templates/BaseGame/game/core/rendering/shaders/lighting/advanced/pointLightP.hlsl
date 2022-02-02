@@ -134,7 +134,6 @@ uniform float shadowSoftness;
 uniform float4x4 worldToCamera;
 uniform float3x3 worldToLightProj;
 
-uniform float3 eyePosWorld;
 uniform float4x4 cameraToWorld;
 
 float4 main(   ConvexConnectP IN ) : SV_TARGET

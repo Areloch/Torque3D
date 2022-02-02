@@ -12,9 +12,6 @@ TORQUE_UNIFORM_SAMPLER2D(BRDFTexture, 3);
 uniform float4 rtParams0;
 uniform float4 vsFarPlane;
 uniform float4x4 cameraToWorld;
-uniform float3 eyePosWorld;
-
-uniform float maxProbeDrawDistance;
 
 //cubemap arrays require all the same size. so shared mips# value
 uniform float cubeMips;
@@ -190,6 +187,9 @@ float4 main(PFXVertToPix IN) : SV_TARGET
    float horizonOcclusion = 1.3;
    float horizon = saturate( 1 + horizonOcclusion * dot(surface.R, surface.N));
    horizon *= horizon;
-
+#if CAPTURING == 1
+    return float4(1,0,0,1);//saturate(lerp(Fd + Fr,surface.f0,surface.metalness));
+#else
    return float4((irradiance + specular) * horizon, 0);//alpha writes disabled
+#endif
 }
