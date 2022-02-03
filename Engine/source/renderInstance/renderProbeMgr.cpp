@@ -728,20 +728,24 @@ void RenderProbeMgr::_update4ProbeConsts(const SceneData& sgData,
          probeConfigAlignedArray[i] = probeSet.probeConfigArray[i];
       }
 
-      shaderConsts->setSafe(probeShaderConsts->mProbeCountSC, (S32)probeSet.effectiveProbeCount);
+      if (probeSet.effectiveProbeCount != 0)
+      {
+         shaderConsts->setSafe(probeShaderConsts->mProbeCountSC, (S32)probeSet.effectiveProbeCount);
 
-      shaderConsts->setSafe(probeShaderConsts->mProbePositionArraySC, probePositionAlignedArray);
-      shaderConsts->setSafe(probeShaderConsts->mProbeRefPosArraySC, probeRefPositionAlignedArray);
+         shaderConsts->setSafe(probeShaderConsts->mProbePositionArraySC, probePositionAlignedArray);
+         shaderConsts->setSafe(probeShaderConsts->mProbeRefPosArraySC, probeRefPositionAlignedArray);
 
-      if (probeShaderConsts->isValid())
-         shaderConsts->set(probeShaderConsts->mWorldToObjArraySC, probeSet.probeWorldToObjArray.address(), probeSet.effectiveProbeCount, GFXSCT_Float4x4);
+         if (probeShaderConsts->isValid())
+            shaderConsts->set(probeShaderConsts->mWorldToObjArraySC, probeSet.probeWorldToObjArray.address(), probeSet.probeWorldToObjArray.size(), GFXSCT_Float4x4);
 
-      shaderConsts->setSafe(probeShaderConsts->mRefScaleArraySC, refScaleAlignedArray);
-      shaderConsts->setSafe(probeShaderConsts->mProbeConfigDataArraySC, probeConfigAlignedArray);
-
-      shaderConsts->setSafe(probeShaderConsts->mSkylightCubemapIdxSC, (float)probeSet.skyLightIdx);
+         shaderConsts->setSafe(probeShaderConsts->mRefScaleArraySC, refScaleAlignedArray);
+         shaderConsts->setSafe(probeShaderConsts->mProbeConfigDataArraySC, probeConfigAlignedArray);
+      }
+      
       if (probeShaderConsts->mBRDFTextureMap->getSamplerRegister() != -1 && mBRDFTexture.isValid())
          GFX->setTexture(probeShaderConsts->mBRDFTextureMap->getSamplerRegister(), mBRDFTexture);
+
+      shaderConsts->setSafe(probeShaderConsts->mSkylightCubemapIdxSC, (float)probeSet.skyLightIdx);
 
       if (probeShaderConsts->mProbeSpecularCubemapArraySC->getSamplerRegister() != -1)
          GFX->setCubeArrayTexture(probeShaderConsts->mProbeSpecularCubemapArraySC->getSamplerRegister(), mPrefilterArray);
@@ -875,8 +879,6 @@ void RenderProbeMgr::render( SceneRenderState *state )
 
    // Make sure the effect is gonna render.
    getProbeArrayEffect()->setSkip(false);
-
-   mActiveProbes.clear();
 }
 
 //=============================================================================

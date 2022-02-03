@@ -473,6 +473,8 @@ public:
    /// Renders the sorted probes list via a PostEffect to draw them into the buffer data in deferred mode.
    /// </summary>
    virtual void render(SceneRenderState * state);
+
+   virtual void clear() { mActiveProbes.clear(); Parent::clear(); }
 };
 
 RenderProbeMgr* RenderProbeMgr::getProbeManager()
