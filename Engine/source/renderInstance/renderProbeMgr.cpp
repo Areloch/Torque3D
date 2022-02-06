@@ -788,7 +788,7 @@ void RenderProbeMgr::render( SceneRenderState *state )
    _setupPerFrameParameters(state);
 
    // Early out if nothing to draw.
-   if (!RenderProbeMgr::smRenderReflectionProbes || (!mHasSkylight && mProbeData.effectiveProbeCount == 0))
+   if ((!RenderProbeMgr::smRenderReflectionProbes && Con::getVariable("$Probes::Capturing", "0") == "0") || (!mHasSkylight && mProbeData.effectiveProbeCount == 0))
    {
       getProbeArrayEffect()->setSkip(true);
       mActiveProbes.clear();
@@ -889,6 +889,7 @@ void RenderProbeMgr::render( SceneRenderState *state )
 //=============================================================================
 // Console functions
 //=============================================================================
+
 DefineEngineMethod(RenderProbeMgr, bakeProbe, void, (ReflectionProbe* probe), (nullAsType< ReflectionProbe*>()),
    "@brief Bakes the cubemaps for a reflection probe\n\n.")
 {
@@ -898,5 +899,7 @@ DefineEngineMethod(RenderProbeMgr, bakeProbe, void, (ReflectionProbe* probe), (n
 
 DefineEngineMethod(RenderProbeMgr, bakeProbes, void, (),, "@brief Iterates over all reflection probes in the scene and bakes their cubemaps\n\n.")
 {
+   Con::setVariable("$Probes::Capturing", "1");
    object->bakeProbes();
+   Con::setVariable("$Probes::Capturing", "0");
 }

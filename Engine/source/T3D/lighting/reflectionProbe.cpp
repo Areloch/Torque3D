@@ -573,7 +573,7 @@ void ReflectionProbe::processDynamicCubemap()
 
 void ReflectionProbe::processBakedCubemap()
 {
-   mProbeInfo.mIsEnabled = false;
+   //mProbeInfo.mIsEnabled = false;
 
    if ((mReflectionModeType != BakedCubemap) || mProbeUniqueID.isEmpty())
       return;
@@ -609,7 +609,7 @@ void ReflectionProbe::processBakedCubemap()
 
    if (mEnabled && mProbeInfo.mPrefilterCubemap->isInitialized() && mProbeInfo.mIrradianceCubemap->isInitialized())
    {
-      mProbeInfo.mIsEnabled = true;
+      //mProbeInfo.mIsEnabled = true;
 
       mCubemapDirty = false;
 
@@ -619,6 +619,11 @@ void ReflectionProbe::processBakedCubemap()
       //now, cleanup
       mProbeInfo.mPrefilterCubemap.free();
       mProbeInfo.mIrradianceCubemap.free();
+   }
+   else
+   {
+      //if we failed, disable
+      mProbeInfo.mIsEnabled = false;
    }
 }
 
@@ -809,7 +814,7 @@ void ReflectionProbe::createEditorResources()
 
 void ReflectionProbe::prepRenderImage(SceneRenderState *state)
 {
-   if (!mEnabled || !RenderProbeMgr::smRenderReflectionProbes)
+   if (!mEnabled || (!RenderProbeMgr::smRenderReflectionProbes && Con::getVariable("$Probes::Capturing", "0") == "0"))
       return;
 
    Point3F distVec = getRenderPosition() - state->getCameraPosition();
