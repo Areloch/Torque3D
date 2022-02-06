@@ -764,7 +764,7 @@ Var* ShaderFeatureHLSL::getWsView( Var *wsPosition, MultiLine *meta )
          eyePos->constSortPos = cspPass;
       }
 
-      meta->addStatement( new GenOp( "   @ = normalize( @ - @ );\r\n", 
+      meta->addStatement( new GenOp( "   @ = @ - @;\r\n", 
          new DecOp( wsView ), eyePos, wsPosition ) );
    }
 
@@ -884,15 +884,7 @@ Var* ShaderFeatureHLSL::getSurface(Vector<ShaderComponent*>& componentList, Mult
          if (!wsNormal)
             wsNormal = getInWorldNormal(componentList);
 
-         if (!fd.features[MFT_NormalMap])
-         {
-            Var *worldToTangent = getInWorldToTangent(componentList);
-            meta->addStatement(new GenOp("  @ = normalize(mul(@,float3(0,0,1.0f)));\r\n\n", normal, worldToTangent));
-         }
-         else
-         {
-            meta->addStatement(new GenOp("   @ = normalize(  @ );\r\n", normal, wsNormal));
-         }
+         meta->addStatement(new GenOp("   @ = normalize(  @ );\r\n", normal, wsNormal));
       }
 
       Var *wsEyePos = (Var *)LangElement::find("eyePosWorld");
@@ -908,7 +900,7 @@ Var* ShaderFeatureHLSL::getSurface(Vector<ShaderComponent*>& componentList, Mult
       Var *wsView = getWsView(wsPosition, meta);
 
       surface = new Var("surface", "Surface");
-      meta->addStatement(new GenOp("  @ = createForwardSurface(@,@,@,@,@,@);\r\n\n", new DecOp(surface), diffuseColor, normal, ormConfig,
+      meta->addStatement(new GenOp("  @ = createForwardSurface(@,normalize(@),@,@,@,@);\r\n\n", new DecOp(surface), diffuseColor, normal, ormConfig,
          wsPosition, wsEyePos, wsView));
    }
 
@@ -3138,11 +3130,21 @@ void ReflectionProbeFeatHLSL::processPix(Vector<ShaderComponent*> &componentList
       ibl = new Var("ibl", "float3");
    }
 
-   String computeForwardProbes = String("   @ = computeForwardProbes(@,@,@,@,@,@,@,@,\r\n\t\t");
+   Var* eyePos = (Var*)LangElement::find("eyePosWorld");
+   if (!eyePos)
+   {
+      eyePos = new Var;
+      eyePos->setType("float3");
+      eyePos->setName("eyePosWorld");
+      eyePos->uniform = true;
+      eyePos->constSortPos = cspPass;
+   }
+
+   String computeForwardProbes = String("   @ = computeForwardProbes(@,@,@,@,@,@,@,@,@,\r\n\t\t");
    computeForwardProbes += String("@,TORQUE_SAMPLER2D_MAKEARG(@),\r\n\t\t"); 
    computeForwardProbes += String("TORQUE_SAMPLERCUBEARRAY_MAKEARG(@),TORQUE_SAMPLERCUBEARRAY_MAKEARG(@)).rgb; \r\n");
       
-   meta->addStatement(new GenOp(computeForwardProbes.c_str(), new DecOp(ibl), surface, cubeMips, numProbes, worldToObjArray, probeConfigData, inProbePosArray, refScaleArray, inRefPosArray,
+   meta->addStatement(new GenOp(computeForwardProbes.c_str(), new DecOp(ibl), surface, cubeMips, numProbes, worldToObjArray, probeConfigData, inProbePosArray, refScaleArray, inRefPosArray, eyePos,
       skylightCubemapIdx, BRDFTexture,
       irradianceCubemapAR, specularCubemapAR));
 

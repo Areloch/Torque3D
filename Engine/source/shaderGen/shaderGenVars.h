@@ -102,6 +102,8 @@ struct ShaderGenVars
 
    const static String BRDFTextureMap;
 
+   const static String maxProbeDrawDistance;
+
    //Skylight
    const static String skylightCubemapIdx;
    

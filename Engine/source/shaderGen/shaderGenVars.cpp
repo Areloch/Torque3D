@@ -91,6 +91,8 @@ const String ShaderGenVars::probeCount("$inNumProbes");
 
 const String ShaderGenVars::BRDFTextureMap("$BRDFTexture");
 
+const String ShaderGenVars::maxProbeDrawDistance("$maxProbeDrawDistance");
+
 //Skylight
 const String ShaderGenVars::skylightCubemapIdx("$inSkylightCubemapIdx");
 

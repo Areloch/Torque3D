@@ -101,6 +101,8 @@ struct ProbeShaderConstants
 
    GFXShaderConstHandle *mSkylightCubemapIdxSC;
 
+   GFXShaderConstHandle* mMaxProbeDrawDistanceSC;
+
    ProbeShaderConstants();
    ~ProbeShaderConstants();
 

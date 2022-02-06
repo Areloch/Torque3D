@@ -758,7 +758,7 @@ Var* ShaderFeatureGLSL::getWsView( Var *wsPosition, MultiLine *meta )
          eyePos->constSortPos = cspPass;
       }
 		
-      meta->addStatement( new GenOp( "   @ = normalize( @ - @ );\r\n", 
+      meta->addStatement( new GenOp( "   @ = @ - @;\r\n", 
 												new DecOp( wsView ), eyePos, wsPosition ) );
    }
 	
@@ -880,15 +880,7 @@ Var* ShaderFeatureGLSL::getSurface(Vector<ShaderComponent*>& componentList, Mult
          if (!wsNormal)
             wsNormal = getInWorldNormal(componentList);
 
-         if (!fd.features[MFT_NormalMap])
-         {
-            Var *worldToTangent = getInWorldToTangent(componentList);
-            meta->addStatement(new GenOp("  @ = normalize(tMul(@,vec3(0,0,1.0f)));\r\n\n", normal, worldToTangent));
-         }
-         else
-         {
-            meta->addStatement(new GenOp("   @ = normalize(  @ );\r\n", normal, wsNormal));
-         }
+         meta->addStatement(new GenOp("   @ = normalize(  @ );\r\n", normal, wsNormal));
       }
 
       Var *wsEyePos = (Var *)LangElement::find("eyePosWorld");
@@ -902,7 +894,7 @@ Var* ShaderFeatureGLSL::getSurface(Vector<ShaderComponent*>& componentList, Mult
 
 
       surface = new Var("surface", "Surface");
-      meta->addStatement(new GenOp("  @ = createForwardSurface(@,@,@,@,@,@);\r\n\n", new DecOp(surface), diffuseColor, normal, ormConfig,
+      meta->addStatement(new GenOp("  @ = createForwardSurface(@,normalize(@),@,@,@,@);\r\n\n", new DecOp(surface), diffuseColor, normal, ormConfig,
          wsPosition, wsEyePos, wsView));
    }
 

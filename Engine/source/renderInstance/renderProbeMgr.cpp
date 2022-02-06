@@ -98,7 +98,8 @@ ProbeShaderConstants::ProbeShaderConstants()
    mProbeCountSC(NULL),
    mBRDFTextureMap(NULL),
    mSkylightCubemapIdxSC(NULL),
-   mWorldToObjArraySC(NULL)
+   mWorldToObjArraySC(NULL),
+   mMaxProbeDrawDistanceSC(NULL)
 {
 }
 
@@ -135,6 +136,8 @@ void ProbeShaderConstants::init(GFXShader* shader)
    mBRDFTextureMap = shader->getShaderConstHandle(ShaderGenVars::BRDFTextureMap);
 
    mSkylightCubemapIdxSC = shader->getShaderConstHandle(ShaderGenVars::skylightCubemapIdx);
+
+   mMaxProbeDrawDistanceSC = shader->getShaderConstHandle(ShaderGenVars::maxProbeDrawDistance);
 
    mInit = true;
 }
@@ -751,6 +754,8 @@ void RenderProbeMgr::_update4ProbeConsts(const SceneData& sgData,
          GFX->setCubeArrayTexture(probeShaderConsts->mProbeSpecularCubemapArraySC->getSamplerRegister(), mPrefilterArray);
       if (probeShaderConsts->mProbeIrradianceCubemapArraySC->getSamplerRegister() != -1)
          GFX->setCubeArrayTexture(probeShaderConsts->mProbeIrradianceCubemapArraySC->getSamplerRegister(), mIrradianceArray);
+
+      shaderConsts->set(probeShaderConsts->mMaxProbeDrawDistanceSC, smMaxProbeDrawDistance);
    }
 }
 
