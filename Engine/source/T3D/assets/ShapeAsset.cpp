@@ -207,16 +207,16 @@ void ShapeAsset::initializeAsset()
    //Ensure our path is expando'd if it isn't already
    mFilePath = getOwned() ? expandAssetFilePath(mFileName) : mFilePath;
 
-   mConstructorFilePath = getOwned() ? expandAssetFilePath(mConstructorFilePath) : mConstructorFilePath;
+   mConstructorFilePath = getOwned() ? expandAssetFilePath(mConstructorFileName) : mConstructorFilePath;
 
-   mDiffuseImposterPath = getOwned() ? expandAssetFilePath(mDiffuseImposterFileName) : mDiffuseImposterFileName;
+   mDiffuseImposterPath = getOwned() ? expandAssetFilePath(mDiffuseImposterFileName) : mDiffuseImposterPath;
    if (mDiffuseImposterPath == StringTable->EmptyString())
    {
       String diffusePath = String(mFilePath) + "_imposter.dds";
       mDiffuseImposterPath = StringTable->insert(diffusePath.c_str());
    }
 
-   mNormalImposterPath = getOwned() ? expandAssetFilePath(mNormalImposterFileName) : mNormalImposterFileName;
+   mNormalImposterPath = getOwned() ? expandAssetFilePath(mNormalImposterFileName) : mNormalImposterPath;
    if (mNormalImposterPath == StringTable->EmptyString())
    {
       String normalPath = String(mFilePath) + "_imposter_normals.dds";
@@ -349,6 +349,26 @@ bool ShapeAsset::loadShape()
       }
    }
 
+   //Next, try and load the companion script for onLoad functions or other supplemental scripted elements, if applicable
+   if (Torque::FS::IsScriptFile(mConstructorFilePath))
+   {
+      //Since we're refreshing, we can assume that the file we're executing WILL have an existing definition.
+      //But that definition, whatever it is, is the 'correct' one, so we enable the Replace Existing behavior
+      //when the engine encounters a named object conflict.
+      String redefineBehaviorPrev = Con::getVariable("$Con::redefineBehavior");
+      Con::setVariable("$Con::redefineBehavior", "replaceExisting");
+
+      if (!Con::executeFile(mConstructorFilePath, false, false))
+      {
+         //This isn't expressly required for the shape to load, so we'll continue, but log the error
+         Con::errorf("ShapeAsset::loadShape() - failed to associated shape constructor script for asset: %s file: %s",
+            getAssetId(), mConstructorFilePath);
+      }
+
+      //And now that we've executed, switch back to the prior behavior
+      Con::setVariable("$Con::redefineBehavior", redefineBehaviorPrev.c_str());
+   }
+
    mShape = ResourceManager::get().load(mFilePath);
 
    if (!mShape)
@@ -369,7 +389,7 @@ bool ShapeAsset::loadShape()
    for (S32 i = mAnimationAssets.size()-1; i >= 0; --i)
    {
       String srcName = mAnimationAssets[i]->getAnimationName();
-      String srcPath(mAnimationAssets[i]->getAnimationFilename());
+      String srcPath(mAnimationAssets[i]->getAnimationPath());
       //SplitSequencePathAndName(srcPath, srcName);
 
       if (!mShape->addSequence(srcPath, srcName, srcName,
