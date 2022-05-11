@@ -696,7 +696,6 @@ function MenuList::getActiveRow(%this)
 /// \param %state (bool) The on/off state of the button being highlighted
 function MenuListButton::onHighlighted(%this, %state)
 {
-   echo("MenuListButton::onHighlighted() - " @ %this.internalName @ " was " @ %state @ " highlighted");
    %parentContainer = %this.getParent();
    if(%parentContainer.class $= "MenuList" || %parentContainer.superClass $= "MenuList")
    {
@@ -707,7 +706,6 @@ function MenuListButton::onHighlighted(%this, %state)
 	         %parentContainer.buttonPointerCtrl.setHidden(false);
 	         
 	         %buttonCenter = %this.getGlobalCenter();
-            echo("   - button center:" @ %buttonCenter);
 	         
 	         if(%parentContainer.centerButtonPointerCtrl)
 	         {
@@ -718,12 +716,8 @@ function MenuListButton::onHighlighted(%this, %state)
 	            //if we're not centering, then left-justify
 	            %parentContainer.buttonPointerCtrl.setGlobalCenter(%buttonCenter.x - %this.extent.x / 2, %buttonCenter.y);  
 	         }
-            echo("   - pointer position:" @ %parentContainer.buttonPointerCtrl.getPosition());
+
 	      }
-         /*else
-      {
-         %parentContainer.buttonPointerCtrl.setHidden(true);
-         }*/
       }
    }
 }
