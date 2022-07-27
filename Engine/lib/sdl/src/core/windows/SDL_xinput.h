@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,13 +20,14 @@
 */
 #include "../../SDL_internal.h"
 
-#ifndef _SDL_xinput_h
-#define _SDL_xinput_h
-
-#ifdef HAVE_XINPUT_H
+#ifndef SDL_xinput_h_
+#define SDL_xinput_h_
 
 #include "SDL_windows.h"
+
+#ifdef HAVE_XINPUT_H
 #include <xinput.h>
+#endif /* HAVE_XINPUT_H */
 
 #ifndef XUSER_MAX_COUNT
 #define XUSER_MAX_COUNT 4
@@ -72,6 +73,53 @@
 #define XINPUT_DEVSUBTYPE_ARCADE_PAD 0x13
 #endif
 
+#ifndef XINPUT_FLAG_GAMEPAD
+#define XINPUT_FLAG_GAMEPAD 0x01
+#endif
+
+#ifndef XINPUT_GAMEPAD_DPAD_UP
+#define XINPUT_GAMEPAD_DPAD_UP 0x0001
+#endif
+#ifndef XINPUT_GAMEPAD_DPAD_DOWN
+#define XINPUT_GAMEPAD_DPAD_DOWN 0x0002
+#endif
+#ifndef XINPUT_GAMEPAD_DPAD_LEFT
+#define XINPUT_GAMEPAD_DPAD_LEFT 0x0004
+#endif
+#ifndef XINPUT_GAMEPAD_DPAD_RIGHT
+#define XINPUT_GAMEPAD_DPAD_RIGHT 0x0008
+#endif
+#ifndef XINPUT_GAMEPAD_START
+#define XINPUT_GAMEPAD_START 0x0010
+#endif
+#ifndef XINPUT_GAMEPAD_BACK
+#define XINPUT_GAMEPAD_BACK 0x0020
+#endif
+#ifndef XINPUT_GAMEPAD_LEFT_THUMB
+#define XINPUT_GAMEPAD_LEFT_THUMB 0x0040
+#endif
+#ifndef XINPUT_GAMEPAD_RIGHT_THUMB
+#define XINPUT_GAMEPAD_RIGHT_THUMB 0x0080
+#endif
+#ifndef XINPUT_GAMEPAD_LEFT_SHOULDER
+#define XINPUT_GAMEPAD_LEFT_SHOULDER 0x0100
+#endif
+#ifndef XINPUT_GAMEPAD_RIGHT_SHOULDER
+#define XINPUT_GAMEPAD_RIGHT_SHOULDER 0x0200
+#endif
+#ifndef XINPUT_GAMEPAD_A
+#define XINPUT_GAMEPAD_A 0x1000
+#endif
+#ifndef XINPUT_GAMEPAD_B
+#define XINPUT_GAMEPAD_B 0x2000
+#endif
+#ifndef XINPUT_GAMEPAD_X
+#define XINPUT_GAMEPAD_X 0x4000
+#endif
+#ifndef XINPUT_GAMEPAD_Y
+#define XINPUT_GAMEPAD_Y 0x8000
+#endif
+
 #ifndef XINPUT_GAMEPAD_GUIDE
 #define XINPUT_GAMEPAD_GUIDE 0x0400
 #endif
@@ -100,6 +148,8 @@
 #endif
 
 /* typedef's for XInput structs we use */
+
+#ifndef HAVE_XINPUT_GAMEPAD_EX
 typedef struct
 {
     WORD wButtons;
@@ -111,18 +161,51 @@ typedef struct
     SHORT sThumbRY;
     DWORD dwPaddingReserved;
 } XINPUT_GAMEPAD_EX;
+#endif
 
+#ifndef HAVE_XINPUT_STATE_EX
 typedef struct
 {
     DWORD dwPacketNumber;
     XINPUT_GAMEPAD_EX Gamepad;
 } XINPUT_STATE_EX;
+#endif
 
 typedef struct
 {
     BYTE BatteryType;
     BYTE BatteryLevel;
 } XINPUT_BATTERY_INFORMATION_EX;
+
+#ifndef HAVE_XINPUT_H
+
+typedef struct
+{
+    WORD wButtons;
+    BYTE bLeftTrigger;
+    BYTE bRightTrigger;
+    SHORT sThumbLX;
+    SHORT sThumbLY;
+    SHORT sThumbRX;
+    SHORT sThumbRY;
+} XINPUT_GAMEPAD;
+
+typedef struct
+{
+    WORD wLeftMotorSpeed;
+    WORD wRightMotorSpeed;
+} XINPUT_VIBRATION;
+
+typedef struct
+{
+    BYTE Type;
+    BYTE SubType;
+    WORD Flags;
+    XINPUT_GAMEPAD Gamepad;
+    XINPUT_VIBRATION Vibration;
+} XINPUT_CAPABILITIES;
+
+#endif /* HAVE_XINPUT_H */
 
 /* Forward decl's for XInput API's we load dynamically and use if available */
 typedef DWORD (WINAPI *XInputGetState_t)
@@ -165,8 +248,6 @@ extern DWORD SDL_XInputVersion;  /* ((major << 16) & 0xFF00) | (minor & 0xFF) */
 #define XINPUTGETCAPABILITIES   SDL_XInputGetCapabilities
 #define XINPUTGETBATTERYINFORMATION   SDL_XInputGetBatteryInformation
 
-#endif /* HAVE_XINPUT_H */
-
-#endif /* _SDL_xinput_h */
+#endif /* SDL_xinput_h_ */
 
 /* vi: set ts=4 sw=4 expandtab: */

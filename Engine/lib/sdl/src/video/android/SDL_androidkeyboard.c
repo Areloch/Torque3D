@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -41,12 +41,12 @@ void Android_InitKeyboard(void)
 
 static SDL_Scancode Android_Keycodes[] = {
     SDL_SCANCODE_UNKNOWN, /* AKEYCODE_UNKNOWN */
-    SDL_SCANCODE_UNKNOWN, /* AKEYCODE_SOFT_LEFT */
-    SDL_SCANCODE_UNKNOWN, /* AKEYCODE_SOFT_RIGHT */
+    SDL_SCANCODE_SOFTLEFT, /* AKEYCODE_SOFT_LEFT */
+    SDL_SCANCODE_SOFTRIGHT, /* AKEYCODE_SOFT_RIGHT */
     SDL_SCANCODE_AC_HOME, /* AKEYCODE_HOME */
     SDL_SCANCODE_AC_BACK, /* AKEYCODE_BACK */
-    SDL_SCANCODE_UNKNOWN, /* AKEYCODE_CALL */
-    SDL_SCANCODE_UNKNOWN, /* AKEYCODE_ENDCALL */
+    SDL_SCANCODE_CALL, /* AKEYCODE_CALL */
+    SDL_SCANCODE_ENDCALL, /* AKEYCODE_ENDCALL */
     SDL_SCANCODE_0, /* AKEYCODE_0 */
     SDL_SCANCODE_1, /* AKEYCODE_1 */
     SDL_SCANCODE_2, /* AKEYCODE_2 */
@@ -129,8 +129,8 @@ static SDL_Scancode Android_Keycodes[] = {
     SDL_SCANCODE_AUDIOSTOP, /* AKEYCODE_MEDIA_STOP */
     SDL_SCANCODE_AUDIONEXT, /* AKEYCODE_MEDIA_NEXT */
     SDL_SCANCODE_AUDIOPREV, /* AKEYCODE_MEDIA_PREVIOUS */
-    SDL_SCANCODE_UNKNOWN, /* AKEYCODE_MEDIA_REWIND */
-    SDL_SCANCODE_UNKNOWN, /* AKEYCODE_MEDIA_FAST_FORWARD */
+    SDL_SCANCODE_AUDIOREWIND, /* AKEYCODE_MEDIA_REWIND */
+    SDL_SCANCODE_AUDIOFASTFORWARD, /* AKEYCODE_MEDIA_FAST_FORWARD */
     SDL_SCANCODE_MUTE, /* AKEYCODE_MUTE */
     SDL_SCANCODE_PAGEUP, /* AKEYCODE_PAGE_UP */
     SDL_SCANCODE_PAGEDOWN, /* AKEYCODE_PAGE_DOWN */
@@ -357,7 +357,7 @@ Android_HasScreenKeyboardSupport(_THIS)
 SDL_bool
 Android_IsScreenKeyboardShown(_THIS, SDL_Window * window)
 {
-    return SDL_IsTextInputActive();
+    return Android_JNI_IsScreenKeyboardShown();
 }
 
 void

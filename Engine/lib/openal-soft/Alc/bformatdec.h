@@ -1,49 +1,75 @@
 #ifndef BFORMATDEC_H
 #define BFORMATDEC_H
 
-#include "alMain.h"
+#include <array>
+#include <cstddef>
+#include <memory>
+
+#include "almalloc.h"
+#include "alspan.h"
+#include "core/ambidefs.h"
+#include "core/bufferline.h"
+#include "core/devformat.h"
+#include "core/filters/splitter.h"
 
 struct AmbDecConf;
-struct BFormatDec;
-struct AmbiUpsampler;
+struct FrontStablizer;
 
-enum BFormatDecFlags {
-    BFDF_DistanceComp = 1<<0
+
+using ChannelDec = std::array<float,MaxAmbiChannels>;
+
+class BFormatDec {
+    static constexpr size_t sHFBand{0};
+    static constexpr size_t sLFBand{1};
+    static constexpr size_t sNumBands{2};
+
+    struct ChannelDecoder {
+        union MatrixU {
+            float Dual[sNumBands][MAX_OUTPUT_CHANNELS];
+            float Single[MAX_OUTPUT_CHANNELS];
+        } mGains{};
+
+        /* NOTE: BandSplitter filter is unused with single-band decoding. */
+        BandSplitter mXOver;
+    };
+
+    alignas(16) std::array<FloatBufferLine,2> mSamples;
+
+    const std::unique_ptr<FrontStablizer> mStablizer;
+    const bool mDualBand{false};
+
+    al::FlexArray<ChannelDecoder> mChannelDec;
+
+public:
+    BFormatDec(const AmbDecConf *conf, const bool allow_2band, const size_t inchans,
+        const uint srate, const uint (&chanmap)[MAX_OUTPUT_CHANNELS],
+        std::unique_ptr<FrontStablizer> stablizer);
+    BFormatDec(const size_t inchans, const al::span<const ChannelDec> coeffs,
+        const al::span<const ChannelDec> coeffslf, std::unique_ptr<FrontStablizer> stablizer);
+
+    bool hasStablizer() const noexcept { return mStablizer != nullptr; };
+
+    /* Decodes the ambisonic input to the given output channels. */
+    void process(const al::span<FloatBufferLine> OutBuffer, const FloatBufferLine *InSamples,
+        const size_t SamplesToDo);
+
+    /* Decodes the ambisonic input to the given output channels with stablization. */
+    void processStablize(const al::span<FloatBufferLine> OutBuffer,
+        const FloatBufferLine *InSamples, const size_t lidx, const size_t ridx, const size_t cidx,
+        const size_t SamplesToDo);
+
+    /* Retrieves per-order HF scaling factors for "upsampling" ambisonic data. */
+    static std::array<float,MaxAmbiOrder+1> GetHFOrderScales(const uint in_order,
+        const uint out_order) noexcept;
+
+    static std::unique_ptr<BFormatDec> Create(const AmbDecConf *conf, const bool allow_2band,
+        const size_t inchans, const uint srate, const uint (&chanmap)[MAX_OUTPUT_CHANNELS],
+        std::unique_ptr<FrontStablizer> stablizer);
+    static std::unique_ptr<BFormatDec> Create(const size_t inchans,
+        const al::span<const ChannelDec> coeffs, const al::span<const ChannelDec> coeffslf,
+        std::unique_ptr<FrontStablizer> stablizer);
+
+    DEF_FAM_NEWDEL(BFormatDec, mChannelDec)
 };
-
-struct BFormatDec *bformatdec_alloc();
-void bformatdec_free(struct BFormatDec *dec);
-int bformatdec_getOrder(const struct BFormatDec *dec);
-void bformatdec_reset(struct BFormatDec *dec, const struct AmbDecConf *conf, ALuint chancount, ALuint srate, const ALuint chanmap[MAX_OUTPUT_CHANNELS], int flags);
-
-/* Decodes the ambisonic input to the given output channels. */
-void bformatdec_process(struct BFormatDec *dec, ALfloat (*restrict OutBuffer)[BUFFERSIZE], ALuint OutChannels, const ALfloat (*restrict InSamples)[BUFFERSIZE], ALuint SamplesToDo);
-
-/* Up-samples a first-order input to the decoder's configuration. */
-void bformatdec_upSample(struct BFormatDec *dec, ALfloat (*restrict OutBuffer)[BUFFERSIZE], const ALfloat (*restrict InSamples)[BUFFERSIZE], ALuint InChannels, ALuint SamplesToDo);
-
-
-/* Stand-alone first-order upsampler. Kept here because it shares some stuff
- * with bformatdec.
- */
-struct AmbiUpsampler *ambiup_alloc();
-void ambiup_free(struct AmbiUpsampler *ambiup);
-void ambiup_reset(struct AmbiUpsampler *ambiup, const ALCdevice *device);
-
-void ambiup_process(struct AmbiUpsampler *ambiup, ALfloat (*restrict OutBuffer)[BUFFERSIZE], ALuint OutChannels, const ALfloat (*restrict InSamples)[BUFFERSIZE], ALuint SamplesToDo);
-
-
-/* Band splitter. Splits a signal into two phase-matching frequency bands. */
-typedef struct BandSplitter {
-    ALfloat coeff;
-    ALfloat lp_z1;
-    ALfloat lp_z2;
-    ALfloat hp_z1;
-} BandSplitter;
-
-void bandsplit_init(BandSplitter *splitter, ALfloat freq_mult);
-void bandsplit_clear(BandSplitter *splitter);
-void bandsplit_process(BandSplitter *splitter, ALfloat *restrict hpout, ALfloat *restrict lpout,
-                       const ALfloat *input, ALuint count);
 
 #endif /* BFORMATDEC_H */
