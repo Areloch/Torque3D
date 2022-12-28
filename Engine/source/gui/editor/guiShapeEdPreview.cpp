@@ -102,7 +102,11 @@ GuiShapeEdPreview::GuiShapeEdPreview()
    mNumBones( 0 ),
    mNumWeights( 0 ),
    mColMeshes( 0 ),
-   mColPolys( 0 )
+   mColPolys( 0 ),
+   mSkylight(NULL),
+   mSkybox(NULL),
+   mGroundPlane(NULL),
+   mSkyboxDirty(false)
 {
    mActive = true;
 
@@ -315,12 +319,59 @@ bool GuiShapeEdPreview::onWake()
    if (!mFakeSun )
       mFakeSun = LIGHTMGR->createLightInfo();
 
+   if (!mSkylight)
+   {
+      mSkylight = new Skylight();
+      mSkylight->registerObject();
+      mSkylight->updateProbeParams();
+   }
+   else
+   {
+      mSkylight->setHidden(false);
+   }
+
+   if (!mSkybox)
+   {
+      mSkybox = new SkyBox();
+      mSkybox->registerObject();
+   }
+   else
+   {
+      mSkybox->setHidden(false);
+   }
+
+   if (!mGroundPlane)
+   {
+      mGroundPlane = new GroundPlane();
+      mGroundPlane->registerObject();
+   }
+   else
+   {
+      mGroundPlane->setHidden(false);
+   }
+   
+
    mFakeSun->setRange( 2000000.0f );
    updateSun();
 
    mGizmoProfile->mode = MoveMode;
 
    return( true );
+}
+
+void GuiShapeEdPreview::onSleep()
+{
+   Parent::onSleep();
+
+   if (mSkylight)
+   {
+      mSkylight->setHidden(false);
+   }
+
+   if (mSkybox)
+   {
+      mSkybox->setHidden(false);
+   }
 }
 
 void GuiShapeEdPreview::setDisplayType( S32 type )
@@ -1442,6 +1493,26 @@ void GuiShapeEdPreview::renderWorld(const RectI &updateRect)
    S32 dt = time - mLastRenderTime;
    mLastRenderTime = time;
 
+   if (mSkybox)
+   {
+      mSkybox->prepRenderImage(&state);
+   }
+
+   if (mSkylight)
+   {
+      if (mSkyboxDirty)
+      {
+         mSkylight->bake();
+         mSkyboxDirty = false;
+      }
+
+      mSkylight->prepRenderImage(&state);
+
+   }
+
+   if (mGroundPlane)
+      mGroundPlane->prepRenderImage(&state);
+
    if ( mModel )
    {
       updateDetailLevel( &state );
@@ -1734,6 +1805,26 @@ void GuiShapeEdPreview::renderCollisionMeshes() const
    }
 }
 
+//
+//
+void GuiShapeEdPreview::setSceneCubemap(StringTableEntry cubemapMaterialAssetId)
+{
+   if (mSkybox)
+   {
+      mSkybox->_setMaterial(cubemapMaterialAssetId);
+      mSkybox->_initRender();
+      mSkybox->_updateMaterial();
+      mSkyboxDirty = true;
+   }
+}
+
+void GuiShapeEdPreview::setGroundPlaneMat(StringTableEntry groundPlaneMaterialAssetId)
+{
+   if (mGroundPlane)
+      mGroundPlane->_setMaterial(groundPlaneMaterialAssetId);
+}
+
+
 //-----------------------------------------------------------------------------
 // Console methods (GuiShapeEdPreview)
 //-----------------------------------------------------------------------------
@@ -1945,4 +2036,16 @@ DefineEngineMethod( GuiShapeEdPreview, unmountAll, void, (),,
    "Unmount all shapes\n" )
 {
    return object->unmountAll();
+}
+
+DefineEngineMethod(GuiShapeEdPreview, setSceneCubemap, void, (StringTableEntry cubemapMaterialAssetId), ,
+   "Sets the cubemap to be used for the backdrop of the preview\n")
+{
+   return object->setSceneCubemap(cubemapMaterialAssetId);
+}
+
+DefineEngineMethod(GuiShapeEdPreview, setGroundPlaneMat, void, (StringTableEntry groundPlaneMaterialAssetId), ,
+   "Sets the cubemap to be used for the backdrop of the preview\n")
+{
+   return object->setGroundPlaneMat(groundPlaneMaterialAssetId);
 }

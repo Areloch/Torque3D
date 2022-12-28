@@ -3238,3 +3238,68 @@ function openShapeInShapeEditor(%shapeAssetId)
    %assetDef = AssetDatabase.acquireAsset(%shapeAssetId);
    AssetBrowser.editShapeAsset(%assetDef);  
 }
+
+//
+//
+//
+//
+function ShapeEditorPlugin::openShapeEditor(%this, %assetId)
+{
+   exec("tools/shapeEditor/gui/shapeEditor.ed.gui");
+   EditorGuiMainTabBook.add($guiContent);
+   
+   %shapeEdSession = new ScriptObject(){
+      class = "ShapeEditor";
+      shape = -1;
+      deletedCount = 0;
+      tabName = "ShapeEditor_" @ strReplace(%assetId, ":", "_");
+      editorPage = $guiContent;
+   };
+   
+   $guiContent.shapeEditor = %shapeEdSession;
+   
+   $guiContent.text = %assetId;
+   $guiContent.internalName = %shapeEdSession.tabName;
+   
+   $guiContent-->FrameSet.columns = 0 SPC $guiContent.extent.x * 0.20 SPC $guiContent.extent.x * 0.80;
+   $guiContent-->FrameSet.updateSizes();
+
+   /*$guiContent-->shapeEdPropertiesInspector.startGroup("Material");
+   $guiContent-->shapeEdPropertiesInspector.addField("Bippity", "Bloofadoo", "bool", "", "1", "", "");
+   $guiContent-->shapeEdPropertiesInspector.endGroup();*/
+   
+   //Load our scene
+   exec("tools/levels/ShapePreviewScene.mis");
+   %shapeEdSession.previewScene = $newScene;
+   
+   %shape = new TSStatic() {
+      shapeAsset = %assetId;
+   };
+   %shapeEdSession.previewScene.add(%shape);
+}
+
+function ShapeEditorTabPage::onTabSelected(%this)
+{
+   for(%i=0; %i < getRootScene().getCount(); %i++)
+   {
+      getRootScene().getObject(%i).setHidden(true);  
+   }
+   
+   for(%i=0; %i < %this.shapeEditor.previewScene.getCount(); %i++)
+   {
+      %this.shapeEditor.previewScene.getObject(%i).setHidden(false);  
+   }
+}
+
+function ShapeEditorTabPage::onTabUnselected(%this)
+{
+   for(%i=0; %i < %this.shapeEditor.previewScene.getCount(); %i++)
+   {
+      %this.shapeEditor.previewScene.getObject(%i).setHidden(true);  
+   }
+   
+   for(%i=0; %i < getRootScene().getCount(); %i++)
+   {
+      getRootScene().getObject(%i).setHidden(false);  
+   }
+}

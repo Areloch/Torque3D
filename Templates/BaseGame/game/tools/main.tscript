@@ -47,6 +47,9 @@ if(!$Tools::loaded)
    
    exec( "tools/gui/profiles.ed." @ $TorqueScriptFileExtension );
    exec("tools/gui/EditorLoadingGui.gui");
+   
+   exec("tools/gui/formBuilder/formBuilder.ed.tscript");
+   GuiFormBuilder::init();
 }
 
 function EditorIsActive()

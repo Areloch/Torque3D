@@ -43,7 +43,7 @@ function EditorGui::init(%this)
       
       if( isObject( EWToolsPaletteWindow ) )
       {
-         %this.add( EWToolsPaletteWindow );
+         MainSceneEditorTab.add( EWToolsPaletteWindow );
          EWToolsPaletteWindow.init();
          EWToolsPaletteWindow.setVisible( false );
       }
@@ -55,7 +55,7 @@ function EditorGui::init(%this)
       exec("~/worldEditor/gui/WorldEditorTreeWindow.ed.gui");
       if( isObject( EWTreeWindow ) )
       {
-         %this.add( EWTreeWindow );
+         MainSceneEditorTab.add( EWTreeWindow );
          EWTreeWindow-->EditorTree.selectPage( 0 );
          EWTreeWindow.setVisible( false );
          
@@ -75,7 +75,7 @@ function EditorGui::init(%this)
       //EWInspectorWindow.resize(getWord(EWInspectorWindow.Position, 0), getWord(EWInspectorWindow.Position, 1), getWord(EWInspectorWindow.extent, 0), getWord(EWInspectorWindow.extent, 1));
       if( isObject( EWInspectorWindow ) )
       {
-         %this.add( EWInspectorWindow );
+         MainSceneEditorTab.add( EWInspectorWindow );
          EWInspectorWindow.setVisible( false );
          
          if(EditorSettings.value( "WorldEditor/forceSidebarToSide" ) == 1)
@@ -139,7 +139,7 @@ function EditorGui::init(%this)
       exec("~/worldEditor/gui/ToolsToolbar.ed.gui");
       if( isObject( EWToolsToolbar ) )
       {
-         %this.add( EWToolsToolbar );
+         MainSceneEditorTab.add( EWToolsToolbar );
          EWToolsToolbar.setVisible( true );
          
       }
@@ -434,6 +434,59 @@ function EditorGui::setDisplayType( %this, %type )
 }
 
 //-----------------------------------------------------------------------------
+function EditorGui::openEditor(%this, %newEditor, %dontActivate)
+{
+   if( !isObject( %newEditor ) )
+   {
+      %this.currentEditor = "";
+      return;
+   }
+   
+   // If we have a special set editor function, run that instead
+   if( %newEditor.isMethod( "setEditorFunction" ) )
+   {
+      if( %newEditor.setEditorFunction() ) 
+      {
+         %this.syncEditor( %newEditor );
+         %this.currentEditor = %newEditor;
+         
+         if (!%dontActivate)
+            %this.currentEditor.onActivated();
+      }
+      else
+      {
+         // if were falling back and were the same editor, why are we going to just shove ourself
+         // into the editor position again? opt for a fallback
+         if( !isObject( %this.currentEditor ) )
+            %this.currentEditor = "WorldEditorInspectorPlugin";
+         else if( %this.currentEditor.getId() == %newEditor.getId() )
+            %this.currentEditor = "WorldEditorInspectorPlugin";
+            
+         %this.syncEditor( %this.currentEditor, true );
+         
+         if( !%dontActivate )
+            %this.currentEditor.onActivated();
+      }
+   }
+   else
+   {
+      %this.syncEditor( %newEditor );
+      %this.currentEditor = %newEditor; 
+      
+      if( !%dontActivate )
+         %this.currentEditor.onActivated();
+   }
+   
+   // Sync display type.
+   
+   %gui = %this.currentEditor.editorGui;
+   if( isObject( %gui ) )
+   {
+      %gui.setDisplayType( %this.currentDisplayType );
+      %gui.setOrthoFOV( %this.currentOrthoFOV );
+      EditorGui.syncCameraGui();
+   }
+}
 
 function EditorGui::setEditor( %this, %newEditor, %dontActivate )
 {
@@ -2746,4 +2799,20 @@ function EditorDropdownSliderContainer::onMouseDown(%this)
 function EditorDropdownSliderContainer::onRightMouseDown(%this)
 {
    Canvas.popDialog(%this);
+}
+
+//
+//
+function EditorGuiMainTabBook::onTabSelected(%this, %text, %id)
+{
+   %page = %this.getObject(%id);
+   if(%page.isMethod("onTabSelected"))
+      %page.onTabSelected();
+}
+
+function EditorGuiMainTabBook::onTabUnSelected(%this, %text, %id)
+{
+   %page = %this.getObject(%id);
+   if(%page.isMethod("onTabUnSelected"))
+      %page.onTabUnSelected();
 }

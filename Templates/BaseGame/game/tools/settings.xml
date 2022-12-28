@@ -100,9 +100,9 @@
     <Group
         name="GuiEditor">
         <Setting
-            name="lastPath">tools/RPGDialogEditor/gui</Setting>
+            name="lastPath">tools/shapeEditor/gui</Setting>
         <Setting
-            name="previewResolution">1024 768</Setting>
+            name="previewResolution">1920 1080</Setting>
         <Group
             name="EngineDevelopment">
             <Setting

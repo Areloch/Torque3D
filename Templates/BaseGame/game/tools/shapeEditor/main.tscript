@@ -160,6 +160,8 @@ function ShapeEditorPlugin::open(%this, %shapeAsset)
    {
       // Activate the Shape Editor
       EditorGui.setEditor( %this, true );
+      
+      
 
       // Get editor settings (note the sun angle is not configured in the settings
       // dialog, so apply the settings here instead of in readSettings)

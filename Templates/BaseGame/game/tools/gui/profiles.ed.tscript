@@ -37,30 +37,29 @@ new GuiControlProfile (ToolsGuiDefaultProfile)
    mouseOverSelected = false;
 
    // fill color
-   opaque = false;
-   fillColor = EditorSettings.value("Theme/tabsColor");
-   fillColorHL = EditorSettings.value("Theme/tabsHLColor");
-   fillColorSEL = EditorSettings.value("Theme/tabsSELColor");
-   fillColorNA = EditorSettings.value("Theme/tabsSELColor");
+   opaque = "1";
+   fillColor = "40 40 40 255";
+   fillColorHL = "180 180 180 255";
+   fillColorSEL = "100 110 120 255";
+   fillColorNA = "100 110 120 255";
 
    // border color
    border = 0;
-   borderColor   = EditorSettings.value("Theme/dividerDarkColor"); 
-   borderColorHL = EditorSettings.value("Theme/dividerMidColor");
-   borderColorNA = EditorSettings.value("Theme/dividerLightColor"); 
+   borderColor   = "30 30 30 255"; 
+   borderColorHL = "150 160 190 100";
+   borderColorNA = "150 150 150 255"; 
 
    // font
    fontType = "Arial";
    fontSize = 14;
    fontCharset = ANSI;
 
-   fontColor = EditorSettings.value("Theme/fieldTextColor");
-   fontColorHL = EditorSettings.value("Theme/fieldTextHLColor");
-   fontColorNA = EditorSettings.value("Theme/fieldTextSELColor");
-   fontColorSEL= EditorSettings.value("Theme/fieldTextSELColor");
+   fontColor = "185 185 185 255";
+   fontColorHL = "255 255 255 255";
+   fontColorNA = "255 255 255 255";
+   fontColorSEL= "255 255 255 255";
 
    // bitmap information
-   bitmapAsset = "";
    bitmapBase = "";
    textOffset = "0 0";
 
@@ -72,6 +71,9 @@ new GuiControlProfile (ToolsGuiDefaultProfile)
    returnTab = false;
    numbersOnly = false;
    cursorColor = "215 215 215 255";
+   fontColors[0] = "185 185 185 255";
+   fontColors[1] = "255 255 255 255";
+   fontColors[2] = "255 255 255 255";
 
    // sounds
    //soundButtonDown = "";
@@ -305,7 +307,7 @@ new GuiControlProfile( ToolsGuiTextEditProfile )
    border = -2; // fix to display textEdit img
    //borderWidth = "1";  // fix to display textEdit img
    //borderColor = "100 100 100";
-   fillColor = EditorSettings.value("Theme/dividerDarkColor");
+   fillColor = EditorSettings.value("Theme/fieldBGColor");
    fillColorHL = "75 75 75 255";
    fillColorSEL = EditorSettings.value("Theme/fieldBGSELColor");
    

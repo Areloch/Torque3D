@@ -1,0 +1,41 @@
+function GuiFormBuilder::createWindow(%title, %pos, %ext)
+{
+   %base = new GuiControl(TestForm)
+   {
+      profile = ToolsGuiDefaultNonModalProfile;
+      horizSizing = "width";
+      vertSizing = "height";
+   };
+   
+   if(%pos $= "")
+      %pos = "25 25";
+   
+   if(%ext $= "")
+      %ext = "200 400";
+   
+   %window = new GuiWindowCtrl()
+   {
+      profile = ToolsGuiWindowCollapseProfile;
+      text = %title;
+      position = %pos;
+      extent = %ext;
+      internalName = "GBFB_" @ %title;  
+   };
+   %base.add(%window);
+   
+   %content = new GuiPanel()
+   {
+      profile = ToolsGuiEditorTabPage;
+      superClass = GuiFormBuilder;
+      position = $GUIFormBuilder::edgePad SPC 20;
+      extent = (%window.extent.x - ($GUIFormBuilder::edgePad * 2)) SPC (%window.extent.y - 20 - $GUIFormBuilder::edgePad);
+      horizSizing = "width";
+      vertSizing = "height";
+   };
+   %window.add(%content);
+   
+   Canvas.pushDialog(%base);
+   
+   return %content;
+}
+

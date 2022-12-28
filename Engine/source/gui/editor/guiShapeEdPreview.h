@@ -25,6 +25,9 @@
 
 #include "gui/worldEditor/editTSCtrl.h"
 #include "ts/tsShapeInstance.h"
+#include <T3D/lighting/skylight.h>
+#include <environment/skyBox.h>
+#include <T3D/groundPlane.h>
 
 class LightInfo;
 
@@ -116,6 +119,11 @@ protected:
    TSShapeInstance*  mModel;
    StringTableEntry mModelName;
 
+   GroundPlane* mGroundPlane;
+   Skylight* mSkylight;
+   SkyBox* mSkybox;
+   bool mSkyboxDirty;
+
    LightInfo*  mFakeSun;
    EulerF      mSunRot;
    ColorI      mSunDiffuseColor;
@@ -172,6 +180,7 @@ protected:
 
 public:
    bool onWake();
+   virtual void onSleep();
 
    void setDisplayType(S32 type);
 
@@ -261,6 +270,10 @@ public:
 
    GuiShapeEdPreview();
    ~GuiShapeEdPreview();
+
+   //Cubemap Management
+   void setSceneCubemap(StringTableEntry cubemapMaterialAssetId);
+   void setGroundPlaneMat(StringTableEntry groundPlaneMaterialAssetId);
 };
 
 #endif

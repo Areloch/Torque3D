@@ -1,0 +1,9 @@
+<LevelAsset
+    AssetName="ShapePreviewScene"
+    LevelFile="@assetFile=ShapePreviewScene.mis"
+    LevelName="Shape Preview Scene"
+    PostFXPresetFile="@assetFile=ShapePreviewScene.postfxpreset.tscript"
+    DecalsFile="@assetFile=ShapePreviewScene.mis.decals"
+    ForestFile="@assetFile=ShapePreviewScene.forest"
+    NavmeshFile="@assetFile=ShapePreviewScene.nav"
+    VersionId="1"/>

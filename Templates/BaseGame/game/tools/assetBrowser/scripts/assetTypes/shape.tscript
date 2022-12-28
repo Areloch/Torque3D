@@ -34,8 +34,9 @@ function AssetBrowser::createShapeAsset(%this)
 function AssetBrowser::editShapeAsset(%this, %assetDef)
 {
    %this.hideDialog();
-    EditorGui.setEditor( ShapeEditorPlugin );
-   ShapeEditorPlugin.openShapeAsset(%assetDef);    
+   // EditorGui.setEditor( ShapeEditorPlugin );
+   //ShapeEditorPlugin.openShapeAsset(%assetDef); 
+   ShapeEditorPlugin.openShapeEditor(%assetDef.getAssetId());
 }
 
 function AssetBrowser::onShapeAssetChanged(%this, %assetDef)
