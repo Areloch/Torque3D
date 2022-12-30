@@ -3263,10 +3263,6 @@ function ShapeEditorPlugin::openShapeEditor(%this, %assetId)
    
    $guiContent-->FrameSet.columns = 0 SPC $guiContent.extent.x * 0.20 SPC $guiContent.extent.x * 0.80;
    $guiContent-->FrameSet.updateSizes();
-
-   /*$guiContent-->shapeEdPropertiesInspector.startGroup("Material");
-   $guiContent-->shapeEdPropertiesInspector.addField("Bippity", "Bloofadoo", "bool", "", "1", "", "");
-   $guiContent-->shapeEdPropertiesInspector.endGroup();*/
    
    //Load our scene
    exec("tools/levels/ShapePreviewScene.mis");
@@ -3276,6 +3272,10 @@ function ShapeEditorPlugin::openShapeEditor(%this, %assetId)
       shapeAsset = %assetId;
    };
    %shapeEdSession.previewScene.add(%shape);
+   
+   $guiContent-->ShapeView.setModel(%shape);
+   
+   $ActiveShapeView = $guiContent-->ShapeView;
 }
 
 function ShapeEditorTabPage::onTabSelected(%this)

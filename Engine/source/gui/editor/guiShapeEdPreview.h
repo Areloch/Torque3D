@@ -28,6 +28,7 @@
 #include <T3D/lighting/skylight.h>
 #include <environment/skyBox.h>
 #include <T3D/groundPlane.h>
+#include <T3D/tsStatic.h>
 
 class LightInfo;
 
@@ -116,13 +117,9 @@ protected:
    bool        mRenderObjBox;
    bool        mRenderColMeshes;
    bool        mRenderMounts;
+   TSStatic* mModelObject;
    TSShapeInstance*  mModel;
    StringTableEntry mModelName;
-
-   GroundPlane* mGroundPlane;
-   Skylight* mSkylight;
-   SkyBox* mSkybox;
-   bool mSkyboxDirty;
 
    LightInfo*  mFakeSun;
    EulerF      mSunRot;
@@ -207,8 +204,7 @@ public:
    TSShapeInstance* getModel() { return mModel; }
 
    void setCurrentDetail(S32 dl);
-   bool setObjectModel(const char * modelName);
-   bool setObjectShapeAsset(const char* assetId);
+   bool setObjectModel(TSStatic* modelObject);
 
    void _onResourceChanged(const Torque::Path& path);
 
@@ -270,10 +266,6 @@ public:
 
    GuiShapeEdPreview();
    ~GuiShapeEdPreview();
-
-   //Cubemap Management
-   void setSceneCubemap(StringTableEntry cubemapMaterialAssetId);
-   void setGroundPlaneMat(StringTableEntry groundPlaneMaterialAssetId);
 };
 
 #endif

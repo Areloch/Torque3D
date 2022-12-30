@@ -1,0 +1,14 @@
+<MaterialAsset
+    AssetName="Pizzo_Pernice_mat"
+    materialDefinitionName="Pizzo_Pernice_mat"
+    VersionId="1">
+    <Material
+        Name="Pizzo_Pernice_mat"
+        mapTo="Pizzo_Pernice_mat"
+        originalAssetName="Pizzo_Pernice_mat">
+        <Material.Stages>
+            <Stages_beginarray
+                DiffuseMapAsset="ToolsModule:Pizzo_Pernice_basecolor"/>
+        </Material.Stages>
+    </Material>
+</MaterialAsset>

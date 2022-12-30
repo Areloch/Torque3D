@@ -1,46 +1,46 @@
 //--- OBJECT WRITE BEGIN ---
-$newScene = new Scene() {
-   isEditing = "1";
-   Enabled = "1";
+new Scene() {
    internalName = "ShapePreviewScene";
+   isEditing = "1";
+      Enabled = "1";
 
    new LevelInfo() {
       fogColor = "0.6 0.6 0.7 1";
       fogDensityOffset = "700";
       canvasClearColor = "0 0 0 255";
       soundAmbience = "AudioAmbienceDefault";
-      Enabled = "1";
       internalName = "theLevelInfo";
+         Enabled = "1";
    };
-   new ScatterSky() {
-      sunScale = "0.991102 0.921582 0.83077 1";
-      zOffset = "-3000";
-      azimuth = "25";
-      brightness = "5";
-      MoonMatAsset = "Core_Rendering:moon_wglow";
-      useNightCubemap = "1";
-      nightCubemap = "nightCubemap";
-      logWeight = "0.9";
-      mieScattering = "0.0045";
-   };
-   new CloudLayer() {
-      TextureAsset = "Core_Rendering:clouds_normal_displacement_image";
-      coverage = "0.25";
-      windSpeed = "0.5";
-      height = "6";
+   new SkySphere() {
+      MaterialAsset = "ToolsModule:Pizzo_Pernice_mat";
+      position = "-60.7754 42.8634 -53.3816";
    };
    new Skylight() {
-      persistentId = "289ad401-3140-11ed-aae8-c0cb519281fc";
-      reflectionPath = "tools/levels/DefaultEditorLevel/probes/";
+      position = "0 0 9";
+      internalName = "Skylight";
+      persistentId = "d5265cf1-87dc-11ed-b653-f35044ace75f";
+         reflectionPath = "tools/levels/ShapePreviewScene/probes/";
+   };
+   new Sun() {
+      azimuth = "235";
+      elevation = "55";
+      color = "1 1 1 1";
+      ambient = "0.9 0.9 0.9 1";
+      brightness = "5";
+      coronaEnabled = "0";
+      CoronaMaterial = "Core_Rendering:Corona_Mat";
+      CoronaMaterialAsset = "Core_Rendering:Corona_Mat";
+         direction = "1 1 -1";
    };
    new GroundPlane() {
       scaleU = "32";
       scaleV = "32";
       MaterialAsset = "Prototyping:FloorGray";
-      Enabled = "1";
-      position = "0 0 0";
-      rotation = "1 0 0 0";
-      scale = "1 1 1";
+         Enabled = "1";
+         position = "0 0 0";
+         rotation = "1 0 0 0";
+         scale = "1 1 1";
    };
 };
 //--- OBJECT WRITE END ---

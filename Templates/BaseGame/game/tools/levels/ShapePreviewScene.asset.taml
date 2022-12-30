@@ -6,4 +6,5 @@
     DecalsFile="@assetFile=ShapePreviewScene.mis.decals"
     ForestFile="@assetFile=ShapePreviewScene.forest"
     NavmeshFile="@assetFile=ShapePreviewScene.nav"
+    staticObjectAssetDependency0="@asset=Prototyping:FloorGray"
     VersionId="1"/>

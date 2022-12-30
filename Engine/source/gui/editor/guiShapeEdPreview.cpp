@@ -102,11 +102,7 @@ GuiShapeEdPreview::GuiShapeEdPreview()
    mNumBones( 0 ),
    mNumWeights( 0 ),
    mColMeshes( 0 ),
-   mColPolys( 0 ),
-   mSkylight(NULL),
-   mSkybox(NULL),
-   mGroundPlane(NULL),
-   mSkyboxDirty(false)
+   mColPolys( 0 )
 {
    mActive = true;
 
@@ -319,38 +315,6 @@ bool GuiShapeEdPreview::onWake()
    if (!mFakeSun )
       mFakeSun = LIGHTMGR->createLightInfo();
 
-   if (!mSkylight)
-   {
-      mSkylight = new Skylight();
-      mSkylight->registerObject();
-      mSkylight->updateProbeParams();
-   }
-   else
-   {
-      mSkylight->setHidden(false);
-   }
-
-   if (!mSkybox)
-   {
-      mSkybox = new SkyBox();
-      mSkybox->registerObject();
-   }
-   else
-   {
-      mSkybox->setHidden(false);
-   }
-
-   if (!mGroundPlane)
-   {
-      mGroundPlane = new GroundPlane();
-      mGroundPlane->registerObject();
-   }
-   else
-   {
-      mGroundPlane->setHidden(false);
-   }
-   
-
    mFakeSun->setRange( 2000000.0f );
    updateSun();
 
@@ -362,16 +326,6 @@ bool GuiShapeEdPreview::onWake()
 void GuiShapeEdPreview::onSleep()
 {
    Parent::onSleep();
-
-   if (mSkylight)
-   {
-      mSkylight->setHidden(false);
-   }
-
-   if (mSkybox)
-   {
-      mSkybox->setHidden(false);
-   }
 }
 
 void GuiShapeEdPreview::setDisplayType( S32 type )
@@ -397,97 +351,63 @@ void GuiShapeEdPreview::setCurrentDetail(S32 dl)
    }
 }
 
-bool GuiShapeEdPreview::setObjectModel(const char* modelName)
+bool GuiShapeEdPreview::setObjectModel(TSStatic* modelObject)
 {
-   SAFE_DELETE( mModel );
+   mModelObject = modelObject;
+
+   if (!modelObject)
+   {
+      Con::warnf(avar("GuiShapeEdPreview: Failed to load model object from scene."));
+      return false;
+   }
+
+   if (modelObject->getShapeAsset().isNull())
+   {
+      Con::warnf(avar("GuiShapeEdPreview: Model object from scene has no valid shapeAsset."));
+      return false;
+   }
+
    unmountAll();
    mThreads.clear();
    mActiveThread = -1;
 
-   ResourceManager::get().getChangedSignal().remove(this, &GuiShapeEdPreview::_onResourceChanged);
+   //ResourceManager::get().getChangedSignal().remove(this, &GuiShapeEdPreview::_onResourceChanged);
 
-   if (modelName && modelName[0])
-   {
-      Resource<TSShape> model = ResourceManager::get().load( modelName );
-      if (! bool( model ))
-      {
-         Con::warnf( avar("GuiShapeEdPreview: Failed to load model %s. Please check your model name and load a valid model.", modelName ));
-         return false;
-      }
+   mModel = mModelObject->getShapeInstance();
+   AssertFatal( mModel, avar("GuiShapeEdPreview: Failed to load model %s. Please check your model name and load a valid model.", mModelObject->getShapeAsset().getAssetId()));
 
-      mModel = new TSShapeInstance( model, true );
-      AssertFatal( mModel, avar("GuiShapeEdPreview: Failed to load model %s. Please check your model name and load a valid model.", modelName ));
+   TSShape* shape = mModelObject->getShapeResource();
 
-      TSShape* shape = mModel->getShape();
+   // Initialize camera values:
+   mOrbitPos = shape->center;
 
-      // Initialize camera values:
-      mOrbitPos = shape->center;
+   // Set camera move and zoom speed according to model size
+   mMoveSpeed = shape->mRadius / sMoveScaler;
+   mZoomSpeed = shape->mRadius / sZoomScaler;
 
-      // Set camera move and zoom speed according to model size
-      mMoveSpeed = shape->mRadius / sMoveScaler;
-      mZoomSpeed = shape->mRadius / sZoomScaler;
+   // Reset node selection
+   mHoverNode = -1;
+   mSelectedNode = -1;
+   mSelectedObject = -1;
+   mSelectedObjDetail = 0;
+   mProjectedNodes.setSize( shape->nodes.size() );
 
-      // Reset node selection
-      mHoverNode = -1;
-      mSelectedNode = -1;
-      mSelectedObject = -1;
-      mSelectedObjDetail = 0;
-      mProjectedNodes.setSize( shape->nodes.size() );
+   // Reset detail stats
+   mCurrentDL = 0;
 
-      // Reset detail stats
-      mCurrentDL = 0;
+   // the first time recording
+   mLastRenderTime = Platform::getVirtualMilliseconds();
 
-      // the first time recording
-      mLastRenderTime = Platform::getVirtualMilliseconds();
+   mModelName = mModelObject->getShapeAsset().getAssetId();
 
-      mModelName = StringTable->insert(modelName);
-
-      //Now to reflect changes when the model file is changed.
-      ResourceManager::get().getChangedSignal().notify(this, &GuiShapeEdPreview::_onResourceChanged);
-   }
-   else
-   {
-      mModelName = StringTable->EmptyString();
-   }
+   //Now to reflect changes when the model file is changed.
+   //ResourceManager::get().getChangedSignal().notify(this, &GuiShapeEdPreview::_onResourceChanged);
 
    return true;
 }
 
-bool GuiShapeEdPreview::setObjectShapeAsset(const char* assetId)
-{
-   SAFE_DELETE(mModel);
-   unmountAll();
-   mThreads.clear();
-   mActiveThread = -1;
-
-   StringTableEntry modelName = StringTable->EmptyString();
-   if (AssetDatabase.isDeclaredAsset(assetId))
-   {
-      StringTableEntry id = StringTable->insert(assetId);
-      StringTableEntry assetType = AssetDatabase.getAssetType(id);
-      if (assetType == StringTable->insert("ShapeAsset"))
-      {
-         ShapeAsset* asset = AssetDatabase.acquireAsset<ShapeAsset>(id);
-         modelName = asset->getShapeFilePath();
-         AssetDatabase.releaseAsset(id);
-      }
-      else if (assetType == StringTable->insert("ShapeAnimationAsset"))
-      {
-         ShapeAnimationAsset* asset = AssetDatabase.acquireAsset<ShapeAnimationAsset>(id);
-         modelName = asset->getAnimationPath();
-         AssetDatabase.releaseAsset(id);
-      }
-   }
-
-   return setObjectModel(modelName);
-}
-
 void GuiShapeEdPreview::_onResourceChanged(const Torque::Path& path)
 {
-   if (path != Torque::Path(mModelName))
-      return;
-
-   setObjectModel(path.getFullPath());
 }
 
 void GuiShapeEdPreview::addThread()
@@ -1445,182 +1365,133 @@ void GuiShapeEdPreview::updateThreads(F32 delta)
 
 void GuiShapeEdPreview::renderWorld(const RectI &updateRect)
 {
-   if ( !mModel )
-      return;
-
-   mSaveFrustum = GFX->getFrustum();
-   mSaveFrustum.setFarDist( 100000.0f );
-   GFX->setFrustum( mSaveFrustum );
-   mSaveFrustum.setTransform( smCamMatrix );
-
-   mSaveProjection = GFX->getProjectionMatrix();
-   mSaveWorldToScreenScale = GFX->getWorldToScreenScale();
-
-   FogData savedFogData = gClientSceneGraph->getFogData();
-   gClientSceneGraph->setFogData( FogData() );  // no fog in preview window
-
-   SceneRenderState state
-   (
-      gClientSceneGraph,
-      SPT_Diffuse,
-      SceneCameraState( GFX->getViewport(), mSaveFrustum,
-                        GFX->getWorldMatrix(), GFX->getProjectionMatrix() )
-   );
-
-   // Set up pass transforms
-   RenderPassManager *renderPass = state.getRenderPass();
-   renderPass->assignSharedXform( RenderPassManager::View, GFX->getWorldMatrix() );
-   renderPass->assignSharedXform( RenderPassManager::Projection, GFX->getProjectionMatrix() );
-
-   // Set up our TS render state here.
-   TSRenderState rdata;
-   rdata.setSceneState(&state);
-
-   LIGHTMGR->unregisterAllLights();
-   LIGHTMGR->setSpecialLight( LightManager::slSunLightType, mFakeSun );
-
-   // We might have some forward lit materials
-   // so pass down a query to gather lights.
-   LightQuery query;
-   query.init( SphereF( Point3F::Zero, 1 ) );
-   rdata.setLightQuery( &query );
-
-   // Update projected node points (for mouse picking)
-   updateProjectedNodePoints();
-
    // Determine time elapsed since last render (for animation playback)
    S32 time = Platform::getVirtualMilliseconds();
    S32 dt = time - mLastRenderTime;
    mLastRenderTime = time;
 
-   if (mSkybox)
+   if (mModel)
    {
-      mSkybox->prepRenderImage(&state);
-   }
-
-   if (mSkylight)
-   {
-      if (mSkyboxDirty)
-      {
-         mSkylight->bake();
-         mSkyboxDirty = false;
-      }
-
-      mSkylight->prepRenderImage(&state);
-
-   }
-
-   if (mGroundPlane)
-      mGroundPlane->prepRenderImage(&state);
-
-   if ( mModel )
-   {
-      updateDetailLevel( &state );
-
-      // Render the grid
-      renderGrid();
-
+      //we'll do this to ensure we can force the model to be in the most up to date state before the world draw
       // Animate the model
-      updateThreads( (F32)dt / 1000.f );
+      updateThreads((F32)dt / 1000.f);
       mModel->animate();
+   }
 
-      // Render the shape
-      GFX->setStateBlock( mDefaultGuiSB );
+   //Draw the scene
+   Parent::renderWorld(updateRect);
 
-      if ( mRenderGhost )
-         rdata.setFadeOverride( 0.5f );
+   if (!mModel)
+      return;
 
-      GFX->pushWorldMatrix();
-      GFX->setWorldMatrix( MatrixF::Identity );
+   // Update projected node points (for mouse picking)
+   updateProjectedNodePoints();
 
-      mModel->render( rdata );
+   SceneRenderState renderState
+   (
+      gClientSceneGraph,
+      SPT_Diffuse
+   );
+   updateDetailLevel( &renderState);
 
-      // Render mounted objects
-      if ( mRenderMounts )
+   // Render the grid
+   //renderGrid();
+
+
+   // Render the shape
+   //GFX->setStateBlock( mDefaultGuiSB );
+
+   //if ( mRenderGhost )
+   //   rdata.setFadeOverride( 0.5f );
+
+   //GFX->pushWorldMatrix();
+   //GFX->setWorldMatrix( MatrixF::Identity );
+
+   //mModel->render( rdata );
+
+   // Render mounted objects
+   /*if (mRenderMounts)
+   {
+      for ( S32 i = 0; i < mMounts.size(); i++ )
       {
-         for ( S32 i = 0; i < mMounts.size(); i++ )
+         MountedShape* mount = mMounts[i];
+
+         GFX->pushWorldMatrix();
+
+         if ( mount->mNode != -1 )
          {
-            MountedShape* mount = mMounts[i];
-
-            GFX->pushWorldMatrix();
-
-            if ( mount->mNode != -1 )
-            {
-               GFX->multWorld( mModel->mNodeTransforms[ mount->mNode ] );
-               GFX->multWorld( mount->mTransform );
-            }
-
-            mount->mShape->animate();
-            mount->mShape->render( rdata );
-
-            GFX->popWorldMatrix();
+            GFX->multWorld( mModel->mNodeTransforms[ mount->mNode ] );
+            GFX->multWorld( mount->mTransform );
          }
+
+         mount->mShape->animate();
+         mount->mShape->render( rdata );
+
+         GFX->popWorldMatrix();
       }
+   }*/
 
-      GFX->popWorldMatrix();
+   //GFX->popWorldMatrix();
 
-      renderPass->renderPass( &state );
+   //renderPass->renderPass( &state );
 
-      // @todo: Model and other elements (bounds, grid etc) use different
-      // zBuffers, so at the moment, draw order determines what is on top
+   // @todo: Model and other elements (bounds, grid etc) use different
+   // zBuffers, so at the moment, draw order determines what is on top
 
-      // Render collision volumes
-      renderCollisionMeshes();
+   // Render collision volumes
+   renderCollisionMeshes();
 
-      // Render the shape bounding box
-      if ( mRenderBounds )
+   // Render the shape bounding box
+   if ( mRenderBounds )
+   {
+      Point3F boxSize = mModel->getShape()->mBounds.maxExtents - mModel->getShape()->mBounds.minExtents;
+
+      GFXStateBlockDesc desc;
+      desc.fillMode = GFXFillWireframe;
+      GFX->getDrawUtil()->drawCube( desc, boxSize, mModel->getShape()->center, ColorI::WHITE );
+   }
+
+   // Render the selected object bounding box
+   if ( mRenderObjBox && ( mSelectedObject != -1 ) )
+   {
+      const TSShape::Object& obj = mModel->getShape()->objects[mSelectedObject];
+      const TSMesh* mesh = ( mCurrentDL < obj.numMeshes ) ? mModel->getShape()->meshes[obj.startMeshIndex + mSelectedObjDetail] : NULL;
+      if ( mesh )
       {
-         Point3F boxSize = mModel->getShape()->mBounds.maxExtents - mModel->getShape()->mBounds.minExtents;
+         GFX->pushWorldMatrix();
+         if ( obj.nodeIndex != -1 )
+            GFX->multWorld( mModel->mNodeTransforms[ obj.nodeIndex ] );
 
+         const Box3F& bounds = mesh->getBounds();
          GFXStateBlockDesc desc;
          desc.fillMode = GFXFillWireframe;
-         GFX->getDrawUtil()->drawCube( desc, boxSize, mModel->getShape()->center, ColorI::WHITE );
-      }
+         GFX->getDrawUtil()->drawCube( desc, bounds.getExtents(), bounds.getCenter(), ColorI::RED );
 
-      // Render the selected object bounding box
-      if ( mRenderObjBox && ( mSelectedObject != -1 ) )
-      {
-         const TSShape::Object& obj = mModel->getShape()->objects[mSelectedObject];
-         const TSMesh* mesh = ( mCurrentDL < obj.numMeshes ) ? mModel->getShape()->meshes[obj.startMeshIndex + mSelectedObjDetail] : NULL;
-         if ( mesh )
-         {
-            GFX->pushWorldMatrix();
-            if ( obj.nodeIndex != -1 )
-               GFX->multWorld( mModel->mNodeTransforms[ obj.nodeIndex ] );
-
-            const Box3F& bounds = mesh->getBounds();
-            GFXStateBlockDesc desc;
-            desc.fillMode = GFXFillWireframe;
-            GFX->getDrawUtil()->drawCube( desc, bounds.getExtents(), bounds.getCenter(), ColorI::RED );
-
-            GFX->popWorldMatrix();
-         }
-      }
-
-      // Render the sun direction if currently editing it
-      renderSunDirection();
-
-      // render the nodes in the model
-      renderNodes();
-
-      // use the gizmo to render the camera axes
-      if ( mRenderCameraAxes )
-      {
-         GizmoMode savedMode = mGizmoProfile->mode;
-         mGizmoProfile->mode = MoveMode;
-
-         Point3F pos;
-         Point2I screenCenter( updateRect.point + updateRect.extent/2 );
-         unproject( Point3F( screenCenter.x, screenCenter.y, 0.5 ), &pos );
-
-         mGizmo->set( MatrixF::Identity, pos, Point3F::One);
-         mGizmo->renderGizmo( smCamMatrix );
-
-         mGizmoProfile->mode = savedMode;
+         GFX->popWorldMatrix();
       }
    }
 
-   gClientSceneGraph->setFogData( savedFogData );         // restore fog setting
+   // Render the sun direction if currently editing it
+   renderSunDirection();
+
+   // render the nodes in the model
+   renderNodes();
+
+   // use the gizmo to render the camera axes
+   if ( mRenderCameraAxes )
+   {
+      GizmoMode savedMode = mGizmoProfile->mode;
+      mGizmoProfile->mode = MoveMode;
+
+      Point3F pos;
+      Point2I screenCenter( updateRect.point + updateRect.extent/2 );
+      unproject( Point3F( screenCenter.x, screenCenter.y, 0.5 ), &pos );
+
+      mGizmo->set( MatrixF::Identity, pos, Point3F::One);
+      mGizmo->renderGizmo( smCamMatrix );
+
+      mGizmoProfile->mode = savedMode;
+   }
 }
 
 void GuiShapeEdPreview::renderGui(Point2I offset, const RectI& updateRect)
@@ -1805,26 +1676,6 @@ void GuiShapeEdPreview::renderCollisionMeshes() const
    }
 }
 
-//
-//
-void GuiShapeEdPreview::setSceneCubemap(StringTableEntry cubemapMaterialAssetId)
-{
-   if (mSkybox)
-   {
-      mSkybox->_setMaterial(cubemapMaterialAssetId);
-      mSkybox->_initRender();
-      mSkybox->_updateMaterial();
-      mSkyboxDirty = true;
-   }
-}
-
-void GuiShapeEdPreview::setGroundPlaneMat(StringTableEntry groundPlaneMaterialAssetId)
-{
-   if (mGroundPlane)
-      mGroundPlane->_setMaterial(groundPlaneMaterialAssetId);
-}
-
-
 //-----------------------------------------------------------------------------
 // Console methods (GuiShapeEdPreview)
 //-----------------------------------------------------------------------------
@@ -1836,20 +1687,12 @@ DefineEngineMethod( GuiShapeEdPreview, setOrbitPos, void, ( Point3F pos ),,
    object->setOrbitPos( pos );
 }
 
-DefineEngineMethod( GuiShapeEdPreview, setModel, bool, ( const char* shapePath ),,
-   "Sets the model to be displayed in this control\n\n"
-   "@param shapeName Name of the model to display.\n"
-   "@return True if the model was loaded successfully, false otherwise.\n" )
-{
-   return object->setObjectModel( shapePath );
-}
-
-DefineEngineMethod(GuiShapeEdPreview, setShapeAsset, bool, (const char* shapeAsset), ,
+DefineEngineMethod(GuiShapeEdPreview, setModel, bool, (TSStatic* model), (nullAsType<TSStatic*>()),
    "Sets the model to be displayed in this control\n\n"
    "@param shapeName Name of the model to display.\n"
    "@return True if the model was loaded successfully, false otherwise.\n")
 {
-   return object->setObjectShapeAsset(shapeAsset);
+   return object->setObjectModel(model);
 }
 
 DefineEngineMethod( GuiShapeEdPreview, fitToShape, void, (),,
@@ -2036,16 +1879,4 @@ DefineEngineMethod( GuiShapeEdPreview, unmountAll, void, (),,
    "Unmount all shapes\n" )
 {
    return object->unmountAll();
-}
-
-DefineEngineMethod(GuiShapeEdPreview, setSceneCubemap, void, (StringTableEntry cubemapMaterialAssetId), ,
-   "Sets the cubemap to be used for the backdrop of the preview\n")
-{
-   return object->setSceneCubemap(cubemapMaterialAssetId);
-}
-
-DefineEngineMethod(GuiShapeEdPreview, setGroundPlaneMat, void, (StringTableEntry groundPlaneMaterialAssetId), ,
-   "Sets the cubemap to be used for the backdrop of the preview\n")
-{
-   return object->setGroundPlaneMat(groundPlaneMaterialAssetId);
 }
