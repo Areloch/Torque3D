@@ -94,13 +94,14 @@ $guiContent = new GuiTabPageCtrl() {
             canCollapse = "0";
             edgeSnap = "0";
             margin = "4 4 4 4";
-            extent = "299 484";
+            extent = "299 1040";
             minExtent = "210 352";
             horizSizing = "width";
             vertSizing = "height";
             profile = "ToolsGuiWindowProfile";
             tooltipProfile = "ToolsGuiToolTipProfile";
             internalName = "ContentsWindow";
+            class = "ContentsWindow";
 
             new GuiTabBookCtrl() {
                tabMargin = "6";
@@ -128,6 +129,7 @@ $guiContent = new GuiTabPageCtrl() {
                   visible = "0";
                   tooltipProfile = "ToolsGuiToolTipProfile";
                   internalName = "ShapeEdSequences";
+                  class = "ShapeEdSequences";
                   hidden = "1";
 
                   new GuiContainer() {
@@ -182,9 +184,10 @@ $guiContent = new GuiTabPageCtrl() {
                            extent = "9 11";
                            minExtent = "8 11";
                            profile = "GuiShapeEdTextListProfile";
-                           command = "ShapeEdPropWindow.update_onSeqSelectionChanged();";
+                           command = "ContentsWindow.update_onSeqSelectionChanged();";
                            tooltipProfile = "ToolsGuiToolTipProfile";
                            internalName = "ShapeEdSequenceList";
+                           class = "ShapeEdSequenceList";
                         };
                      };
                   };
@@ -238,12 +241,14 @@ $guiContent = new GuiTabPageCtrl() {
                            tooltipProfile = "GuiToolTipProfile";
                            tooltip = "Animation source data";
                         };
-                        new GuiPopUpMenuCtrl(ShapeEdSeqFromMenu) {
+                        new GuiPopUpMenuCtrl() {
                            position = "46 41";
                            extent = "180 18";
                            horizSizing = "width";
                            profile = "ToolsGuiPopUpMenuProfile";
                            tooltipProfile = "GuiToolTipProfile";
+                           internalName = "ShapeEdSeqFromMenu";
+                           class = "ShapeEdSeqFromMenu";
                         };
                         new GuiTextCtrl() {
                            text = "in";
@@ -416,15 +421,17 @@ $guiContent = new GuiTabPageCtrl() {
                                  profile = "inspectorStyleRolloutListProfile";
                                  tooltipProfile = "GuiToolTipProfile";
                               };
-                              new GuiTextListCtrl(ShapeEdTriggerList) {
+                              new GuiTextListCtrl() {
                                  columns = "-1 0 60 118";
                                  clipColumnText = "1";
                                  position = "1 1";
                                  extent = "289 11";
                                  minExtent = "8 11";
                                  profile = "GuiShapeEdTextListProfile";
-                                 command = "ShapeEdPropWindow.onTriggerSelectionChanged();";
+                                 command = "ContentsWindow.onTriggerSelectionChanged();";
                                  tooltipProfile = "ToolsGuiToolTipProfile";
+                                 internalName = "ShapeEdTriggerList";
+                                 class = "ShapeEdTriggerList";
                               };
                            };
                         };
@@ -482,6 +489,7 @@ $guiContent = new GuiTabPageCtrl() {
                   visible = "0";
                   tooltipProfile = "ToolsGuiToolTipProfile";
                   internalName = "ShapeEdNodes";
+                  class = "ShapeEdNodes";
                   hidden = "1";
 
                   new GuiBitmapBorderCtrl() {
@@ -536,6 +544,7 @@ $guiContent = new GuiTabPageCtrl() {
                         profile = "ToolsGuiTreeViewProfile";
                         tooltipProfile = "ToolsGuiToolTipProfile";
                         internalName = "ShapeEdNodeTreeView";
+                        class = "ShapeEdNodeTreeView";
                      };
                   };
                   new GuiContainer() {
@@ -617,13 +626,15 @@ $guiContent = new GuiTabPageCtrl() {
                            isContainer = "0";
                            internalName = "nodeName";
                         };
-                        new GuiPopUpMenuCtrl(ShapeEdNodeParentMenu) {
+                        new GuiPopUpMenuCtrl() {
                            position = "12 25";
                            extent = "226 18";
                            horizSizing = "width";
                            profile = "ToolsGuiPopUpMenuProfile";
                            tooltipProfile = "GuiToolTipProfile";
                            tooltip = "Selected node\'s parent";
+                           internalName = "ShapeEdNodeParentMenu";
+                           class = "ShapeEdNodeParentMenu";
                         };
                         new GuiIconButtonCtrl() {
                            buttonMargin = "0 4";
@@ -636,7 +647,7 @@ $guiContent = new GuiTabPageCtrl() {
                            extent = "65 25";
                            minExtent = "8 8";
                            profile = "ToolsGuiIconButtonProfile";
-                           command = "ShapeEdPropWindow.update_onNodeTransformChanged();";
+                           command = "ContentsWindow.update_onNodeTransformChanged();";
                            tooltipProfile = "ToolsGuiToolTipProfile";
                            tooltip = "View global node transform";
                            internalName = "worldTransform";
@@ -653,7 +664,7 @@ $guiContent = new GuiTabPageCtrl() {
                            minExtent = "8 8";
                            horizSizing = "left";
                            profile = "ToolsGuiIconButtonProfile";
-                           command = "ShapeEdPropWindow.update_onNodeTransformChanged();";
+                           command = "ContentsWindow.update_onNodeTransformChanged();";
                            tooltipProfile = "ToolsGuiToolTipProfile";
                            tooltip = "View local node transform (relative to parent)";
                            internalName = "objectTransform";
@@ -746,6 +757,7 @@ $guiContent = new GuiTabPageCtrl() {
                            profile = "ToolsGuiTreeViewProfile";
                            tooltipProfile = "ToolsGuiToolTipProfile";
                            internalName = "ShapeEdDetailTree";
+                           class = "ShapeEdDetailTree";
                         };
                      };
                   };
@@ -873,6 +885,7 @@ $guiContent = new GuiTabPageCtrl() {
                   profile = "ToolsGuiTabPageProfile";
                   tooltipProfile = "ToolsGuiToolTipProfile";
                   internalName = "ShapeEdMaterials";
+                  class = "ShapeEdMaterials";
 
                   new GuiContainer() {
                      extent = "291 437";
@@ -929,6 +942,7 @@ $guiContent = new GuiTabPageCtrl() {
                            command = "ShapeEdMaterials.updateSelectedMaterial(ShapeEdMaterials-->highlightMaterial.getValue());";
                            tooltipProfile = "ToolsGuiToolTipProfile";
                            internalName = "ShapeEdMaterialList";
+                           class = "ShapeEdMaterialList";
                         };
                      };
                   };
@@ -1028,6 +1042,7 @@ $guiContent = new GuiTabPageCtrl() {
             profile = "WorldEditorProfile";
             tooltipProfile = "GuiToolTipProfile";
             internalName = "ShapeView";
+            class = "ShapeEdShapeView";
          };
          new GuiWindowCollapseCtrl() {
             text = "Metrics";
@@ -1046,7 +1061,8 @@ $guiContent = new GuiTabPageCtrl() {
             vertSizing = "windowRelative";
             profile = "ToolsGuiWindowProfile";
             tooltipProfile = "ToolsGuiToolTipProfile";
-            internalName = "AdvancedProperties";
+            internalName = "ShapeEdAdvancedWindow";
+            class = "ShapeEdAdvancedWindow";
 
             new GuiTabBookCtrl() {
                tabMargin = "6";
@@ -1457,7 +1473,7 @@ $guiContent = new GuiTabPageCtrl() {
                      tooltipProfile = "GuiToolTipProfile";
                      isContainer = "1";
                   };
-                  new GuiContainer(ShapeEdMountWindow) {
+                  new GuiContainer() {
                      docking = "None";
                      extent = "202 225";
                      minExtent = "8 8";
@@ -1465,6 +1481,8 @@ $guiContent = new GuiTabPageCtrl() {
                      vertSizing = "height";
                      profile = "ToolsGuiDefaultProfile";
                      tooltipProfile = "ToolsGuiToolTipProfile";
+                     internalName = "ShapeEdMountWindow";
+                     class = "ShapeEdMountWindow";
 
                      new GuiCheckBoxCtrl() {
                         text = " Render mounted shapes";
@@ -1526,7 +1544,6 @@ $guiContent = new GuiTabPageCtrl() {
                         };
                         new GuiBitmapButtonCtrl() {
                            BitmapAsset = "ToolsModule:delete_n_image";
-                           color = "255 255 255 255";
                            position = "182 1";
                            extent = "16 16";
                            horizSizing = "left";
@@ -1552,7 +1569,7 @@ $guiContent = new GuiTabPageCtrl() {
                            profile = "ToolsGuiTextRightProfile";
                            tooltipProfile = "GuiToolTipProfile";
                         };
-                        new GuiPopUpMenuCtrl(ShapeEdMountShapeMenu) {
+                        new GuiPopUpMenuCtrl() {
                            text = "Browse...";
                            position = "42 20";
                            extent = "156 18";
@@ -1560,6 +1577,8 @@ $guiContent = new GuiTabPageCtrl() {
                            profile = "ToolsGuiPopUpMenuProfile";
                            tooltipProfile = "GuiToolTipProfile";
                            tooltip = "Select the model to mount";
+                           internalName = "ShapeEdMountShapeMenu";
+                           class = "ShapeEdMountShapeMenu";
                         };
                         new GuiTextCtrl() {
                            text = "Node";
@@ -1608,7 +1627,7 @@ $guiContent = new GuiTabPageCtrl() {
                            tooltip = "Select the sequence to play on the mounted model";
                            internalName = "mountSeq";
                         };
-                        new GuiSliderCtrl(ShapeEdMountSeqSlider) {
+                        new GuiSliderCtrl() {
                            ticks = "0";
                            value = "0";
                            position = "109 64";
@@ -1618,6 +1637,8 @@ $guiContent = new GuiTabPageCtrl() {
                            profile = "ToolsGuiSliderProfile";
                            tooltipProfile = "ToolsGuiToolTipProfile";
                            tooltip = "Drag the slider to scrub through the sequence keyframes";
+                           internalName = "ShapeEdMountSeqSlider";
+                           class = "ShapeEdMountSeqSlider";
                         };
                         new GuiBitmapButtonCtrl() {
                            BitmapAsset = "ToolsModule:playfwd_btn_n_image";
@@ -1648,13 +1669,15 @@ $guiContent = new GuiTabPageCtrl() {
                   tooltipProfile = "ToolsGuiToolTipProfile";
                   hidden = "1";
 
-                  new GuiContainer(ShapeEdThreadWindow) {
+                  new GuiContainer() {
                      docking = "Client";
                      extent = "202 225";
                      minExtent = "8 8";
                      horizSizing = "width";
                      profile = "ToolsGuiDefaultProfile";
                      tooltipProfile = "ToolsGuiToolTipProfile";
+                     internalName = "ShapeEdThreadWindow";
+                     class = "ShapeEdThreadWindow";
 
                      new GuiContainer() {
                         extent = "203 142";
@@ -1682,13 +1705,15 @@ $guiContent = new GuiTabPageCtrl() {
                            profile = "GuiShapeEdScrollProfile";
                            tooltipProfile = "ToolsGuiToolTipProfile";
 
-                           new GuiTextListCtrl(ShapeEdThreadList) {
+                           new GuiTextListCtrl() {
                               clipColumnText = "1";
                               position = "1 1";
                               extent = "45 11";
                               minExtent = "8 11";
                               profile = "GuiShapeEdTextListProfile";
                               tooltipProfile = "ToolsGuiToolTipProfile";
+                              internalName = "ShapeEdThreadList";
+                              class = "ShapeEdThreadList";
                            };
                         };
                         new GuiTextCtrl() {
@@ -1743,7 +1768,7 @@ $guiContent = new GuiTabPageCtrl() {
                            tooltip = "Add a new thread";
                         };
                      };
-                     new GuiSliderCtrl(ShapeEdThreadSlider) {
+                     new GuiSliderCtrl() {
                         range = "0 0";
                         ticks = "0";
                         value = "0";
@@ -1754,6 +1779,8 @@ $guiContent = new GuiTabPageCtrl() {
                         profile = "ToolsGuiSliderProfile";
                         tooltipProfile = "ToolsGuiToolTipProfile";
                         tooltip = "Drag the slider to scrub through the sequence keyframes";
+                        internalName = "ShapeEdThreadSlider";
+                        class = "ShapeEdThreadSlider";
                      };
                      new GuiBitmapButtonCtrl() {
                         BitmapAsset = "ToolsModule:playbkwd_btn_n_image";
@@ -1876,13 +1903,15 @@ $guiContent = new GuiTabPageCtrl() {
                   profile = "ToolsGuiTabPageProfile";
                   tooltipProfile = "ToolsGuiToolTipProfile";
 
-                  new GuiContainer(ShapeEdColWindow) {
+                  new GuiContainer() {
                      docking = "Client";
                      extent = "202 225";
                      minExtent = "8 8";
                      horizSizing = "width";
                      profile = "ToolsGuiDefaultProfile";
                      tooltipProfile = "ToolsGuiToolTipProfile";
+                     internalName = "ShapeEdColWindow";
+                     class = "ShapeEdColWindow";
 
                      new GuiTextCtrl() {
                         text = "Fit Type";
@@ -1983,7 +2012,6 @@ $guiContent = new GuiTabPageCtrl() {
                         range = "0 60";
                         ticks = "4";
                         value = "30";
-                        fillBarColor = "255 255 255 255";
                         position = "70 90";
                         extent = "104 14";
                         horizSizing = "width";
@@ -2210,7 +2238,7 @@ $guiContent = new GuiTabPageCtrl() {
                      isContainer = "0";
                      internalName = "seqIn";
                   };
-                  new GuiSliderCtrl(ShapeEdSeqSlider) {
+                  new GuiSliderCtrl() {
                      range = "0 255";
                      ticks = "0";
                      value = "0";
@@ -2220,6 +2248,8 @@ $guiContent = new GuiTabPageCtrl() {
                      profile = "ToolsGuiSliderProfile";
                      variable = "$ShapeEdCurrentFrame";
                      tooltipProfile = "ToolsGuiToolTipProfile";
+                     internalName = "ShapeEdSeqSlider";
+                     class = "ShapeEdSeqSlider";
                   };
                   new GuiTextEditCtrl() {
                      maxLength = "5";
@@ -2415,7 +2445,7 @@ $guiContent = new GuiTabPageCtrl() {
             canCollapse = "0";
             edgeSnap = "0";
             margin = "4 4 4 4";
-            extent = "317 484";
+            extent = "317 1040";
             minExtent = "210 352";
             horizSizing = "width";
             vertSizing = "height";

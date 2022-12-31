@@ -72,26 +72,26 @@ function ShapeEditor::getObjectShapeFile( %this, %obj )
 // Check if the given name already exists
 function ShapeEditor::nameExists( %this, %type, %name )
 {
-   if ( ShapeEditor.shape == -1 )
+   if ( $ActiveShapeEditor.shape == -1 )
       return false;
 
    if ( %type $= "node" )
-      return ( ShapeEditor.shape.getNodeIndex( %name ) >= 0 );
+      return ( $ActiveShapeEditor.shape.getNodeIndex( %name ) >= 0 );
    else if ( %type $= "sequence" )
-      return ( ShapeEditor.shape.getSequenceIndex( %name ) >= 0 );
+      return ( $ActiveShapeEditor.shape.getSequenceIndex( %name ) >= 0 );
    else if ( %type $= "object" )
-      return ( ShapeEditor.shape.getObjectIndex( %name ) >= 0 );
+      return ( $ActiveShapeEditor.shape.getObjectIndex( %name ) >= 0 );
 }
 
 // Check if the given 'hint' name exists (spaces could also be underscores)
 function ShapeEditor::hintNameExists( %this, %type, %name )
 {
-   if ( ShapeEditor.nameExists( %type, %name ) )
+   if ( $ActiveShapeEditor.nameExists( %type, %name ) )
       return true;
 
    // If the name contains spaces, try replacing with underscores
    %name = strreplace( %name, " ", "_" );
-   if ( ShapeEditor.nameExists( %type, %name ) )
+   if ( $ActiveShapeEditor.nameExists( %type, %name ) )
       return true;
 
    return false;
@@ -182,14 +182,14 @@ function ShapeEditor::getObjectMeshList( %this, %name )
 function ShapeEditor::getDetailMeshList( %this, %detSize )
 {
    %list = "";
-   %objCount = ShapeEditor.shape.getObjectCount();
+   %objCount = $ActiveShapeEditor.shape.getObjectCount();
    for ( %i = 0; %i < %objCount; %i++ )
    {
-      %objName = ShapeEditor.shape.getObjectName( %i );
-      %meshCount = ShapeEditor.shape.getMeshCount( %objName );
+      %objName = $ActiveShapeEditor.shape.getObjectName( %i );
+      %meshCount = $ActiveShapeEditor.shape.getMeshCount( %objName );
       for ( %j = 0; %j < %meshCount; %j++ )
       {
-         %size = ShapeEditor.shape.getMeshSize( %objName, %j );
+         %size = $ActiveShapeEditor.shape.getMeshSize( %objName, %j );
          if ( %size == %detSize )
             %list = %list TAB %this.shape.getMeshName( %objName, %j );
       }
@@ -199,7 +199,7 @@ function ShapeEditor::getDetailMeshList( %this, %detSize )
 
 function ShapeEditor::isDirty( %this )
 {
-   return ( isObject( %this.shape ) && ShapeEdPropWindow-->saveBtn.isActive() );
+   return ( isObject( %this.shape ) && ContentsWindow-->saveBtn.isActive() );
 }
 
 function ShapeEditor::setDirty( %this, %dirty )
@@ -209,17 +209,17 @@ function ShapeEditor::setDirty( %this, %dirty )
    else
       ShapeEdSelectWindow.text = "Shapes";
 
-   ShapeEdPropWindow-->saveBtn.setActive( %dirty );
+   ContentsWindow-->saveBtn.setActive( %dirty );
 }
 
 function ShapeEditor::saveChanges( %this )
 {
-   if ( isObject( ShapeEditor.shape ) )
+   if ( isObject( $ActiveShapeEditor.shape ) )
    {
-      ShapeEditor.saveConstructor( ShapeEditor.shape );
-      ShapeEditor.shape.writeChangeSet();
-      ShapeEditor.shape.notifyShapeChanged();      // Force game objects to reload shape
-      ShapeEditor.setDirty( false );
+      $ActiveShapeEditor.saveConstructor( $ActiveShapeEditor.shape );
+      $ActiveShapeEditor.shape.writeChangeSet();
+      $ActiveShapeEditor.shape.notifyShapeChanged();      // Force game objects to reload shape
+      $ActiveShapeEditor.setDirty( false );
    }
 }
 
@@ -268,55 +268,55 @@ function ShapeEditor::saveConstructor( %this, %constructor )
 function ShapeEdSelectWindow::onSelect( %this, %path )
 {
    // Prompt user to save the old shape if it is dirty
-   if ( ShapeEditor.isDirty() )
+   if ( $ActiveShapeEditor.isDirty() )
    {
-      %cmdY = "showImportDialog( \"" @ %path @ "\", \"ShapeEditor.selectShape( \"" @ %path @ "\", true)\" );";
-      %cmdN = "showImportDialog( \"" @ %path @ "\", \"ShapeEditor.selectShape( \"" @ %path @ "\", false)\" );";
+      %cmdY = "showImportDialog( \"" @ %path @ "\", \"$ActiveShapeEditor.selectShape( \"" @ %path @ "\", true)\" );";
+      %cmdN = "showImportDialog( \"" @ %path @ "\", \"$ActiveShapeEditor.selectShape( \"" @ %path @ "\", false)\" );";
       toolsMessageBoxYesNoCancel( "Shape Modified", "Would you like to save your changes?", %cmdY, %cmdN,"" );
    }
    else
    {
-      %cmd = "ShapeEditor.selectShape( \"" @ %path @ "\", false );";
+      %cmd = "$ActiveShapeEditor.selectShape( \"" @ %path @ "\", false );";
       showImportDialog( %path, %cmd );
    }
 }
 
 function ShapeEditor::selectShape( %this, %shapeAsset, %saveOld )
 {
-   ShapeEdShapeView.setModel( "" );
+   $ActiveShapeEditor.editorPage-->ShapeView.setModel( "" );
 
    if ( %saveOld )
    {
       // Save changes to a TSShapeConstructor script
       %this.saveChanges();
    }
-   else if ( ShapeEditor.isDirty() )
+   else if ( $ActiveShapeEditor.isDirty() )
    {
       // Purge all unsaved changes
-      %oldPath = ShapeEditor.shape.baseShapeAsset;
-      ShapeEditor.shape.delete();
-      ShapeEditor.shape = 0;
+      %oldPath = $ActiveShapeEditor.shape.baseShapeAsset;
+      $ActiveShapeEditor.shape.delete();
+      $ActiveShapeEditor.shape = 0;
 
       reloadResource( %oldPath );   // Force game objects to reload shape
    }
 
    // Initialise the shape preview window
-   if ( !ShapeEdShapeView.setShapeAsset( %shapeAsset.getAssetId() ) )
+   if ( !$ActiveShapeEditor.editorPage-->ShapeView.setShapeAsset( %shapeAsset.getAssetId() ) )
    {
       toolsMessageBoxOK( "Error", "Failed to load '" @ %shapeAsset.getAssetId() @ "'. Check the console for error messages." );
       return;
    }
-   ShapeEdShapeView.fitToShape();
+   $ActiveShapeEditor.editorPage-->ShapeView.fitToShape();
 
    ShapeEdUndoManager.clearAll();
-   ShapeEditor.setDirty( false );
+   $ActiveShapeEditor.setDirty( false );
 
    // Get ( or create ) the TSShapeConstructor object for this shape
-   ShapeEditor.shape = findShapeConstructorByAssetId( %shapeAsset.getAssetId() );
-   if ( ShapeEditor.shape <= 0 )
+   $ActiveShapeEditor.shape = findShapeConstructorByAssetId( %shapeAsset.getAssetId() );
+   if ( $ActiveShapeEditor.shape <= 0 )
    {
-      ShapeEditor.shape = %this.createConstructor( %shapeAsset.getAssetId() );
-      if ( ShapeEditor.shape <= 0 )
+      $ActiveShapeEditor.shape = %this.createConstructor( %shapeAsset.getAssetId() );
+      if ( $ActiveShapeEditor.shape <= 0 )
       {
          error( "ShapeEditor: Error - could not select " @ %shapeAsset.getAssetId() );
          return;
@@ -324,12 +324,12 @@ function ShapeEditor::selectShape( %this, %shapeAsset, %saveOld )
    }
 
    // Initialise the editor windows
-   ShapeEdAdvancedWindow.update_onShapeSelectionChanged();
-   ShapeEdMountWindow.update_onShapeSelectionChanged();
-   ShapeEdThreadWindow.update_onShapeSelectionChanged();
-   ShapeEdColWindow.update_onShapeSelectionChanged();
-   ShapeEdPropWindow.update_onShapeSelectionChanged();
-   ShapeEdShapeView.refreshShape();
+   $ActiveShapeEditor.editorPage-->ShapeEdAdvancedWindow.update_onShapeSelectionChanged();
+   $ActiveShapeEditor.editorPage-->ShapeEdMountWindow.update_onShapeSelectionChanged();
+   $ActiveShapeEditor.editorPage-->ShapeEdThreadWindow.update_onShapeSelectionChanged();
+   $ActiveShapeEditor.editorPage-->ShapeEdColWindow.update_onShapeSelectionChanged();
+   $ActiveShapeEditor.editorPage-->ContentsWindow.update_onShapeSelectionChanged();
+   $ActiveShapeEditor.editorPage-->ShapeView.refreshShape();
 
    // Update object type hints
    ShapeEdSelectWindow.updateHints();
@@ -341,7 +341,7 @@ function ShapeEditor::selectShape( %this, %shapeAsset, %saveOld )
 // Handle a selection in the MissionGroup shape selector
 function ShapeEdShapeTreeView::onSelect( %this, %obj )
 {
-   %path = ShapeEditor.getObjectShapeFile( %obj );
+   %path = $ActiveShapeEditor.getObjectShapeFile( %obj );
    if ( %path !$= "" )
       ShapeEdSelectWindow.onSelect( %path );
 
@@ -367,36 +367,36 @@ function ShapeEdShapeTreeView::onSelect( %this, %obj )
 }
 
 // Update the GUI in response to the shape selection changing
-function ShapeEdPropWindow::update_onShapeSelectionChanged( %this )
+function ContentsWindow::update_onShapeSelectionChanged( %this )
 {
    // --- NODES TAB ---
-   ShapeEdNodeTreeView.removeItem( 0 );
-   %rootId = ShapeEdNodeTreeView.insertItem( 0, "<root>", 0, "" );
-   %count = ShapeEditor.shape.getNodeCount();
+   $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.removeItem( 0 );
+   %rootId = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.insertItem( 0, "<root>", 0, "" );
+   %count = $ActiveShapeEditor.shape.getNodeCount();
    for ( %i = 0; %i < %count; %i++ )
    {
-      %name = ShapeEditor.shape.getNodeName( %i );
-      if ( ShapeEditor.shape.getNodeParentName( %name ) $= "" )
-         ShapeEdNodeTreeView.addNodeTree( %name );
+      %name = $ActiveShapeEditor.shape.getNodeName( %i );
+      if ( $ActiveShapeEditor.shape.getNodeParentName( %name ) $= "" )
+         $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.addNodeTree( %name );
    }
    %this.update_onNodeSelectionChanged( -1 );    // no node selected
 
    // --- SEQUENCES TAB ---
-   ShapeEdSequenceList.clear();
-   ShapeEdSequenceList.addRow( -1, "Name" TAB "Cyclic" TAB "Blend" TAB "Frames" TAB "Priority" );
-   ShapeEdSequenceList.setRowActive( -1, false );
-   ShapeEdSequenceList.addRow( 0, "<rootpose>" TAB "" TAB "" TAB "" TAB "" );
+   $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.clear();
+   $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.addRow( -1, "Name" TAB "Cyclic" TAB "Blend" TAB "Frames" TAB "Priority" );
+   $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.setRowActive( -1, false );
+   $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.addRow( 0, "<rootpose>" TAB "" TAB "" TAB "" TAB "" );
 
-   %count = ShapeEditor.shape.getSequenceCount();
+   %count = $ActiveShapeEditor.shape.getSequenceCount();
    for ( %i = 0; %i < %count; %i++ )
    {
-      %name = ShapeEditor.shape.getSequenceName( %i );
+      %name = $ActiveShapeEditor.shape.getSequenceName( %i );
 
       // Ignore __backup__ sequences (only used by editor)
       if ( !startswith( %name, "__backup__" ) )
-         ShapeEdSequenceList.addItem( %name );
+         $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.addItem( %name );
    }
-   ShapeEdThreadWindow.onAddThread();        // add thread 0
+   $ActiveShapeEditor.editorPage-->ShapeEdThreadWindow.onAddThread();        // add thread 0
    
    //Now, fetch any animation assets if we're utilizing a shape asset
    if(ShapeEditorPlugin.selectedAssetDef !$= "")
@@ -407,36 +407,36 @@ function ShapeEdPropWindow::update_onShapeSelectionChanged( %this )
       {
          %animAsset = ShapeEditorPlugin.selectedAssetDef.getAnimation(%animIdx);
          
-         //ShapeEdSequenceList.addItem( %animAsset.assetName );
+         //$ActiveShapeEditor.editorPage-->ShapeEdSequenceList.addItem( %animAsset.assetName );
       }
    }
 
    // --- DETAILS TAB ---
    // Add detail levels and meshes to tree
-   ShapeEdDetailTree.clearSelection();
-   ShapeEdDetailTree.removeItem( 0 );
-   %root = ShapeEdDetailTree.insertItem( 0, "<root>", "", "" );
-   %objCount = ShapeEditor.shape.getObjectCount();
+   $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.clearSelection();
+   $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.removeItem( 0 );
+   %root = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.insertItem( 0, "<root>", "", "" );
+   %objCount = $ActiveShapeEditor.shape.getObjectCount();
    for ( %i = 0; %i < %objCount; %i++ )
    {
-      %objName = ShapeEditor.shape.getObjectName( %i );
-      %meshCount = ShapeEditor.shape.getMeshCount( %objName );
+      %objName = $ActiveShapeEditor.shape.getObjectName( %i );
+      %meshCount = $ActiveShapeEditor.shape.getMeshCount( %objName );
       for ( %j = 0; %j < %meshCount; %j++ )
       {
-         %meshName = ShapeEditor.shape.getMeshName( %objName, %j );
-         ShapeEdDetailTree.addMeshEntry( %meshName, 1 );
+         %meshName = $ActiveShapeEditor.shape.getMeshName( %objName, %j );
+         $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.addMeshEntry( %meshName, 1 );
       }
    }
 
    // Initialise object node list
-   ShapeEdDetails-->objectNode.clear();
-   ShapeEdDetails-->objectNode.add( "<root>" );
-   %nodeCount = ShapeEditor.shape.getNodeCount();
+   $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.clear();
+   $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.add( "<root>" );
+   %nodeCount = $ActiveShapeEditor.shape.getNodeCount();
    for ( %i = 0; %i < %nodeCount; %i++ )
-      ShapeEdDetails-->objectNode.add( ShapeEditor.shape.getNodeName( %i ) );
+      $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.add( $ActiveShapeEditor.shape.getNodeName( %i ) );
 
    // --- MATERIALS TAB ---
-   ShapeEdMaterials.updateMaterialList();
+   $ActiveShapeEditor.editorPage-->ShapeEdMaterials.updateMaterialList();
 }
 
 //------------------------------------------------------------------------------
@@ -503,13 +503,13 @@ function ShapeEdHintMenu::processHint( %this, %type, %hint )
 
       // get the state of the first element
       %arrayStart = %first;
-      %prevPresent = ShapeEditor.hintNameExists( %type, %base @ %first );
+      %prevPresent = $ActiveShapeEditor.hintNameExists( %type, %base @ %first );
 
       for ( %j = %first + 1; %j <= %last; %j++ )
       {
          // if the state of this element is different to the previous one, we
          // need to add a hint
-         %present = ShapeEditor.hintNameExists( %type, %base @ %j );
+         %present = $ActiveShapeEditor.hintNameExists( %type, %base @ %j );
          if ( %present != %prevPresent )
          {
             ShapeEdSelectWindow.addObjectHint( %type, %base, %desc, %prevPresent, %arrayStart, %j-1 );
@@ -524,7 +524,7 @@ function ShapeEdHintMenu::processHint( %this, %type, %hint )
    else
    {
       // non-arrayed name
-      %present = ShapeEditor.hintNameExists( %type, %name );
+      %present = $ActiveShapeEditor.hintNameExists( %type, %name );
       ShapeEdSelectWindow.addObjectHint( %type, %name, %desc, %present );
    }
 }
@@ -590,40 +590,40 @@ function ShapeEdSeqNodeTabBook::onTabSelected( %this, %name, %index )
    switch$ ( %name )
    {
       case "Seq":
-         ShapeEdPropWindow-->newBtn.ToolTip = "Add new sequence";
-         ShapeEdPropWindow-->newBtn.Command = "ShapeEdSequences.onAddSequence();"; 
-         ShapeEdPropWindow-->newBtn.setActive( true );
-         ShapeEdPropWindow-->deleteBtn.ToolTip = "Delete selected sequence (cannot be undone)";
-         ShapeEdPropWindow-->deleteBtn.Command = "ShapeEdSequences.onDeleteSequence();";
-         ShapeEdPropWindow-->deleteBtn.setActive( true );
+         ContentsWindow-->newBtn.ToolTip = "Add new sequence";
+         ContentsWindow-->newBtn.Command = "ShapeEdSequences.onAddSequence();"; 
+         ContentsWindow-->newBtn.setActive( true );
+         ContentsWindow-->deleteBtn.ToolTip = "Delete selected sequence (cannot be undone)";
+         ContentsWindow-->deleteBtn.Command = "ShapeEdSequences.onDeleteSequence();";
+         ContentsWindow-->deleteBtn.setActive( true );
 
       case "Node":
-         ShapeEdPropWindow-->newBtn.ToolTip = "Add new node";
-         ShapeEdPropWindow-->newBtn.Command = "ShapeEdNodes.onAddNode();";
-         ShapeEdPropWindow-->newBtn.setActive( true );
-         ShapeEdPropWindow-->deleteBtn.ToolTip = "Delete selected node (cannot be undone)";
-         ShapeEdPropWindow-->deleteBtn.Command = "ShapeEdNodes.onDeleteNode();";
-         ShapeEdPropWindow-->deleteBtn.setActive( true );
+         ContentsWindow-->newBtn.ToolTip = "Add new node";
+         ContentsWindow-->newBtn.Command = "ShapeEdNodes.onAddNode();";
+         ContentsWindow-->newBtn.setActive( true );
+         ContentsWindow-->deleteBtn.ToolTip = "Delete selected node (cannot be undone)";
+         ContentsWindow-->deleteBtn.Command = "ShapeEdNodes.onDeleteNode();";
+         ContentsWindow-->deleteBtn.setActive( true );
 
       case "Detail":
-         ShapeEdPropWindow-->newBtn.ToolTip = "";
-         ShapeEdPropWindow-->newBtn.Command = "";
-         ShapeEdPropWindow-->newBtn.setActive( false );
-         ShapeEdPropWindow-->deleteBtn.ToolTip = "Delete the selected mesh or detail level (cannot be undone)";
-         ShapeEdPropWindow-->deleteBtn.Command = "ShapeEdDetails.onDeleteMesh();";
-         ShapeEdPropWindow-->deleteBtn.setActive( true );
+         ContentsWindow-->newBtn.ToolTip = "";
+         ContentsWindow-->newBtn.Command = "";
+         ContentsWindow-->newBtn.setActive( false );
+         ContentsWindow-->deleteBtn.ToolTip = "Delete the selected mesh or detail level (cannot be undone)";
+         ContentsWindow-->deleteBtn.Command = "$ActiveShapeEditor.editorPage-->ShapeEdDetails.onDeleteMesh();";
+         ContentsWindow-->deleteBtn.setActive( true );
 
       case "Mat":
-         ShapeEdPropWindow-->newBtn.ToolTip = "";
-         ShapeEdPropWindow-->newBtn.Command = "";
-         ShapeEdPropWindow-->newBtn.setActive( false );
-         ShapeEdPropWindow-->deleteBtn.ToolTip = "";
-         ShapeEdPropWindow-->deleteBtn.Command = "";
-         ShapeEdPropWindow-->deleteBtn.setActive( false );
+         $ActiveShapeEditor.editorPage-->ContentsWindow-->newBtn.ToolTip = "";
+         $ActiveShapeEditor.editorPage-->ContentsWindow-->newBtn.Command = "";
+         $ActiveShapeEditor.editorPage-->ContentsWindow-->newBtn.setActive( false );
+         $ActiveShapeEditor.editorPage-->ContentsWindow-->deleteBtn.ToolTip = "";
+         $ActiveShapeEditor.editorPage-->ContentsWindow-->deleteBtn.Command = "";
+         $ActiveShapeEditor.editorPage-->ContentsWindow-->deleteBtn.setActive( false );
 
          // For some reason, the header is not resized correctly until the Materials tab has been
          // displayed at least once, so resize it here too
-         ShapeEdMaterials-->materialListHeader.setExtent( getWord( ShapeEdMaterialList.extent, 0 ) SPC "19" );
+         $ActiveShapeEditor.editorPage-->ShapeEdMaterials-->materialListHeader.setExtent( getWord( $ActiveShapeEditor.editorPage-->ShapeEdMaterialList.extent, 0 ) SPC "19" );
    }
 }
 
@@ -632,30 +632,30 @@ function ShapeEdSeqNodeTabBook::onTabSelected( %this, %name, %index )
 //------------------------------------------------------------------------------
 
 // Update the GUI in response to the node selection changing
-function ShapeEdPropWindow::update_onNodeSelectionChanged( %this, %id )
+function ContentsWindow::update_onNodeSelectionChanged( %this, %id )
 {
    if ( %id > 0 )
    {
       // Enable delete button and edit boxes
       if ( ShapeEdSeqNodeTabBook.activePage $= "Node" )
-         ShapeEdPropWindow-->deleteBtn.setActive( true );
+         ContentsWindow-->deleteBtn.setActive( true );
       ShapeEdNodes-->nodeName.setActive( true );
       ShapeEdNodes-->nodePosition.setActive( true );
       ShapeEdNodes-->nodeRotation.setActive( true );
 
       // Update the node inspection data
-      %name = ShapeEdNodeTreeView.getItemText( %id );
+      %name = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getItemText( %id );
 
       ShapeEdNodes-->nodeName.setText( %name );
 
       // Node parent list => ancestor and sibling nodes only (can't re-parent to a descendent)
       ShapeEdNodeParentMenu.clear();
-      %parentNames = ShapeEditor.getNodeNames( "", "<root>", %name );
+      %parentNames = $ActiveShapeEditor.getNodeNames( "", "<root>", %name );
       %count = getWordCount( %parentNames );
       for ( %i = 0; %i < %count; %i++ )
          ShapeEdNodeParentMenu.add( getWord(%parentNames, %i), %i );
 
-      %pName = ShapeEditor.shape.getNodeParentName( %name );
+      %pName = $ActiveShapeEditor.shape.getNodeParentName( %name );
       if ( %pName $= "" )
          %pName = "<root>";
       ShapeEdNodeParentMenu.setText( %pName );
@@ -663,25 +663,25 @@ function ShapeEdPropWindow::update_onNodeSelectionChanged( %this, %id )
       if ( ShapeEdNodes-->worldTransform.getValue() )
       {
          // Global transform
-         %txfm = ShapeEditor.shape.getNodeTransform( %name, 1 );
+         %txfm = $ActiveShapeEditor.shape.getNodeTransform( %name, 1 );
          ShapeEdNodes-->nodePosition.setText( getWords( %txfm, 0, 2 ) );
          ShapeEdNodes-->nodeRotation.setText( getWords( %txfm, 3, 6 ) );
       }
       else
       {
          // Local transform (relative to parent)
-         %txfm = ShapeEditor.shape.getNodeTransform( %name, 0 );
+         %txfm = $ActiveShapeEditor.shape.getNodeTransform( %name, 0 );
          ShapeEdNodes-->nodePosition.setText( getWords( %txfm, 0, 2 ) );
          ShapeEdNodes-->nodeRotation.setText( getWords( %txfm, 3, 6 ) );
       }
 
-      ShapeEdShapeView.selectedNode = ShapeEditor.shape.getNodeIndex( %name );
+      $ActiveShapeEditor.editorPage-->ShapeView.selectedNode = $ActiveShapeEditor.shape.getNodeIndex( %name );
    }
    else
    {
       // Disable delete button and edit boxes
       if ( ShapeEdSeqNodeTabBook.activePage $= "Node" ) 
-         ShapeEdPropWindow-->deleteBtn.setActive( false );
+         ContentsWindow-->deleteBtn.setActive( false );
       ShapeEdNodes-->nodeName.setActive( false );
       ShapeEdNodes-->nodePosition.setActive( false );
       ShapeEdNodes-->nodeRotation.setActive( false );
@@ -690,34 +690,34 @@ function ShapeEdPropWindow::update_onNodeSelectionChanged( %this, %id )
       ShapeEdNodes-->nodePosition.setText( "" );
       ShapeEdNodes-->nodeRotation.setText( "" );
 
-      ShapeEdShapeView.selectedNode = -1;
+      $ActiveShapeEditor.editorPage-->ShapeView.selectedNode = -1;
    }
 }
 
 // Update the GUI in response to a node being added
-function ShapeEdPropWindow::update_onNodeAdded( %this, %nodeName, %oldTreeIndex )
+function ContentsWindow::update_onNodeAdded( %this, %nodeName, %oldTreeIndex )
 {
    // --- MISC ---
-   ShapeEdShapeView.refreshShape();
-   ShapeEdShapeView.updateNodeTransforms();
+   $ActiveShapeEditor.editorPage-->ShapeView.refreshShape();
+   $ActiveShapeEditor.editorPage-->ShapeView.updateNodeTransforms();
    ShapeEdSelectWindow.updateHints();
 
    // --- MOUNT WINDOW ---
-   if ( ShapeEdMountWindow.isMountableNode( %nodeName ) )
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdMountWindow.isMountableNode( %nodeName ) )
    {
       ShapeEdMountWindow-->mountNode.add( %nodeName );
       ShapeEdMountWindow-->mountNode.sort();
    }
 
    // --- NODES TAB ---
-   %id = ShapeEdNodeTreeView.addNodeTree( %nodeName );
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.addNodeTree( %nodeName );
    if ( %oldTreeIndex <= 0 )
    {
       // This is a new node => make it the current selection
       if ( %id > 0 )
       {
-         ShapeEdNodeTreeView.clearSelection();
-         ShapeEdNodeTreeView.selectItem( %id );
+         $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.clearSelection();
+         $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.selectItem( %id );
       }
    }
    else
@@ -725,24 +725,24 @@ function ShapeEdPropWindow::update_onNodeAdded( %this, %nodeName, %oldTreeIndex 
       // This node has been un-deleted. Inserting a new item puts it at the
       // end of the siblings, but we want to restore the original order as
       // if the item was never deleted, so move it up as required.
-      %childIndex = ShapeEdNodeTreeView.getChildIndexByName( %nodeName );
+      %childIndex = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getChildIndexByName( %nodeName );
       while ( %childIndex > %oldTreeIndex )
       {
-         ShapeEdNodeTreeView.moveItemUp( %id );
+         $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.moveItemUp( %id );
          %childIndex--;
       }
    }
 
    // --- DETAILS TAB ---
-   ShapeEdDetails-->objectNode.add( %nodeName );
+   $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.add( %nodeName );
 }
 
 // Update the GUI in response to a node(s) being removed
-function ShapeEdPropWindow::update_onNodeRemoved( %this, %nameList, %nameCount )
+function ContentsWindow::update_onNodeRemoved( %this, %nameList, %nameCount )
 {
    // --- MISC ---
-   ShapeEdShapeView.refreshShape();
-   ShapeEdShapeView.updateNodeTransforms();
+   $ActiveShapeEditor.editorPage-->ShapeView.refreshShape();
+   $ActiveShapeEditor.editorPage-->ShapeView.updateNodeTransforms();
    ShapeEdSelectWindow.updateHints();
 
    // Remove nodes from the mountable list, and any shapes mounted to the node
@@ -756,7 +756,7 @@ function ShapeEdPropWindow::update_onNodeRemoved( %this, %nameList, %nameCount )
          %text = ShapeEdMountWindow-->mountList.getRowText( %j );
          if ( getField( %text, 1 ) $= %nodeName )
          {
-            ShapeEdShapeView.unmountShape( %j-1 );
+            $ActiveShapeEditor.editorPage-->ShapeView.unmountShape( %j-1 );
             ShapeEdMountWindow-->mountList.removeRow( %j );
          }
       }
@@ -764,24 +764,24 @@ function ShapeEdPropWindow::update_onNodeRemoved( %this, %nameList, %nameCount )
 
    // --- NODES TAB ---
    %lastName = getField( %nameList, %nameCount-1 );
-   %id = ShapeEdNodeTreeView.findItemByName( %lastName );   // only need to remove the parent item
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.findItemByName( %lastName );   // only need to remove the parent item
    if ( %id > 0 )
    {
-      ShapeEdNodeTreeView.removeItem( %id );
-      if ( ShapeEdNodeTreeView.getSelectedItem() <= 0 )
-         ShapeEdPropWindow.update_onNodeSelectionChanged( -1 );
+      $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.removeItem( %id );
+      if ( $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getSelectedItem() <= 0 )
+         $ActiveShapeEditor.editorPage-->ContentsWindow.update_onNodeSelectionChanged( -1 );
    }
 
    // --- DETAILS TAB ---
    for ( %i = 0; %i < %nameCount; %i++ )
    {
       %nodeName = getField( %nameList, %i );
-      ShapeEdDetails-->objectNode.clearEntry( ShapeEdDetails-->objectNode.findText( %nodeName ) );
+      $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.clearEntry( $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.findText( %nodeName ) );
    }
 }
 
 // Update the GUI in response to a node being renamed
-function ShapeEdPropWindow::update_onNodeRenamed( %this, %oldName, %newName )
+function ContentsWindow::update_onNodeRenamed( %this, %oldName, %newName )
 {
    // --- MISC ---
    ShapeEdSelectWindow.updateHints();
@@ -801,63 +801,63 @@ function ShapeEdPropWindow::update_onNodeRenamed( %this, %oldName, %newName )
 
    // Update list of mountable nodes
    ShapeEdMountWindow-->mountNode.clearEntry( ShapeEdMountWindow-->mountNode.findText( %oldName ) );
-   if ( ShapeEdMountWindow.isMountableNode( %newName ) )
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdMountWindow.isMountableNode( %newName ) )
    {
       ShapeEdMountWindow-->mountNode.add( %newName );
       ShapeEdMountWindow-->mountNode.sort();
    }
 
    // --- NODES TAB ---
-   %id = ShapeEdNodeTreeView.findItemByName( %oldName );
-   ShapeEdNodeTreeView.editItem( %id, %newName, 0 );
-   if ( ShapeEdNodeTreeView.getSelectedItem() == %id )
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.findItemByName( %oldName );
+   $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.editItem( %id, %newName, 0 );
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getSelectedItem() == %id )
       ShapeEdNodes-->nodeName.setText( %newName );
 
    // --- DETAILS TAB ---
-   %id = ShapeEdDetails-->objectNode.findText( %oldName );
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.findText( %oldName );
    if ( %id != -1 )
    {
-      ShapeEdDetails-->objectNode.clearEntry( %id );
-      ShapeEdDetails-->objectNode.add( %newName, %id );
-      ShapeEdDetails-->objectNode.sortID();
-      if ( ShapeEdDetails-->objectNode.getText() $= %oldName )
-         ShapeEdDetails-->objectNode.setText( %newName );
+      $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.clearEntry( %id );
+      $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.add( %newName, %id );
+      $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.sortID();
+      if ( $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.getText() $= %oldName )
+         $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.setText( %newName );
    }
 }
 
 // Update the GUI in response to a node's parent being changed
-function ShapeEdPropWindow::update_onNodeParentChanged( %this, %nodeName )
+function ContentsWindow::update_onNodeParentChanged( %this, %nodeName )
 {
    // --- MISC ---
-   ShapeEdShapeView.updateNodeTransforms();
+   $ActiveShapeEditor.editorPage-->ShapeView.updateNodeTransforms();
 
    // --- NODES TAB ---
    %isSelected = 0;
-   %id = ShapeEdNodeTreeView.findItemByName( %nodeName );
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.findItemByName( %nodeName );
    if ( %id > 0 )
    {
-      %isSelected = ( ShapeEdNodeTreeView.getSelectedItem() == %id );
-      ShapeEdNodeTreeView.removeItem( %id );
+      %isSelected = ( $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getSelectedItem() == %id );
+      $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.removeItem( %id );
    }
-   ShapeEdNodeTreeView.addNodeTree( %nodeName );
+   $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.addNodeTree( %nodeName );
    if ( %isSelected )
-      ShapeEdNodeTreeView.selectItem( ShapeEdNodeTreeView.findItemByName( %nodeName ) );
+      $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.selectItem( $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.findItemByName( %nodeName ) );
 }
 
-function ShapeEdPropWindow::update_onNodeTransformChanged( %this, %nodeName )
+function ContentsWindow::update_onNodeTransformChanged( %this, %nodeName )
 {
    // Default to the selected node if none is specified
    if ( %nodeName $= "" )
    {
-      %id = ShapeEdNodeTreeView.getSelectedItem();
+      %id = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getSelectedItem();
       if ( %id > 0 )
-         %nodeName = ShapeEdNodeTreeView.getItemText( %id );
+         %nodeName = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getItemText( %id );
       else
          return;
    }
 
    // --- MISC ---
-   ShapeEdShapeView.updateNodeTransforms();
+   $ActiveShapeEditor.editorPage-->ShapeView.updateNodeTransforms();
    if ( ShapeEdNodes-->objectTransform.getValue() )
       GlobalGizmoProfile.setFieldValue(alignment, Object);
    else
@@ -865,11 +865,11 @@ function ShapeEdPropWindow::update_onNodeTransformChanged( %this, %nodeName )
 
    // --- NODES TAB ---
    // Update the node transform fields if necessary
-   %id = ShapeEdNodeTreeView.getSelectedItem();
-   if ( ( %id > 0 ) && ( ShapeEdNodeTreeView.getItemText( %id ) $= %nodeName ) )
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getSelectedItem();
+   if ( ( %id > 0 ) && ( $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getItemText( %id ) $= %nodeName ) )
    {
       %isWorld = ShapeEdNodes-->worldTransform.getValue();
-      %transform = ShapeEditor.shape.getNodeTransform( %nodeName, %isWorld );
+      %transform = $ActiveShapeEditor.shape.getNodeTransform( %nodeName, %isWorld );
       ShapeEdNodes-->nodePosition.setText( getWords( %transform, 0, 2 ) );
       ShapeEdNodes-->nodeRotation.setText( getWords( %transform, 3, 6 ) );
    }
@@ -877,32 +877,32 @@ function ShapeEdPropWindow::update_onNodeTransformChanged( %this, %nodeName )
 
 function ShapeEdNodeTreeView::onClearSelection( %this )
 {
-   ShapeEdPropWindow.update_onNodeSelectionChanged( -1 );
+   $ActiveShapeEditor.editorPage-->ContentsWindow.update_onNodeSelectionChanged( -1 );
 }
 
 function ShapeEdNodeTreeView::onSelect( %this, %id )
 {
    // Update the node name and transform controls
-   ShapeEdPropWindow.update_onNodeSelectionChanged( %id );
+   $ActiveShapeEditor.editorPage-->ContentsWindow.update_onNodeSelectionChanged( %id );
 
    // Update orbit position if orbiting the selected node
-   if ( ShapeEdShapeView.orbitNode )
+   if ( $ActiveShapeEditor.editorPage-->ShapeView.orbitNode )
    {
       %name = %this.getItemText( %id );
-      %transform = ShapeEditor.shape.getNodeTransform( %name, 1 );
-      ShapeEdShapeView.setOrbitPos( getWords( %transform, 0, 2 ) );
+      %transform = $ActiveShapeEditor.shape.getNodeTransform( %name, 1 );
+      $ActiveShapeEditor.editorPage-->ShapeView.setOrbitPos( getWords( %transform, 0, 2 ) );
    }
 }
 
 function ShapeEdShapeView::onNodeSelected( %this, %index )
 {
-   ShapeEdNodeTreeView.clearSelection();
+   $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.clearSelection();
    if ( %index > 0 )
    {
-      %name = ShapeEditor.shape.getNodeName( %index );
-      %id = ShapeEdNodeTreeView.findItemByName( %name );
+      %name = $ActiveShapeEditor.shape.getNodeName( %index );
+      %id = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.findItemByName( %name );
       if ( %id > 0 )
-         ShapeEdNodeTreeView.selectItem( %id );
+         $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.selectItem( %id );
    }
 }
 
@@ -910,25 +910,25 @@ function ShapeEdNodes::onAddNode( %this, %name )
 {
    // Add a new node, using the currently selected node as the initial parent
    if ( %name $= "" )
-      %name = ShapeEditor.getUniqueName( "node", "myNode" );
+      %name = $ActiveShapeEditor.getUniqueName( "node", "myNode" );
 
-   %id = ShapeEdNodeTreeView.getSelectedItem();
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getSelectedItem();
    if ( %id <= 0 )
       %parent = "";
    else
-      %parent = ShapeEdNodeTreeView.getItemText( %id );
+      %parent = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getItemText( %id );
 
-   ShapeEditor.doAddNode( %name, %parent, "0 0 0 0 0 1 0" );
+   $ActiveShapeEditor.doAddNode( %name, %parent, "0 0 0 0 0 1 0" );
 }
 
 function ShapeEdNodes::onDeleteNode( %this )
 {
    // Remove the node and all its children from the shape
-   %id = ShapeEdNodeTreeView.getSelectedItem();
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getSelectedItem();
    if ( %id > 0 )
    {
-      %name = ShapeEdNodeTreeView.getItemText( %id );
-      ShapeEditor.doRemoveShapeData( "Node", %name );
+      %name = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getItemText( %id );
+      $ActiveShapeEditor.doRemoveShapeData( "Node", %name );
    }
 }
 
@@ -963,7 +963,7 @@ function ShapeEdNodeTreeView::addNodeTree( %this, %nodeName )
    }
 
    // Find parent and add me to it
-   %parentName = ShapeEditor.shape.getNodeParentName( %nodeName );
+   %parentName = $ActiveShapeEditor.shape.getNodeParentName( %nodeName );
    if ( %parentName $= "" )
       %parentName = "<root>";
 
@@ -971,41 +971,41 @@ function ShapeEdNodeTreeView::addNodeTree( %this, %nodeName )
    %id = %this.insertItem( %parentId, %nodeName, 0, "" );
 
    // Add children
-   %count = ShapeEditor.shape.getNodeChildCount( %nodeName );
+   %count = $ActiveShapeEditor.shape.getNodeChildCount( %nodeName );
    for ( %i = 0; %i < %count; %i++ )
-      %this.addNodeTree( ShapeEditor.shape.getNodeChildName( %nodeName, %i ) );
+      %this.addNodeTree( $ActiveShapeEditor.shape.getNodeChildName( %nodeName, %i ) );
 
    return %id;
 }
 
 function ShapeEdNodes::onEditName( %this )
 {
-   %id = ShapeEdNodeTreeView.getSelectedItem();
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getSelectedItem();
    if ( %id > 0 )
    {
-      %oldName = ShapeEdNodeTreeView.getItemText( %id );
+      %oldName = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getItemText( %id );
       %newName = %this-->nodeName.getText();
       if ( %newName !$= "" )
-         ShapeEditor.doRenameNode( %oldName, %newName );
+         $ActiveShapeEditor.doRenameNode( %oldName, %newName );
    }
 }
 
 function ShapeEdNodeParentMenu::onSelect( %this, %id, %text )
 {
-   %id = ShapeEdNodeTreeView.getSelectedItem();
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getSelectedItem();
    if ( %id > 0 )
    {
-      %name = ShapeEdNodeTreeView.getItemText( %id );
-      ShapeEditor.doSetNodeParent( %name, %text );
+      %name = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getItemText( %id );
+      $ActiveShapeEditor.doSetNodeParent( %name, %text );
    }
 }
 
 function ShapeEdNodes::onEditTransform( %this )
 {
-   %id = ShapeEdNodeTreeView.getSelectedItem();
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getSelectedItem();
    if ( %id > 0 )
    {
-      %name = ShapeEdNodeTreeView.getItemText( %id );
+      %name = $ActiveShapeEditor.editorPage-->ShapeEdNodeTreeView.getItemText( %id );
 
       // Get the node transform from the gui
       %pos = %this-->nodePosition.getText();
@@ -1020,20 +1020,20 @@ function ShapeEdNodes::onEditTransform( %this )
             return;
       }
 
-      ShapeEditor.doEditNodeTransform( %name, %txfm, %isWorld, -1 );
+      $ActiveShapeEditor.doEditNodeTransform( %name, %txfm, %isWorld, -1 );
    }
 }
 
 function ShapeEdShapeView::onEditNodeTransform( %this, %node, %txfm, %gizmoID )
 {
-   ShapeEditor.doEditNodeTransform( %node, %txfm, 1, %gizmoID );
+   $ActiveShapeEditor.doEditNodeTransform( %node, %txfm, 1, %gizmoID );
 }
 
 //------------------------------------------------------------------------------
 // Sequence Editing
 //------------------------------------------------------------------------------
 
-function ShapeEdPropWindow::onWake( %this )
+function ContentsWindow::onWake( %this )
 {
    ShapeEdTriggerList.triggerId = 1;
 
@@ -1041,231 +1041,231 @@ function ShapeEdPropWindow::onWake( %this )
    ShapeEdTriggerList.setRowActive( -1, false );
 }
 
-function ShapeEdPropWindow::update_onSeqSelectionChanged( %this )
+function ContentsWindow::update_onSeqSelectionChanged( %this )
 {
    // Sync the Thread window sequence selection
-   %row = ShapeEdSequenceList.getSelectedRow();
-   if ( ShapeEdThreadWindow-->seqList.getSelectedRow() != ( %row-1 ) )
+   %row = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedRow();
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdThreadWindow-->seqList.getSelectedRow() != ( %row-1 ) )
    {
-      ShapeEdThreadWindow-->seqList.setSelectedRow( %row-1 );
+      $ActiveShapeEditor.editorPage-->ShapeEdThreadWindow-->seqList.setSelectedRow( %row-1 );
       return;  // selecting a sequence in the Thread window will re-call this function
    }
 
-   ShapeEdSeqFromMenu.clear();
-   ShapeEdSequences-->blendSeq.clear();
+   $ActiveShapeEditor.editorPage-->ShapeEdSeqFromMenu.clear();
+   $ActiveShapeEditor.editorPage-->ShapeEdSequences-->blendSeq.clear();
 
    // Clear the trigger list
-   ShapeEdTriggerList.removeAll();
+   $ActiveShapeEditor.editorPage-->ShapeEdTriggerList.removeAll();
 
    // Update the active sequence data
-   %seqName = ShapeEdSequenceList.getSelectedName();
+   %seqName = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName();
    if ( %seqName !$= "" )
    {
       // Enable delete button and edit boxes
       if ( ShapeEdSeqNodeTabBook.activePage $= "Seq" ) 
-         ShapeEdPropWindow-->deleteBtn.setActive( true );
-      ShapeEdSequences-->seqName.setActive( true );
-      ShapeEdSequences-->blendFlag.setActive( true );
-      ShapeEdSequences-->cyclicFlag.setActive( true );
-      ShapeEdSequences-->priority.setActive( true );
-      ShapeEdSequences-->addTriggerBtn.setActive( true );
-      ShapeEdSequences-->deleteTriggerBtn.setActive( true );
+         ContentsWindow-->deleteBtn.setActive( true );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->seqName.setActive( true );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->blendFlag.setActive( true );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->cyclicFlag.setActive( true );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->priority.setActive( true );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->addTriggerBtn.setActive( true );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->deleteTriggerBtn.setActive( true );
 
       // Initialise the sequence properties
-      %blendData = ShapeEditor.shape.getSequenceBlend( %seqName );
-      ShapeEdSequences-->seqName.setText( %seqName );
-      ShapeEdSequences-->cyclicFlag.setValue( ShapeEditor.shape.getSequenceCyclic( %seqName ) );
-      ShapeEdSequences-->blendFlag.setValue( getField( %blendData, 0 ) );
-      ShapeEdSequences-->priority.setText( ShapeEditor.shape.getSequencePriority( %seqName ) );
+      %blendData = $ActiveShapeEditor.shape.getSequenceBlend( %seqName );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->seqName.setText( %seqName );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->cyclicFlag.setValue( $ActiveShapeEditor.shape.getSequenceCyclic( %seqName ) );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->blendFlag.setValue( getField( %blendData, 0 ) );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->priority.setText( $ActiveShapeEditor.shape.getSequencePriority( %seqName ) );
 
       // 'From' and 'Blend' sequence menus
-      ShapeEdSeqFromMenu.add( "Browse..." );
-      %count = ShapeEdSequenceList.rowCount();
+      $ActiveShapeEditor.editorPage-->ShapeEdSeqFromMenu.add( "Browse..." );
+      %count = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.rowCount();
       for ( %i = 2; %i < %count; %i++ )  // skip header row and <rootpose>
       {
-         %name = ShapeEdSequenceList.getItemName( %i );
+         %name = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getItemName( %i );
          if ( %name !$= %seqName )
          {
-            ShapeEdSeqFromMenu.add( %name );
-            ShapeEdSequences-->blendSeq.add( %name );
+            $ActiveShapeEditor.editorPage-->ShapeEdSeqFromMenu.add( %name );
+            $ActiveShapeEditor.editorPage-->ShapeEdSequences-->blendSeq.add( %name );
          }
       }
-      ShapeEdSequences-->blendSeq.setText( getField( %blendData, 1 ) );
-      ShapeEdSequences-->blendFrame.setText( getField( %blendData, 2 ) );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->blendSeq.setText( getField( %blendData, 1 ) );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->blendFrame.setText( getField( %blendData, 2 ) );
 
       %this.syncPlaybackDetails();
 
       // Triggers (must occur after syncPlaybackDetails is called so the slider range is correct)
-      %count = ShapeEditor.shape.getTriggerCount( %seqName );
+      %count = $ActiveShapeEditor.shape.getTriggerCount( %seqName );
       for ( %i = 0; %i < %count; %i++ )
       {
-         %trigger = ShapeEditor.shape.getTrigger( %seqName, %i );
-         ShapeEdTriggerList.addItem( getWord( %trigger, 0 ), getWord( %trigger, 1 ) );
+         %trigger = $ActiveShapeEditor.shape.getTrigger( %seqName, %i );
+         $ActiveShapeEditor.editorPage-->ShapeEdTriggerList.addItem( getWord( %trigger, 0 ), getWord( %trigger, 1 ) );
       }
    }
    else
    {
       // Disable delete button and edit boxes
-      if ( ShapeEdSeqNodeTabBook.activePage $= "Seq" ) 
-         ShapeEdPropWindow-->deleteBtn.setActive( false );
-      ShapeEdSequences-->seqName.setActive( false );
-      ShapeEdSequences-->blendFlag.setActive( false );
-      ShapeEdSequences-->cyclicFlag.setActive( false );
-      ShapeEdSequences-->priority.setActive( false );
-      ShapeEdSequences-->addTriggerBtn.setActive( false );
-      ShapeEdSequences-->deleteTriggerBtn.setActive( false );
+      if ( $ActiveShapeEditor.editorPage-->ShapeEdSeqNodeTabBook.activePage $= "Seq" ) 
+         $ActiveShapeEditor.editorPage-->ContentsWindow-->deleteBtn.setActive( false );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->seqName.setActive( false );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->blendFlag.setActive( false );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->cyclicFlag.setActive( false );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->priority.setActive( false );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->addTriggerBtn.setActive( false );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->deleteTriggerBtn.setActive( false );
 
       // Clear sequence properties
-      ShapeEdSequences-->seqName.setText( "" );
-      ShapeEdSequences-->cyclicFlag.setValue( 0 );
-      ShapeEdSequences-->blendSeq.setText( "" );
-      ShapeEdSequences-->blendFlag.setValue( 0 );
-      ShapeEdSequences-->priority.setText( 0 );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->seqName.setText( "" );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->cyclicFlag.setValue( 0 );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->blendSeq.setText( "" );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->blendFlag.setValue( 0 );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->priority.setText( 0 );
 
       %this.syncPlaybackDetails();
    }
 
    %this.onTriggerSelectionChanged();
 
-   ShapeEdSequences-->sequenceListHeader.setExtent( getWord( ShapeEdSequenceList.extent, 0 ) SPC "19" );
+   $ActiveShapeEditor.editorPage-->ShapeEdSequences-->sequenceListHeader.setExtent( getWord( $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.extent, 0 ) SPC "19" );
 
    // Reset current frame
    //ShapeEdAnimWindow.setKeyframe( ShapeEdAnimWindow-->seqIn.getText() );
 }
 
 // Update the GUI in response to a sequence being added
-function ShapeEdPropWindow::update_onSequenceAdded( %this, %seqName, %oldIndex )
+function ContentsWindow::update_onSequenceAdded( %this, %seqName, %oldIndex )
 {
    // --- MISC ---
-   ShapeEdSelectWindow.updateHints();
+   $ActiveShapeEditor.editorPage-->ShapeEdSelectWindow.updateHints();
 
    // --- SEQUENCES TAB ---
    if ( %oldIndex == -1 )
    {
       // This is a brand new sequence => add it to the list and make it the
       // current selection
-      %row = ShapeEdSequenceList.insertItem( %seqName, ShapeEdSequenceList.rowCount() );
-      ShapeEdSequenceList.scrollVisible( %row );
-      ShapeEdSequenceList.setSelectedRow( %row );
+      %row = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.insertItem( %seqName, $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.rowCount() );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.scrollVisible( %row );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.setSelectedRow( %row );
    }
    else
    {
       // This sequence has been un-deleted => add it back to the list at the
       // original position
-      ShapeEdSequenceList.insertItem( %seqName, %oldIndex );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.insertItem( %seqName, %oldIndex );
    }
 }
 
-function ShapeEdPropWindow::update_onSequenceRemoved( %this, %seqName )
+function ContentsWindow::update_onSequenceRemoved( %this, %seqName )
 {
    // --- MISC ---
-   ShapeEdSelectWindow.updateHints();
+   $ActiveShapeEditor.editorPage-->ShapeEdSelectWindow.updateHints();
 
    // --- SEQUENCES TAB ---
-   %isSelected = ( ShapeEdSequenceList.getSelectedName() $= %seqName );
-   ShapeEdSequenceList.removeItem( %seqName );
+   %isSelected = ( $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName() $= %seqName );
+   $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.removeItem( %seqName );
    if ( %isSelected )
-      ShapeEdPropWindow.update_onSeqSelectionChanged();
+      $ActiveShapeEditor.editorPage-->ContentsWindow.update_onSeqSelectionChanged();
 
    // --- THREADS WINDOW ---
-   ShapeEdShapeView.refreshThreadSequences();
+   $ActiveShapeEditor.editorPage-->ShapeView.refreshThreadSequences();
 }
 
-function ShapeEdPropWindow::update_onSequenceRenamed( %this, %oldName, %newName )
+function ContentsWindow::update_onSequenceRenamed( %this, %oldName, %newName )
 {
    // --- MISC ---
-   ShapeEdSelectWindow.updateHints();
+   $ActiveShapeEditor.editorPage-->ShapeEdSelectWindow.updateHints();
 
    // Rename the proxy sequence as well
-   %oldProxy = ShapeEditor.getProxyName( %oldName );
-   %newProxy = ShapeEditor.getProxyName( %newName );
-   if ( ShapeEditor.shape.getSequenceIndex( %oldProxy ) != -1 )
-      ShapeEditor.shape.renameSequence( %oldProxy, %newProxy );
+   %oldProxy = $ActiveShapeEditor.getProxyName( %oldName );
+   %newProxy = $ActiveShapeEditor.getProxyName( %newName );
+   if ( $ActiveShapeEditor.shape.getSequenceIndex( %oldProxy ) != -1 )
+      $ActiveShapeEditor.shape.renameSequence( %oldProxy, %newProxy );
 
    // --- SEQUENCES TAB ---
-   ShapeEdSequenceList.editColumn( %oldName, 0, %newName );
-   if ( ShapeEdSequenceList.getSelectedName() $= %newName )
-      ShapeEdSequences-->seqName.setText( %newName );
+   $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.editColumn( %oldName, 0, %newName );
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName() $= %newName )
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->seqName.setText( %newName );
 
    // --- THREADS WINDOW ---
    // Update any threads that use this sequence
-   %active = ShapeEdShapeView.activeThread;
-   for ( %i = 0; %i < ShapeEdShapeView.getThreadCount(); %i++ )
+   %active = $ActiveShapeEditor.editorPage-->ShapeView.activeThread;
+   for ( %i = 0; %i < $ActiveShapeEditor.editorPage-->ShapeView.getThreadCount(); %i++ )
    {
-      ShapeEdShapeView.activeThread = %i;
-      if ( ShapeEdShapeView.getThreadSequence() $= %oldName )
-         ShapeEdShapeView.setThreadSequence( %newName, 0, ShapeEdShapeView.threadPos, 0 );
-      else if ( ShapeEdShapeView.getThreadSequence() $= %oldProxy )
-         ShapeEdShapeView.setThreadSequence( %newProxy, 0, ShapeEdShapeView.threadPos, 0 );
+      $ActiveShapeEditor.editorPage-->ShapeView.activeThread = %i;
+      if ( $ActiveShapeEditor.editorPage-->ShapeView.getThreadSequence() $= %oldName )
+         $ActiveShapeEditor.editorPage-->ShapeView.setThreadSequence( %newName, 0, $ActiveShapeEditor.editorPage-->ShapeView.threadPos, 0 );
+      else if ( $ActiveShapeEditor.editorPage-->ShapeView.getThreadSequence() $= %oldProxy )
+         $ActiveShapeEditor.editorPage-->ShapeView.setThreadSequence( %newProxy, 0, $ActiveShapeEditor.editorPage-->ShapeView.threadPos, 0 );
    }
-   ShapeEdShapeView.activeThread = %active;
+   $ActiveShapeEditor.editorPage-->ShapeView.activeThread = %active;
 }
 
-function ShapeEdPropWindow::update_onSequenceCyclicChanged( %this, %seqName, %cyclic )
+function ContentsWindow::update_onSequenceCyclicChanged( %this, %seqName, %cyclic )
 {
    // --- MISC ---
    // Apply the same transformation to the proxy animation if necessary
-   %proxyName = ShapeEditor.getProxyName( %seqName );
-   if ( ShapeEditor.shape.getSequenceIndex( %proxyName ) != -1 )
-      ShapeEditor.shape.setSequenceCyclic( %proxyName, %cyclic );
+   %proxyName = $ActiveShapeEditor.getProxyName( %seqName );
+   if ( $ActiveShapeEditor.shape.getSequenceIndex( %proxyName ) != -1 )
+      $ActiveShapeEditor.shape.setSequenceCyclic( %proxyName, %cyclic );
 
    // --- SEQUENCES TAB ---
-   ShapeEdSequenceList.editColumn( %seqName, 1, %cyclic ? "yes" : "no" );
-   if ( ShapeEdSequenceList.getSelectedName() $= %seqName )
-      ShapeEdSequences-->cyclicFlag.setStateOn( %cyclic );
+   $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.editColumn( %seqName, 1, %cyclic ? "yes" : "no" );
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName() $= %seqName )
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->cyclicFlag.setStateOn( %cyclic );
 }
 
-function ShapeEdPropWindow::update_onSequenceBlendChanged( %this, %seqName, %blend,
+function ContentsWindow::update_onSequenceBlendChanged( %this, %seqName, %blend,
                               %oldBlendSeq, %oldBlendFrame, %blendSeq, %blendFrame )
 {
    // --- MISC ---
    // Apply the same transformation to the proxy animation if necessary
-   %proxyName = ShapeEditor.getProxyName( %seqName );
-   if ( ShapeEditor.shape.getSequenceIndex( %proxyName ) != -1 )
+   %proxyName = $ActiveShapeEditor.getProxyName( %seqName );
+   if ( $ActiveShapeEditor.shape.getSequenceIndex( %proxyName ) != -1 )
    {
       //TODO
       %oldBlend = false;
       if ( %blend && %oldBlend )
-         ShapeEditor.shape.setSequenceBlend( %proxyName, false, %oldBlendSeq, %oldBlendFrame );
-      ShapeEditor.shape.setSequenceBlend( %proxyName, %blend, %blendSeq, %blendFrame );
+         $ActiveShapeEditor.shape.setSequenceBlend( %proxyName, false, %oldBlendSeq, %oldBlendFrame );
+      $ActiveShapeEditor.shape.setSequenceBlend( %proxyName, %blend, %blendSeq, %blendFrame );
    }
-   ShapeEdShapeView.updateNodeTransforms();
+   $ActiveShapeEditor.editorPage-->ShapeView.updateNodeTransforms();
 
    // --- SEQUENCES TAB ---
-   ShapeEdSequenceList.editColumn( %seqName, 2, %blend ? "yes" : "no" );
-   if ( ShapeEdSequenceList.getSelectedName() $= %seqName )
+   $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.editColumn( %seqName, 2, %blend ? "yes" : "no" );
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName() $= %seqName )
    {
-      ShapeEdSequences-->blendFlag.setStateOn( %blend );
-      ShapeEdSequences-->blendSeq.setText( %blendSeq );
-      ShapeEdSequences-->blendFrame.setText( %blendFrame );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->blendFlag.setStateOn( %blend );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->blendSeq.setText( %blendSeq );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->blendFrame.setText( %blendFrame );
    }
 }
 
-function ShapeEdPropWindow::update_onSequencePriorityChanged( %this, %seqName )
+function ContentsWindow::update_onSequencePriorityChanged( %this, %seqName )
 {
    // --- SEQUENCES TAB ---
-   %priority = ShapeEditor.shape.getSequencePriority( %seqName );
-   ShapeEdSequenceList.editColumn( %seqName, 4, %priority );
-   if ( ShapeEdSequenceList.getSelectedName() $= %seqName )
-      ShapeEdSequences-->priority.setText( %priority );
+   %priority = $ActiveShapeEditor.shape.getSequencePriority( %seqName );
+   $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.editColumn( %seqName, 4, %priority );
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName() $= %seqName )
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->priority.setText( %priority );
 }
 
-function ShapeEdPropWindow::update_onSequenceGroundSpeedChanged( %this, %seqName )
+function ContentsWindow::update_onSequenceGroundSpeedChanged( %this, %seqName )
 {
    // nothing to do yet
 }
 
-function ShapeEdPropWindow::syncPlaybackDetails( %this )
+function ContentsWindow::syncPlaybackDetails( %this )
 {
-   %seqName = ShapeEdSequenceList.getSelectedName();
+   %seqName = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName();
    if ( %seqName !$= "" )
    {
       // Show sequence in/out bars
-      ShapeEdAnimWindow-->seqInBar.setVisible( true );
-      ShapeEdAnimWindow-->seqOutBar.setVisible( true );
+      %this-->ShapeEdAnimWindow-->seqInBar.setVisible( true );
+      %this-->ShapeEdAnimWindow-->seqOutBar.setVisible( true );
 
       // Sync playback controls
-      %sourceData = ShapeEditor.getSequenceSource( %seqName );
+      %sourceData = $ActiveShapeEditor.getSequenceSource( %seqName );
       %seqFrom = rtrim( getFields( %sourceData, 0, 1 ) );
       %seqStart = getField( %sourceData, 2 );
       %seqEnd = getField( %sourceData, 3 );
@@ -1274,49 +1274,49 @@ function ShapeEdPropWindow::syncPlaybackDetails( %this )
       // Display the original source for edited sequences
       if ( startswith( %seqFrom, "__backup__" ) )
       {
-         %backupData = ShapeEditor.getSequenceSource( getField( %seqFrom, 0 ) );
+         %backupData = $ActiveShapeEditor.getSequenceSource( getField( %seqFrom, 0 ) );
          %seqFrom = rtrim( getFields( %backupData, 0, 1 ) );
       }
 
-      ShapeEdSeqFromMenu.setText( %seqFrom );
-      ShapeEdSeqFromMenu.tooltip = ShapeEdSeqFromMenu.getText();   // use tooltip to show long names
-      ShapeEdSequences-->startFrame.setText( %seqStart );
-      ShapeEdSequences-->endFrame.setText( %seqEnd );
+      %this-->ShapeEdSeqFromMenu.setText( %seqFrom );
+      %this-->ShapeEdSeqFromMenu.tooltip = ShapeEdSeqFromMenu.getText();   // use tooltip to show long names
+      %this-->ShapeEdSequences-->startFrame.setText( %seqStart );
+      %this-->ShapeEdSequences-->endFrame.setText( %seqEnd );
 
       %val = ShapeEdSeqSlider.getValue() / getWord( ShapeEdSeqSlider.range, 1 );
-      ShapeEdSeqSlider.range = "0" SPC ( %seqFromTotal-1 );
-      ShapeEdSeqSlider.setValue( %val * getWord( ShapeEdSeqSlider.range, 1 ) );
-      ShapeEdThreadSlider.range = ShapeEdSeqSlider.range;
-      ShapeEdThreadSlider.setValue( ShapeEdSeqSlider.value );
+      %this-->ShapeEdSeqSlider.range = "0" SPC ( %seqFromTotal-1 );
+      %this-->ShapeEdSeqSlider.setValue( %val * getWord( ShapeEdSeqSlider.range, 1 ) );
+      %this-->ShapeEdThreadSlider.range = ShapeEdSeqSlider.range;
+      %this-->ShapeEdThreadSlider.setValue( ShapeEdSeqSlider.value );
 
-      ShapeEdAnimWindow.setSequence( %seqName );
-      ShapeEdAnimWindow.setPlaybackLimit( "in", %seqStart );
-      ShapeEdAnimWindow.setPlaybackLimit( "out", %seqEnd );
+      %this-->ShapeEdAnimWindow.setSequence( %seqName );
+      %this-->ShapeEdAnimWindow.setPlaybackLimit( "in", %seqStart );
+      %this-->ShapeEdAnimWindow.setPlaybackLimit( "out", %seqEnd );
    }
    else
    {
       // Hide sequence in/out bars
-      ShapeEdAnimWindow-->seqInBar.setVisible( false );
-      ShapeEdAnimWindow-->seqOutBar.setVisible( false );
+      %this-->ShapeEdAnimWindow-->seqInBar.setVisible( false );
+      %this-->ShapeEdAnimWindow-->seqOutBar.setVisible( false );
 
-      ShapeEdSeqFromMenu.setText( "" );
-      ShapeEdSeqFromMenu.tooltip = "";
-      ShapeEdSequences-->startFrame.setText( 0 );
-      ShapeEdSequences-->endFrame.setText( 0 );
+      %this-->ShapeEdSeqFromMenu.setText( "" );
+      %this-->ShapeEdSeqFromMenu.tooltip = "";
+      %this-->ShapeEdSequences-->startFrame.setText( 0 );
+      %this-->ShapeEdSequences-->endFrame.setText( 0 );
 
-      ShapeEdSeqSlider.range = "0 1";
-      ShapeEdSeqSlider.setValue( 0 );
-      ShapeEdThreadSlider.range = ShapeEdSeqSlider.range;
-      ShapeEdThreadSlider.setValue( ShapeEdSeqSlider.value );
-      ShapeEdAnimWindow.setPlaybackLimit( "in", 0 );
-      ShapeEdAnimWindow.setPlaybackLimit( "out", 1 );
-      ShapeEdAnimWindow.setSequence( "" );
+      %this-->ShapeEdSeqSlider.range = "0 1";
+      %this-->ShapeEdSeqSlider.setValue( 0 );
+      %this-->ShapeEdThreadSlider.range = ShapeEdSeqSlider.range;
+      %this-->ShapeEdThreadSlider.setValue( ShapeEdSeqSlider.value );
+      %this-->ShapeEdAnimWindow.setPlaybackLimit( "in", 0 );
+      %this-->ShapeEdAnimWindow.setPlaybackLimit( "out", 1 );
+      %this-->ShapeEdAnimWindow.setSequence( "" );
    }
 }
 
 function ShapeEdSequences::onEditSeqInOut( %this, %type, %val )
 {
-   %frameCount = getWord( ShapeEdSeqSlider.range, 1 );
+   %frameCount = getWord( $ActiveShapeEditor.editorPage-->ShapeEdSeqSlider.range, 1 );
 
    // Force value to a frame index within the slider range
    %val = mRound( %val );
@@ -1345,7 +1345,7 @@ function ShapeEdSequences::onEditSeqInOut( %this, %type, %val )
 function ShapeEdSequences::onEditSequenceSource( %this, %from )
 {
    // ignore for shapes without sequences
-   if (ShapeEditor.shape.getSequenceCount() == 0)
+   if ($ActiveShapeEditor.shape.getSequenceCount() == 0)
       return;
 
    %start = %this-->startFrame.getText();
@@ -1353,8 +1353,8 @@ function ShapeEdSequences::onEditSequenceSource( %this, %from )
 
    if ( ( %start !$= "" ) && ( %end !$= "" ) )
    {
-      %seqName = ShapeEdSequenceList.getSelectedName();
-      %oldSource = ShapeEditor.getSequenceSource( %seqName );
+      %seqName = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName();
+      %oldSource = $ActiveShapeEditor.getSequenceSource( %seqName );
 
       if ( %from $= "" )
          %from = rtrim( getFields( %oldSource, 0, 0 ) );
@@ -1370,39 +1370,39 @@ function ShapeEdSequences::onEditSequenceSource( %this, %from )
             %from = %aq.getAsset(0);
          }
          %aq.delete();
-         ShapeEditor.doEditSeqSource( %seqName, %from, %start, %end );
+         $ActiveShapeEditor.doEditSeqSource( %seqName, %from, %start, %end );
    }
    }
 }
 
 function ShapeEdSequences::onToggleCyclic( %this )
 {
-   %seqName = ShapeEdSequenceList.getSelectedName();
+   %seqName = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName();
    if ( %seqName !$= "" )
    {
       %cyclic = %this-->cyclicFlag.getValue();
-      ShapeEditor.doEditCyclic( %seqName, %cyclic );
+      $ActiveShapeEditor.doEditCyclic( %seqName, %cyclic );
    }
 }
 
 function ShapeEdSequences::onEditPriority( %this )
 {
-   %seqName = ShapeEdSequenceList.getSelectedName();
+   %seqName = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName();
    if ( %seqName !$= "" )
    {
       %newPriority = %this-->priority.getText();
       if ( %newPriority !$= "" )
-         ShapeEditor.doEditSequencePriority( %seqName, %newPriority );
+         $ActiveShapeEditor.doEditSequencePriority( %seqName, %newPriority );
    }
 }
 
 function ShapeEdSequences::onEditBlend( %this )
 {
-   %seqName = ShapeEdSequenceList.getSelectedName();
+   %seqName = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName();
    if ( %seqName !$= "" )
    {
       // Get the blend flags (current and new)
-      %oldBlendData = ShapeEditor.shape.getSequenceBlend( %seqName );
+      %oldBlendData = $ActiveShapeEditor.shape.getSequenceBlend( %seqName );
       %oldBlend = getField( %oldBlendData, 0 );
       %blend = %this-->blendFlag.getValue();
 
@@ -1432,19 +1432,19 @@ function ShapeEdSequences::onEditBlend( %this )
 
       // Check if there is anything to do
       if ( ( %oldBlend TAB %oldBlendSeq TAB %oldBlendFrame ) !$= ( %blend TAB %blendSeq TAB %blendFrame ) )
-         ShapeEditor.doEditBlend( %seqName, %blend, %blendSeq, %blendFrame );
+         $ActiveShapeEditor.doEditBlend( %seqName, %blend, %blendSeq, %blendFrame );
    }
 }
 
 function ShapeEdSequences::onAddSequence( %this, %name )
 {
    if ( %name $= "" )
-      %name = ShapeEditor.getUniqueName( "sequence", "mySequence" );
+      %name = $ActiveShapeEditor.getUniqueName( "sequence", "mySequence" );
 
    // Use the currently selected sequence as the base
-   %from = ShapeEdSequenceList.getSelectedName();
-   %row = ShapeEdSequenceList.getSelectedRow();
-   if ( ( %row < 2 ) && ( ShapeEdSequenceList.rowCount() > 2 ) )
+   %from = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName();
+   %row = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedRow();
+   if ( ( %row < 2 ) && ( $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.rowCount() > 2 ) )
       %row = 2;
    if ( %from $= "" )
    {
@@ -1456,9 +1456,9 @@ function ShapeEdSequences::onAddSequence( %this, %name )
    else
    {
       // Add the new sequence
-      %start = ShapeEdSequences-->startFrame.getText();
-      %end = ShapeEdSequences-->endFrame.getText();
-      ShapeEditor.doAddSequence( %name, %from, %start, %end );
+      %start = $ActiveShapeEditor.editorPage-->ShapeEdSequences-->startFrame.getText();
+      %end = $ActiveShapeEditor.editorPage-->ShapeEdSequences-->endFrame.getText();
+      $ActiveShapeEditor.doAddSequence( %name, %from, %start, %end );
    }
 }
 
@@ -1466,20 +1466,20 @@ function ShapeEdSequences::onAddSequenceFromBrowse( %this, %path )
 {
    // Add a new sequence from the browse path
    %path = makeRelativePath( %path, getMainDotCSDir() );
-   ShapeEdFromMenu.lastPath = %path;
+   $ActiveShapeEditor.editorPage-->ShapeEdFromMenu.lastPath = %path;
 
-   %name = ShapeEditor.getUniqueName( "sequence", "mySequence" );
-   ShapeEditor.doAddSequence( %name, %path, 0, -1 );
+   %name = $ActiveShapeEditor.getUniqueName( "sequence", "mySequence" );
+   $ActiveShapeEditor.doAddSequence( %name, %path, 0, -1 );
 }
 
 // Delete the selected sequence
 function ShapeEdSequences::onDeleteSequence( %this )
 {
-   %row = ShapeEdSequenceList.getSelectedRow();
+   %row = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedRow();
    if ( %row != -1 )
    {
-      %seqName = ShapeEdSequenceList.getItemName( %row );
-      ShapeEditor.doRemoveShapeData( "Sequence", %seqName );
+      %seqName = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getItemName( %row );
+      $ActiveShapeEditor.doRemoveShapeData( "Sequence", %seqName );
    }
 }
 
@@ -1516,7 +1516,7 @@ function ShapeEdSequenceList::editColumn( %this, %name, %col, %text )
    // Update the Properties and Thread sequence lists
    %id = %this.getRowId( %row );
    if ( %col == 0 )
-      ShapeEdThreadWindow-->seqList.setRowById( %id, %text );   // Sync name in Thread window
+      $ActiveShapeEditor.editorPage-->ShapeEdThreadWindow-->seqList.setRowById( %id, %text );   // Sync name in Thread window
    %this.setRowById( %id, %rowText );
 }
 
@@ -1527,14 +1527,14 @@ function ShapeEdSequenceList::addItem( %this, %name )
 
 function ShapeEdSequenceList::insertItem( %this, %name, %index )
 {
-   %cyclic = ShapeEditor.shape.getSequenceCyclic( %name ) ? "yes" : "no";
-   %blend = getField( ShapeEditor.shape.getSequenceBlend( %name ), 0 ) ? "yes" : "no";
-   %frameCount = ShapeEditor.shape.getSequenceFrameCount( %name );
-   %priority = ShapeEditor.shape.getSequencePriority( %name );
+   %cyclic = $ActiveShapeEditor.shape.getSequenceCyclic( %name ) ? "yes" : "no";
+   %blend = getField( $ActiveShapeEditor.shape.getSequenceBlend( %name ), 0 ) ? "yes" : "no";
+   %frameCount = $ActiveShapeEditor.shape.getSequenceFrameCount( %name );
+   %priority = $ActiveShapeEditor.shape.getSequencePriority( %name );
 
    // Add the item to the Properties and Thread sequence lists
    %this.seqId++; // use this to keep the row IDs synchronised
-   ShapeEdThreadWindow-->seqList.addRow( %this.seqId, %name, %index-1 );   // no header row
+   $ActiveShapeEditor.editorPage-->ShapeEdThreadWindow-->seqList.addRow( %this.seqId, %name, %index-1 );   // no header row
    return %this.addRow( %this.seqId, %name TAB %cyclic TAB %blend TAB %frameCount TAB %priority, %index );
 }
 
@@ -1544,7 +1544,7 @@ function ShapeEdSequenceList::removeItem( %this, %name )
    if ( %index >= 0 )
    {
       %this.removeRow( %index );
-      ShapeEdThreadWindow-->seqList.removeRow( %index-1 );   // no header row
+      $ActiveShapeEditor.editorPage-->ShapeEdThreadWindow-->seqList.removeRow( %index-1 );   // no header row
    }
 }
 
@@ -1553,8 +1553,8 @@ function ShapeEdSeqFromMenu::onSelect( %this, %id, %text )
    if ( %text $= "Browse..." )
    {
       // Reset menu text
-      %seqName = ShapeEdSequenceList.getSelectedName();
-      %seqFrom = rtrim( getFields( ShapeEditor.getSequenceSource( %seqName ), 0, 1 ) );
+      %seqName = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName();
+      %seqFrom = rtrim( getFields( $ActiveShapeEditor.getSequenceSource( %seqName ), 0, 1 ) );
       %this.setText( %seqFrom );
 
       // Allow the user to browse for an external source of animation data
@@ -1563,7 +1563,7 @@ function ShapeEdSeqFromMenu::onSelect( %this, %id, %text )
    }
    else
    {
-      ShapeEdSequences.onEditSequenceSource( %text );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences.onEditSequenceSource( %text );
    }
 }
 
@@ -1577,7 +1577,7 @@ function ShapeEdSeqFromMenu::onBrowseSelect( %this, %assetId )
    %shapePath = %assetDef.getShapePath();
    AssetDatabase.releaseAsset(%assetId);
    
-   ShapeEdSequences.onEditSequenceSource( %shapePath );
+   $ActiveShapeEditor.editorPage-->ShapeEdSequences.onEditSequenceSource( %shapePath );
 }
 
 //------------------------------------------------------------------------------
@@ -1603,22 +1603,22 @@ function ShapeEdThreadWindow::onWake( %this )
 // Update the GUI in response to the shape selection changing
 function ShapeEdThreadWindow::update_onShapeSelectionChanged( %this )
 {
-   ShapeEdThreadList.clear();
+   $ActiveShapeEditor.editorPage-->ShapeEdThreadList.clear();
    %this-->seqList.clear();
    %this-->seqList.addRow( 0, "<rootpose>" );
 }
 
-function ShapeEdAnimWIndow::threadPosToKeyframe( %this, %pos )
+function ShapeEdAnimWindow::threadPosToKeyframe( %this, %pos )
 {
    if ( %this.usingProxySeq )
    {
-      %start = getWord( ShapeEdSeqSlider.range, 0 );
-      %end = getWord( ShapeEdSeqSlider.range, 1 );
+      %start = getWord( %this-->ShapeEdSeqSlider.range, 0 );
+      %end = getWord( %this-->ShapeEdSeqSlider.range, 1 );
    }
    else
    {
-      %start = ShapeEdAnimWindow.seqStartFrame;
-      %end = ShapeEdAnimWindow.seqEndFrame;
+      %start = %this.seqStartFrame;
+      %end = %this.seqEndFrame;
    }
 
    return %start + ( %end - %start ) * %pos;
@@ -1628,13 +1628,13 @@ function ShapeEdAnimWindow::keyframeToThreadPos( %this, %frame )
 {
    if ( %this.usingProxySeq )
    {
-      %start = getWord( ShapeEdSeqSlider.range, 0 );
-      %end = getWord( ShapeEdSeqSlider.range, 1 );
+      %start = getWord( %this-->ShapeEdSeqSlider.range, 0 );
+      %end = getWord( %this-->ShapeEdSeqSlider.range, 1 );
    }
    else
    {
-      %start = ShapeEdAnimWindow.seqStartFrame;
-      %end = ShapeEdAnimWindow.seqEndFrame;
+      %start = %this.seqStartFrame;
+      %end = %this.seqEndFrame;
    }
 
    return ( %frame - %start ) / ( %end - %start );
@@ -1642,9 +1642,9 @@ function ShapeEdAnimWindow::keyframeToThreadPos( %this, %frame )
 
 function ShapeEdAnimWindow::setKeyframe( %this, %frame )
 {
-   ShapeEdSeqSlider.setValue( %frame );
-   if ( ShapeEdThreadWindow-->transitionTo.getText() $= "synched position" )
-      ShapeEdThreadSlider.setValue( %frame );
+   %this-->ShapeEdSeqSlider.setValue( %frame );
+   if ( %this-->ShapeEdThreadWindow-->transitionTo.getText() $= "synched position" )
+      %this-->ShapeEdThreadSlider.setValue( %frame );
 
    // Update the position of the active thread => if outside the in/out range,
    // need to switch to the proxy sequence
@@ -1653,12 +1653,12 @@ function ShapeEdAnimWindow::setKeyframe( %this, %frame )
       if ( ( %frame < %this.seqStartFrame ) || ( %frame > %this.seqEndFrame) )
       {
          %this.usingProxySeq = true;
-         %proxyName = ShapeEditor.getProxyName( ShapeEdShapeView.getThreadSequence() );
-         ShapeEdShapeView.setThreadSequence( %proxyName, 0, 0, false );
+         %proxyName = $ActiveShapeEditor.getProxyName( $ActiveShapeEditor.editorPage-->ShapeView.getThreadSequence() );
+         $ActiveShapeEditor.editorPage-->ShapeView.setThreadSequence( %proxyName, 0, 0, false );
       }
    }
 
-   ShapeEdShapeView.threadPos = %this.keyframeToThreadPos( %frame );
+   $ActiveShapeEditor.editorPage-->ShapeView.threadPos = %this.keyframeToThreadPos( %frame );
 }
 
 function ShapeEdAnimWindow::setNoProxySequence( %this )
@@ -1667,9 +1667,9 @@ function ShapeEdAnimWindow::setNoProxySequence( %this )
    if ( %this.usingProxySeq )
    {
       %this.usingProxySeq = false;
-      %seqName = ShapeEditor.getUnproxyName( ShapeEdShapeView.getThreadSequence() );
-      ShapeEdShapeView.setThreadSequence( %seqName, 0, 0, false );
-      ShapeEdShapeView.threadPos = %this.keyframeToThreadPos( ShapeEdSeqSlider.getValue() );
+      %seqName = $ActiveShapeEditor.getUnproxyName( $ActiveShapeEditor.editorPage-->ShapeView.getThreadSequence() );
+      $ActiveShapeEditor.editorPage-->ShapeView.setThreadSequence( %seqName, 0, 0, false );
+      $ActiveShapeEditor.editorPage-->ShapeView.threadPos = %this.keyframeToThreadPos( ShapeEdSeqSlider.getValue() );
    }
 }
 
@@ -1692,7 +1692,7 @@ function ShapeEdAnimWindow::togglePause( %this )
 
 function ShapeEdAnimWindow::togglePingPong( %this )
 {
-   ShapeEdShapeView.threadPingPong = %this-->pingpong.getValue();
+   $ActiveShapeEditor.editorPage-->ShapeView.threadPingPong = %this-->pingpong.getValue();
    if ( %this-->playFwdBtn.getValue() )
       %this-->playFwdBtn.performClick();
    else if ( %this-->playBkwdBtn.getValue() )
@@ -1723,18 +1723,18 @@ function ShapeEdThreadSlider::onMouseDragged( %this )
 function ShapeEdShapeView::onThreadPosChanged( %this, %pos, %inTransition )
 {
    // Update sliders
-   %frame = ShapeEdAnimWindow.threadPosToKeyframe( %pos );
-   ShapeEdSeqSlider.setValue( %frame );
+   %frame = %this-->ShapeEdAnimWindow.threadPosToKeyframe( %pos );
+   %this-->ShapeEdSeqSlider.setValue( %frame );
 
-   if ( ShapeEdThreadWindow-->transitionTo.getText() $= "synched position" )
+   if ( %this-->ShapeEdThreadWindow-->transitionTo.getText() $= "synched position" )
    {
-      ShapeEdThreadSlider.setValue( %frame );
+      %this-->ShapeEdThreadSlider.setValue( %frame );
 
       // Highlight the slider during transitions
       if ( %inTransition )
-         ShapeEdThreadSlider.profile = GuiShapeEdTransitionSliderProfile;
+         %this-->ShapeEdThreadSlider.profile = GuiShapeEdTransitionSliderProfile;
       else
-         ShapeEdThreadSlider.profile = ToolsGuiSliderProfile;
+         %this-->ShapeEdThreadSlider.profile = ToolsGuiSliderProfile;
    }
 }
 
@@ -1742,7 +1742,7 @@ function ShapeEdShapeView::onThreadPosChanged( %this, %pos, %inTransition )
 function ShapeEdAnimWindow::setThreadDirection( %this, %dir )
 {
    // Update thread direction
-   ShapeEdShapeView.threadDirection = %dir;
+   $ActiveShapeEditor.editorPage-->ShapeView.threadDirection = %dir;
 
    // Sync the controls in the thread window
    switch ( %dir )
@@ -1764,8 +1764,8 @@ function ShapeEdAnimWindow::setSequence( %this, %seqName )
       if ( ShapeEdThreadWindow-->transitionTo.getText() $= "synched position" )
          %transPos = -1;
       else
-         %transPos = %this.keyframeToThreadPos( ShapeEdThreadSlider.getValue() );
-      %transPlay = ( ShapeEdThreadWindow-->transitionTarget.getText() $= "plays during transition" );
+         %transPos = %this.keyframeToThreadPos( %this-->ShapeEdThreadSlider.getValue() );
+      %transPlay = ( %this-->ShapeEdThreadWindow-->transitionTarget.getText() $= "plays during transition" );
    }
    else
    {
@@ -1775,7 +1775,7 @@ function ShapeEdAnimWindow::setSequence( %this, %seqName )
    }
 
    // No transition when sequence is not changing
-   if ( %seqName $= ShapeEdShapeView.getThreadSequence() )
+   if ( %seqName $= $ActiveShapeEditor.editorPage-->ShapeView.getThreadSequence() )
       %transTime = 0;
 
    if ( %seqName !$= "" )
@@ -1783,7 +1783,7 @@ function ShapeEdAnimWindow::setSequence( %this, %seqName )
       // To be able to effectively scrub through the animation, we need to have all
       // frames available, even if it was added with only a subset. If that is the
       // case, then create a proxy sequence that has all the frames instead.
-      %sourceData = ShapeEditor.getSequenceSource( %seqName );
+      %sourceData = $ActiveShapeEditor.getSequenceSource( %seqName );
       %from = rtrim( getFields( %sourceData, 0, 1 ) );
       %startFrame = getField( %sourceData, 2 );
       %endFrame = getField( %sourceData, 3 );
@@ -1791,20 +1791,20 @@ function ShapeEdAnimWindow::setSequence( %this, %seqName )
 
       if ( ( %startFrame != 0 ) || ( %endFrame != ( %frameCount-1 ) ) )
       {
-         %proxyName = ShapeEditor.getProxyName( %seqName );
-         if ( ShapeEditor.shape.getSequenceIndex( %proxyName ) != -1 )
+         %proxyName = $ActiveShapeEditor.getProxyName( %seqName );
+         if ( $ActiveShapeEditor.shape.getSequenceIndex( %proxyName ) != -1 )
          {
-            ShapeEditor.shape.removeSequence( %proxyName );
-            ShapeEdShapeView.refreshThreadSequences();
+            $ActiveShapeEditor.shape.removeSequence( %proxyName );
+            $ActiveShapeEditor.editorPage-->ShapeView.refreshThreadSequences();
          }
-         ShapeEditor.shape.addSequence( %from, %proxyName );
+         $ActiveShapeEditor.shape.addSequence( %from, %proxyName );
 
          // Limit the transition position to the in/out range
          %transPos = mClamp( %transPos, 0, 1 );
       }
    }
 
-   ShapeEdShapeView.setThreadSequence( %seqName, %transTime, %transPos, %transPlay );
+   $ActiveShapeEditor.editorPage-->ShapeView.setThreadSequence( %seqName, %transTime, %transPos, %transPlay );
 }
 
 function ShapeEdAnimWindow::getTimelineBitmapPos( %this, %val, %width )
@@ -1838,114 +1838,114 @@ function ShapeEdAnimWindow::setPlaybackLimit( %this, %limit, %val )
 
 function ShapeEdThreadWindow::onAddThread( %this )
 {
-   ShapeEdShapeView.addThread();
-   ShapeEdThreadList.addRow( %this.threadID++, ShapeEdThreadList.rowCount() );
-   ShapeEdThreadList.setSelectedRow( ShapeEdThreadList.rowCount()-1 );
+   $ActiveShapeEditor.editorPage-->ShapeView.addThread();
+   %this-->ShapeEdThreadList.addRow( %this.threadID++, %this-->ShapeEdThreadList.rowCount() );
+   %this-->ShapeEdThreadList.setSelectedRow( %this-->ShapeEdThreadList.rowCount()-1 );
 }
 
 function ShapeEdThreadWindow::onRemoveThread( %this )
 {
-   if ( ShapeEdThreadList.rowCount() > 1 )
+   if ( %this-->ShapeEdThreadList.rowCount() > 1 )
    {
       // Remove the selected thread
-      %row = ShapeEdThreadList.getSelectedRow();
-      ShapeEdShapeView.removeThread( %row );
-      ShapeEdThreadList.removeRow( %row );
+      %row = %this-->ShapeEdThreadList.getSelectedRow();
+      $ActiveShapeEditor.editorPage-->ShapeView.removeThread( %row );
+      %this-->ShapeEdThreadList.removeRow( %row );
 
       // Update list (threads are always numbered 0-N)
-      %rowCount = ShapeEdThreadList.rowCount();
+      %rowCount = %this-->ShapeEdThreadList.rowCount();
       for ( %i = %row; %i < %rowCount; %i++ )
-         ShapeEdThreadList.setRowById( ShapeEdThreadList.getRowId( %i ), %i );
+         %this-->ShapeEdThreadList.setRowById( %this-->ShapeEdThreadList.getRowId( %i ), %i );
 
       // Select the next thread
       if ( %row >= %rowCount )
          %row = %rowCount - 1;
 
-      ShapeEdThreadList.setSelectedRow( %row );
+      %this-->ShapeEdThreadList.setSelectedRow( %row );
    }
 }
 
 function ShapeEdThreadList::onSelect( %this, %row, %text )
 {
-   ShapeEdShapeView.activeThread = ShapeEdThreadList.getSelectedRow();
+   $ActiveShapeEditor.editorPage-->ShapeView.activeThread = $ActiveShapeEditor.editorPage-->ShapeEdThreadList.getSelectedRow();
 
    // Select the active thread's sequence in the list
-   %seqName = ShapeEdShapeView.getThreadSequence();
+   %seqName = $ActiveShapeEditor.editorPage-->ShapeView.getThreadSequence();
    if ( %seqName $= "" )
       %seqName = "<rootpose>";
    else if ( startswith( %seqName, "__proxy__" ) )
-      %seqName = ShapeEditor.getUnproxyName( %seqName );
+      %seqName = $ActiveShapeEditor.getUnproxyName( %seqName );
 
-   %seqIndex = ShapeEdSequenceList.getItemIndex( %seqName );
-   ShapeEdSequenceList.setSelectedRow( %seqIndex );
+   %seqIndex = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getItemIndex( %seqName );
+   $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.setSelectedRow( %seqIndex );
 
    // Update the playback controls
-   switch ( ShapeEdShapeView.threadDirection )
+   switch ( $ActiveShapeEditor.editorPage-->ShapeView.threadDirection )
    {
-      case -1: ShapeEdAnimWindow-->playBkwdBtn.performClick();
-      case 0:  ShapeEdAnimWindow-->pauseBtn.performClick();
-      case 1:  ShapeEdAnimWindow-->playFwdBtn.performClick();
+      case -1: $ActiveShapeEditor.editorPage-->ShapeEdAnimWindow-->playBkwdBtn.performClick();
+      case 0:  $ActiveShapeEditor.editorPage-->ShapeEdAnimWindow-->pauseBtn.performClick();
+      case 1:  $ActiveShapeEditor.editorPage-->ShapeEdAnimWindow-->playFwdBtn.performClick();
    }
-   SetToggleButtonValue( ShapeEdAnimWindow-->pingpong, ShapeEdShapeView.threadPingPong );
+   SetToggleButtonValue( $ActiveShapeEditor.editorPage-->ShapeEdAnimWindow-->pingpong, $ActiveShapeEditor.editorPage-->ShapeView.threadPingPong );
 }
 
 //------------------------------------------------------------------------------
 // Trigger Editing
 //------------------------------------------------------------------------------
 
-function ShapeEdPropWindow::onTriggerSelectionChanged( %this )
+function ContentsWindow::onTriggerSelectionChanged( %this )
 {
-   %row = ShapeEdTriggerList.getSelectedRow();
+   %row = $ActiveShapeEditor.editorPage-->ShapeEdTriggerList.getSelectedRow();
    if ( %row > 0 )  // skip header row
    {
-      %text = ShapeEdTriggerList.getRowText( %row );
+      %text = $ActiveShapeEditor.editorPage-->ShapeEdTriggerList.getRowText( %row );
 
-      ShapeEdSequences-->triggerFrame.setActive( true );
-      ShapeEdSequences-->triggerNum.setActive( true );
-      ShapeEdSequences-->triggerOnOff.setActive( true );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->triggerFrame.setActive( true );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->triggerNum.setActive( true );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->triggerOnOff.setActive( true );
 
-      ShapeEdSequences-->triggerFrame.setText( getField( %text, 1 ) );
-      ShapeEdSequences-->triggerNum.setText( getField( %text, 2 ) );
-      ShapeEdSequences-->triggerOnOff.setValue( getField( %text, 3 ) $= "on" );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->triggerFrame.setText( getField( %text, 1 ) );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->triggerNum.setText( getField( %text, 2 ) );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->triggerOnOff.setValue( getField( %text, 3 ) $= "on" );
    }
    else
    {
       // No trigger selected
-      ShapeEdSequences-->triggerFrame.setActive( false );
-      ShapeEdSequences-->triggerNum.setActive( false );
-      ShapeEdSequences-->triggerOnOff.setActive( false );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->triggerFrame.setActive( false );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->triggerNum.setActive( false );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->triggerOnOff.setActive( false );
 
-      ShapeEdSequences-->triggerFrame.setText( "" );
-      ShapeEdSequences-->triggerNum.setText( "" );
-      ShapeEdSequences-->triggerOnOff.setValue( 0 );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->triggerFrame.setText( "" );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->triggerNum.setText( "" );
+      $ActiveShapeEditor.editorPage-->ShapeEdSequences-->triggerOnOff.setValue( 0 );
    }
 }
 
 function ShapeEdSequences::onEditName( %this )
 {
-   %seqName = ShapeEdSequenceList.getSelectedName();
+   %seqName = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName();
    if ( %seqName !$= "" )
    {
       %newName = %this-->seqName.getText();
       if ( %newName !$= "" )
-         ShapeEditor.doRenameSequence( %seqName, %newName );
+         $ActiveShapeEditor.doRenameSequence( %seqName, %newName );
    }
 }
 
-function ShapeEdPropWindow::update_onTriggerAdded( %this, %seqName, %frame, %state )
+function ContentsWindow::update_onTriggerAdded( %this, %seqName, %frame, %state )
 {
    // --- SEQUENCES TAB ---
    // Add trigger to list if this sequence is selected
-   if ( ShapeEdSequenceList.getSelectedName() $= %seqName )
-      ShapeEdTriggerList.addItem( %frame, %state );
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName() $= %seqName )
+      $ActiveShapeEditor.editorPage-->ShapeEdTriggerList.addItem( %frame, %state );
 }
 
-function ShapeEdPropWindow::update_onTriggerRemoved( %this, %seqName, %frame, %state )
+function ContentsWindow::update_onTriggerRemoved( %this, %seqName, %frame, %state )
 {
    // --- SEQUENCES TAB ---
    // Remove trigger from list if this sequence is selected
-   if ( ShapeEdSequenceList.getSelectedName() $= %seqName )
-      ShapeEdTriggerList.removeItem( %frame, %state );
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName() $= %seqName )
+      $ActiveShapeEditor.editorPage-->ShapeEdTriggerList.removeItem( %frame, %state );
 }
 
 function ShapeEdTriggerList::getTriggerText( %this, %frame, %state )
@@ -2029,7 +2029,7 @@ function ShapeEdTriggerList::updateItem( %this, %oldFrame, %oldState, %frame, %s
 function ShapeEdSequences::onAddTrigger( %this )
 {
     // Can only add triggers if a sequence is selected
-    %seqName = ShapeEdSequenceList.getSelectedName();
+    %seqName = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName();
     if ( %seqName !$= "" )
     {
         // Add a new trigger at the current frame
@@ -2041,7 +2041,7 @@ function ShapeEdSequences::onAddTrigger( %this )
         else
         {
         %state = ShapeEdTriggerList.rowCount() % 30;
-        ShapeEditor.doAddTrigger( %seqName, %frame, %state );
+        $ActiveShapeEditor.doAddTrigger( %seqName, %frame, %state );
         }
     }
 }
@@ -2049,7 +2049,7 @@ function ShapeEdSequences::onAddTrigger( %this )
 function ShapeEdTriggerList::onDeleteSelection( %this )
 {
    // Can only delete a trigger if a sequence and trigger are selected
-   %seqName = ShapeEdSequenceList.getSelectedName();
+   %seqName = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName();
    if ( %seqName !$= "" )
    {
       %row = %this.getSelectedRow();
@@ -2059,7 +2059,7 @@ function ShapeEdTriggerList::onDeleteSelection( %this )
          %frame = getWord( %text, 1 );
          %state = getWord( %text, 2 );
          %state *= ( getWord( %text, 3 ) $= "on" ) ? 1 : -1;
-         ShapeEditor.doRemoveTrigger( %seqName, %frame, %state );
+         $ActiveShapeEditor.doRemoveTrigger( %seqName, %frame, %state );
       }
    }
 }
@@ -2067,7 +2067,7 @@ function ShapeEdTriggerList::onDeleteSelection( %this )
 function ShapeEdTriggerList::onEditSelection( %this )
 {
    // Can only edit triggers if a sequence and trigger are selected
-   %seqName = ShapeEdSequenceList.getSelectedName();
+   %seqName = $ActiveShapeEditor.editorPage-->ShapeEdSequenceList.getSelectedName();
    if ( %seqName !$= "" )
    {
       %row = ShapeEdTriggerList.getSelectedRow();
@@ -2083,7 +2083,7 @@ function ShapeEdTriggerList::onEditSelection( %this )
          %state *= ShapeEdSequences-->triggerOnOff.getValue() ? 1 : -1;
 
          if ( ( %frame >= 0 ) && ( %state != 0 ) )
-            ShapeEditor.doEditTrigger( %seqName, %oldFrame, %oldState, %frame, %state );
+            $ActiveShapeEditor.doEditTrigger( %seqName, %oldFrame, %oldState, %frame, %state );
       }
    }
 }
@@ -2095,22 +2095,22 @@ function ShapeEdTriggerList::onEditSelection( %this )
 function ShapeEdMaterials::updateMaterialList( %this )
 {
    // --- MATERIALS TAB ---
-   ShapeEdMaterialList.clear();
-   ShapeEdMaterialList.addRow( -2, "Name" TAB "Mapped" );
-   ShapeEdMaterialList.setRowActive( -2, false );
-   ShapeEdMaterialList.addRow( -1, "<none>" );
-   %count = ShapeEditor.shape.getTargetCount();
+   $ActiveShapeEditor.editorPage-->ShapeEdMaterialList.clear();
+   $ActiveShapeEditor.editorPage-->ShapeEdMaterialList.addRow( -2, "Name" TAB "Mapped" );
+   $ActiveShapeEditor.editorPage-->ShapeEdMaterialList.setRowActive( -2, false );
+   $ActiveShapeEditor.editorPage-->ShapeEdMaterialList.addRow( -1, "<none>" );
+   %count = $ActiveShapeEditor.shape.getTargetCount();
    for ( %i = 0; %i < %count; %i++ )
    {
-      %matName = ShapeEditor.shape.getTargetName( %i );
+      %matName = $ActiveShapeEditor.shape.getTargetName( %i );
       %mapped = getMaterialMapping( %matName );
       if ( %mapped $= "" )
-         ShapeEdMaterialList.addRow( WarningMaterial.getID(), %matName TAB "unmapped" );
+         $ActiveShapeEditor.editorPage-->ShapeEdMaterialList.addRow( WarningMaterial.getID(), %matName TAB "unmapped" );
       else
-         ShapeEdMaterialList.addRow( %mapped.getID(), %matName TAB %mapped );
+         $ActiveShapeEditor.editorPage-->ShapeEdMaterialList.addRow( %mapped.getID(), %matName TAB %mapped );
    }
 
-   ShapeEdMaterials-->materialListHeader.setExtent( getWord( ShapeEdMaterialList.extent, 0 ) SPC "19" );
+   $ActiveShapeEditor.editorPage-->ShapeEdMaterials-->materialListHeader.setExtent( getWord( $ActiveShapeEditor.editorPage-->ShapeEdMaterialList.extent, 0 ) SPC "19" );
 }
 
 function ShapeEdMaterials::updateSelectedMaterial( %this, %highlight )
@@ -2123,8 +2123,8 @@ function ShapeEdMaterials::updateSelectedMaterial( %this, %highlight )
    }
 
    // Apply the highlight effect to the new selected material
-   %this.selectedMapTo = getField( ShapeEdMaterialList.getRowText( ShapeEdMaterialList.getSelectedRow() ), 0 );
-   %this.selectedMaterial = ShapeEdMaterialList.getSelectedId();
+   %this.selectedMapTo = getField( $ActiveShapeEditor.editorPage-->ShapeEdMaterialList.getRowText( $ActiveShapeEditor.editorPage-->ShapeEdMaterialList.getSelectedRow() ), 0 );
+   %this.selectedMaterial = $ActiveShapeEditor.editorPage-->ShapeEdMaterialList.getSelectedId();
    %this.savedMap = %this.selectedMaterial.diffuseMap[1];
    if ( %highlight && isObject( %this.selectedMaterial ) )
    {
@@ -2145,7 +2145,7 @@ function ShapeEdMaterials::editSelectedMaterial( %this )
       // materials.
       pushInstantGroup();
       %this.tempShape = new TSStatic() {
-         shapeAsset = ShapeEditor.shape.baseShapeAsset;
+         shapeAsset = $ActiveShapeEditor.shape.baseShapeAsset;
          collisionType = "None";
       };
       popInstantGroup();
@@ -2154,13 +2154,13 @@ function ShapeEdMaterials::editSelectedMaterial( %this )
       MaterialEditorGui.currentObject = $Tools::materialEditorList = %this.tempShape;
 
       ShapeEdSelectWindow.setVisible( false );
-      ShapeEdPropWindow.setVisible( false );
+      $ActiveShapeEditor.editorPage-->ContentsWindow.setVisible( false );
       
       EditorGui-->MatEdPropertiesWindow.setVisible( true );
       EditorGui-->MatEdPreviewWindow.setVisible( true );
       
       MatEd_phoBreadcrumb.setVisible( true );
-      MatEd_phoBreadcrumb.command = "ShapeEdMaterials.editSelectedMaterialEnd();";
+      MatEd_phoBreadcrumb.command = "$ActiveShapeEditor.editorPage-->ShapeEdMaterials.editSelectedMaterialEnd();";
       
       advancedTextureMapsRollout.Expanded = false;
       materialAnimationPropertiesRollout.Expanded = false;
@@ -2189,8 +2189,8 @@ function ShapeEdMaterials::editSelectedMaterialEnd( %this, %closeEditor )
 
    if( !%closeEditor )
    {
-      ShapeEdSelectWindow.setVisible( true );
-      ShapeEdPropWindow.setVisible( true );
+      $ActiveShapeEditor.editorPage-->ShapeEdSelectWindow.setVisible( true );
+      $ActiveShapeEditor.editorPage-->ContentsWindow.setVisible( true );
    }
 }
 
@@ -2211,7 +2211,7 @@ function ShapeEdDetails::onWake( %this )
    %this-->addGeomTo.add( "new detail", 1 );
    %this-->addGeomTo.setSelected( 0, false );
 
-   ShapeEdDetailTree.onDefineIcons();
+   $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.onDefineIcons();
 }
 
 function ShapeEdDetailTree::onDefineIcons(%this)
@@ -2241,7 +2241,7 @@ function ShapeEdDetailTree::getDetailLevelFromItem( %this, %id )
       
    else
       %detSize = %this.getItemValue( %this.getParentItem( %id ) );
-   return ShapeEditor.shape.getDetailLevelIndex( %detSize );
+   return $ActiveShapeEditor.shape.getDetailLevelIndex( %detSize );
 }
 
 function ShapeEdDetailTree::addMeshEntry( %this, %name, %noSync )
@@ -2251,18 +2251,18 @@ function ShapeEdDetailTree::addMeshEntry( %this, %name, %noSync )
    %detailID = %this.findItemByValue( %size );
    if ( %detailID <= 0 )
    {
-      %dl = ShapeEditor.shape.getDetailLevelIndex( %size );
-      %detName = ShapeEditor.shape.getDetailLevelName( %dl );
-      %detailID = ShapeEdDetailTree.insertItem( 1, %detName, %size, "" );
+      %dl = $ActiveShapeEditor.shape.getDetailLevelIndex( %size );
+      %detName = $ActiveShapeEditor.shape.getDetailLevelName( %dl );
+      %detailID = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.insertItem( 1, %detName, %size, "" );
 
       // Sort details by decreasing size
-      for ( %sibling = ShapeEdDetailTree.getPrevSibling( %detailID );
-            ( %sibling > 0 ) && ( ShapeEdDetailTree.getItemValue( %sibling ) < %size );
-            %sibling = ShapeEdDetailTree.getPrevSibling( %detailID ) )
-         ShapeEdDetailTree.moveItemUp( %detailID );
+      for ( %sibling = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getPrevSibling( %detailID );
+            ( %sibling > 0 ) && ( $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getItemValue( %sibling ) < %size );
+            %sibling = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getPrevSibling( %detailID ) )
+         $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.moveItemUp( %detailID );
 
       if ( !%noSync )
-         ShapeEdDetails.update_onDetailsChanged();
+         $ActiveShapeEditor.editorPage-->ShapeEdDetails.update_onDetailsChanged();
    }
    return %this.insertItem( %detailID, %name, "", "" );
 }
@@ -2270,12 +2270,12 @@ function ShapeEdDetailTree::addMeshEntry( %this, %name, %noSync )
 function ShapeEdDetailTree::removeMeshEntry( %this, %name, %size )
 {
    %size = getTrailingNumber( %name );
-   %id = ShapeEdDetailTree.findItemByName( %name );
-   if ( ShapeEditor.shape.getDetailLevelIndex( %size ) < 0 )
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.findItemByName( %name );
+   if ( $ActiveShapeEditor.shape.getDetailLevelIndex( %size ) < 0 )
    {
       // Last mesh of a detail level has been removed => remove the detail level
       %this.removeItem( %this.getParentItem( %id ) );
-      ShapeEdDetails.update_onDetailsChanged();
+      $ActiveShapeEditor.editorPage-->ShapeEdDetails.update_onDetailsChanged();
    }
    else
       %this.removeItem( %id );
@@ -2283,67 +2283,67 @@ function ShapeEdDetailTree::removeMeshEntry( %this, %name, %size )
 
 function ShapeEdAdvancedWindow::update_onShapeSelectionChanged( %this )
 {
-   ShapeEdShapeView.currentDL = 0;
-   ShapeEdShapeView.onDetailChanged();
+   $ActiveShapeEditor.editorPage-->ShapeView.currentDL = 0;
+   $ActiveShapeEditor.editorPage-->ShapeView.onDetailChanged();
 }
 
-function ShapeEdPropWindow::update_onDetailRenamed( %this, %oldName, %newName )
+function ContentsWindow::update_onDetailRenamed( %this, %oldName, %newName )
 {
    // --- DETAILS TAB ---
    // Rename detail entry
-   %id = ShapeEdDetailTree.findItemByName( %oldName );
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.findItemByName( %oldName );
    if ( %id > 0 )
    {
-      %size = ShapeEdDetailTree.getItemValue( %id );
-      ShapeEdDetailTree.editItem( %id, %newName, %size );
+      %size = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getItemValue( %id );
+      $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.editItem( %id, %newName, %size );
 
       // Sync text if item is selected
-      if ( ShapeEdDetailTree.isItemSelected( %id ) &&
-           ( ShapeEdDetails-->meshName.getText() !$= %newName ) )
-         ShapeEdDetails-->meshName.setText( stripTrailingNumber( %newName ) );
+      if ( $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.isItemSelected( %id ) &&
+           ( $ActiveShapeEditor.editorPage-->ShapeEdDetails-->meshName.getText() !$= %newName ) )
+         $ActiveShapeEditor.editorPage-->ShapeEdDetails-->meshName.setText( stripTrailingNumber( %newName ) );
    }
 }
 
-function ShapeEdPropWindow::update_onDetailSizeChanged( %this, %oldSize, %newSize )
+function ContentsWindow::update_onDetailSizeChanged( %this, %oldSize, %newSize )
 {
    // --- MISC ---
-   ShapeEdShapeView.refreshShape();
-   %dl = ShapeEditor.shape.getDetailLevelIndex( %newSize );
+   $ActiveShapeEditor.editorPage-->ShapeView.refreshShape();
+   %dl = $ActiveShapeEditor.shape.getDetailLevelIndex( %newSize );
    if ( ShapeEdAdvancedWindow-->detailSize.getText() $= %oldSize )
    {
-      ShapeEdShapeView.currentDL = %dl;
+      $ActiveShapeEditor.editorPage-->ShapeView.currentDL = %dl;
       ShapeEdAdvancedWindow-->detailSize.setText( %newSize );
-      ShapeEdDetails-->meshSize.setText( %newSize );
+      $ActiveShapeEditor.editorPage-->ShapeEdDetails-->meshSize.setText( %newSize );
    }
 
    // --- DETAILS TAB ---
    // Update detail entry then resort details by size
-   %id = ShapeEdDetailTree.findItemByValue( %oldSize );
-   %detName = ShapeEditor.shape.getDetailLevelName( %dl );
-   ShapeEdDetailTree.editItem( %id, %detName, %newSize );
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.findItemByValue( %oldSize );
+   %detName = $ActiveShapeEditor.shape.getDetailLevelName( %dl );
+   $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.editItem( %id, %detName, %newSize );
 
-   for ( %sibling = ShapeEdDetailTree.getPrevSibling( %id );
-         ( %sibling > 0 ) && ( ShapeEdDetailTree.getItemValue( %sibling ) < %newSize );
-         %sibling = ShapeEdDetailTree.getPrevSibling( %id ) )
-      ShapeEdDetailTree.moveItemUp( %id );
-   for ( %sibling = ShapeEdDetailTree.getNextSibling( %id );
-         ( %sibling > 0 ) && ( ShapeEdDetailTree.getItemValue( %sibling ) > %newSize );
-         %sibling = ShapeEdDetailTree.getNextSibling( %id ) )
-      ShapeEdDetailTree.moveItemDown( %id );
+   for ( %sibling = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getPrevSibling( %id );
+         ( %sibling > 0 ) && ( $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getItemValue( %sibling ) < %newSize );
+         %sibling = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getPrevSibling( %id ) )
+      $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.moveItemUp( %id );
+   for ( %sibling = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getNextSibling( %id );
+         ( %sibling > 0 ) && ( $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getItemValue( %sibling ) > %newSize );
+         %sibling = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getNextSibling( %id ) )
+      $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.moveItemDown( %id );
 
    // Update size values for meshes of this detail
-   for ( %child = ShapeEdDetailTree.getChild( %id );
+   for ( %child = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getChild( %id );
          %child > 0;
-         %child = ShapeEdDetailTree.getNextSibling( %child ) )
+         %child = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getNextSibling( %child ) )
    {
-      %meshName = stripTrailingNumber( ShapeEdDetailTree.getItemText( %child ) );
-      ShapeEdDetailTree.editItem( %child, %meshName SPC %newSize, "" );
+      %meshName = stripTrailingNumber( $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getItemText( %child ) );
+      $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.editItem( %child, %meshName SPC %newSize, "" );
    }
 }
 
 function ShapeEdDetails::update_onDetailsChanged( %this )
 {
-   %detailCount = ShapeEditor.shape.getDetailLevelCount();
+   %detailCount = $ActiveShapeEditor.shape.getDetailLevelCount();
    ShapeEdAdvancedWindow-->detailSlider.range = "0" SPC ( %detailCount-1 );
    if ( %detailCount >= 2 )
       ShapeEdAdvancedWindow-->detailSlider.ticks = %detailCount - 2;
@@ -2351,12 +2351,12 @@ function ShapeEdDetails::update_onDetailsChanged( %this )
       ShapeEdAdvancedWindow-->detailSlider.ticks = 0;
 
    // Initialise imposter settings
-   ShapeEdAdvancedWindow-->bbUseImposters.setValue( ShapeEditor.shape.getImposterDetailLevel() != -1 );
+   ShapeEdAdvancedWindow-->bbUseImposters.setValue( $ActiveShapeEditor.shape.getImposterDetailLevel() != -1 );
 
    // Update detail parameters
-   if ( ShapeEdShapeView.currentDL < %detailCount )
+   if ( $ActiveShapeEditor.editorPage-->ShapeView.currentDL < %detailCount )
    {
-      %settings = ShapeEditor.shape.getImposterSettings( ShapeEdShapeView.currentDL );
+      %settings = $ActiveShapeEditor.shape.getImposterSettings( $ActiveShapeEditor.editorPage-->ShapeView.currentDL );
       %isImposter = getWord( %settings, 0 );
 
       ShapeEdAdvancedWindow-->imposterInactive.setVisible( !%isImposter );
@@ -2370,53 +2370,53 @@ function ShapeEdDetails::update_onDetailsChanged( %this )
    }
 }
 
-function ShapeEdPropWindow::update_onObjectNodeChanged( %this, %objName )
+function ContentsWindow::update_onObjectNodeChanged( %this, %objName )
 {
    // --- MISC ---
-   ShapeEdShapeView.refreshShape();
+   $ActiveShapeEditor.editorPage-->ShapeView.refreshShape();
 
    // --- DETAILS TAB ---
    // Update the node popup menu if this object is selected
-   if ( ShapeEdDetails-->meshName.getText() $= %objName )
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdDetails-->meshName.getText() $= %objName )
    {
-      %nodeName = ShapeEditor.shape.getObjectNode( %objName );
+      %nodeName = $ActiveShapeEditor.shape.getObjectNode( %objName );
       if ( %nodeName $= "" )
          %nodeName = "<root>";
-      %id = ShapeEdDetails-->objectNode.findText( %nodeName );
-      ShapeEdDetails-->objectNode.setSelected( %id, false );
+      %id = $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.findText( %nodeName );
+      $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.setSelected( %id, false );
    }
 }
 
-function ShapeEdPropWindow::update_onObjectRenamed( %this, %oldName, %newName )
+function ContentsWindow::update_onObjectRenamed( %this, %oldName, %newName )
 {
    // --- DETAILS TAB ---
    // Rename tree entries for this object
-   %count = ShapeEditor.shape.getMeshCount( %newName );
+   %count = $ActiveShapeEditor.shape.getMeshCount( %newName );
    for ( %i = 0; %i < %count; %i++ )
    {
-      %size = getTrailingNumber( ShapeEditor.shape.getMeshName( %newName, %i ) );
-      %id = ShapeEdDetailTree.findItemByName( %oldName SPC %size );
+      %size = getTrailingNumber( $ActiveShapeEditor.shape.getMeshName( %newName, %i ) );
+      %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.findItemByName( %oldName SPC %size );
       if ( %id > 0 )
       {
-         ShapeEdDetailTree.editItem( %id, %newName SPC %size, "" );
+         $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.editItem( %id, %newName SPC %size, "" );
 
          // Sync text if item is selected
-         if ( ShapeEdDetailTree.isItemSelected( %id ) &&
-              ( ShapeEdDetails-->meshName.getText() !$= %newName ) )
-            ShapeEdDetails-->meshName.setText( %newName );
+         if ( $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.isItemSelected( %id ) &&
+              ( $ActiveShapeEditor.editorPage-->ShapeEdDetails-->meshName.getText() !$= %newName ) )
+            $ActiveShapeEditor.editorPage-->ShapeEdDetails-->meshName.setText( %newName );
       }
    }
 }
 
-function ShapeEdPropWindow::update_onMeshAdded( %this, %meshName )
+function ContentsWindow::update_onMeshAdded( %this, %meshName )
 {
    // --- MISC ---
-   ShapeEdShapeView.refreshShape();
-   ShapeEdShapeView.updateNodeTransforms();
+   $ActiveShapeEditor.editorPage-->ShapeView.refreshShape();
+   $ActiveShapeEditor.editorPage-->ShapeView.updateNodeTransforms();
 
    // --- COLLISION WINDOW ---
    // Add object to target list if it does not already exist
-   if ( !ShapeEditor.isCollisionMesh( %meshName ) )
+   if ( !$ActiveShapeEditor.isCollisionMesh( %meshName ) )
    {
       %objName = stripTrailingNumber( %meshName );
       %id = ShapeEdColWindow-->colTarget.findText( %objName );
@@ -2425,40 +2425,40 @@ function ShapeEdPropWindow::update_onMeshAdded( %this, %meshName )
    }
 
    // --- DETAILS TAB ---
-   %id = ShapeEdDetailTree.addMeshEntry( %meshName );
-   ShapeEdDetailTree.clearSelection();
-   ShapeEdDetailTree.selectItem( %id );
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.addMeshEntry( %meshName );
+   $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.clearSelection();
+   $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.selectItem( %id );
 }
 
-function ShapeEdPropWindow::update_onMeshSizeChanged( %this, %meshName, %oldSize, %newSize )
+function ContentsWindow::update_onMeshSizeChanged( %this, %meshName, %oldSize, %newSize )
 {
    // --- MISC ---
-   ShapeEdShapeView.refreshShape();
+   $ActiveShapeEditor.editorPage-->ShapeView.refreshShape();
 
    // --- DETAILS TAB ---
    // Move the mesh to the new location in the tree
-   %selected = ShapeEdDetailTree.getSelectedItem();
-   %id = ShapeEdDetailTree.findItemByName( %meshName SPC %oldSize );
-   ShapeEdDetailTree.removeMeshEntry( %meshName SPC %oldSize );
-   %newId = ShapeEdDetailTree.addMeshEntry( %meshName SPC %newSize );
+   %selected = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getSelectedItem();
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.findItemByName( %meshName SPC %oldSize );
+   $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.removeMeshEntry( %meshName SPC %oldSize );
+   %newId = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.addMeshEntry( %meshName SPC %newSize );
 
    // Re-select the new entry if it was selected
    if ( %selected == %id )
    {
-      ShapeEdDetailTree.clearSelection();
-      ShapeEdDetailTree.selectItem( %newId );
+      $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.clearSelection();
+      $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.selectItem( %newId );
    }
 }
 
-function ShapeEdPropWindow::update_onMeshRemoved( %this, %meshName )
+function ContentsWindow::update_onMeshRemoved( %this, %meshName )
 {
    // --- MISC ---
-   ShapeEdShapeView.refreshShape();
+   $ActiveShapeEditor.editorPage-->ShapeView.refreshShape();
 
    // --- COLLISION WINDOW ---
    // Remove object from target list if it no longer exists
    %objName = stripTrailingNumber( %meshName );
-   if ( ShapeEditor.shape.getObjectIndex( %objName ) == -1 )
+   if ( $ActiveShapeEditor.shape.getObjectIndex( %objName ) == -1 )
    {
       %id = ShapeEdColWindow-->colTarget.findText( %objName );
       if ( %id != -1 )
@@ -2467,24 +2467,24 @@ function ShapeEdPropWindow::update_onMeshRemoved( %this, %meshName )
 
    // --- DETAILS TAB ---
    // Determine which item to select next
-   %id = ShapeEdDetailTree.findItemByName( %meshName );
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.findItemByName( %meshName );
    if ( %id > 0 )
    {
-      %nextId = ShapeEdDetailTree.getPrevSibling( %id );
+      %nextId = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getPrevSibling( %id );
       if ( %nextId <= 0 )
       {
-         %nextId = ShapeEdDetailTree.getNextSibling( %id );
+         %nextId = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getNextSibling( %id );
          if ( %nextId <= 0 )
             %nextId = 2;
       }
 
       // Remove the entry from the tree
       %meshSize = getTrailingNumber( %meshName );
-      ShapeEdDetailTree.removeMeshEntry( %meshName, %meshSize );
+      $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.removeMeshEntry( %meshName, %meshSize );
 
       // Change selection if needed
-      if ( ShapeEdDetailTree.getSelectedItem() == -1 )
-         ShapeEdDetailTree.selectItem( %nextId );
+      if ( $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getSelectedItem() == -1 )
+         $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.selectItem( %nextId );
    }
 }
 
@@ -2494,38 +2494,38 @@ function ShapeEdDetailTree::onSelect( %this, %id )
    %baseName = stripTrailingNumber( %name );
    %size = getTrailingNumber( %name );
 
-   ShapeEdDetails-->meshName.setText( %baseName );
-   ShapeEdDetails-->meshSize.setText( %size );
+   $ActiveShapeEditor.editorPage-->ShapeEdDetails-->meshName.setText( %baseName );
+   $ActiveShapeEditor.editorPage-->ShapeEdDetails-->meshSize.setText( %size );
 
    // Select the appropriate detail level
    %dl = %this.getDetailLevelFromItem( %id );
-   ShapeEdShapeView.currentDL = %dl;
+   $ActiveShapeEditor.editorPage-->ShapeView.currentDL = %dl;
 
    if ( %this.isDetailItem( %id ) )
    {
       // Selected a detail => disable mesh controls
-      ShapeEdDetails-->editMeshInactive.setVisible( true );
-      ShapeEdShapeView.selectedObject = -1;
-      ShapeEdShapeView.selectedObjDetail = 0;
+      $ActiveShapeEditor.editorPage-->ShapeEdDetails-->editMeshInactive.setVisible( true );
+      $ActiveShapeEditor.editorPage-->ShapeView.selectedObject = -1;
+      $ActiveShapeEditor.editorPage-->ShapeView.selectedObjDetail = 0;
    }
    else
    {
       // Selected a mesh => sync mesh controls
-      ShapeEdDetails-->editMeshInactive.setVisible( false );
+      $ActiveShapeEditor.editorPage-->ShapeEdDetails-->editMeshInactive.setVisible( false );
 
-      switch$ ( ShapeEditor.shape.getMeshType( %name ) )
+      switch$ ( $ActiveShapeEditor.shape.getMeshType( %name ) )
       {
-         case "normal":          ShapeEdDetails-->bbType.setSelected( 0, false );
-         case "billboard":       ShapeEdDetails-->bbType.setSelected( 1, false );
-         case "billboardzaxis":  ShapeEdDetails-->bbType.setSelected( 2, false );
+         case "normal":          $ActiveShapeEditor.editorPage-->ShapeEdDetails-->bbType.setSelected( 0, false );
+         case "billboard":       $ActiveShapeEditor.editorPage-->ShapeEdDetails-->bbType.setSelected( 1, false );
+         case "billboardzaxis":  $ActiveShapeEditor.editorPage-->ShapeEdDetails-->bbType.setSelected( 2, false );
       }
 
-      %node = ShapeEditor.shape.getObjectNode( %baseName );
+      %node = $ActiveShapeEditor.shape.getObjectNode( %baseName );
       if ( %node $= "" )
          %node = "<root>";
-      ShapeEdDetails-->objectNode.setSelected( ShapeEdDetails-->objectNode.findText( %node ), false );
-      ShapeEdShapeView.selectedObject = ShapeEditor.shape.getObjectIndex( %baseName );
-      ShapeEdShapeView.selectedObjDetail = %dl;
+      $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.setSelected( $ActiveShapeEditor.editorPage-->ShapeEdDetails-->objectNode.findText( %node ), false );
+      $ActiveShapeEditor.editorPage-->ShapeView.selectedObject = $ActiveShapeEditor.shape.getObjectIndex( %baseName );
+      $ActiveShapeEditor.editorPage-->ShapeView.selectedObjDetail = %dl;
    }
 }
 
@@ -2541,15 +2541,15 @@ function ShapeEdDetailTree::onRightMouseUp( %this, %itemId, %mouse )
             superClass = "MenuBuilder";
             isPopup = "1";
 
-            item[ 0 ] = "Hidden" TAB "" TAB "ShapeEdDetailTree.onHideMeshItem(" @ ShapeEdMeshPopup._objName @ ", !" @ ShapeEdMeshPopup @ "._itemHidden );";
+            item[ 0 ] = "Hidden" TAB "" TAB "$ActiveShapeEditor.editorPage-->ShapeEdDetailTree.onHideMeshItem(" @ ShapeEdMeshPopup._objName @ ", !" @ ShapeEdMeshPopup @ "._itemHidden );";
             item[ 1 ] = "-";
-            item[ 2 ] = "Hide all" TAB "" TAB "ShapeEdDetailTree.onHideMeshItem( \"\", true );";
-            item[ 3 ] = "Show all" TAB "" TAB "ShapeEdDetailTree.onHideMeshItem( \"\", false );";
+            item[ 2 ] = "Hide all" TAB "" TAB "$ActiveShapeEditor.editorPage-->ShapeEdDetailTree.onHideMeshItem( \"\", true );";
+            item[ 3 ] = "Show all" TAB "" TAB "$ActiveShapeEditor.editorPage-->ShapeEdDetailTree.onHideMeshItem( \"\", false );";
          };
       }
 
       ShapeEdMeshPopup._objName = stripTrailingNumber( %this.getItemText( %itemId ) );
-      ShapeEdMeshPopup._itemHidden = ShapeEdShapeView.getMeshHidden( ShapeEdMeshPopup._objName );
+      ShapeEdMeshPopup._itemHidden = $ActiveShapeEditor.editorPage-->ShapeView.getMeshHidden( ShapeEdMeshPopup._objName );
 
       ShapeEdMeshPopup.checkItem( 0, ShapeEdMeshPopup._itemHidden );
       ShapeEdMeshPopup.showPopup( Canvas );
@@ -2566,7 +2566,7 @@ function ShapeEdDetailTree::onHideMeshItem( %this, %objName, %hide )
    if ( %objName $= "" )
    {
       // Show/hide all
-      ShapeEdShapeView.setAllMeshesHidden( %hide );
+      $ActiveShapeEditor.editorPage-->ShapeView.setAllMeshesHidden( %hide );
       for ( %parent = %this.getChild(%this.getFirstRootItem()); %parent > 0; %parent = %this.getNextSibling(%parent) )
          for ( %child = %this.getChild(%parent); %child > 0; %child = %this.getNextSibling(%child) )
             %this.setItemImages( %child, %imageId, %imageId );
@@ -2574,12 +2574,12 @@ function ShapeEdDetailTree::onHideMeshItem( %this, %objName, %hide )
    else
    {
       // Show/hide all meshes for this object
-      ShapeEdShapeView.setMeshHidden( %objName, %hide );
-      %count = ShapeEditor.shape.getMeshCount( %objName );
+      $ActiveShapeEditor.editorPage-->ShapeView.setMeshHidden( %objName, %hide );
+      %count = $ActiveShapeEditor.shape.getMeshCount( %objName );
       for ( %i = 0; %i < %count; %i++ )
       {
-         %meshName = ShapeEditor.shape.getMeshName( %objName, %i );
-         %id = ShapeEdDetailTree.findItemByName( %meshName );
+         %meshName = $ActiveShapeEditor.shape.getMeshName( %objName, %i );
+         %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.findItemByName( %meshName );
          if ( %id > 0 )
             %this.setItemImages( %id, %imageId, %imageId );
       }
@@ -2593,16 +2593,16 @@ function ShapeEdShapeView::onDetailChanged( %this )
       ShapeEdAdvancedWindow-->detailSlider.setValue( %this.currentDL );
    ShapeEdAdvancedWindow-->detailSize.setText( %this.detailSize );
 
-   ShapeEdDetails.update_onDetailsChanged();
+   $ActiveShapeEditor.editorPage-->ShapeEdDetails.update_onDetailsChanged();
 
-   %id = ShapeEdDetailTree.getSelectedItem();
-   if ( ( %id <= 0 ) || ( %this.currentDL != ShapeEdDetailTree.getDetailLevelFromItem( %id ) ) )
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getSelectedItem();
+   if ( ( %id <= 0 ) || ( %this.currentDL != $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getDetailLevelFromItem( %id ) ) )
    {
-      %id = ShapeEdDetailTree.findItemByValue( %this.detailSize );
+      %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.findItemByValue( %this.detailSize );
       if ( %id > 0 )
       {
-         ShapeEdDetailTree.clearSelection();
-         ShapeEdDetailTree.selectItem( %id );
+         $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.clearSelection();
+         $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.selectItem( %id );
       }
    }
 }
@@ -2610,9 +2610,9 @@ function ShapeEdShapeView::onDetailChanged( %this )
 function ShapeEdAdvancedWindow::onEditDetailSize( %this )
 {
    // Change the size of the current detail level
-   %oldSize = ShapeEditor.shape.getDetailLevelSize( ShapeEdShapeView.currentDL );
+   %oldSize = $ActiveShapeEditor.shape.getDetailLevelSize( $ActiveShapeEditor.editorPage-->ShapeView.currentDL );
    %detailSize = %this-->detailSize.getText();
-   ShapeEditor.doEditDetailSize( %oldSize, %detailSize );
+   $ActiveShapeEditor.doEditDetailSize( %oldSize, %detailSize );
 }
 
 function ShapeEdDetails::onEditName( %this )
@@ -2620,19 +2620,19 @@ function ShapeEdDetails::onEditName( %this )
    %newName = %this-->meshName.getText();
 
    // Check if we are renaming a detail or a mesh
-   %id = ShapeEdDetailTree.getSelectedItem();
-   %oldName = ShapeEdDetailTree.getItemText( %id );
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getSelectedItem();
+   %oldName = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getItemText( %id );
 
-   if ( ShapeEdDetailTree.isDetailItem( %id ) )
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.isDetailItem( %id ) )
    {
       // Rename the selected detail level
       %oldSize = getTrailingNumber( %oldName );
-      ShapeEditor.doRenameDetail( %oldName, %newName @ %oldSize );
+      $ActiveShapeEditor.doRenameDetail( %oldName, %newName @ %oldSize );
    }
    else
    {
       // Rename the selected mesh
-      ShapeEditor.doRenameObject( stripTrailingNumber( %oldName ), %newName );
+      $ActiveShapeEditor.doRenameObject( stripTrailingNumber( %oldName ), %newName );
    }
 }
 
@@ -2641,51 +2641,51 @@ function ShapeEdDetails::onEditSize( %this )
    %newSize = %this-->meshSize.getText();
 
    // Check if we are changing the size for a detail or a mesh
-   %id = ShapeEdDetailTree.getSelectedItem();
-   if ( ShapeEdDetailTree.isDetailItem( %id ) )
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getSelectedItem();
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.isDetailItem( %id ) )
    {
       // Change the size of the selected detail level
-      %oldSize = ShapeEdDetailTree.getItemValue( %id );
-      ShapeEditor.doEditDetailSize( %oldSize, %newSize );
+      %oldSize = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getItemValue( %id );
+      $ActiveShapeEditor.doEditDetailSize( %oldSize, %newSize );
    }
    else
    {
       // Change the size of the selected mesh
-      %meshName = ShapeEdDetailTree.getItemText( %id );
-      ShapeEditor.doEditMeshSize( %meshName, %newSize );
+      %meshName = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getItemText( %id );
+      $ActiveShapeEditor.doEditMeshSize( %meshName, %newSize );
    }
 }
 
 function ShapeEdDetails::onEditBBType( %this )
 {
    // This command is only valid for meshes (not details)
-   %id = ShapeEdDetailTree.getSelectedItem();
-   if ( !ShapeEdDetailTree.isDetailItem( %id ) )
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getSelectedItem();
+   if ( !$ActiveShapeEditor.editorPage-->ShapeEdDetailTree.isDetailItem( %id ) )
    {
-      %meshName = ShapeEdDetailTree.getItemText( %id );
-      %bbType = ShapeEdDetails-->bbType.getText();
+      %meshName = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getItemText( %id );
+      %bbType = $ActiveShapeEditor.editorPage-->ShapeEdDetails-->bbType.getText();
       switch$ ( %bbType )
       {
          case "None":         %bbType = "normal";
          case "Billboard":    %bbType = "billboard";
          case "Z Billboard":  %bbType = "billboardzaxis";
       }
-      ShapeEditor.doEditMeshBillboard( %meshName, %bbType );
+      $ActiveShapeEditor.doEditMeshBillboard( %meshName, %bbType );
    }
 }
 
 function ShapeEdDetails::onSetObjectNode( %this )
 {
    // This command is only valid for meshes (not details)
-   %id = ShapeEdDetailTree.getSelectedItem();
-   if ( !ShapeEdDetailTree.isDetailItem( %id ) )
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getSelectedItem();
+   if ( !$ActiveShapeEditor.editorPage-->ShapeEdDetailTree.isDetailItem( %id ) )
    {
-      %meshName = ShapeEdDetailTree.getItemText( %id );
+      %meshName = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getItemText( %id );
       %objName = stripTrailingNumber( %meshName );
       %node = %this-->objectNode.getText();
       if ( %node $= "<root>" )
          %node = "";
-      ShapeEditor.doSetObjectNode( %objName, %node );
+      $ActiveShapeEditor.doSetObjectNode( %objName, %node );
    }
 }
 
@@ -2703,7 +2703,7 @@ function ShapeEdDetails::onAddMeshFromFile( %this, %assetId )
    // Determine the detail level to use for the new geometry
    if ( %this-->addGeomTo.getText() $= "current detail" )
    {
-      %size = ShapeEditor.shape.getDetailLevelSize( ShapeEdShapeView.currentDL );
+      %size = $ActiveShapeEditor.shape.getDetailLevelSize( $ActiveShapeEditor.editorPage-->ShapeView.currentDL );
    }
    else
    {
@@ -2716,31 +2716,31 @@ function ShapeEdDetails::onAddMeshFromFile( %this, %assetId )
          %size = 2;
 
       // Make sure size is not in use
-      while ( ShapeEditor.shape.getDetailLevelIndex( %size ) != -1 )
+      while ( $ActiveShapeEditor.shape.getDetailLevelIndex( %size ) != -1 )
          %size++;
    }
 
-   ShapeEditor.doAddMeshFromFile( %assetId, %size );
+   $ActiveShapeEditor.doAddMeshFromFile( %assetId, %size );
 }
 
 function ShapeEdDetails::onDeleteMesh( %this )
 {
-   %id = ShapeEdDetailTree.getSelectedItem();
-   if ( ShapeEdDetailTree.isDetailItem( %id ) )
+   %id = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getSelectedItem();
+   if ( $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.isDetailItem( %id ) )
    {
-      %detSize = ShapeEdDetailTree.getItemValue( %id );
-      ShapeEditor.doRemoveShapeData( "Detail", %detSize );
+      %detSize = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getItemValue( %id );
+      $ActiveShapeEditor.doRemoveShapeData( "Detail", %detSize );
    }
    else
    {
-      %name = ShapeEdDetailTree.getItemText( %id );
-      ShapeEditor.doRemoveShapeData( "Mesh", %name );
+      %name = $ActiveShapeEditor.editorPage-->ShapeEdDetailTree.getItemText( %id );
+      $ActiveShapeEditor.doRemoveShapeData( "Mesh", %name );
    }
 }
 
 function ShapeEdDetails::onToggleImposter( %this, %useImposter )
 {
-   %hasImposterDetail = ( ShapeEditor.shape.getImposterDetailLevel() != -1 );
+   %hasImposterDetail = ( $ActiveShapeEditor.shape.getImposterDetailLevel() != -1 );
    if ( %useImposter == %hasImposterDetail )
       return;
 
@@ -2749,7 +2749,7 @@ function ShapeEdDetails::onToggleImposter( %this, %useImposter )
       // Determine an unused detail size
       for ( %detailSize = 0; %detailSize < 50; %detailSize++ )
       {
-         if ( ShapeEditor.shape.getDetailLevelIndex( %detailSize ) == -1 )
+         if ( $ActiveShapeEditor.shape.getDetailLevelIndex( %detailSize ) == -1 )
             break;
       }
 
@@ -2762,20 +2762,20 @@ function ShapeEdDetails::onToggleImposter( %this, %useImposter )
       %bbPolarAngle = 0;
 
       // Add a new imposter detail level to the shape
-      ShapeEditor.doEditImposter( -1, %detailSize, %bbEquatorSteps, %bbPolarSteps,
+      $ActiveShapeEditor.doEditImposter( -1, %detailSize, %bbEquatorSteps, %bbPolarSteps,
          %bbDetailLevel, %bbDimension, %bbIncludePoles, %bbPolarAngle );
    }
    else
    {
       // Remove the imposter detail level
-      ShapeEditor.doRemoveImposter();
+      $ActiveShapeEditor.doRemoveImposter();
    }
 }
 
 function ShapeEdDetails::onEditImposter( %this )
 {
    // Modify the parameters of the current imposter detail level
-   %detailSize = ShapeEditor.shape.getDetailLevelSize( ShapeEdShapeView.currentDL );
+   %detailSize = $ActiveShapeEditor.shape.getDetailLevelSize( $ActiveShapeEditor.editorPage-->ShapeView.currentDL );
    %bbDimension = ShapeEdAdvancedWindow-->bbDimension.getText();
    %bbDetailLevel = ShapeEdAdvancedWindow-->bbDetailLevel.getText();
    %bbEquatorSteps = ShapeEdAdvancedWindow-->bbEquatorSteps.getText();
@@ -2783,7 +2783,7 @@ function ShapeEdDetails::onEditImposter( %this )
    %bbPolarSteps = ShapeEdAdvancedWindow-->bbPolarSteps.getText();
    %bbPolarAngle = ShapeEdAdvancedWindow-->bbPolarAngle.getText();
 
-   ShapeEditor.doEditImposter( ShapeEdShapeView.currentDL, %detailSize,
+   $ActiveShapeEditor.doEditImposter( $ActiveShapeEditor.editorPage-->ShapeView.currentDL, %detailSize,
       %bbEquatorSteps, %bbPolarSteps, %bbDetailLevel, %bbDimension,
       %bbIncludePoles, %bbPolarAngle );
 }
@@ -2831,7 +2831,7 @@ function ShapeEditor::autoAddDetails( %this, %dest )
          // Determine the detail size ( number after the base name ), then add the
          // new mesh
          %size = strreplace( fileBase( %fullPath ), %base, "" );
-         ShapeEditor.addLODFromFile( %dest, %fullPath, %size, 0 );
+         $ActiveShapeEditor.addLODFromFile( %dest, %fullPath, %size, 0 );
       }
 
       %fullPath = findNextFileMultiExpr( %filePatterns );
@@ -2839,8 +2839,8 @@ function ShapeEditor::autoAddDetails( %this, %dest )
 
    if ( %this.shape == %dest )
    {
-      ShapeEdShapeView.refreshShape();
-      ShapeEdDetails.update_onDetailsChanged();
+      $ActiveShapeEditor.editorPage-->ShapeView.refreshShape();
+      $ActiveShapeEditor.editorPage-->ShapeEdDetails.update_onDetailsChanged();
    }
 }
 
@@ -2858,7 +2858,7 @@ function ShapeEditor::addLODFromFile( %this, %dest, %assetId, %size, %allowUnmat
 
    %source = findShapeConstructorByAssetId( %assetId );
    if ( %source == -1 )
-      %source = ShapeEditor.createConstructor( %assetId  );
+      %source = $ActiveShapeEditor.createConstructor( %assetId  );
    %source.lodType = "SingleSize";
    %source.singleDetailSize = %size;
 
@@ -2921,9 +2921,9 @@ function ShapeEdColWindow::update_onShapeSelectionChanged( %this )
    // Initialise collision mesh target list
    %this-->colTarget.clear();
    %this-->colTarget.add( "Bounds" );
-   %objCount = ShapeEditor.shape.getObjectCount();
+   %objCount = $ActiveShapeEditor.shape.getObjectCount();
    for ( %i = 0; %i < %objCount; %i++ )
-      %this-->colTarget.add( ShapeEditor.shape.getObjectName( %i ) );
+      %this-->colTarget.add( $ActiveShapeEditor.shape.getObjectName( %i ) );
 
    %this-->colTarget.setSelected( %this-->colTarget.findText( "Bounds" ), false );
 }
@@ -2967,12 +2967,12 @@ function ShapeEdColWindow::editCollision( %this )
 {
    // If the shape already contains a collision detail size-1, warn the user
    // that it will be removed
-   if ( ( ShapeEditor.shape.getDetailLevelIndex( -1 ) >= 0 ) &&
+   if ( ( $ActiveShapeEditor.shape.getDetailLevelIndex( -1 ) >= 0 ) &&
         ( getField(%this.lastColSettings, 0) $= "" ) )
    {
       toolsMessageBoxYesNo( "Warning", "Existing collision geometry at detail size " @
          "-1 will be removed, and this cannot be undone. Do you want to continue?",
-         "ShapeEdColWindow.editCollisionOK();", "" );
+         "$ActiveShapeEditor.editorPage-->ShapeEdColWindow.editCollisionOK();", "" );
    }
    else
    {
@@ -2992,7 +2992,7 @@ function ShapeEdColWindow::editCollisionOK( %this )
    %maxSphere = %this-->hullMaxSphereError.getValue();
    %maxCapsule = %this-->hullMaxCapsuleError.getValue();
 
-   ShapeEditor.doEditCollision( %type, %target, %depth, %merge, %concavity, %maxVerts,
+   $ActiveShapeEditor.doEditCollision( %type, %target, %depth, %merge, %concavity, %maxVerts,
                                  %maxBox, %maxSphere, %maxCapsule );
 }
 
@@ -3034,10 +3034,10 @@ function ShapeEdMountWindow::update_onShapeSelectionChanged( %this )
    // Initialise the dropdown menus
    %this-->mountNode.clear();
    %this-->mountNode.add( "<origin>" );
-   %count = ShapeEditor.shape.getNodeCount();
+   %count = $ActiveShapeEditor.shape.getNodeCount();
    for ( %i = 0; %i < %count; %i++ )
    {
-      %name = ShapeEditor.shape.getNodeName( %i );
+      %name = $ActiveShapeEditor.shape.getNodeName( %i );
       if ( %this.isMountableNode( %name ) )
          %this-->mountNode.add( %name );
    }
@@ -3067,7 +3067,7 @@ function ShapeEdMountWindow::update_onMountSelectionChanged( %this )
 
       %tss = findShapeConstructorByFilename( %shapePath );
       if ( !isObject( %tss ) )
-         %tss = ShapeEditor.createConstructor( %shapePath );
+         %tss = $ActiveShapeEditor.createConstructor( %shapePath );
       if ( isObject( %tss ) )
       {
          %count = %tss.getSequenceCount();
@@ -3077,14 +3077,14 @@ function ShapeEdMountWindow::update_onMountSelectionChanged( %this )
 
       // Select the currently playing sequence
       %slot = %row - 1;
-      %seq = ShapeEdShapeView.getMountThreadSequence( %slot );
+      %seq = $ActiveShapeEditor.editorPage-->ShapeView.getMountThreadSequence( %slot );
       %id = %this-->mountSeq.findText( %seq );
       if ( %id == -1 )
          %id = 0;
       %this-->mountSeq.setSelected( %id, false );
 
-      ShapeEdMountSeqSlider.setValue( ShapeEdShapeView.getMountThreadPos( %slot ) );
-      %this-->mountPlayBtn.setStateOn( ShapeEdShapeView.getMountThreadPos( %slot ) != 0 );
+      ShapeEdMountSeqSlider.setValue( $ActiveShapeEditor.editorPage-->ShapeView.getMountThreadPos( %slot ) );
+      %this-->mountPlayBtn.setStateOn( $ActiveShapeEditor.editorPage-->ShapeView.getMountThreadPos( %slot ) != 0 );
    }
 }
 
@@ -3100,8 +3100,8 @@ function ShapeEdMountWindow::setMountThreadSequence( %this )
    %row = %this-->mountList.getSelectedRow();
    if ( %row > 0 )
    {
-      ShapeEdShapeView.setMountThreadSequence( %row-1, %this-->mountSeq.getText() );
-      ShapeEdShapeView.setMountThreadDir( %row-1, %this-->mountPlayBtn.getValue() );
+      $ActiveShapeEditor.editorPage-->ShapeView.setMountThreadSequence( %row-1, %this-->mountSeq.getText() );
+      $ActiveShapeEditor.editorPage-->ShapeView.setMountThreadDir( %row-1, %this-->mountPlayBtn.getValue() );
    }
 }
 
@@ -3110,10 +3110,10 @@ function ShapeEdMountSeqSlider::onMouseDragged( %this )
    %row = ShapeEdMountWindow-->mountList.getSelectedRow();
    if ( %row > 0 )
    {
-      ShapeEdShapeView.setMountThreadPos( %row-1, %this.getValue() );
+      $ActiveShapeEditor.editorPage-->ShapeView.setMountThreadPos( %row-1, %this.getValue() );
 
       // Pause the sequence when the slider is dragged
-      ShapeEdShapeView.setMountThreadDir( %row-1, 0 );
+      $ActiveShapeEditor.editorPage-->ShapeView.setMountThreadDir( %row-1, 0 );
       ShapeEdMountWindow-->mountPlayBtn.setStateOn( false );
    }
 }
@@ -3122,7 +3122,7 @@ function ShapeEdMountWindow::toggleMountThreadPlayback( %this )
 {
    %row = %this-->mountList.getSelectedRow();
    if ( %row > 0 )
-      ShapeEdShapeView.setMountThreadDir( %row-1, %this-->mountPlayBtn.getValue() );
+      $ActiveShapeEditor.editorPage-->ShapeView.setMountThreadDir( %row-1, %this-->mountPlayBtn.getValue() );
 }
 
 function ShapeEdMountShapeMenu::onSelect( %this, %id, %text )
@@ -3136,7 +3136,7 @@ function ShapeEdMountShapeMenu::onSelect( %this, %id, %text )
    else
    {
       // Modify the current mount
-      ShapeEdMountWindow.updateSelectedMount();
+      $ActiveShapeEditor.editorPage-->ShapeEdMountWindow.updateSelectedMount();
    }
 }
 
@@ -3149,7 +3149,7 @@ function ShapeEdMountShapeMenu::onBrowseSelect( %this, %shapeAssetId )
    if ( %this.findText( %shapeAssetId ) == -1 )
       %this.add( %shapeAssetId );
 
-   ShapeEdMountWindow.updateSelectedMount();
+   $ActiveShapeEditor.editorPage-->ShapeEdMountWindow.updateSelectedMount();
 }
 
 function ShapeEdMountWindow::mountShape( %this, %slot )
@@ -3161,7 +3161,7 @@ function ShapeEdMountWindow::mountShape( %this, %slot )
    if ( %model $= "Browse..." )
       %model = "Core_GameObjects:octahedron.dts";
 
-   if ( ShapeEdShapeView.mountShape( %model, %node, %type, %slot ) )
+   if ( $ActiveShapeEditor.editorPage-->ShapeView.mountShape( %model, %node, %type, %slot ) )
    {
       %rowText = %model TAB %node TAB %type;
       if ( %slot == -1 )
@@ -3188,7 +3188,7 @@ function ShapeEdMountWindow::unmountShape( %this )
    %row = %this-->mountList.getSelectedRow();
    if ( %row > 0 )
    {
-      ShapeEdShapeView.unmountShape( %row-1 );
+      $ActiveShapeEditor.editorPage-->ShapeView.unmountShape( %row-1 );
       %this-->mountList.removeRow( %row );
 
       // Select the next row (if any)
@@ -3202,7 +3202,7 @@ function ShapeEdMountWindow::unmountShape( %this )
 
 function ShapeEdMountWindow::unmountAll( %this )
 {
-   ShapeEdShapeView.unmountAll();
+   $ActiveShapeEditor.editorPage-->ShapeView.unmountAll();
    %this-->mountList.clear();
    %this-->mountList.addRow( -1, "FullPath" TAB "Filename" TAB "Node" TAB "Type" );
    %this-->mountList.setRowActive( -1, false );
@@ -3254,6 +3254,7 @@ function ShapeEditorPlugin::openShapeEditor(%this, %assetId)
       deletedCount = 0;
       tabName = "ShapeEditor_" @ strReplace(%assetId, ":", "_");
       editorPage = $guiContent;
+      editedAssetId = %assetId;
    };
    
    $guiContent.shapeEditor = %shapeEdSession;
@@ -3264,18 +3265,57 @@ function ShapeEditorPlugin::openShapeEditor(%this, %assetId)
    $guiContent-->FrameSet.columns = 0 SPC $guiContent.extent.x * 0.20 SPC $guiContent.extent.x * 0.80;
    $guiContent-->FrameSet.updateSizes();
    
+   $ActiveShapeView = $guiContent-->ShapeView;
+   $ActiveShapeEditor = %shapeEdSession;
+   
+   %shapeEdSession.herpaboop();
+}
+
+function ShapeEditor::herpaboop(%this)
+{
+   $ActiveShapeEditor.editorPage-->ShapeView.setModel( "" );
+
    //Load our scene
    exec("tools/levels/ShapePreviewScene.mis");
-   %shapeEdSession.previewScene = $newScene;
+   $ActiveShapeEditor.previewScene = $newScene;
    
    %shape = new TSStatic() {
-      shapeAsset = %assetId;
+      shapeAsset = $ActiveShapeEditor.editedAssetId;
    };
-   %shapeEdSession.previewScene.add(%shape);
+   $ActiveShapeEditor.previewScene.add(%shape);
    
-   $guiContent-->ShapeView.setModel(%shape);
+   $ActiveShapeEditor.editorPage-->ShapeView.setModel(%shape);
    
-   $ActiveShapeView = $guiContent-->ShapeView;
+   $ActiveShapeEditor.editorPage-->ShapeView.fitToShape();
+
+   ShapeEdUndoManager.clearAll();
+   $ActiveShapeEditor.setDirty( false );
+
+   // Get ( or create ) the TSShapeConstructor object for this shape
+   $ActiveShapeEditor.shape = findShapeConstructorByAssetId( $ActiveShapeEditor.editedAssetId );
+   if ( $ActiveShapeEditor.shape <= 0 )
+   {
+      $ActiveShapeEditor.shape = %this.createConstructor( $ActiveShapeEditor.editedAssetId );
+      if ( $ActiveShapeEditor.shape <= 0 )
+      {
+         error( "ShapeEditor: Error - could not select " @ $ActiveShapeEditor.editedAssetId );
+         return;
+      }
+   }
+
+   // Initialise the editor windows
+   $ActiveShapeEditor.editorPage-->ShapeEdAdvancedWindow.update_onShapeSelectionChanged();
+   $ActiveShapeEditor.editorPage-->ShapeEdMountWindow.update_onShapeSelectionChanged();
+   $ActiveShapeEditor.editorPage-->ShapeEdThreadWindow.update_onShapeSelectionChanged();
+   $ActiveShapeEditor.editorPage-->ShapeEdColWindow.update_onShapeSelectionChanged();
+   $ActiveShapeEditor.editorPage-->ContentsWindow.update_onShapeSelectionChanged();
+   $ActiveShapeEditor.editorPage-->ShapeView.refreshShape();
+
+   // Update object type hints
+   ShapeEdSelectWindow.updateHints();
+
+   // Update editor status bar
+   EditorGuiStatusBar.setSelection( $ActiveShapeEditor.editedAssetId );  
 }
 
 function ShapeEditorTabPage::onTabSelected(%this)
