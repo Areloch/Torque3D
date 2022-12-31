@@ -17,7 +17,7 @@ $guiContent = new GuiTabPageCtrl() {
 
       new GuiStackControl() {
          stackingType = "Horizontal";
-         extent = "260 40";
+         extent = "449 40";
          profile = "ToolsGuiDefaultProfile";
          tooltipProfile = "GuiToolTipProfile";
          internalName = "ButtonPanelStack";
@@ -51,17 +51,45 @@ $guiContent = new GuiTabPageCtrl() {
          };
          new GuiIconButtonCtrl() {
             buttonMargin = "0 -10";
+            BitmapAsset = "ToolsModule:save_icon_n_image";
+            iconLocation = "Center";
+            sizeIconToButton = "1";
+            makeIconSquare = "1";
+            textLocation = "Bottom";
+            text = "Save Shape";
+            position = "180 0";
+            extent = "80 40";
+            profile = "ToolsGuiIconButtonProfile";
+            tooltipProfile = "GuiToolTipProfile";
+            internalName = "saveShapeButton";
+         };
+         new GuiIconButtonCtrl() {
+            buttonMargin = "0 -10";
             BitmapAsset = "ToolsModule:visibility_toggle_n_image";
             iconLocation = "Center";
             sizeIconToButton = "1";
             makeIconSquare = "1";
             textLocation = "Bottom";
             text = "Visibility";
-            position = "180 0";
+            position = "260 0";
             extent = "80 40";
             profile = "ToolsGuiIconButtonProfile";
             tooltipProfile = "GuiToolTipProfile";
-            internalName = "openShapeButton";
+            internalName = "visibilityButton";
+         };
+         new GuiIconButtonCtrl() {
+            buttonMargin = "0 -10";
+            BitmapAsset = "ToolsModule:collision_shape_n_image";
+            iconLocation = "Center";
+            sizeIconToButton = "1";
+            makeIconSquare = "1";
+            textLocation = "Bottom";
+            text = "Generate Collisions";
+            position = "340 0";
+            extent = "109 40";
+            profile = "ToolsGuiIconButtonProfile";
+            tooltipProfile = "GuiToolTipProfile";
+            internalName = "visibilityButton";
          };
       };
    };
@@ -111,17 +139,19 @@ $guiContent = new GuiTabPageCtrl() {
                docking = "Client";
                margin = "3 1 3 3";
                position = "4 24";
-               extent = "291 456";
+               extent = "291 1012";
                minExtent = "8 8";
                horizSizing = "width";
                vertSizing = "height";
                profile = "ToolsGuiTabBookProfile";
                tooltipProfile = "ToolsGuiToolTipProfile";
+               internalName = "ShapeEdContentsTabBook";
+               class = "ShapeEdContentsTabBook";
 
                new GuiTabPageCtrl() {
                   text = "Sequences";
                   position = "0 19";
-                  extent = "291 437";
+                  extent = "291 993";
                   minExtent = "0 -500";
                   horizSizing = "width";
                   vertSizing = "height";
@@ -133,7 +163,7 @@ $guiContent = new GuiTabPageCtrl() {
                   hidden = "1";
 
                   new GuiContainer() {
-                     extent = "291 437";
+                     extent = "291 993";
                      minExtent = "0 8";
                      horizSizing = "width";
                      vertSizing = "height";
@@ -141,7 +171,7 @@ $guiContent = new GuiTabPageCtrl() {
                      tooltipProfile = "GuiToolTipProfile";
                   };
                   new GuiBitmapBorderCtrl() {
-                     extent = "291 437";
+                     extent = "291 993";
                      minExtent = "0 8";
                      horizSizing = "width";
                      vertSizing = "height";
@@ -150,7 +180,7 @@ $guiContent = new GuiTabPageCtrl() {
                      isContainer = "1";
                   };
                   new GuiControl() {
-                     extent = "291 230";
+                     extent = "291 786";
                      minExtent = "8 8";
                      horizSizing = "width";
                      vertSizing = "height";
@@ -161,7 +191,7 @@ $guiContent = new GuiTabPageCtrl() {
                      new GuiScrollCtrl() {
                         hScrollBar = "dynamic";
                         vScrollBar = "dynamic";
-                        extent = "291 230";
+                        extent = "291 786";
                         minExtent = "8 25";
                         horizSizing = "width";
                         vertSizing = "height";
@@ -192,7 +222,7 @@ $guiContent = new GuiTabPageCtrl() {
                      };
                   };
                   new GuiControl() {
-                     position = "0 229";
+                     position = "0 785";
                      extent = "291 209";
                      minExtent = "8 11";
                      horizSizing = "width";
@@ -481,7 +511,7 @@ $guiContent = new GuiTabPageCtrl() {
                new GuiTabPageCtrl() {
                   text = "Node";
                   position = "0 19";
-                  extent = "291 437";
+                  extent = "291 993";
                   minExtent = "0 -500";
                   horizSizing = "width";
                   vertSizing = "height";
@@ -493,7 +523,7 @@ $guiContent = new GuiTabPageCtrl() {
                   hidden = "1";
 
                   new GuiBitmapBorderCtrl() {
-                     extent = "291 437";
+                     extent = "291 993";
                      minExtent = "0 8";
                      horizSizing = "width";
                      vertSizing = "height";
@@ -524,7 +554,7 @@ $guiContent = new GuiTabPageCtrl() {
                      vScrollBar = "dynamic";
                      anchorTop = "0";
                      position = "0 32";
-                     extent = "291 275";
+                     extent = "291 831";
                      minExtent = "8 0";
                      horizSizing = "width";
                      vertSizing = "height";
@@ -538,7 +568,7 @@ $guiContent = new GuiTabPageCtrl() {
                         dragToItemAllowed = "0";
                         showRoot = "0";
                         position = "1 1";
-                        extent = "122 40";
+                        extent = "122 596";
                         minExtent = "8 8";
                         vertSizing = "height";
                         profile = "ToolsGuiTreeViewProfile";
@@ -548,7 +578,7 @@ $guiContent = new GuiTabPageCtrl() {
                      };
                   };
                   new GuiContainer() {
-                     position = "0 306";
+                     position = "0 862";
                      extent = "291 131";
                      horizSizing = "width";
                      vertSizing = "top";
@@ -697,19 +727,19 @@ $guiContent = new GuiTabPageCtrl() {
                new GuiTabPageCtrl() {
                   text = "Detail";
                   position = "0 19";
-                  extent = "291 437";
+                  extent = "291 993";
                   minExtent = "0 -500";
                   horizSizing = "width";
                   vertSizing = "height";
                   profile = "ToolsGuiTabPageProfile";
                   visible = "0";
                   tooltipProfile = "ToolsGuiToolTipProfile";
-                  internalName = "ShapeEdDetails";
-                  class = "ShapeEdDetails";
+                  internalName = "ShapeEdDetailsTab";
+                  class = "ShapeEdDetailsTab";
                   hidden = "1";
 
                   new GuiContainer() {
-                     extent = "291 437";
+                     extent = "291 993";
                      minExtent = "0 8";
                      horizSizing = "width";
                      vertSizing = "height";
@@ -717,7 +747,7 @@ $guiContent = new GuiTabPageCtrl() {
                      tooltipProfile = "GuiToolTipProfile";
                   };
                   new GuiBitmapBorderCtrl() {
-                     extent = "291 437";
+                     extent = "291 993";
                      minExtent = "0 8";
                      horizSizing = "width";
                      vertSizing = "height";
@@ -726,7 +756,7 @@ $guiContent = new GuiTabPageCtrl() {
                      isContainer = "1";
                   };
                   new GuiControl() {
-                     extent = "291 295";
+                     extent = "291 851";
                      minExtent = "8 8";
                      horizSizing = "width";
                      vertSizing = "height";
@@ -737,7 +767,7 @@ $guiContent = new GuiTabPageCtrl() {
                      new GuiScrollCtrl() {
                         hScrollBar = "dynamic";
                         vScrollBar = "dynamic";
-                        extent = "291 295";
+                        extent = "291 851";
                         minExtent = "8 25";
                         horizSizing = "width";
                         vertSizing = "height";
@@ -751,7 +781,7 @@ $guiContent = new GuiTabPageCtrl() {
                            dragToItemAllowed = "0";
                            showRoot = "0";
                            position = "1 1";
-                           extent = "85 129";
+                           extent = "85 685";
                            minExtent = "8 8";
                            vertSizing = "height";
                            profile = "ToolsGuiTreeViewProfile";
@@ -762,7 +792,7 @@ $guiContent = new GuiTabPageCtrl() {
                      };
                   };
                   new GuiControl() {
-                     position = "0 294";
+                     position = "0 850";
                      extent = "291 143";
                      minExtent = "8 8";
                      horizSizing = "width";
@@ -878,17 +908,17 @@ $guiContent = new GuiTabPageCtrl() {
                new GuiTabPageCtrl() {
                   text = "Materials";
                   position = "0 19";
-                  extent = "291 437";
+                  extent = "291 993";
                   minExtent = "0 -500";
                   horizSizing = "width";
                   vertSizing = "height";
                   profile = "ToolsGuiTabPageProfile";
                   tooltipProfile = "ToolsGuiToolTipProfile";
-                  internalName = "ShapeEdMaterials";
-                  class = "ShapeEdMaterials";
+                  internalName = "ShapeEdMaterialsTab";
+                  class = "ShapeEdMaterialsTab";
 
                   new GuiContainer() {
-                     extent = "291 437";
+                     extent = "291 993";
                      minExtent = "0 8";
                      horizSizing = "width";
                      vertSizing = "height";
@@ -896,7 +926,7 @@ $guiContent = new GuiTabPageCtrl() {
                      tooltipProfile = "GuiToolTipProfile";
                   };
                   new GuiBitmapBorderCtrl() {
-                     extent = "291 437";
+                     extent = "291 993";
                      minExtent = "0 8";
                      horizSizing = "width";
                      vertSizing = "height";
@@ -905,7 +935,7 @@ $guiContent = new GuiTabPageCtrl() {
                      isContainer = "1";
                   };
                   new GuiControl() {
-                     extent = "291 364";
+                     extent = "291 920";
                      minExtent = "8 8";
                      horizSizing = "width";
                      vertSizing = "height";
@@ -916,7 +946,7 @@ $guiContent = new GuiTabPageCtrl() {
                      new GuiScrollCtrl() {
                         hScrollBar = "dynamic";
                         vScrollBar = "dynamic";
-                        extent = "291 364";
+                        extent = "289 920";
                         minExtent = "8 25";
                         horizSizing = "width";
                         vertSizing = "height";
@@ -938,52 +968,12 @@ $guiContent = new GuiTabPageCtrl() {
                            position = "0 1";
                            extent = "9 11";
                            minExtent = "8 11";
+                           horizSizing = "width";
                            profile = "GuiShapeEdTextListProfile";
-                           command = "ShapeEdMaterials.updateSelectedMaterial(ShapeEdMaterials-->highlightMaterial.getValue());";
                            tooltipProfile = "ToolsGuiToolTipProfile";
                            internalName = "ShapeEdMaterialList";
                            class = "ShapeEdMaterialList";
                         };
-                     };
-                  };
-                  new GuiContainer() {
-                     position = "0 363";
-                     extent = "291 74";
-                     horizSizing = "width";
-                     vertSizing = "top";
-                     profile = "inspectorStyleRolloutDarkProfile";
-                     tooltipProfile = "GuiToolTipProfile";
-
-                     new GuiTextCtrl() {
-                        text = "Material Options";
-                        position = "5 1";
-                        extent = "104 16";
-                        profile = "ToolsGuiTextProfile";
-                        tooltipProfile = "GuiToolTipProfile";
-                     };
-                     new GuiIconButtonCtrl() {
-                        buttonMargin = "0 4";
-                        BitmapAsset = "ToolsModule:material_editor_n_image";
-                        textMargin = "25";
-                        text = "Edit the selected Material";
-                        groupNum = "0";
-                        position = "0 21";
-                        extent = "150 25";
-                        minExtent = "8 8";
-                        profile = "ToolsGuiIconButtonProfile";
-                        command = "ShapeEdMaterials.editSelectedMaterial();";
-                        tooltipProfile = "ToolsGuiToolTipProfile";
-                        tooltip = "Open the Material Editor to edit the selected material";
-                     };
-                     new GuiCheckBoxCtrl() {
-                        text = "Highlight selected Material";
-                        position = "7 52";
-                        extent = "150 13";
-                        profile = "ToolsGuiCheckBoxProfile";
-                        command = "ShapeEdMaterials.updateSelectedMaterial($ThisControl.getValue());";
-                        tooltipProfile = "ToolsGuiToolTipProfile";
-                        tooltip = "Highlight the primitives that use the selected Material";
-                        internalName = "highlightMaterial";
                      };
                   };
                };
@@ -1035,6 +1025,7 @@ $guiContent = new GuiTabPageCtrl() {
          tooltipProfile = "GuiToolTipProfile";
 
          new GuiShapeEdPreview() {
+            sunDiffuse = "255 255 255 255";
             GizmoProfile = "GlobalGizmoProfile";
             extent = "1296 1045";
             horizSizing = "width";
@@ -1045,7 +1036,7 @@ $guiContent = new GuiTabPageCtrl() {
             class = "ShapeEdShapeView";
          };
          new GuiWindowCollapseCtrl() {
-            text = "Metrics";
+            text = "View";
             resizeWidth = "0";
             resizeHeight = "0";
             canMove = "0";
@@ -2201,7 +2192,7 @@ $guiContent = new GuiTabPageCtrl() {
                tooltipProfile = "ToolsGuiToolTipProfile";
 
                new GuiControl() {
-                  position = "0 3";
+                  position = "0 -10";
                   extent = "1288 38";
                   horizSizing = "width";
                   vertSizing = "top";
@@ -2458,12 +2449,16 @@ $guiContent = new GuiTabPageCtrl() {
                vScrollBar = "dynamic";
                position = "-3 21";
                extent = "320 1016";
+               horizSizing = "width";
+               vertSizing = "height";
                profile = "ToolsGuiScrollProfile";
                tooltipProfile = "GuiToolTipProfile";
 
                new GuiVariableInspector() {
                   position = "1 1";
                   extent = "317 200";
+                  horizSizing = "width";
+                  vertSizing = "height";
                   profile = "GuiDefaultProfile";
                   tooltipProfile = "GuiToolTipProfile";
                   internalName = "shapeEdPropertiesInspector";
