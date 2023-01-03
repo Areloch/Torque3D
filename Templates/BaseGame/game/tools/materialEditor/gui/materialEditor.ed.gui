@@ -1,0 +1,193 @@
+//--- OBJECT WRITE BEGIN ---
+$guiContent = new GuiTabPageCtrl() {
+   fitBook = "1";
+   text = "Shape Editor";
+   extent = "1920 1080";
+   horizSizing = "width";
+   vertSizing = "height";
+   profile = "ToolsGuiTabPageProfile";
+   tooltipProfile = "GuiToolTipProfile";
+   class = "ShapeEditorTabPage";
+   canSaveDynamicFields = "1";
+
+   new GuiPanel() {
+      extent = "1920 40";
+      horizSizing = "width";
+      profile = "ToolsGuiDefaultProfile";
+      tooltipProfile = "ToolsGuiDefaultProfile";
+
+      new GuiStackControl() {
+         stackingType = "Horizontal";
+         extent = "449 40";
+         profile = "ToolsGuiDefaultProfile";
+         tooltipProfile = "GuiToolTipProfile";
+         internalName = "ButtonPanelStack";
+
+         new GuiIconButtonCtrl() {
+            buttonMargin = "0 -10";
+            BitmapAsset = "ToolsModule:open_file_n_image";
+            iconLocation = "Center";
+            sizeIconToButton = "1";
+            makeIconSquare = "1";
+            textLocation = "Bottom";
+            text = "Open Shape";
+            extent = "80 40";
+            profile = "ToolsGuiIconButtonProfile";
+            tooltipProfile = "GuiToolTipProfile";
+            internalName = "openShapeButton";
+         };
+         new GuiIconButtonCtrl() {
+            buttonMargin = "0 -10";
+            BitmapAsset = "ToolsModule:open_file_n_image";
+            iconLocation = "Center";
+            sizeIconToButton = "1";
+            makeIconSquare = "1";
+            textLocation = "Bottom";
+            text = "Open From Scene";
+            position = "80 0";
+            extent = "100 40";
+            profile = "ToolsGuiIconButtonProfile";
+            tooltipProfile = "GuiToolTipProfile";
+            internalName = "openFromSceneButton";
+         };
+         new GuiIconButtonCtrl() {
+            buttonMargin = "0 -10";
+            BitmapAsset = "ToolsModule:save_icon_n_image";
+            iconLocation = "Center";
+            sizeIconToButton = "1";
+            makeIconSquare = "1";
+            textLocation = "Bottom";
+            text = "Save Shape";
+            position = "180 0";
+            extent = "80 40";
+            profile = "ToolsGuiIconButtonProfile";
+            tooltipProfile = "GuiToolTipProfile";
+            internalName = "saveShapeButton";
+         };
+         new GuiIconButtonCtrl() {
+            buttonMargin = "0 -10";
+            BitmapAsset = "ToolsModule:visibility_toggle_n_image";
+            iconLocation = "Center";
+            sizeIconToButton = "1";
+            makeIconSquare = "1";
+            textLocation = "Bottom";
+            text = "Visibility";
+            position = "260 0";
+            extent = "80 40";
+            profile = "ToolsGuiIconButtonProfile";
+            tooltipProfile = "GuiToolTipProfile";
+            internalName = "visibilityButton";
+         };
+         new GuiIconButtonCtrl() {
+            buttonMargin = "0 -10";
+            BitmapAsset = "ToolsModule:collision_shape_n_image";
+            iconLocation = "Center";
+            sizeIconToButton = "1";
+            makeIconSquare = "1";
+            textLocation = "Bottom";
+            text = "Generate Collisions";
+            position = "340 0";
+            extent = "109 40";
+            profile = "ToolsGuiIconButtonProfile";
+            tooltipProfile = "GuiToolTipProfile";
+            internalName = "visibilityButton";
+         };
+      };
+      new GuiIconButtonCtrl() {
+         buttonMargin = "0 -10";
+         BitmapAsset = "ToolsModule:clear_icon_n_image";
+         iconLocation = "Center";
+         sizeIconToButton = "1";
+         makeIconSquare = "1";
+         textLocation = "Bottom";
+         text = "Close";
+         position = "1880 0";
+         extent = "40 40";
+         profile = "ToolsGuiIconButtonProfile";
+         tooltipProfile = "GuiToolTipProfile";
+         internalName = "visibilityButton";
+      };
+   };
+   new GuiFrameSetCtrl() {
+      columns = "0 1600";
+      borderColor = "9 9 9 255";
+      position = "0 40";
+      extent = "1920 1045";
+      horizSizing = "width";
+      vertSizing = "height";
+      profile = "ToolsGuiFrameSetProfile";
+      tooltipProfile = "GuiToolTipProfile";
+      internalName = "FrameSet";
+
+      new GuiContainer() {
+         extent = "1596 1045";
+         horizSizing = "width";
+         vertSizing = "height";
+         profile = "GuiDefaultProfile";
+         tooltipProfile = "GuiToolTipProfile";
+
+         new GuiShapeEdPreview() {
+            consoleFrameColor = "255 0 0 255";
+            GizmoProfile = "GlobalGizmoProfile";
+            extent = "1596 1045";
+            horizSizing = "width";
+            vertSizing = "height";
+            profile = "WorldEditorProfile";
+            tooltipProfile = "GuiToolTipProfile";
+            internalName = "ShapeView";
+            class = "ShapeEdShapeView";
+         };
+      };
+      new GuiContainer() {
+         position = "1600 0";
+         extent = "320 1045";
+         horizSizing = "width";
+         vertSizing = "height";
+         profile = "GuiDefaultProfile";
+         tooltipProfile = "GuiToolTipProfile";
+
+         new GuiWindowCollapseCtrl() {
+            text = "Properties";
+            resizeWidth = "0";
+            resizeHeight = "0";
+            canMove = "0";
+            canClose = "0";
+            canMinimize = "0";
+            canMaximize = "0";
+            canCollapse = "0";
+            edgeSnap = "0";
+            margin = "4 4 4 4";
+            extent = "317 1040";
+            minExtent = "210 352";
+            horizSizing = "width";
+            vertSizing = "height";
+            profile = "ToolsGuiWindowProfile";
+            tooltipProfile = "ToolsGuiToolTipProfile";
+            internalName = "PropertiesWindow";
+
+            new GuiScrollCtrl() {
+               hScrollBar = "dynamic";
+               vScrollBar = "dynamic";
+               position = "-3 21";
+               extent = "320 1016";
+               horizSizing = "width";
+               vertSizing = "height";
+               profile = "ToolsGuiScrollProfile";
+               tooltipProfile = "GuiToolTipProfile";
+
+               new GuiVariableInspector() {
+                  position = "1 1";
+                  extent = "303 200";
+                  horizSizing = "width";
+                  vertSizing = "height";
+                  profile = "GuiDefaultProfile";
+                  tooltipProfile = "GuiToolTipProfile";
+                  internalName = "materialEdPropertiesInspector";
+                  class = "materialEdPropertiesInspector";
+               };
+            };
+         };
+      };
+   };
+};
+//--- OBJECT WRITE END ---

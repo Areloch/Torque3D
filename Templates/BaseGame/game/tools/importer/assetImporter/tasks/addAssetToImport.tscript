@@ -1,0 +1,9 @@
+function AddAssetToImportTask::populateFields(%this)
+{
+   AssetImporterEditor-->inspector.addField("");
+}
+
+function AddAssetToImportTask::runIOTask(%file)
+{
+   
+}

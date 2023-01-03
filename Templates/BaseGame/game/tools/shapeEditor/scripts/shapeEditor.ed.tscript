@@ -335,6 +335,8 @@ function ShapeEdDetailTree::removeMeshEntry( %this, %name, %size )
 function ShapeEdDetailTree::onSelect( %this, %id )
 {
    %editorPage = $ActiveShapeEditor.editorPage;
+   %inspector = %editorPage-->shapeEdPropertiesInspector;
+   
    $ActiveShapeEditor.selectedDetail = %id;
    
    %name = %this.getItemText( %id );
@@ -342,21 +344,21 @@ function ShapeEdDetailTree::onSelect( %this, %id )
    %size = getTrailingNumber( %name );
    
    //(const char* name, const char* label, const char* typeName, const char* description, const char* defaultValue, const char* dataValues, SimObject* ownerObj)
-   %editorPage-->shapeEdPropertiesInspector.clearFields();
+   %inspector.clearFields();
    
-   %editorPage-->shapeEdPropertiesInspector.startGroup("Detail Properties");
-   %editorPage-->shapeEdPropertiesInspector.addField("MeshName", "Mesh Name", "String", "Name of the Detail Mesh", %baseName, "");
-   %editorPage-->shapeEdPropertiesInspector.addField("MeshSize", "Mesh Size", "String", "Size in pixels the Detail Mesh is targeting", %size, "");
-   %editorPage-->shapeEdPropertiesInspector.addField("BillboardType", "Billboard Type", "list", "The type of billboarding to use on the current detail mesh", "", "Blbrds");
-   %editorPage-->shapeEdPropertiesInspector.addField("ObjectNode", "Object Node", "list", "The node that the current detail level is targeting", "", "Mesh");
-   %editorPage-->shapeEdPropertiesInspector.endGroup();
+   %inspector.startGroup("Detail Properties");
+   %inspector.addCallbackField("MeshName", "Mesh Name", "String", "Name of the Detail Mesh", %baseName, "", "renameMesh");
+   %inspector.addField("MeshSize", "Mesh Size", "String", "Size in pixels the Detail Mesh is targeting", %size, "");
+   %inspector.addField("BillboardType", "Billboard Type", "list", "The type of billboarding to use on the current detail mesh", "", "Blbrds");
+   %inspector.addField("ObjectNode", "Object Node", "list", "The node that the current detail level is targeting", "", "Mesh");
+   %inspector.endGroup();
    
-   %editorPage-->shapeEdPropertiesInspector.startGroup("Bounds");
-   %editorPage-->shapeEdPropertiesInspector.addField("Recompute", "Recompute Bounds", "button", "Recomputes the bounds of the selected Detail Mesh", "", "");
-   %editorPage-->shapeEdPropertiesInspector.endGroup();
+   %inspector.startGroup("Bounds");
+   %inspector.addField("Recompute", "Recompute Bounds", "button", "Recomputes the bounds of the selected Detail Mesh", "", "");
+   %inspector.endGroup();
    
-   %editorPage-->shapeEdPropertiesInspector.startGroup("Billboard Impostors");
-   %editorPage-->shapeEdPropertiesInspector.addField("UseImpostors", "Use Impostors", "bool", "Does this mesh generate and utilize billboard impostors", "", "");
+   %inspector.startGroup("Billboard Impostors");
+   %inspector.addField("UseImpostors", "Use Impostors", "bool", "Does this mesh generate and utilize billboard impostors", "", "");
    /*
    %editorPage-->shapeEdPropertiesInspector.addField("ImpostorDetailSize", "Impostor Detail Size", "String", "Size in pixels the Impostors are targeting", "1", "");
    %editorPage-->shapeEdPropertiesInspector.addField("ImpostorResolution", "Impostor Resolution", "String", "Resolution of the images generate for Impostors", "128", "");
@@ -364,7 +366,7 @@ function ShapeEdDetailTree::onSelect( %this, %id )
    %editorPage-->shapeEdPropertiesInspector.addField("ImpostorUsePoles", "Capture Poles", "bool", "Do the impostors also capture the poles angles of the mesh", "", "");
    %editorPage-->shapeEdPropertiesInspector.addField("ImpostorYSteps", "Y Axis Steps", "String", "Number of steps around the X axis to capture for the Impostors", "6", "");
    %editorPage-->shapeEdPropertiesInspector.addField("ImpostorYAngle", "Y Axis Angle", "String", "Angle to capture along the Y axis for the Impostors", "30", "");*/
-   %editorPage-->shapeEdPropertiesInspector.endGroup();
+   %inspector.endGroup();
 
    // Select the appropriate detail level
    %dl = %this.getDetailLevelFromItem( %id );
@@ -425,4 +427,12 @@ function ShapeEdDetailTree::onDefineIcons(%this)
             "tools/gui/images/visible_i:";               // hidden
 
    %this.buildIconTable( %icons );
+}
+
+//==============================================================================
+// ShapeEditor Properties Inspector callbacks
+//==============================================================================
+function ShapeEdPropertiesInspector::renameMesh(%this, %variableName, %newData, %targetObject)
+{
+   error("ShapeEdPropertiesInspector::renameMesh() - called on: " @ %variableName @ ": " @ %newData @ " for object: " @ %targetObject);
 }

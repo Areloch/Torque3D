@@ -96,17 +96,7 @@ void GuiPanel::onRender(Point2I offset, const RectI &updateRect)
          ctrlRect.inset( mProfile->mBorderThickness, mProfile->mBorderThickness );
       }
 
-      // Draw a gradient left to right.
-
-      PrimBuild::begin( GFXTriangleStrip, 4 );
-         PrimBuild::color( mProfile->mFillColorHL );
-         PrimBuild::vertex2i( ctrlRect.point.x, ctrlRect.point.y );
-         PrimBuild::vertex2i( ctrlRect.point.x, ctrlRect.point.y + ctrlRect.extent.y );
-
-         PrimBuild::color( mProfile->mFillColor );
-         PrimBuild::vertex2i( ctrlRect.point.x + ctrlRect.extent.x, ctrlRect.point.y);
-         PrimBuild::vertex2i( ctrlRect.point.x + ctrlRect.extent.x, ctrlRect.point.y + ctrlRect.extent.y );
-      PrimBuild::end();
+      GFX->getDrawUtil()->drawRectFill(ctrlRect, mProfile->mFillColor);
    }
 
    Parent::onRender( offset, updateRect );

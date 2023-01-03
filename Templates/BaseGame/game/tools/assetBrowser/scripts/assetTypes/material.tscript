@@ -37,11 +37,12 @@ function AssetBrowser::editMaterialAsset(%this, %assetDef)
 {
    %assetDef.materialDefinitionName.reload();
    
-   EditorGui.setEditor(MaterialEditorPlugin);
+   MaterialEditorPlugin.openMaterialEditor(%assetDef.getAssetId());
+   //EditorGui.setEditor(MaterialEditorPlugin);
    
-   MaterialEditorGui.currentMaterialAsset = %assetDef.getAssetId();
-   MaterialEditorGui.currentMaterial = %assetDef.materialDefinitionName;
-   MaterialEditorGui.setActiveMaterial( %assetDef.materialDefinitionName );
+   //MaterialEditorGui.currentMaterialAsset = %assetDef.getAssetId();
+   //MaterialEditorGui.currentMaterial = %assetDef.materialDefinitionName;
+   //MaterialEditorGui.setActiveMaterial( %assetDef.materialDefinitionName );
    
    AssetBrowser.hideDialog();
 }

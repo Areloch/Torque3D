@@ -1,0 +1,5 @@
+<GUIAsset
+    AssetName="AssetImporterConfigEditor"
+    scriptFile="@assetFile=AssetImporterConfigEditor.tscript"
+    GUIFile="@assetFile=AssetImporterConfigEditor.gui"
+    VersionId="1"/>

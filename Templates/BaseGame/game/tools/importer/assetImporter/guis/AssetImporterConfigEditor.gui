@@ -1,0 +1,171 @@
+//--- OBJECT WRITE BEGIN ---
+$guiContent = new GuiControl(AssetImporterConfigEditor) {
+   extent = "1920 1080";
+   profile = "GuiDefaultProfile";
+   tooltipProfile = "GuiToolTipProfile";
+   isContainer = "1";
+   canSaveDynamicFields = "1";
+      originalAssetName = "AssetImporterConfigEditor";
+
+   new GuiWindowCtrl(AssetImporterConfigEditorWindow) {
+      text = "AssetImporter Config Editor";
+      position = "148 102";
+      extent = "1501 816";
+      profile = "ToolsGuiWindowProfile";
+      command = "AssetImporterConfigEditor.close();";
+      tooltipProfile = "GuiToolTipProfile";
+
+      new GuiFrameSetCtrl() {
+         columns = "0 300 1000";
+         borderColor = "0 0 0 255";
+         position = "0 22";
+         extent = "1500 764";
+         horizSizing = "width";
+         vertSizing = "height";
+         profile = "ToolsGuiFrameSetProfile";
+         tooltipProfile = "GuiToolTipProfile";
+
+         new GuiContainer() {
+            extent = "296 764";
+            profile = "GuiDefaultProfile";
+            tooltipProfile = "GuiToolTipProfile";
+
+            new GuiIconButtonCtrl() {
+               BitmapAsset = "ToolsModule:iconAdd_image";
+               textLocation = "Right";
+               text = "Add New Config";
+               position = "3 2";
+               extent = "140 29";
+               profile = "ToolsGuiIconButtonProfile";
+               tooltipProfile = "GuiToolTipProfile";
+            };
+            new GuiIconButtonCtrl() {
+               BitmapAsset = "ToolsModule:iconDelete_image";
+               textLocation = "Right";
+               text = "Delete Selected Config";
+               position = "155 2";
+               extent = "140 29";
+               profile = "ToolsGuiIconButtonProfile";
+               tooltipProfile = "GuiToolTipProfile";
+            };
+            new GuiScrollCtrl() {
+               hScrollBar = "dynamic";
+               vScrollBar = "dynamic";
+               position = "0 36";
+               extent = "296 728";
+               horizSizing = "width";
+               vertSizing = "height";
+               profile = "ToolsGuiScrollProfile";
+               tooltipProfile = "GuiToolTipProfile";
+
+               new GuiTextListCtrl(AICE_ConfigsList) {
+                  position = "1 2";
+                  extent = "294 2";
+                  profile = "ToolsGuiListBoxProfile";
+                  tooltipProfile = "GuiToolTipProfile";
+               };
+            };
+         };
+         new GuiContainer() {
+            position = "300 0";
+            extent = "696 764";
+            profile = "GuiDefaultProfile";
+            tooltipProfile = "GuiToolTipProfile";
+
+            new GuiScrollCtrl() {
+               hScrollBar = "dynamic";
+               vScrollBar = "dynamic";
+               position = "0 0";
+               extent = "696 764";
+               horizSizing = "width";
+               vertSizing = "height";
+               profile = "ToolsGuiScrollProfile";
+               tooltipProfile = "GuiToolTipProfile";
+
+               new GuiStackControl(AICE_TasksList) {
+                  position = "0 0";
+                  extent = "696 764";
+                  horizSizing = "width";
+                  vertSizing = "height";
+                  profile = "GuiDefaultProfile";
+                  tooltipProfile = "GuiToolTipProfile";
+                  padding = "5";
+               };
+            };
+         };
+         new GuiContainer() {
+            position = "1000 0";
+            extent = "500 764";
+            profile = "GuiDefaultProfile";
+            tooltipProfile = "GuiToolTipProfile";
+
+            new GuiContainer(AICE_PropertiesContainer) {
+               extent = "500 764";
+               horizSizing = "width";
+               vertSizing = "height";
+               profile = "GuiDefaultProfile";
+               tooltipProfile = "GuiToolTipProfile";
+
+               new GuiScrollCtrl() {
+                  hScrollBar = "dynamic";
+                  vScrollBar = "dynamic";
+                  position = "0 0";
+                  extent = "500 764";
+                  horizSizing = "width";
+                  vertSizing = "height";
+                  profile = "ToolsGuiScrollProfile";
+                  tooltipProfile = "GuiToolTipProfile";
+
+                  new GuiVariableInspector(AICE_Properties) {
+                     position = "0 0";
+                     extent = "500 764";
+                     horizSizing = "width";
+                     vertSizing = "height";
+                     profile = "GuiDefaultProfile";
+                     tooltipProfile = "GuiToolTipProfile";
+                  };
+               };
+            };
+            new GuiContainer(AICE_NewTasksContainer) {
+               extent = "500 764";
+               profile = "GuiDefaultProfile";
+               tooltipProfile = "GuiToolTipProfile";
+
+               new GuiScrollCtrl() {
+                  extent = "500 764";
+                  profile = "GuiScrollProfile";
+                  tooltipProfile = "GuiToolTipProfile";
+
+                  new GuiStackControl(AICE_NewTasksList) {
+                     position = "1 1";
+                     extent = "500 64";
+                     profile = "GuiDefaultProfile";
+                     tooltipProfile = "GuiToolTipProfile";
+                  };
+               };
+            };
+         };
+      };
+      new GuiButtonCtrl() {
+         text = "Save";
+         position = "1295 787";
+         extent = "89 27";
+         horizSizing = "left";
+         vertSizing = "top";
+         profile = "ToolsGuiButtonProfile";
+         command = "AssetImporterConfigEditor.save()";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+      new GuiButtonCtrl() {
+         text = "Close";
+         position = "1391 787";
+         extent = "89 27";
+         horizSizing = "left";
+         vertSizing = "top";
+         profile = "ToolsGuiButtonProfile";
+         command = "AssetImporterConfigEditor.close();";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+   };
+};
+//--- OBJECT WRITE END ---

@@ -12,6 +12,8 @@ $guiContent = new GuiTabPageCtrl() {
 
    new GuiPanel() {
       extent = "1920 40";
+      horizSizing = "width";
+      vertSizing = "bottom";
       profile = "ToolsGuiDefaultProfile";
       tooltipProfile = "ToolsGuiDefaultProfile";
 
@@ -2461,7 +2463,8 @@ $guiContent = new GuiTabPageCtrl() {
                   vertSizing = "height";
                   profile = "GuiDefaultProfile";
                   tooltipProfile = "GuiToolTipProfile";
-                  internalName = "shapeEdPropertiesInspector";
+                  internalName = "ShapeEdPropertiesInspector";
+                  className = "ShapeEdPropertiesInspector";
                };
             };
          };

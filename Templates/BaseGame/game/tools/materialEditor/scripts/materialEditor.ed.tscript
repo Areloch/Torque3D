@@ -23,6 +23,82 @@
 // Material Editor originally created by Dave Calabrese and Travis Vroman of Gaslight Studios
 $MaterialEditor::emptyMaterialImage = "ToolsModule:unknownImage_image";
 
+function MaterialEditorPlugin::openMaterialEditor(%this, %assetId)
+{
+   exec("tools/materialEditor/gui/materialEditor.ed.gui");
+   EditorGuiMainTabBook.add($guiContent);
+   
+   %matEdSession = new ScriptObject(){
+      class = "MaterialEditor";
+      material = 0;
+      tabName = "MaterialEditor_" @ strReplace(%assetId, ":", "_");
+      editorPage = $guiContent;
+      editedAssetId = %assetId;
+   };
+   
+   $guiContent.materialEditor = %matEdSession;
+   
+   $guiContent.text = %assetId;
+   $guiContent.internalName = %matEdSession.tabName;
+   
+   $guiContent-->FrameSet.columns = 0 SPC $guiContent.extent.x * 0.80;
+   $guiContent-->FrameSet.updateSizes();
+   
+   $ActiveShapeView = $guiContent-->ShapeView;
+   $ActiveMaterialEditor = %matEdSession;
+
+   //Load our scene
+   exec("tools/levels/ShapePreviewScene.mis");
+   
+   $ActiveShapeView.previewScene = getScene(getSceneCount()-1);
+   
+   %shape = new TSStatic() {
+      shapeAsset = "Prototyping:CubePrimitive_shape";
+      skin = $ActiveMaterialEditor.editedAssetId;
+   };
+   $ActiveMaterialEditor.previewScene.add(%shape);
+   
+   $ActiveMaterialEditor.editorPage-->ShapeView.setModel(%shape);
+   
+   $ActiveMaterialEditor.editorPage-->ShapeView.schedule(32, "fitToShape");
+   
+   $ActiveMaterialEditor.editorPage-->floor.setHidden(true);
+
+   MaterialEdUndoManager.clearAll();
+   $ActiveMaterialEditor.setDirty( false );
+
+   // Update object type hints
+   $ActiveMaterialEditor.editorPage-->ShapeEdSelectWindow.updateHints();
+
+   // Update editor status bar
+   EditorGuiStatusBar.setSelection( $ActiveMaterialEditor.editedAssetId ); 
+}
+
+//Swapping on/off from a ShapeEditor Instance
+function MaterialEditorTabPage::onTabSelected(%this)
+{
+   getRootScene().callOnChildren("setHidden", true);
+   
+   //Swap to this as our active shapeEditor
+   $ActiveMaterialEditor = %this.shapeEditor;
+
+   $ActiveMaterialEditor.previewScene.callOnChildren("setHidden", false);
+}
+
+function MaterialEditorTabPage::onTabUnselected(%this)
+{
+   //hide everything in the subscene
+   $ActiveMaterialEditor.previewScene.callOnChildren("setHidden", true);
+   
+   //clear active editor
+   $ActiveMaterialEditor = 0;
+   
+   getRootScene().callOnChildren("setHidden", false);
+}
+
+//
+//
+//
 function MaterialEditorGui::establishMaterials(%this)
 {
    //Cubemap used to preview other cubemaps in the editor.

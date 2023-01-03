@@ -37,7 +37,7 @@ new GuiControlProfile (ToolsGuiDefaultProfile)
    mouseOverSelected = false;
 
    // fill color
-   opaque = "1";
+   opaque = "0";
    fillColor = "40 40 40 255";
    fillColorHL = "180 180 180 255";
    fillColorSEL = "100 110 120 255";
@@ -45,7 +45,7 @@ new GuiControlProfile (ToolsGuiDefaultProfile)
 
    // border color
    border = 0;
-   borderColor   = "30 30 30 255"; 
+   borderColor   = "40 40 40 255"; 
    borderColorHL = "150 160 190 100";
    borderColorNA = "150 150 150 255"; 
 
@@ -203,8 +203,20 @@ new GuiControlProfile (ToolsGuiTextProfile)
    category = "Tools";
 };
 
+if( !isObject( ToolsGuiTextNonModalProfile ) )
+new GuiControlProfile (ToolsGuiTextNonModalProfile : ToolsGuiTextProfile)
+{
+   modal = false;
+};
+
 if( !isObject( ToolsGuiTextBoldProfile ) )
 new GuiControlProfile (ToolsGuiTextBoldProfile : ToolsGuiTextProfile)
+{
+   fontType = "Arial Bold";
+};
+
+if( !isObject( ToolsGuiTextBoldNonModalProfile ) )
+new GuiControlProfile (ToolsGuiTextBoldNonModalProfile : ToolsGuiTextNonModalProfile)
 {
    fontType = "Arial Bold";
 };
@@ -390,16 +402,27 @@ if( !isObject( ToolsGuiIconButtonProfile ) )
 new GuiControlProfile( ToolsGuiIconButtonProfile )
 {
    opaque = true;
-   border = true;
-   fontColor = EditorSettings.value("Theme/fieldTextColor");
-   fontColorHL = EditorSettings.value("Theme/fieldTextHLColor");
-   fontColorNA = EditorSettings.value("Theme/fieldTextSELColor");
-   fixedExtent = false;
+   border = "1";
+   fontColor = "185 185 185 255";
+   fontColorHL = "255 255 255 255";
+   fontColorNA = "255 255 255 255";
+   fixedExtent = 0;
    justify = "center";
    canKeyFocus = false;
 	bitmapAsset = "ToolsModule:iconbutton_image";
-   hasBitmapArray = true;
+   hasBitmapArray = "0";
    category = "Tools";
+   fillColor = "38 38 38 255";
+   fillColorHL = "120 120 120 255";
+   fillColorNA = "8 8 8 255";
+   fillColorERR = "120 0 0 255";
+   fillColorSEL = "180 180 180 255";
+   fontColors[0] = "185 185 185 255";
+   fontColors[1] = "255 255 255 255";
+   fontColors[2] = "255 255 255 255";
+   borderColor = "38 38 38 255";
+   borderColorHL = "120 120 120 255";
+   borderColorNA = "8 8 8 255";
 };
 
 if( !isObject( ToolsGuiIconButtonSmallProfile ) )

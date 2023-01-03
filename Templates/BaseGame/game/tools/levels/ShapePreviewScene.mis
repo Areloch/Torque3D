@@ -34,6 +34,7 @@ new Scene() {
          direction = "1 1 -1";
    };
    new GroundPlane() {
+      internalName = "floor";
       scaleU = "32";
       scaleV = "32";
       MaterialAsset = "Prototyping:FloorGray";

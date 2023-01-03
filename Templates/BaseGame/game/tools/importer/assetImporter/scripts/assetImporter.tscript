@@ -1,0 +1,40 @@
+function AssetImporter::init()
+{
+   if(!isObject(AssetImporter))
+   {
+      new ScriptObject( AssetImporter )
+      {
+      };
+      
+      AssetImporter.registeredTasksList = new ArrayObject(AssetImporterRegisteredTasks){};
+      
+      AssetImporter.importTasksList = new ArrayObject(AssetImporterActiveTasks){};
+      
+      AssetImporter.assetTypesList = new ArrayObject(AssetImporterAssetTypes){};
+   }
+   
+   AssetImporterRegisteredTasks.empty();
+   AssetImporterActiveTasks.empty();
+   AssetImporterAssetTypes.empty();
+   
+   %pattern = "tools/importer/assetImporter/tasks/*." @ $TorqueScriptFileExtension;
+   
+   %file = findFirstFile( %pattern );
+   while( %file !$= "" )
+   {      
+      exec( %file );
+      %file = findNextFile( %pattern );
+   }
+   
+   //Establish our list of asset types that the importer actually can handle
+   AssetImporterAssetTypes.add("ShapeAsset");
+   AssetImporterAssetTypes.add("MaterialAsset");
+   AssetImporterAssetTypes.add("ImageAsset");
+   AssetImporterAssetTypes.add("AnimationAsset");
+   AssetImporterAssetTypes.add("SoundAsset");
+}
+
+function AssetImporterTask::onAdd(%this)
+{
+   AssetImporterRegisteredTasks.add(%this);
+}

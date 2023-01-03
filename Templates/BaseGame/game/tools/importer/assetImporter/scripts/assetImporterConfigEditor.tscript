@@ -1,0 +1,208 @@
+function AssetImporterConfigEditor::onWake()
+{
+   AssetImporterConfigEditor::refresh();
+}
+
+function AssetImporterConfigEditor::refresh()
+{
+   AICE_ConfigsList.populate();
+   AICE_TasksList.populate();
+   AICE_NewTasksContainer.setHidden(true);
+}
+
+function AssetImporterConfigEditor::open()
+{
+   Canvas.pushDialog(AssetImporterConfigEditor);  
+}
+
+function AssetImporterConfigEditor::close()
+{
+   Canvas.popDialog(AssetImporterConfigEditor);  
+}
+
+//
+//
+//
+function AICE_ConfigsList::populate(%this)
+{
+   %this.clear();
+   %this.addRow(%this.rowCount(), "Default Import Config");
+}
+
+//
+//
+//
+function AICE_TasksList::populate(%this)
+{
+   %this.clear();
+   
+   for(%i=0; %i < AssetImporterAssetTypes.count(); %i++)
+   {
+      %assetType = AssetImporterAssetTypes.getKey(%i);  
+      
+      %shapeAssetRoll = new GuiRolloutCtrl() { 
+         caption = %assetType @ "s";
+         extent = MainViewStack.extent.x SPC 40;
+         profile = GuiInspectorGroupProfile;
+         margin = "5 5 5 5";
+      
+         new GuiStackControl() {
+            internalName = %assetType @ "Stack";
+            padding = "5";
+         
+            new GuiIconButtonCtrl() {
+               BitmapAsset = "ToolsModule:iconAdd_image";
+               textLocation = "Right";
+               text = "Add Task";
+               profile = "ToolsGuiIconButtonProfile";
+               tooltipProfile = "GuiToolTipProfile";
+               command = "AssetImporterConfigEditor.showAddNewTaskPanel(" @ %assetType @ ");";
+            };
+         };
+      };
+
+      %this.add(%shapeAssetRoll);
+   }
+   
+   //now loop over the shape assets task and fill in the tasks for it
+   for(%i=0; %i < AssetImporterActiveTasks.count(); %i++)
+   {
+      %type = AssetImporterActiveTasks.getKey(%i);
+      %task = AssetImporterActiveTasks.getValue(%i);
+      
+      %card = AssetImporterConfigEditor::createAddTaskCard(%task, AssetImporterConfigEditor @ ".editTask($ThisControl, " @ %task @ ");");
+      %typeGroup = %this.findObjectByInternalName(%type @ "Stack", true);
+      
+      %typeGroup.add(%card);
+   }
+}
+
+function AssetImporterConfigEditor::showAddNewTaskPanel(%this, %assetType)
+{
+   AICE_NewTasksContainer.setHidden(false);
+   AICE_NewTasksList.clear();
+   
+   for(%i=0; %i < AssetImporterRegisteredTasks.count(); %i++)
+   {
+      %task = AssetImporterRegisteredTasks.getKey(%i);
+      if(%task.type $= %assetType || %task.type $= "any" || %task.type $= "")
+      {
+         %card = AssetImporterConfigEditor::createAddTaskCard(%task, %this @ ".addNewTask($ThisControl, " @ %assetType @ ");");
+         AICE_NewTasksList.add(%card);
+      }
+   }
+}
+
+function AssetImporterConfigEditor::addNewTask(%this, %taskEntry, %assetType)
+{
+   AssetImporterActiveTasks.add(%assetType, %taskEntry.getParent().taskObject);
+   AICE_NewTasksContainer.setHidden(true);
+   
+   AssetImporterConfigEditor::refresh();
+}
+
+function AssetImporterConfigEditor::editTask(%this, %taskCtrl, %taskObject)
+{
+   %this.clearTaskSelection();
+   %taskCtrl.setHighlighted(true);
+   %taskObject.populateFields();  
+}
+
+function AssetImporterConfigEditor::clearTaskSelection(%this)
+{
+   for(%i=0; %i < AssetImporterActiveTasks.count(); %i++)
+   {
+      %type = AssetImporterActiveTasks.getKey(%i);
+      %task = AssetImporterActiveTasks.getValue(%i);
+      
+      %typeGroup = %this.findObjectByInternalName(%type @ "Stack", true);
+      
+      for(%b=0; %b < %typeGroup.getCount(); %b++)
+      {
+         %typeGroup.getObject(%b)-->btn.setHighlighted(false);
+      }
+   }
+}
+
+function AssetImporterConfigEditor::createTaskCard(%taskObject)
+{
+   %name = %taskObject.DisplayName;
+   %description = %taskObject.Description;
+   
+   %pad = 5;
+   %cardRowHeight = 20;
+   %cardHeight = %cardRowHeight * 2;
+   %engineBuildCardButtonSize = 40;
+   %engineBuildTextHeight = %cardHeight;
+   %actionCtrlWidth = 150;
+   
+   %navArrowMargin = (%cardHeight > (%cardRowHeight * 2)) ? 20 : 8;
+      
+   %ctrl = new GuiControl() {
+      position = "0 0";
+      extent = MainViewStack.extent.x SPC %cardHeight;
+      horizSizing = "width";
+      vertSizing = "bottom";
+      profile = GuiMenuButtonProfile;
+      minExtent = "100" SPC %cardHeight;
+      taskObject = %taskObject;
+      
+      new GuiIconButtonCtrl() {
+         horizSizing = "width";
+         vertSizing = "height";
+         iconLocation = "Right";
+         sizeIconToButton = true;
+         makeIconSquare = true;
+         buttonMargin = "0" SPC %navArrowMargin;
+         position = "0 0";
+         extent = MainViewStack.extent.x SPC %cardHeight;
+         profile = ToolsGuiIconButtonProfile;
+         internalName = "btn";
+      };
+      
+      new GuiTextCtrl() { 
+         text = "  " @ %name;
+         position = "0 0";
+         extent = MainViewStack.extent.x -(%engineBuildCardButtonSize * 2) SPC %engineBuildTextHeight;
+         horizSizing = "width";
+         vertSizing = "bottom";
+         profile = ToolsGuiTextBoldNonModalProfile;
+         internalName = "label";
+         margin = "0 10 0 0";
+      };
+   };
+   
+   //ensure the height is right for the button
+   %ctrl-->btn.extent = %ctrl.extent;
+   
+   if(%description !$= "")
+   {
+      //add the additional text line for our local path display  
+      
+      %ctrl-->label.extent.y = %cardRowHeight;
+      
+      %subTextLine = new GuiTextCtrl() { 
+         text = "  " @ %description;
+         position = "0" SPC %cardRowHeight;
+         extent = MainViewStack.extent.x - (%engineBuildCardButtonSize * 2) SPC %cardRowHeight;
+         horizSizing = "width";
+         vertSizing = "bottom";
+         profile = ToolsGuiTextNonModalProfile;
+         internalName = "tooltip";
+         margin = "0 10 0 0";
+      };
+      
+      %ctrl.add(%subTextLine);
+   }
+
+   return %ctrl;
+}
+
+function AssetImporterConfigEditor::createAddTaskCard(%taskObject, %command)
+{
+   %ctrl = AssetImporterConfigEditor::createTaskCard(%taskObject);
+   
+   %ctrl-->btn.command = %command;
+
+   return %ctrl;
+}

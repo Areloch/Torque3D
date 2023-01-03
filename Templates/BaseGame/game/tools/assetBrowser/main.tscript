@@ -60,7 +60,7 @@ function initializeAssetBrowser()
    exec("./guis/newComponentAsset.gui");
    exec("./guis/editAsset.gui");
    exec("./guis/assetImport.gui");
-   exec("./guis/assetImportConfigEditor.gui");
+   //exec("./guis/assetImportConfigEditor.gui");
    exec("./guis/selectModule.gui");
    exec("./guis/selectPath.gui");
    exec("./guis/editModule.gui");
