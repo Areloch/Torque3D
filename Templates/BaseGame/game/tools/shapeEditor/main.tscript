@@ -207,7 +207,7 @@ function ShapeEditorPlugin::open(%this, %shapeAsset)
    }
 
    // Select the new shape
-   if (isObject(ShapeEditor.shape) && (ShapeEditor.shape.baseShapeAsset $= %shapeAsset))
+   if (isObject(ShapeEditor.shapeConstructor) && (ShapeEditor.shapeConstructor.baseShapeAsset $= %shapeAsset))
    {
       // Shape is already selected => re-highlight the selected material if necessary
       ShapeEdMaterials.updateSelectedMaterial(ShapeEdMaterials-->highlightMaterial.getValue());
@@ -234,7 +234,7 @@ function ShapeEditorPlugin::onActivated(%this)
       %shapeFile = ShapeEditor.getObjectShapeFile(%obj);
       if (%shapeFile !$= "" && isFile(%shapeFile))
       {
-         if (!isObject(ShapeEditor.shape) || (ShapeEditor.shape.baseShape !$= %shapeFile))
+         if (!isObject(ShapeEditor.shapeConstructor) || (ShapeEditor.shapeConstructor.baseShape !$= %shapeFile))
          {
             // Call the 'onSelect' method directly if the object is not in the
             // MissionGroup tree (such as a Player or Projectile object).
@@ -261,7 +261,7 @@ function ShapeEditorPlugin::onActivated(%this)
 function ShapeEditorPlugin::initStatusBar(%this)
 {
    EditorGuiStatusBar.setInfo("Shape editor ( Shift Click ) to speed up camera.");
-   EditorGuiStatusBar.setSelection( ShapeEditor.shape.baseShape );
+   EditorGuiStatusBar.setSelection( ShapeEditor.shapeConstructor.baseShape );
 }
 
 function ShapeEditorPlugin::onDeactivated(%this)
@@ -270,7 +270,7 @@ function ShapeEditorPlugin::onDeactivated(%this)
 
    // Notify game objects if shape has been modified
    if ( ShapeEditor.isDirty() )
-      ShapeEditor.shape.notifyShapeChanged();
+      ShapeEditor.shapeConstructor.notifyShapeChanged();
 
    $gfx::wireframe = $wasInWireFrameMode;
 
@@ -306,9 +306,9 @@ function ShapeEditorPlugin::onExitMission( %this )
 {
    // unselect the current shape
    ShapeEdShapeView.setModel( "" );
-   if (ShapeEditor.shape != -1)
-      ShapeEditor.shape.delete();
-   ShapeEditor.shape = 0;
+   if (ShapeEditor.shapeConstructor != -1)
+      ShapeEditor.shapeConstructor.delete();
+   ShapeEditor.shapeConstructor = 0;
    ShapeEdUndoManager.clearAll();
    ShapeEditor.setDirty( false );
 

@@ -34,7 +34,20 @@ function AssetImporter::init()
    AssetImporterAssetTypes.add("SoundAsset");
 }
 
-function AssetImporterTask::onAdd(%this)
+function AssetImporterTask::registerTask(%this)
 {
-   AssetImporterRegisteredTasks.add(%this);
+   %found = false;
+   for(%i=0; %i < AssetImporterRegisteredTasks.count(); %i++)
+   {
+      %registeredTask = AssetImporterRegisteredTasks.getKey(%i);
+      %registeredDisplayName = %registeredTask.DisplayName;
+      if(%registeredTask.DisplayName $= %this.DisplayName)
+      {
+         %found = true;
+         break;
+      }
+   }
+   
+   if(!%found) 
+      AssetImporterRegisteredTasks.add(%this);
 }
