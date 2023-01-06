@@ -12,7 +12,7 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
       position = "148 102";
       extent = "1501 816";
       profile = "ToolsGuiWindowProfile";
-      command = "AssetImporterConfigEditor.close();";
+      closeCommand = "AssetImporterConfigEditor.close();";
       tooltipProfile = "GuiToolTipProfile";
 
       new GuiFrameSetCtrl() {
