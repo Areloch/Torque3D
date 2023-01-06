@@ -27,5 +27,13 @@ function RenameAssetTask::populateFields(%this)
 
 function RenameAssetTask::runTask(%this, %assetItem)
 {
+   if(!%this.enabled)
+      return;
    
+   %assetItem.assetName = %this.prefix @ %assetItem.assetName @ %this.suffix;
+   
+   if(%this.doFolderPrefix)
+   {
+      %assetItem.assetName = %assetItem.destinationFolder @ "_" @ %assetItem.assetName;  
+   }
 }

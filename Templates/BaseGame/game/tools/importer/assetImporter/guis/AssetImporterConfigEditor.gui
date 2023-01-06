@@ -9,10 +9,10 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
 
    new GuiWindowCtrl(AssetImporterConfigEditorWindow) {
       text = "AssetImporter Config Editor";
+      closeCommand = "AssetImporterConfigEditor.close();";
       position = "148 102";
       extent = "1501 816";
       profile = "ToolsGuiWindowProfile";
-      closeCommand = "AssetImporterConfigEditor.close();";
       tooltipProfile = "GuiToolTipProfile";
 
       new GuiFrameSetCtrl() {
@@ -37,6 +37,7 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
                position = "3 2";
                extent = "140 29";
                profile = "ToolsGuiIconButtonProfile";
+               command = "AssetImporterConfigEditor.promptNewConfig();";
                tooltipProfile = "GuiToolTipProfile";
             };
             new GuiIconButtonCtrl() {
@@ -46,6 +47,7 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
                position = "155 2";
                extent = "140 29";
                profile = "ToolsGuiIconButtonProfile";
+               command = "AssetImporterConfigEditor.promptDeleteConfig();";
                tooltipProfile = "GuiToolTipProfile";
             };
             new GuiScrollCtrl() {
@@ -59,7 +61,7 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
                tooltipProfile = "GuiToolTipProfile";
 
                new GuiTextListCtrl(AICE_ConfigsList) {
-                  position = "1 2";
+                  position = "1 1";
                   extent = "294 2";
                   profile = "ToolsGuiListBoxProfile";
                   tooltipProfile = "GuiToolTipProfile";
@@ -75,7 +77,6 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
             new GuiScrollCtrl() {
                hScrollBar = "dynamic";
                vScrollBar = "dynamic";
-               position = "0 0";
                extent = "696 764";
                horizSizing = "width";
                vertSizing = "height";
@@ -83,13 +84,12 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
                tooltipProfile = "GuiToolTipProfile";
 
                new GuiStackControl(AICE_TasksList) {
-                  position = "0 0";
+                  padding = "5";
                   extent = "696 764";
                   horizSizing = "width";
                   vertSizing = "height";
                   profile = "GuiDefaultProfile";
                   tooltipProfile = "GuiToolTipProfile";
-                  padding = "5";
                };
             };
          };
@@ -109,7 +109,6 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
                new GuiScrollCtrl() {
                   hScrollBar = "dynamic";
                   vScrollBar = "dynamic";
-                  position = "0 0";
                   extent = "500 764";
                   horizSizing = "width";
                   vertSizing = "height";
@@ -117,7 +116,6 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
                   tooltipProfile = "GuiToolTipProfile";
 
                   new GuiVariableInspector(AICE_Properties) {
-                     position = "0 0";
                      extent = "500 764";
                      horizSizing = "width";
                      vertSizing = "height";
@@ -129,7 +127,9 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
             new GuiContainer(AICE_NewTasksContainer) {
                extent = "500 764";
                profile = "GuiDefaultProfile";
+               visible = "0";
                tooltipProfile = "GuiToolTipProfile";
+               hidden = "1";
 
                new GuiScrollCtrl() {
                   extent = "500 764";
@@ -153,7 +153,7 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
          horizSizing = "left";
          vertSizing = "top";
          profile = "ToolsGuiButtonProfile";
-         command = "AssetImporterConfigEditor.save()";
+         command = "AssetImporterConfigEditor.save();";
          tooltipProfile = "GuiToolTipProfile";
       };
       new GuiButtonCtrl() {
@@ -165,6 +165,52 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
          profile = "ToolsGuiButtonProfile";
          command = "AssetImporterConfigEditor.close();";
          tooltipProfile = "GuiToolTipProfile";
+      };
+   };
+   new GuiWindowCtrl(AICE_addConfigWindow) {
+      text = "Create New Import Config";
+      canClose = "0";
+      canMinimize = "0";
+      canMaximize = "0";
+      position = "810 490";
+      extent = "299 99";
+      minExtent = "48 92";
+      horizSizing = "center";
+      vertSizing = "center";
+      profile = "ToolsGuiWindowProfile";
+      tooltipProfile = "ToolsGuiToolTipProfile";
+
+      new GuiTextCtrl() {
+         text = "Config Name:";
+         position = "12 35";
+         extent = "72 16";
+         profile = "ToolsGuiTextProfile";
+         tooltipProfile = "ToolsGuiToolTipProfile";
+         isContainer = "0";
+      };
+      new GuiTextEditCtrl() {
+         position = "88 35";
+         extent = "196 18";
+         profile = "ToolsGuiTextEditProfile";
+         tooltipProfile = "ToolsGuiToolTipProfile";
+         isContainer = "0";
+         internalName = "configName";
+      };
+      new GuiButtonCtrl() {
+         text = "Create";
+         position = "88 68";
+         extent = "126 22";
+         profile = "ToolsGuiButtonProfile";
+         command = "AssetImporterConfigEditor.addNewConfig();";
+         tooltipProfile = "ToolsGuiToolTipProfile";
+      };
+      new GuiButtonCtrl() {
+         text = "Cancel";
+         position = "220 68";
+         extent = "64 22";
+         profile = "ToolsGuiButtonProfile";
+         command = "AICE_addConfigWindow.setHidden(true);";
+         tooltipProfile = "ToolsGuiToolTipProfile";
       };
    };
 };

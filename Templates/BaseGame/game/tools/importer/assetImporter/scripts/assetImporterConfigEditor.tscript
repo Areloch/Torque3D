@@ -6,14 +6,25 @@ function AssetImporterConfigEditor::onWake()
 function AssetImporterConfigEditor::refresh()
 {
    AICE_ConfigsList.populate();
+   AICE_TasksList.populate();
    
-   AICE_TasksList.clear();
    AICE_NewTasksContainer.setHidden(true);
 }
 
 function AssetImporterConfigEditor::open()
 {
+   // "Load" the configs list
+   if(!isObject(AssetImporterConfigEditor.configList))
+   {
+      AssetImporterConfigEditor.configList = new SimGroup(){};
+   }      
+   
    Canvas.pushDialog(AssetImporterConfigEditor);  
+   
+   AICE_addConfigWindow.setHidden(true);
+   AICE_addConfigWindow.schedule(32, selectWindow);
+   
+   AssetImporterConfigEditor.isDirty = false;
 }
 
 function AssetImporterConfigEditor::close()
@@ -21,38 +32,90 @@ function AssetImporterConfigEditor::close()
    Canvas.popDialog(AssetImporterConfigEditor);  
 }
 
+function AssetImporterConfigEditor::save(%this)
+{
+   //loop over the list of configs and the serialize them out to file
+   TAMLWrite(AssetImporterConfigEditor.configList, "tools/importer/assetImporter/scripts/importConfigs.taml");
+   
+   %this.isDirty = false;
+}
+
+function AssetImporterConfigEditor::promptNewConfig(%this)
+{
+   AICE_addConfigWindow.setHidden(false);
+   AICE_addConfigWindow-->configName.text = "";
+   AICE_addConfigWindow-->configName.setFirstResponder();
+}
+
+function AssetImporterConfigEditor::addNewConfig(%this)
+{
+   %newConfigName = AICE_addConfigWindow-->configName.getText();
+   if(%newConfigName $= "")
+   {
+      toolsMessageBoxOK("", "An Asset Import Config requires a name");
+      return;  
+   }
+   
+   %config = new SimGroup()
+   {
+      internalName = %newConfigName;      
+   };
+   
+   for(%i=0; %i < AssetImporterAssetTypes.count(); %i++)
+   {
+      %assetType = AssetImporterAssetTypes.getKey(%i); 
+      
+      %assetTypeGroup = new SimGroup()
+      {
+         internalName = %assetType;      
+      };
+      
+      %config.add(%assetTypeGroup);
+   }
+   
+   %this.configList.add(%config);
+   
+   %this.isDirty = true;
+   
+   AICE_addConfigWindow.setHidden(true);
+   %this.refresh();
+   
+   AICE_ConfigsList.setSelectedById(%this.configList.count()-1);
+}
+
+function AssetImporterConfigEditor::promptDeleteConfig(%this)
+{
+   %currentConfig = AssetImporterConfigEditor.currentConfig;
+   toolsMessageBoxOKCancel("Delete Asset Import Config?", "This will delete the " @ %currentConfig.internalName @ " asset import config. Do you want to continue?", %this @ ".deleteConfig();", "");
+}
+
+function AssetImporterConfigEditor::deleteConfig(%this)
+{
+   AssetImporterConfigEditor.currentConfig.delete();
+   %this.isDirty = true;
+   %this.refresh();
+}
 //
 //
 //
 function AICE_ConfigsList::populate(%this)
 {
    %this.clear();
-   %this.addRow(%this.rowCount(), "Default Import Config");
+   
+   for(%i=0; %i < AssetImporterConfigEditor.configList.getCount(); %i++)
+   {
+      %config = AssetImporterConfigEditor.configList.getObject(%i);
+      
+      %this.addRow(%this.rowCount(), %config.internalName);
+   }
 }
 
 function AICE_ConfigsList::onSelect(%this, %id, %text)
 {
    //load the particular config here
    
-   if(!isObject(AssetImporterConfigEditor.currentConfig))
-   {
-      AssetImporterConfigEditor.currentConfig = new SimGroup()
-      {
-         internalName = %text;      
-      };
-      
-      for(%i=0; %i < AssetImporterAssetTypes.count(); %i++)
-      {
-         %assetType = AssetImporterAssetTypes.getKey(%i); 
-         
-         %assetTypeGroup = new SimGroup()
-         {
-            internalName = %assetType;      
-         };
-         
-         AssetImporterConfigEditor.currentConfig.add(%assetTypeGroup);
-      }
-   }
+   %config = AssetImporterConfigEditor.configList.getObject(%id);
+   AssetImporterConfigEditor.currentConfig = %config;
    
    AICE_TasksList.populate();
 }
@@ -63,6 +126,10 @@ function AICE_ConfigsList::onSelect(%this, %id, %text)
 function AICE_TasksList::populate(%this)
 {
    %this.clear();
+   
+   //if we don't have a selected config, just exit
+   if(!isObject(AssetImporterConfigEditor.currentConfig))
+      return;
    
    for(%i=0; %i < AssetImporterConfigEditor.currentConfig.getCount(); %i++)
    {

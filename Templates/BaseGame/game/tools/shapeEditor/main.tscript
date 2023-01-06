@@ -306,7 +306,7 @@ function ShapeEditorPlugin::onExitMission( %this )
 {
    // unselect the current shape
    ShapeEdShapeView.setModel( "" );
-   if (ShapeEditor.shapeConstructor != -1)
+   if (isObject(ShapeEditor.shapeConstructor))
       ShapeEditor.shapeConstructor.delete();
    ShapeEditor.shapeConstructor = 0;
    ShapeEdUndoManager.clearAll();
