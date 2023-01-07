@@ -7,8 +7,10 @@ function AssetImporterConfigEditor::refresh()
 {
    AICE_ConfigsList.populate();
    AICE_TasksList.populate();
+   AICE_Properties.clearFields();
    
    AICE_NewTasksContainer.setHidden(true);
+   AICE_PropertiesContainer.setHidden(true);
 }
 
 function AssetImporterConfigEditor::open()
@@ -22,7 +24,6 @@ function AssetImporterConfigEditor::open()
    Canvas.pushDialog(AssetImporterConfigEditor);  
    
    AICE_addConfigWindow.setHidden(true);
-   AICE_addConfigWindow.schedule(32, selectWindow);
    
    AssetImporterConfigEditor.isDirty = false;
 }
@@ -43,6 +44,8 @@ function AssetImporterConfigEditor::save(%this)
 function AssetImporterConfigEditor::promptNewConfig(%this)
 {
    AICE_addConfigWindow.setHidden(false);
+   AICE_addConfigWindow.schedule(32, selectWindow);
+   
    AICE_addConfigWindow-->configName.text = "";
    AICE_addConfigWindow-->configName.setFirstResponder();
 }
@@ -80,7 +83,7 @@ function AssetImporterConfigEditor::addNewConfig(%this)
    AICE_addConfigWindow.setHidden(true);
    %this.refresh();
    
-   AICE_ConfigsList.setSelectedById(%this.configList.count()-1);
+   AICE_ConfigsList.setSelectedById(%this.configList.getCount()-1);
 }
 
 function AssetImporterConfigEditor::promptDeleteConfig(%this)
@@ -169,6 +172,10 @@ function AICE_TasksList::populate(%this)
       
       %this.add(%assetRoll);
    }
+   
+   AICE_PropertiesContainer-->moveTaskUpBtn.setHidden(true);
+   AICE_PropertiesContainer-->moveTaskDownBtn.setHidden(true);
+   AICE_PropertiesContainer-->removeTaskBtn.setHidden(true);
 }
 
 function AssetImporterConfigEditor::showAddNewTaskPanel(%this, %assetTypeGroup)
@@ -205,9 +212,59 @@ function AssetImporterConfigEditor::editTask(%this, %taskObject)
 {
    AICE_NewTasksContainer.setHidden(true);
    AICE_PropertiesContainer.setHidden(false);
+   AssetImporterConfigEditor.editedTask = %taskObject;
+   
    //%this.clearTaskSelection();
    //%taskCtrl.setHighlighted(true);
    %taskObject.populateFields();  
+   
+   %tasksCount = %taskObject.parentGroup.getCount();
+   %taskIndex = %taskObject.parentGroup.getObjectIndex(%taskObject);
+   
+   AICE_PropertiesContainer-->moveTaskUpBtn.setHidden(%taskIndex < 1);
+   AICE_PropertiesContainer-->moveTaskDownBtn.setHidden(%taskIndex >= %tasksCount-1);
+      
+   AICE_PropertiesContainer-->removeTaskBtn.setHidden(false);
+}
+
+function AssetImporterConfigEditor::moveTaskUp(%this)
+{
+   %task = AssetImporterConfigEditor.editedTask;
+   %taskIndex = %task.parentGroup.getObjectIndex(%task);
+   
+   %prevTask = %task.parentGroup.getObject(%taskIndex-1);
+   
+   %task.parentGroup.reorderChild(%task, %prevTask);
+   
+   %this.isDirty = true;
+   %this.refresh();
+}
+
+function AssetImporterConfigEditor::moveTaskDown(%this)
+{
+   %task = AssetImporterConfigEditor.editedTask;
+   %taskIndex = %task.parentGroup.getObjectIndex(%task);
+   
+   %nextTask = %task.parentGroup.getObject(%taskIndex+1);
+   
+   %task.parentGroup.reorderChild(%nextTask, %task);
+   
+   %this.isDirty = true;
+   %this.refresh();
+}
+
+function AssetImporterConfigEditor::promptRemoveTask(%this)
+{
+   %task = AssetImporterConfigEditor.editedTask;
+   toolsMessageBoxOKCancel("Remove Task?", "This will remove the " @ %task.DisplayName @ " task from the Import Configuration. Do you want to continue?", %this @ ".removeTask();", "");
+}
+
+function AssetImporterConfigEditor::removeTask(%this)
+{
+   %task = AssetImporterConfigEditor.editedTask;
+   %task.parentGroup.remove(%task);
+   %this.isDirty = true;
+   %this.refresh();
 }
 
 function AssetImporterConfigEditor::clearTaskSelection(%this)

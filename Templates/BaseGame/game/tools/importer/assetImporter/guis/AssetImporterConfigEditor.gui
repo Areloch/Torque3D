@@ -106,17 +106,58 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
                profile = "GuiDefaultProfile";
                tooltipProfile = "GuiToolTipProfile";
 
+               new GuiIconButtonCtrl() {
+                  BitmapAsset = "ToolsModule:arrowUp";
+                  sizeIconToButton = "1";
+                  makeIconSquare = "1";
+                  textLocation = "Right";
+                  text = "Move Task Up";
+                  position = "3 2";
+                  extent = "140 29";
+                  profile = "ToolsGuiIconButtonProfile";
+                  command = "AssetImporterConfigEditor.moveTaskUp();";
+                  tooltipProfile = "GuiToolTipProfile";
+                  internalName = "moveTaskUpBtn";
+               };
+               new GuiIconButtonCtrl() {
+                  BitmapAsset = "ToolsModule:arrowDown";
+                  sizeIconToButton = "1";
+                  makeIconSquare = "1";
+                  textLocation = "Right";
+                  text = "Move Task Down";
+                  position = "155 2";
+                  extent = "140 29";
+                  profile = "ToolsGuiIconButtonProfile";
+                  command = "AssetImporterConfigEditor.moveTaskDown();";
+                  tooltipProfile = "GuiToolTipProfile";
+                  internalName = "moveTaskDownBtn";
+               };
+               new GuiIconButtonCtrl() {
+                  BitmapAsset = "ToolsModule:cross_image";
+                  sizeIconToButton = "1";
+                  makeIconSquare = "1";
+                  textLocation = "Right";
+                  text = "Remove Task";
+                  position = "358 2";
+                  extent = "140 29";
+                  profile = "ToolsGuiIconButtonProfile";
+                  command = "AssetImporterConfigEditor.promptRemoveTask();";
+                  tooltipProfile = "GuiToolTipProfile";
+                  internalName = "removeTaskBtn";
+               };
                new GuiScrollCtrl() {
                   hScrollBar = "dynamic";
                   vScrollBar = "dynamic";
-                  extent = "500 764";
+                  position = "0 32";
+                  extent = "500 732";
                   horizSizing = "width";
                   vertSizing = "height";
                   profile = "ToolsGuiScrollProfile";
                   tooltipProfile = "GuiToolTipProfile";
 
                   new GuiVariableInspector(AICE_Properties) {
-                     extent = "500 764";
+                     position = "1 0";
+                     extent = "483 764";
                      horizSizing = "width";
                      vertSizing = "height";
                      profile = "GuiDefaultProfile";
