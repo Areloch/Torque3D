@@ -180,6 +180,7 @@ GuiCanvas::GuiCanvas(): GuiControl(),
    mNumFences = 0;
 #endif
    mConsumeLastInputEvent = false;
+   mLastInputDeviceType = -1;
 }
 
 GuiCanvas::~GuiCanvas()
@@ -685,35 +686,37 @@ bool GuiCanvas::tabPrev(void)
 
 bool GuiCanvas::processInputEvent(InputEventInfo &inputEvent)
 {
-   mConsumeLastInputEvent = true;
+   mConsumeLastInputEvent = false;
    // First call the general input handler (on the extremely off-chance that it will be handled):
    if (mFirstResponder &&  mFirstResponder->onInputEvent(inputEvent))
    {
-		return mConsumeLastInputEvent;  
+	 mConsumeLastInputEvent = true;  
    }
 
    switch (inputEvent.deviceType)
    {
    case KeyboardDeviceType:
-      return processKeyboardEvent(inputEvent);
+      mConsumeLastInputEvent = processKeyboardEvent(inputEvent);
       break;
 
    case GamepadDeviceType:
-      return processGamepadEvent(inputEvent);
+      mConsumeLastInputEvent = processGamepadEvent(inputEvent);
       break;
 
    case MouseDeviceType:
       if (mCursorEnabled || mForceMouseToGUI || 
          (mAlwaysHandleMouseButtons && inputEvent.objType == SI_BUTTON) )
       {
-         return processMouseEvent(inputEvent);
+         mConsumeLastInputEvent = processMouseEvent(inputEvent);
       }
       break;
    default:
       break;
    }
 
-   return false;
+   mLastInputDeviceType = inputEvent.deviceType;
+
+   return mConsumeLastInputEvent;
 }
 
 bool GuiCanvas::processKeyboardEvent(InputEventInfo &inputEvent)
@@ -2138,6 +2141,26 @@ void GuiCanvas::setFirstResponder( GuiControl* newResponder )
       newResponder->onGainFirstResponder();
 }
 
+StringTableEntry GuiCanvas::getLastInputDeviceType()
+{
+   switch (mLastInputDeviceType)
+   {
+      case KeyboardDeviceType:
+         return StringTable->insert("Keyboard");
+         break;
+
+      case GamepadDeviceType:
+         return StringTable->insert("Gamepad");
+         break;
+
+      case MouseDeviceType:
+         return StringTable->insert("Mouse");
+         break;
+   }
+
+   return StringTable->EmptyString();
+}
+
 DefineEngineMethod( GuiCanvas, getContent, S32, (),,
                "@brief Get the GuiControl which is being used as the content.\n\n"
 
@@ -2954,3 +2977,7 @@ DefineEngineMethod(GuiCanvas, resetVideoMode, void, (), , "")
    }
 }
 
+DefineEngineMethod(GuiCanvas, getLastInputDevice, const char*, (), , "Returns the name of the last input device that the GuiCanvas consumed.")
+{
+   return object->getLastInputDeviceType();
+}
