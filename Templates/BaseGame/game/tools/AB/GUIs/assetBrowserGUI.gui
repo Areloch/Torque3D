@@ -1,0 +1,441 @@
+//--- OBJECT WRITE BEGIN ---
+$guiContent = new GuiControl(NuAssetBrowser) {
+   extent = "1600 1200";
+   profile = "ToolsGuiDefaultNonModalProfile";
+   tooltipProfile = "GuiToolTipProfile";
+   isContainer = "1";
+   canSaveDynamicFields = "1";
+      AddNewArtAssetPopup = "18483";
+      AddNewAssetPopup = "18485";
+      AddNewCppAssetPopup = "18484";
+      AddNewScriptAssetPopup = "18482";
+      coreModulesFilter = "0";
+      dirHandler = "18501";
+      folderPanelSplit = "0";
+      folderPanelState = "1";
+      ImportAssetActions = "18496";
+      ImportAssetResolutionsPopup = "18494";
+      isReImportingAsset = "0";
+      onlyShowModulesWithAssets = "0";
+      templateFilesPath = "tools/assetBrowser/scripts/templateFiles/";
+      toolsModulesFilter = "0";
+
+   new GuiWindowCtrl() {
+      canMinimize = "0";
+      canMaximize = "0";
+      closeCommand = "AssetBrowser::hideDialog();";
+      position = "204 80";
+      extent = "615 608";
+      minExtent = "383 274";
+      horizSizing = "windowRelative";
+      vertSizing = "windowRelative";
+      profile = "ToolsGuiWindowProfile";
+      tooltipProfile = "GuiToolTipProfile";
+      internalName = "window";
+
+      new GuiTabBookCtrl() {
+         tabHeight = "20";
+         selectedPage = "1";
+         extent = "615 608";
+         profile = "ToolsGuiTabBookProfile";
+         tooltipProfile = "GuiToolTipProfile";
+
+         new GuiTabPageCtrl() {
+            text = "Asset Browser";
+            position = "0 20";
+            extent = "615 588";
+            profile = "GuiTabPageProfile";
+            tooltipProfile = "GuiToolTipProfile";
+
+            new GuiStackControl() {
+               stackingType = "Horizontal";
+               extent = "210 30";
+               horizSizing = "width";
+               profile = "GuiDefaultProfile";
+               tooltipProfile = "GuiToolTipProfile";
+
+               new GuiIconButtonCtrl() {
+                  BitmapAsset = "ToolsModule:plus_image";
+                  sizeIconToButton = "1";
+                  makeIconSquare = "1";
+                  textLocation = "Center";
+                  text = "New";
+                  extent = "70 30";
+                  profile = "ToolsGuiDefaultProfile";
+                  tooltipProfile = "GuiToolTipProfile";
+                  tooltip = "Create a new asset in the current directory";
+                  class = "CreateAssetButton";
+               };
+               new GuiIconButtonCtrl() {
+                  BitmapAsset = "ToolsModule:import_image";
+                  sizeIconToButton = "1";
+                  makeIconSquare = "1";
+                  textLocation = "Center";
+                  text = "Import";
+                  position = "70 0";
+                  extent = "70 30";
+                  profile = "ToolsGuiDefaultProfile";
+                  command = "AssetBrowser.importNewFile();";
+                  tooltipProfile = "GuiToolTipProfile";
+                  tooltip = "Import a file to be a new asset in the current directory";
+                  internalName = "ImportAssetButton";
+               };
+               new GuiIconButtonCtrl() {
+                  BitmapAsset = "ToolsModule:gear_image";
+                  sizeIconToButton = "1";
+                  makeIconSquare = "1";
+                  textLocation = "Center";
+                  text = "Settings";
+                  position = "140 0";
+                  extent = "70 30";
+                  profile = "ToolsGuiDefaultProfile";
+                  command = "AssetBrowser.importNewFile();";
+                  tooltipProfile = "GuiToolTipProfile";
+                  tooltip = "Import a file to be a new asset in the current directory";
+                  internalName = "ImportAssetButton";
+               };
+            };
+            new GuiSplitContainer() {
+               splitPoint = "190 100";
+               fixedSize = "468";
+               position = "3 30";
+               extent = "608 556";
+               horizSizing = "relative";
+               vertSizing = "height";
+               profile = "ToolsGuiSolidDefaultProfile";
+               tooltipProfile = "GuiToolTipProfile";
+
+               new GuiPanel() {
+                  docking = "Client";
+                  extent = "188 556";
+                  minExtent = "0 0";
+                  profile = "ToolsGuiSolidDefaultProfile";
+                  tooltipProfile = "GuiToolTipProfile";
+                  internalName = "Panel1";
+
+                  new GuiScrollCtrl() {
+                     hScrollBar = "dynamic";
+                     vScrollBar = "dynamic";
+                     docking = "Client";
+                     extent = "188 556";
+                     minExtent = "8 8";
+                     horizSizing = "width";
+                     vertSizing = "height";
+                     profile = "GuiEditorScrollProfile";
+                     tooltipProfile = "ToolsGuiSolidDefaultProfile";
+
+                     new GuiTreeViewCtrl() {
+                        itemHeight = "21";
+                        position = "1 1";
+                        extent = "186 2";
+                        profile = "ToolsGuiTreeViewProfile";
+                        tooltipProfile = "GuiToolTipProfile";
+                        internalName = "filterTree";
+                     };
+                  };
+               };
+               new GuiPanel() {
+                  docking = "Client";
+                  position = "192 0";
+                  extent = "416 556";
+                  profile = "ToolsGuiSolidDefaultProfile";
+                  tooltipProfile = "GuiToolTipProfile";
+                  internalName = "panel2";
+
+                  new GuiContainer() {
+                     extent = "418 20";
+                     horizSizing = "width";
+                     profile = "GuiDefaultProfile";
+                     tooltipProfile = "GuiToolTipProfile";
+
+                     new GuiBitmapButtonCtrl() {
+                        BitmapAsset = "ToolsModule:folderUp_image";
+                        bitmapMode = "Centered";
+                        extent = "22 22";
+                        profile = "GuiDefaultProfile";
+                        command = "AssetBrowser.navigateHistoryBack();";
+                        tooltipProfile = "GuiToolTipProfile";
+                        tooltip = "Navigate Back in history";
+                     };
+                     new GuiBitmapButtonCtrl() {
+                        BitmapAsset = "ToolsModule:folderDown_image";
+                        bitmapMode = "Centered";
+                        position = "22 0";
+                        extent = "22 22";
+                        profile = "GuiDefaultProfile";
+                        command = "AssetBrowser.navigateHistoryForward();";
+                        tooltipProfile = "GuiToolTipProfile";
+                        tooltip = "Navigate forward in history";
+                     };
+                     new GuiStackControl() {
+                        stackingType = "Horizontal";
+                        dynamicSize = "0";
+                        changeChildSizeToFit = "0";
+                        position = "52 0";
+                        extent = "365 23";
+                        horizSizing = "width";
+                        profile = "GuiDefaultProfile";
+                        tooltipProfile = "GuiToolTipProfile";
+                     };
+                     new GuiTextEditCtrl() {
+                        position = "48 0";
+                        extent = "369 18";
+                        horizSizing = "width";
+                        profile = "ToolsGuiTextEditProfile";
+                        tooltipProfile = "GuiToolTipProfile";
+                        internalName = "NavPath";
+                        class = "assetBrowserNavPath";
+                     };
+                  };
+                  new GuiContainer() {
+                     position = "1 20";
+                     extent = "416 19";
+                     horizSizing = "width";
+                     profile = "inspectorStyleRolloutDarkProfile";
+                     tooltipProfile = "GuiToolTipProfile";
+
+                     new GuiTextEditCtrl() {
+                        placeholderText = "Search Assets...";
+                        position = "26 1";
+                        extent = "365 18";
+                        horizSizing = "width";
+                        profile = "ToolsGuiTextEditProfile";
+                        command = "AssetBrowserSearchFilter.onEdited();";
+                        tooltipProfile = "GuiToolTipProfile";
+                        class = "AssetBrowserSearchFilterTxt";
+                     };
+                     new GuiBitmapButtonCtrl() {
+                        BitmapAsset = "ToolsModule:zoom_image";
+                        position = "0 -2";
+                        extent = "23 23";
+                        horizSizing = "left";
+                        profile = "ToolsGuiSolidDefaultProfile";
+                        tooltipProfile = "GuiToolTipProfile";
+                        internalName = "assetSearchBtn";
+                        class = "AssetBrowserAssetSearchBtn";
+                     };
+                     new GuiBitmapButtonCtrl() {
+                        BitmapAsset = "ToolsModule:save_icon_n_image";
+                        position = "377 2";
+                        extent = "15 15";
+                        horizSizing = "left";
+                        profile = "ToolsGuiSolidDefaultProfile";
+                        visible = "0";
+                        command = "Canvas.pushDialog(CreateNewCollectionSetCtrl);";
+                        tooltipProfile = "GuiToolTipProfile";
+                        tooltip = "Save current search parameters as a collectionset";
+                        internalName = "saveSearchAsCollectionBtn";
+                        hidden = "1";
+                     };
+                     new GuiBitmapButtonCtrl() {
+                        BitmapAsset = "ToolsModule:filter_image";
+                        position = "392 -1";
+                        extent = "23 23";
+                        profile = "ToolsGuiSolidDefaultProfile";
+                        command = "AssetBrowser.showVisibiltyOptions();";
+                        tooltipProfile = "GuiToolTipProfile";
+                        tooltip = "Visibility Options";
+                     };
+                  };
+                  new GuiContainer() {
+                     anchorRight = "1";
+                     position = "1 37";
+                     extent = "416 519";
+                     horizSizing = "width";
+                     vertSizing = "height";
+                     profile = "ToolsGuiSolidDefaultProfile";
+                     tooltipProfile = "GuiToolTipProfile";
+
+                     new GuiScrollCtrl() {
+                        hScrollBar = "alwaysOff";
+                        vScrollBar = "dynamic";
+                        lockHorizScroll = "1";
+                        docking = "Client";
+                        extent = "416 503";
+                        minExtent = "8 8";
+                        horizSizing = "width";
+                        vertSizing = "height";
+                        profile = "GuiEditorScrollProfile";
+                        tooltipProfile = "ToolsGuiSolidDefaultProfile";
+
+                        new GuiMouseEventCtrl() {
+                           position = "1 1";
+                           extent = "414 496";
+                           horizSizing = "width";
+                           vertSizing = "height";
+                           profile = "GuiDefaultProfile";
+                           tooltipProfile = "GuiToolTipProfile";
+                        };
+                        new GuiStackControl() {
+                           changeChildPosition = "0";
+                           position = "2 2";
+                           extent = "414 120";
+                           horizSizing = "width";
+                           profile = "ToolsGuiModelessDialogProfile";
+                           tooltipProfile = "GuiToolTipProfile";
+
+                           new GuiDynamicCtrlArrayControl() {
+                              colCount = "4";
+                              colSize = "100";
+                              rowCount = "1";
+                              rowSize = "120";
+                              rowSpacing = "2";
+                              colSpacing = "2";
+                              autoCellSize = "1";
+                              dynamicSize = "1";
+                              position = "3 0";
+                              extent = "414 120";
+                              minExtent = "8 8";
+                              horizSizing = "width";
+                              profile = "ToolsGuiDefaultNonModalProfile";
+                              tooltipProfile = "GuiToolTipProfile";
+                              internalName = "assetList";
+                           };
+                        };
+                     };
+                     new GuiContainer() {
+                        docking = "Bottom";
+                        position = "0 503";
+                        extent = "416 16";
+                        horizSizing = "width";
+                        vertSizing = "height";
+                        profile = "ToolsGuiSolidDefaultProfile";
+                        tooltipProfile = "GuiToolTipProfile";
+                        internalName = "materialPreviewControlContainer";
+                     };
+                     new GuiTextCtrl() {
+                        text = "0 Assets";
+                        position = "0 499";
+                        extent = "269 23";
+                        vertSizing = "top";
+                        profile = "ToolsGuiTextProfile";
+                        tooltipProfile = "GuiToolTipProfile";
+                     };
+                  };
+               };
+            };
+            new GuiIconButtonCtrl() {
+               BitmapAsset = "ToolsModule:iconInformation_image";
+               sizeIconToButton = "1";
+               makeIconSquare = "1";
+               textLocation = "Center";
+               position = "588 4";
+               extent = "24 24";
+               horizSizing = "left";
+               vertSizing = "center";
+               profile = "ToolsGuiDefaultProfile";
+               command = "AssetBrowser.importNewFile();";
+               tooltipProfile = "GuiToolTipProfile";
+               tooltip = "Go to online documentation for the Asset Browser";
+               internalName = "ImportAssetButton";
+            };
+         };
+         new GuiTabPageCtrl() {
+            text = "Creator";
+            position = "0 20";
+            extent = "615 588";
+            profile = "GuiTabPageProfile";
+            visible = "0";
+            tooltipProfile = "GuiToolTipProfile";
+            hidden = "1";
+         };
+      };
+      new GuiButtonCtrl() {
+         text = "Select";
+         position = "559 588";
+         extent = "53 19";
+         horizSizing = "left";
+         vertSizing = "top";
+         profile = "ToolsGuiButtonProfile";
+         visible = "0";
+         command = "AssetBrowser.selectAsset( AssetBrowser.selectedAsset );";
+         tooltipProfile = "GuiToolTipProfile";
+         internalName = "SelectButton";
+         hidden = "1";
+      };
+   };
+   new GuiContainer() {
+      position = "1285 125";
+      extent = "200 60";
+      profile = "GuiDefaultProfile";
+      tooltipProfile = "GuiToolTipProfile";
+      internalName = "AssetPreviewListTemplate";
+
+      new GuiButtonCtrl() {
+         groupNum = "1";
+         buttonType = "ToggleButton";
+         extent = "200 60";
+         horizSizing = "width";
+         vertSizing = "height";
+         profile = "ToolsGuiButtonProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+      new GuiBitmapCtrl() {
+         BitmapAsset = "ToolsModule:Prototyping_SpherePrimitive_shape_PreviewImage";
+         extent = "60 60";
+         vertSizing = "height";
+         profile = "GuiDefaultProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+      new GuiMLTextCtrl() {
+         text = "Sphere_Shape";
+         position = "60 0";
+         extent = "140 14";
+         horizSizing = "width";
+         profile = "ToolsGuiMLTextProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+      new GuiTextCtrl() {
+         text = "ShapeAsset";
+         position = "60 44";
+         extent = "140 14";
+         horizSizing = "width";
+         vertSizing = "top";
+         profile = "ToolsGuiTextProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+   };
+   new GuiContainer() {
+      position = "1149 125";
+      extent = "100 150";
+      profile = "GuiDefaultProfile";
+      tooltipProfile = "GuiToolTipProfile";
+      internalName = "AssetPreviewCardTemplate";
+
+      new GuiButtonCtrl() {
+         groupNum = "1";
+         buttonType = "ToggleButton";
+         extent = "100 150";
+         horizSizing = "width";
+         vertSizing = "height";
+         profile = "ToolsGuiButtonProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+      new GuiBitmapCtrl() {
+         BitmapAsset = "ToolsModule:Prototyping_SpherePrimitive_shape_PreviewImage";
+         extent = "100 100";
+         horizSizing = "width";
+         profile = "GuiDefaultProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+      new GuiMLTextCtrl() {
+         text = "Sphere_Shape";
+         position = "0 100";
+         extent = "100 14";
+         horizSizing = "width";
+         vertSizing = "top";
+         profile = "ToolsGuiMLTextProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+      new GuiTextCtrl() {
+         text = "ShapeAsset";
+         position = "0 134";
+         extent = "100 14";
+         horizSizing = "width";
+         vertSizing = "top";
+         profile = "ToolsGuiTextProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+   };
+};
+//--- OBJECT WRITE END ---
