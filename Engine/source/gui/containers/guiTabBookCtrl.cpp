@@ -426,6 +426,11 @@ void GuiTabBookCtrl::onMouseMove(const GuiEvent &event)
 void GuiTabBookCtrl::onMouseLeave( const GuiEvent &event )
 {
    Parent::onMouseLeave( event );
+
+   if (mDraggingTab)
+   {
+      Con::printf("WE HAVE DRAGGED A TAB OUTSIDE THE REORDER RECT");
+   }
    
    mHoverTab = NULL;
 }
