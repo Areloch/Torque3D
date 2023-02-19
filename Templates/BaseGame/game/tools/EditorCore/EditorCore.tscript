@@ -1,0 +1,13 @@
+
+function EditorCore::onCreate(%this)
+{
+   exec("./scripts/formBuilder/formBuilder.ed.tscript");
+   GuiFormBuilder::init();
+   
+   exec("./scripts/directoryHandler");
+}
+
+function EditorCore::onDestroy(%this)
+{
+
+}

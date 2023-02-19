@@ -1,5 +1,5 @@
 //--- OBJECT WRITE BEGIN ---
-$guiContent = new GuiControl(NuAssetBrowser) {
+$guiContent = new GuiControl() {
    extent = "1600 1200";
    profile = "ToolsGuiDefaultNonModalProfile";
    tooltipProfile = "GuiToolTipProfile";
@@ -21,9 +21,14 @@ $guiContent = new GuiControl(NuAssetBrowser) {
       toolsModulesFilter = "0";
 
    new GuiWindowCtrl() {
+      text = "Asset Browser";
       canMinimize = "0";
       canMaximize = "0";
       closeCommand = "AssetBrowser::hideDialog();";
+      edgeSnap = "0";
+      docking = "None";
+      anchorTop = "0";
+      anchorLeft = "0";
       position = "204 80";
       extent = "615 608";
       minExtent = "383 274";
@@ -32,80 +37,110 @@ $guiContent = new GuiControl(NuAssetBrowser) {
       profile = "ToolsGuiWindowProfile";
       tooltipProfile = "GuiToolTipProfile";
       internalName = "window";
+      class = "AssetBrowserWindow";
 
       new GuiTabBookCtrl() {
+         docking = "Client";
          tabHeight = "20";
          allowReorder = "1";
          defaultPage = "0";
          selectedPage = "0";
-         extent = "615 608";
+         docking = "Client";
+         position = "1 21";
+         extent = "613 584";
+         horizSizing = "width";
          profile = "ToolsGuiTabBookProfile";
          tooltipProfile = "GuiToolTipProfile";
+         internalName = "book";
 
          new GuiTabPageCtrl() {
             text = "Asset Browser";
             position = "0 20";
-            extent = "615 588";
+            extent = "613 564";
+            horizSizing = "width";
+            vertSizing = "height";
             profile = "GuiTabPageProfile";
-            visible = "0";
             tooltipProfile = "GuiToolTipProfile";
             internalName = "AssetBrowserTab";
-            hidden = "1";
+            class = "AssetBrowserTab";
 
-            new GuiStackControl() {
-               stackingType = "Horizontal";
-               extent = "210 30";
+            new GuiContainer() {
+               extent = "613 30";
                horizSizing = "width";
                profile = "GuiDefaultProfile";
                tooltipProfile = "GuiToolTipProfile";
 
-               new GuiIconButtonCtrl() {
-                  BitmapAsset = "ToolsModule:plus_image";
-                  sizeIconToButton = "1";
-                  makeIconSquare = "1";
-                  textLocation = "Center";
-                  text = "New";
-                  extent = "70 30";
-                  profile = "ToolsGuiDefaultProfile";
+               new GuiStackControl() {
+                  stackingType = "Horizontal";
+                  extent = "210 30";
+                  horizSizing = "width";
+                  vertSizing = "height";
+                  profile = "GuiDefaultProfile";
                   tooltipProfile = "GuiToolTipProfile";
-                  tooltip = "Create a new asset in the current directory";
-                  internalName = "newAssetButton";
-                  class = "CreateAssetButton";
+
+                  new GuiIconButtonCtrl() {
+                     BitmapAsset = "ToolsModule:plus_image";
+                     sizeIconToButton = "1";
+                     makeIconSquare = "1";
+                     textLocation = "Center";
+                     text = "New";
+                     extent = "70 30";
+                     profile = "ToolsGuiDefaultProfile";
+                     tooltipProfile = "GuiToolTipProfile";
+                     tooltip = "Create a new asset in the current directory";
+                     internalName = "newAssetButton";
+                     class = "CreateAssetButton";
+                  };
+                  new GuiIconButtonCtrl() {
+                     BitmapAsset = "ToolsModule:import_image";
+                     sizeIconToButton = "1";
+                     makeIconSquare = "1";
+                     textLocation = "Center";
+                     text = "Import";
+                     position = "70 0";
+                     extent = "70 30";
+                     profile = "ToolsGuiDefaultProfile";
+                     command = "AssetBrowser.importNewFile();";
+                     tooltipProfile = "GuiToolTipProfile";
+                     tooltip = "Import a file to be a new asset in the current directory";
+                     internalName = "ImportAssetButton";
+                  };
+                  new GuiIconButtonCtrl() {
+                     BitmapAsset = "ToolsModule:gear_image";
+                     sizeIconToButton = "1";
+                     makeIconSquare = "1";
+                     textLocation = "Center";
+                     text = "Settings";
+                     position = "140 0";
+                     extent = "70 30";
+                     profile = "ToolsGuiDefaultProfile";
+                     command = "AssetBrowser.importNewFile();";
+                     tooltipProfile = "GuiToolTipProfile";
+                     tooltip = "Import a file to be a new asset in the current directory";
+                     internalName = "assetBrowserSettingsButton";
+                  };
                };
                new GuiIconButtonCtrl() {
-                  BitmapAsset = "ToolsModule:import_image";
+                  BitmapAsset = "ToolsModule:iconInformation_image";
                   sizeIconToButton = "1";
                   makeIconSquare = "1";
                   textLocation = "Center";
-                  text = "Import";
-                  position = "70 0";
-                  extent = "70 30";
+                  position = "586 3";
+                  extent = "24 24";
+                  horizSizing = "left";
+                  vertSizing = "center";
                   profile = "ToolsGuiDefaultProfile";
                   command = "AssetBrowser.importNewFile();";
                   tooltipProfile = "GuiToolTipProfile";
-                  tooltip = "Import a file to be a new asset in the current directory";
+                  tooltip = "Go to online documentation for the Asset Browser";
                   internalName = "ImportAssetButton";
-               };
-               new GuiIconButtonCtrl() {
-                  BitmapAsset = "ToolsModule:gear_image";
-                  sizeIconToButton = "1";
-                  makeIconSquare = "1";
-                  textLocation = "Center";
-                  text = "Settings";
-                  position = "140 0";
-                  extent = "70 30";
-                  profile = "ToolsGuiDefaultProfile";
-                  command = "AssetBrowser.importNewFile();";
-                  tooltipProfile = "GuiToolTipProfile";
-                  tooltip = "Import a file to be a new asset in the current directory";
-                  internalName = "assetBrowserSettingsButton";
                };
             };
             new GuiSplitContainer() {
                splitPoint = "190 100";
                fixedSize = "468";
                position = "3 30";
-               extent = "608 556";
+               extent = "606 532";
                horizSizing = "relative";
                vertSizing = "height";
                profile = "ToolsGuiSolidDefaultProfile";
@@ -113,17 +148,17 @@ $guiContent = new GuiControl(NuAssetBrowser) {
 
                new GuiPanel() {
                   docking = "Client";
-                  extent = "188 556";
+                  extent = "188 532";
                   minExtent = "0 0";
                   profile = "ToolsGuiSolidDefaultProfile";
                   tooltipProfile = "GuiToolTipProfile";
-                  internalName = "Panel1";
+                  internalName = "panel1";
 
                   new GuiScrollCtrl() {
                      hScrollBar = "dynamic";
                      vScrollBar = "dynamic";
                      docking = "Client";
-                     extent = "188 556";
+                     extent = "188 532";
                      minExtent = "8 8";
                      horizSizing = "width";
                      vertSizing = "height";
@@ -133,23 +168,24 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                      new GuiTreeViewCtrl() {
                         itemHeight = "21";
                         position = "1 1";
-                        extent = "186 2";
+                        extent = "159 189";
                         profile = "ToolsGuiTreeViewProfile";
                         tooltipProfile = "GuiToolTipProfile";
-                        internalName = "filterTree";
+                        internalName = "directoryTree";
+                        class = "AssetBrowserDirectoryTree";
                      };
                   };
                };
                new GuiPanel() {
                   docking = "Client";
                   position = "192 0";
-                  extent = "416 556";
+                  extent = "414 532";
                   profile = "ToolsGuiSolidDefaultProfile";
                   tooltipProfile = "GuiToolTipProfile";
                   internalName = "panel2";
 
                   new GuiContainer() {
-                     extent = "418 20";
+                     extent = "416 20";
                      horizSizing = "width";
                      profile = "GuiDefaultProfile";
                      tooltipProfile = "GuiToolTipProfile";
@@ -178,14 +214,14 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                         dynamicSize = "0";
                         changeChildSizeToFit = "0";
                         position = "52 0";
-                        extent = "365 23";
+                        extent = "363 23";
                         horizSizing = "width";
                         profile = "GuiDefaultProfile";
                         tooltipProfile = "GuiToolTipProfile";
                      };
                      new GuiTextEditCtrl() {
                         position = "48 0";
-                        extent = "369 18";
+                        extent = "367 18";
                         horizSizing = "width";
                         profile = "ToolsGuiTextEditProfile";
                         tooltipProfile = "GuiToolTipProfile";
@@ -195,7 +231,7 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                   };
                   new GuiContainer() {
                      position = "1 20";
-                     extent = "416 19";
+                     extent = "414 19";
                      horizSizing = "width";
                      profile = "inspectorStyleRolloutDarkProfile";
                      tooltipProfile = "GuiToolTipProfile";
@@ -203,7 +239,7 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                      new GuiTextEditCtrl() {
                         placeholderText = "Search Assets...";
                         position = "26 1";
-                        extent = "365 18";
+                        extent = "363 18";
                         horizSizing = "width";
                         profile = "ToolsGuiTextEditProfile";
                         command = "AssetBrowserSearchFilter.onEdited();";
@@ -221,7 +257,7 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                      };
                      new GuiBitmapButtonCtrl() {
                         BitmapAsset = "ToolsModule:save_icon_n_image";
-                        position = "377 2";
+                        position = "375 2";
                         extent = "15 15";
                         horizSizing = "left";
                         profile = "ToolsGuiSolidDefaultProfile";
@@ -236,6 +272,7 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                         BitmapAsset = "ToolsModule:filter_image";
                         position = "392 -1";
                         extent = "23 23";
+                        horizSizing = "left";
                         profile = "ToolsGuiSolidDefaultProfile";
                         command = "AssetBrowser.showVisibiltyOptions();";
                         tooltipProfile = "GuiToolTipProfile";
@@ -247,7 +284,7 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                   new GuiContainer() {
                      anchorRight = "1";
                      position = "1 37";
-                     extent = "416 519";
+                     extent = "414 495";
                      horizSizing = "width";
                      vertSizing = "height";
                      profile = "ToolsGuiSolidDefaultProfile";
@@ -258,7 +295,7 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                         vScrollBar = "dynamic";
                         lockHorizScroll = "1";
                         docking = "Client";
-                        extent = "416 503";
+                        extent = "414 479";
                         minExtent = "8 8";
                         horizSizing = "width";
                         vertSizing = "height";
@@ -267,7 +304,7 @@ $guiContent = new GuiControl(NuAssetBrowser) {
 
                         new GuiMouseEventCtrl() {
                            position = "1 1";
-                           extent = "414 496";
+                           extent = "412 472";
                            horizSizing = "width";
                            vertSizing = "height";
                            profile = "GuiDefaultProfile";
@@ -277,7 +314,7 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                         new GuiStackControl() {
                            changeChildPosition = "0";
                            position = "2 2";
-                           extent = "414 120";
+                           extent = "412 120";
                            horizSizing = "width";
                            profile = "ToolsGuiModelessDialogProfile";
                            tooltipProfile = "GuiToolTipProfile";
@@ -292,7 +329,7 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                               autoCellSize = "1";
                               dynamicSize = "1";
                               position = "3 0";
-                              extent = "414 120";
+                              extent = "412 120";
                               minExtent = "8 8";
                               horizSizing = "width";
                               profile = "ToolsGuiDefaultNonModalProfile";
@@ -303,8 +340,8 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                      };
                      new GuiContainer() {
                         docking = "Bottom";
-                        position = "0 503";
-                        extent = "416 16";
+                        position = "0 479";
+                        extent = "414 16";
                         horizSizing = "width";
                         vertSizing = "height";
                         profile = "ToolsGuiSolidDefaultProfile";
@@ -313,8 +350,9 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                      };
                      new GuiTextCtrl() {
                         text = "0 Assets";
-                        position = "0 499";
-                        extent = "269 23";
+                        position = "0 475";
+                        extent = "416 23";
+                        horizSizing = "width";
                         vertSizing = "top";
                         profile = "ToolsGuiTextProfile";
                         tooltipProfile = "GuiToolTipProfile";
@@ -323,6 +361,7 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                      new GuiContainer() {
                         position = "2 9";
                         extent = "413 20";
+                        horizSizing = "width";
                         profile = "GuiDefaultProfile";
                         tooltipProfile = "GuiToolTipProfile";
                         internalName = "noticeBar";
@@ -366,38 +405,29 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                   };
                };
             };
-            new GuiIconButtonCtrl() {
-               BitmapAsset = "ToolsModule:iconInformation_image";
-               sizeIconToButton = "1";
-               makeIconSquare = "1";
-               textLocation = "Center";
-               position = "588 4";
-               extent = "24 24";
-               horizSizing = "left";
-               vertSizing = "center";
-               profile = "ToolsGuiDefaultProfile";
-               command = "AssetBrowser.importNewFile();";
-               tooltipProfile = "GuiToolTipProfile";
-               tooltip = "Go to online documentation for the Asset Browser";
-               internalName = "ImportAssetButton";
-            };
          };
          new GuiTabPageCtrl() {
             text = "Creator";
             position = "0 20";
-            extent = "615 588";
+            extent = "613 564";
+            horizSizing = "width";
+            vertSizing = "height";
             profile = "GuiTabPageProfile";
+            visible = "0";
             tooltipProfile = "GuiToolTipProfile";
             internalName = "CreatorTab";
+            class = "CreatorTab";
+            hidden = "1";
 
             new GuiContainer() {
-               extent = "616 20";
+               extent = "614 20";
                horizSizing = "width";
                profile = "GuiDefaultProfile";
                tooltipProfile = "GuiToolTipProfile";
 
                new GuiBitmapButtonCtrl() {
                   BitmapAsset = "ToolsModule:folderUp_image";
+                  color = "White";
                   bitmapMode = "Centered";
                   extent = "22 22";
                   profile = "GuiDefaultProfile";
@@ -420,14 +450,14 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                   dynamicSize = "0";
                   changeChildSizeToFit = "0";
                   position = "52 0";
-                  extent = "563 23";
+                  extent = "561 23";
                   horizSizing = "width";
                   profile = "GuiDefaultProfile";
                   tooltipProfile = "GuiToolTipProfile";
                };
                new GuiTextEditCtrl() {
                   position = "48 0";
-                  extent = "567 18";
+                  extent = "565 18";
                   horizSizing = "width";
                   profile = "ToolsGuiTextEditProfile";
                   tooltipProfile = "GuiToolTipProfile";
@@ -437,7 +467,7 @@ $guiContent = new GuiControl(NuAssetBrowser) {
             };
             new GuiContainer() {
                position = "1 20";
-               extent = "611 19";
+               extent = "609 19";
                horizSizing = "width";
                profile = "inspectorStyleRolloutDarkProfile";
                tooltipProfile = "GuiToolTipProfile";
@@ -445,7 +475,7 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                new GuiTextEditCtrl() {
                   placeholderText = "Search Assets...";
                   position = "26 1";
-                  extent = "759 18";
+                  extent = "757 18";
                   horizSizing = "width";
                   profile = "ToolsGuiTextEditProfile";
                   command = "AssetBrowserSearchFilter.onEdited();";
@@ -463,7 +493,7 @@ $guiContent = new GuiControl(NuAssetBrowser) {
                };
                new GuiBitmapButtonCtrl() {
                   BitmapAsset = "ToolsModule:filter_image";
-                  position = "589 -1";
+                  position = "587 -1";
                   extent = "23 23";
                   horizSizing = "left";
                   profile = "ToolsGuiSolidDefaultProfile";

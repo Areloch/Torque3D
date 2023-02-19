@@ -82,7 +82,7 @@ function initializeAssetBrowser()
    exec("./scripts/editModule." @ $TorqueScriptFileExtension);   
    exec("./scripts/selectModule." @ $TorqueScriptFileExtension);   
    exec("./scripts/assetImportConfigEditor." @ $TorqueScriptFileExtension);  
-   exec("./scripts/directoryHandling." @ $TorqueScriptFileExtension);
+   //exec("./scripts/directoryHandling." @ $TorqueScriptFileExtension);
    exec("./scripts/selectPath." @ $TorqueScriptFileExtension);
    exec("./scripts/looseFileAudit." @ $TorqueScriptFileExtension);
    exec("./scripts/creator." @ $TorqueScriptFileExtension);

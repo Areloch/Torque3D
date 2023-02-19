@@ -1,0 +1,7 @@
+<GUIAsset
+    canSave="true"
+    canSaveDynamicFields="true"
+    AssetName="assetBrowserGUI"
+    scriptFile="@assetFile=assetBrowserGUI.tscript"
+    GUIFile="@assetFile=assetBrowserGUI.gui"
+    VersionId="1" />

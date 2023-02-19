@@ -1,0 +1,57 @@
+$GUIFormBuilder::rowHeight = 20;
+$GUIFormBuilder::edgePad = 5;
+
+function GuiFormBuilder::init()
+{
+   exec("./scripts/formBuilderUtils.tscript"); 
+   exec("./scripts/propertyField.tscript");  
+   
+   //load elements
+   exec("./scripts/elements/window.tscript");  
+   exec("./scripts/elements/basicStack.tscript"); 
+   exec("./scripts/elements/rollout.tscript"); 
+   exec("./scripts/elements/tabBook.tscript"); 
+   exec("./scripts/elements/tabPage.tscript"); 
+   exec("./scripts/elements/textField.tscript"); 
+   exec("./scripts/elements/treeView.tscript"); 
+   exec("./scripts/elements/splitContainer.tscript"); 
+}
+
+function testFBFunc()
+{
+   %window = GuiFormBuilder::createWindow("Test Window");
+   
+   %book = %window.createTabBook();
+   %page = %book.createTabPage("Test Page");
+   
+   %mainStack = %page.createScrollStack();
+   
+   %rollout = %mainStack.createRollout("Test Rollout");
+   %rolloutStack = %rollout.createStack();
+   
+   %rolloutStack.createTextField("A Test Field", "AAAAAAAAA");
+   %rolloutStack.createTextPropertyField("Another Test Field", "$GUIFormBuilder::edgePad");
+   
+   %pageTwo = %book.createTabPage("Other Page");
+}
+
+function testFBFunc2()
+{
+   %window = GuiFormBuilder::createWindow("Test Alt Window", "", "500 400");
+   %splitContainer = %window.createSplitContainer();
+   
+   %tree = %splitContainer-->panel1.createTreeView();
+   %book = %splitContainer-->panel2.createTabBook();
+   
+   %page = %book.createTabPage("Test Page");
+   
+   %mainStack = %page.createScrollStack();
+   
+   %rollout = %mainStack.createRollout("Test Rollout");
+   %rolloutStack = %rollout.createStack();
+   
+   %rolloutStack.createTextField("A Test Field", "AAAAAAAAA");
+   %propField = %rolloutStack.createTextPropertyField("Another Test Field", "$GUIFormBuilder::edgePad");
+   
+   %pageTwo = %book.createTabPage("Other Page");
+}

@@ -1,0 +1,7 @@
+function initializeAB()
+{
+   echo(" % - Initializing Asset Browser");  
+   
+   exec("./GUIs/assetBrowserGUI.tscript");
+   exec("./GUIs/assetBrowserGUI.gui");
+}

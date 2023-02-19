@@ -1,0 +1,19 @@
+function GuiFormBuilder::createTabPage(%base, %title)
+{
+   %page = new GuiTabPageCtrl()
+   {
+      superClass = GuiFormBuilder;
+      text = %title;
+      profile = ToolsGuiEditorTabPage;
+      position = "0 20";
+      extent = %base.extent.x SPC %base.extent.y - 20;
+      internalName = "page";  
+      horizSizing = "width";
+      vertSizing = "height";
+      margin = $GUIFormBuilder::edgePad SPC $GUIFormBuilder::edgePad SPC $GUIFormBuilder::edgePad SPC $GUIFormBuilder::edgePad;
+   };
+   
+   %base.add(%page);
+   
+   return %page;
+}
