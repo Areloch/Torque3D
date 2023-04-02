@@ -161,6 +161,8 @@ public:
 
    bool onWake();
 
+   void setDataField(StringTableEntry slotName, StringTableEntry array, StringTableEntry value);
+
 private:
    GuiFrameSetCtrl(const GuiFrameSetCtrl &);
    GuiFrameSetCtrl& operator=(const GuiFrameSetCtrl &);

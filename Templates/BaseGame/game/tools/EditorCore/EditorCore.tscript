@@ -1,0 +1,30 @@
+
+function EditorCore::onCreate(%this)
+{
+   exec( "tools/gui/profiles.ed." @ $TorqueScriptFileExtension );
+   
+   exec("./scripts/formBuilder/formBuilder.ed.tscript");
+   GuiFormBuilder::init();
+   
+   //
+   AssetDatabase.acquireAsset("EditorCore:MainEditorWindow");
+   
+   //   
+   exec("./scripts/directoryHandler");
+   exec("./scripts/menus");
+   
+   new ScriptObject(MenuManager){};
+   
+   MenuManager.registeredMenubarMenus = new ArrayObject(){};
+   MenuManager.registeredContextMenus = new ArrayObject(){};
+}
+
+function EditorCore::onDestroy(%this)
+{
+
+}
+
+function openMainEditor()
+{
+   Canvas.setContent(MainEditorWindow);  
+}

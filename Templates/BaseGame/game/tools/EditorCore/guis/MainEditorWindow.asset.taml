@@ -1,0 +1,7 @@
+<GUIAsset
+    canSave="true"
+    canSaveDynamicFields="true"
+    AssetName="MainEditorWIndow"
+    scriptFile="@assetFile=MainEditorWIndow.tscript"
+    GUIFile="@assetFile=MainEditorWIndow.gui"
+    VersionId="1" />

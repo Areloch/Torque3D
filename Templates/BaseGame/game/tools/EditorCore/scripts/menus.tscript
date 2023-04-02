@@ -1,0 +1,57 @@
+function MenuManager::registerMenubarMenu(%this, %menuName)
+{
+   if(MenuManager.registeredMenubarMenus.getIndexFromKey(%menuName) == -1)
+      MenuManager.registeredMenubarMenus.add(%menuName);  
+}
+
+function MenuManager::registerContextMenu(%this, %menuName)
+{
+   if(MenuManager.registeredContextMenus.getIndexFromKey(%menuName) == -1)
+      MenuManager.registeredContextMenus.add(%menuName);  
+}
+
+function MainEditorMenubar::onWake(%this)
+{
+   %this.refresh();  
+}
+
+function MainEditorMenubar::refresh(%this)
+{
+   //clear the existing lists
+   %this.clear();
+   
+   %entryPadding = 5;
+   
+   for(%i=0; %i <  MenuManager.registeredMenubarMenus.count(); %i++)
+   {
+      %menuName = MenuManager.registeredMenubarMenus.getKey(%i);
+      
+      %entries = strreplace(%menuName, "/", "\t");
+      %count = getFieldCount(%entries);
+      
+      //top level entry here
+      %menuEntryName = getField(%entries, 0);
+      
+      if(isObject(%this.findObjectByInternalName(%menuEntryName)))
+         continue; //already have this one, skip adding again
+      
+      %buttonWidth = ToolsGuiDefaultProfile.getStringWidth(%menuEntryName);
+      
+      %command = "";
+      
+      %button = new GuiIconButtonCtrl()
+      {
+         profile = "ToolsGuiButtonProfile";
+         extent = %buttonWidth + (%entryPadding *2) SPC %this.getExtent().y;
+         internalName = %menuEntryName;
+         text = %menuEntryName;
+         iconBitmap = "";
+         iconLocation = "Left";
+         textLocation = "Center";
+         command = %command;
+         hasChildren = %count != 1;
+      };  
+      
+      %this.add(%button);
+   }
+}

@@ -1,0 +1,8 @@
+function MainEditorWindow::onWake(%this)
+{
+   MenuManager.registerMenubarMenu("File");
+   MenuManager.registerMenubarMenu("Edit");
+   MenuManager.registerMenubarMenu("Resizing Validation");
+   
+   MainEditorMenubar.refresh();
+}

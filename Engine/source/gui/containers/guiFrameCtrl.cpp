@@ -938,7 +938,11 @@ void GuiFrameSetCtrl::computeSizes(bool balanceFrames)
             if (row == hDividers)
                newExtent.y = getHeight() - mRowOffsets[row];                   // last row
             else
+            {
+               S32 rowOffsetrow1 = mRowOffsets[row + 1];
+               S32 rowOffsetrow0 = mRowOffsets[row];
                newExtent.y = mRowOffsets[row + 1] - mRowOffsets[row] - mFramesetDetails.mBorderWidth;            // any other row
+            }
 
             if ( *fditr )
             {
@@ -1151,4 +1155,14 @@ RectSpacingI GuiFrameSetCtrl::getFramePadding(S32 index)
       return fd->mPadding;
 
    return RectSpacingI( 0, 0, 0, 0 );
+}
+
+
+
+void GuiFrameSetCtrl::setDataField(StringTableEntry slotName, StringTableEntry array, StringTableEntry value)
+{
+   if (slotName == StringTable->insert("rows"))
+   {
+      bool asdfasdf = true;
+   }
 }

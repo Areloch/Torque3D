@@ -1,0 +1,38 @@
+//--- OBJECT WRITE BEGIN ---
+$guiContent = new GuiContainer(MainEditorWIndow) {
+   extent = "1024 768";
+   minExtent = "8 8";
+   horizSizing = "width";
+   vertSizing = "height";
+   profile = "ToolsGuiDefaultNonModalProfile";
+   tooltipProfile = "GuiToolTipProfile";
+   canSaveDynamicFields = "1";
+      Enabled = "1";
+      
+   new GuiPanel() {
+      position = "0 0";
+      extent = "1024 30";
+      horizSizing = "width";
+      vertSizing = "bottom";
+      profile = "ToolsGuiDefaultNonModalProfile";
+      tooltipProfile = "GuiToolTipProfile";
+
+      new GuiStackControl(MainEditorMenubar) {
+         stackingType = "Horizontal";
+         extent = "1024 30";
+         horizSizing = "width";
+         profile = "GuiDefaultProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+   };
+   
+   new GuiFrameSetCtrl(MainEditorFrameSet) {
+      position = "0 30";
+      extent = "1024 738";
+      profile = "ToolsGuiDefaultNonModalProfile";
+      tooltipProfile = "GuiToolTipProfile";
+      horizSizing = "width";
+      horizSizing = "bottom";
+   };
+};
+//--- OBJECT WRITE END ---

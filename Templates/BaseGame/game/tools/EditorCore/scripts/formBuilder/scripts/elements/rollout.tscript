@@ -1,0 +1,19 @@
+function GuiFormBuilder::createRollout(%base, %title)
+{
+   %rollout = new GuiRolloutCtrl()
+   {
+      caption = %title;
+      superClass = GuiFormBuilder;
+      profile = GuiInspectorGroupProfile;
+      position = "0 0";
+      extent = %base.extent.x SPC 50;
+      internalName = "rollout";  
+      horizSizing = "width";
+      vertSizing = "height";
+      margin = $GUIFormBuilder::edgePad SPC $GUIFormBuilder::edgePad SPC $GUIFormBuilder::edgePad SPC $GUIFormBuilder::edgePad;
+   };
+
+   %base.add(%rollout);
+   
+   return %rollout;
+}

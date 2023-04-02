@@ -1,0 +1,85 @@
+function GuiFormBuilder::createWindow(%title, %pos, %ext)
+{
+   %base = new GuiControl(TestForm)
+   {
+      profile = ToolsGuiDefaultNonModalProfile;
+      horizSizing = "width";
+      vertSizing = "height";
+   };
+   
+   if(%pos $= "")
+      %pos = "25 25";
+   
+   if(%ext $= "")
+      %ext = "200 400";
+   
+   %window = new GuiWindowCtrl()
+   {
+      profile = ToolsGuiWindowCollapseProfile;
+      text = %title;
+      position = %pos;
+      extent = %ext;
+      internalName = "GBFB_" @ %title;  
+   };
+   %base.add(%window);
+   
+   %content = new GuiPanel()
+   {
+      profile = ToolsGuiEditorTabPage;
+      superClass = GuiFormBuilder;
+      position = $GUIFormBuilder::edgePad SPC 20;
+      extent = (%window.extent.x - ($GUIFormBuilder::edgePad * 2)) SPC (%window.extent.y - 20 - $GUIFormBuilder::edgePad);
+      horizSizing = "width";
+      vertSizing = "height";
+   };
+   %window.add(%content);
+   
+   Canvas.pushDialog(%base);
+   
+   return %content;
+}
+
+function GuiFormBuilder::createTabbedWindow(%title, %pos, %ext)
+{
+   %base = new GuiControl(TestForm)
+   {
+      profile = ToolsGuiDefaultNonModalProfile;
+      horizSizing = "width";
+      vertSizing = "height";
+   };
+   
+   if(%pos $= "")
+      %pos = "25 25";
+   
+   if(%ext $= "")
+      %ext = "200 400";
+   
+   %window = new GuiWindowCtrl()
+   {
+      profile = ToolsGuiWindowCollapseProfile;
+      text = %title;
+      position = %pos;
+      extent = %ext;
+      internalName = "GBFB_" @ %title;  
+   };
+   %base.add(%window);
+   
+   //TODO: Make the tabbook profile for this non-modal so it doesn't intercept 
+   //inputs over the window bar
+   %book = new GuiTabBookCtrl()
+   {
+      superClass = GuiFormBuilder;
+      profile = ToolsGuiTabBookProfile;
+      position = "0 0";
+      extent = %window.extent;
+      internalName = "book";  
+      horizSizing = "width";
+      vertSizing = "height";
+   };
+   %window.add(%book);
+   
+   Canvas.pushDialog(%base);
+   
+   return %book;
+}
+

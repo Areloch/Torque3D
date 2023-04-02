@@ -1,0 +1,17 @@
+function GuiFormBuilder::createTabBook(%base)
+{
+   %book = new GuiTabBookCtrl()
+   {
+      superClass = GuiFormBuilder;
+      profile = ToolsGuiTabBookProfile;
+      position = "0 0";
+      extent = %base.extent;
+      internalName = "book";  
+      horizSizing = "width";
+      vertSizing = "height";
+   };
+
+   %base.add(%book);
+   
+   return %book;
+}

@@ -1,0 +1,7 @@
+function GuiFormBuilderPropertyField::onValidate(%this)
+{
+   echo("VALIDATED TARGET: " @ %this.target);  
+   
+   %evalCommand = %this.target @ " = \"" @ %this.getText() @ "\";";
+   eval(%evalCommand);
+}
