@@ -1,6 +1,16 @@
 function MainMenuGui::onAdd(%this)
 {
    $activeControllerName = "K&M"; //default input type
+   
+   new ArrayObject(MenuButtonsArray);
+   
+   MenuButtonsArray.Add("Text=Singleplayer\tCommand=openSinglePlayerMenu();");
+   MenuButtonsArray.Add("Text=Create Server\tCommand=openMultiPlayerMenu();");
+   MenuButtonsArray.Add("Text=Join Server");
+   MenuButtonsArray.Add("Text=Options");
+   MenuButtonsArray.Add("Text=GUI Editor");
+   MenuButtonsArray.Add("Text=World Editor");
+   MenuButtonsArray.Add("Text=Exit");
 }
 
 function MainMenuGui::onWake(%this)
@@ -37,6 +47,8 @@ function MainMenuGui::onWake(%this)
    %this.setRootPage(MainMenuButtons);
    
    %this.refreshPage();
+   
+   MenuTest.refresh();
 }
 
 function MainMenuButtonHolder::onWake(%this)

@@ -2342,6 +2342,58 @@ void SimObject::onInspect(GuiInspector* inspector)
 }
 
 //-----------------------------------------------------------------------------
+void SimObject::setFieldBindingValue(StringTableEntry bindingName, StringTableEntry assignedValue)
+{
+   /*if (mFlags.test(ModStaticFields))
+   {
+      const AbstractClassRep::FieldList& list = getFieldList();
+      const AbstractClassRep::Field* f;
+      U32 numDummyEntries = 0;
+
+      for (S32 i = 0; i < list.size(); i++)
+      {
+         f = &list[i];
+
+         // The special field types do not need to be counted.
+         if (f->type >= AbstractClassRep::ARCFirstCustomField)
+            continue;
+
+         StringTableEntry fieldVal = StringTable->EmptyString();
+         if (f)
+         {
+            for(U32 i=0; i < )
+            if (array1 == -1 && fld->elementCount == 1)
+               return (*fld->getDataFn)(this, Con::getData(fld->type, (void*)(((const char*)this) + fld->offset), 0, fld->table, fld->flag));
+            if (array1 >= 0 && array1 < fld->elementCount)
+               return (*fld->getDataFn)(this, Con::getData(fld->type, (void*)(((const char*)this) + fld->offset), array1, fld->table, fld->flag));// + typeSizes[fld.type] * array1));
+            return "";
+         }
+      }
+
+      return list.size() - numDummyEntries;
+   }
+
+   if (mFlags.test(ModDynamicFields))
+   {
+      if (!mFieldDictionary)
+         return "";
+
+      if (!array)
+      {
+         if (const char* val = mFieldDictionary->getFieldValue(slotName))
+            return val;
+      }
+      else
+      {
+         static char buf[256];
+         dStrcpy(buf, slotName, 256);
+         dStrcat(buf, array, 256);
+         if (const char* val = mFieldDictionary->getFieldValue(StringTable->insert(buf)))
+            return val;
+      }
+   }*/
+}
+//-----------------------------------------------------------------------------
 DefineEngineMethod( SimObject, dumpGroupHierarchy, void, (),,
    "Dump the hierarchy of this object up to RootGroup to the console." )
 {
@@ -3077,6 +3129,15 @@ DefineEngineMethod( SimObject, setFieldType, void, ( const char* fieldName, cons
 }
 
 //-----------------------------------------------------------------------------
+DefineEngineMethod(SimObject, setFieldBindingValue, void, (const char* bindingName, const char* assignedValue), ("", ""),
+   "Iterates over the fields of the object and finds any fields who's values match the binding name string, and then replaces it with the assignedValue\n"
+   "@param bindingName The needle string to look through the object's fields for.\n"
+   "@param assignedValue The value to replace the bindingName string with.\n")
+{
+   object->setFieldBindingValue(StringTable->insert(bindingName), StringTable->insert(assignedValue));
+}
+
+//-----------------------------------------------------------------------------
 
 DefineEngineStringlyVariadicMethod( SimObject, call, const char*, 3, 0, "( string method, string args... ) Dynamically call a method on an object.\n"
    "@param method Name of method to call.\n"
@@ -3271,9 +3332,9 @@ DefineEngineMethod( SimObject, getFieldCount, S32, (),,
 //-----------------------------------------------------------------------------
 
 DefineEngineMethod( SimObject, getField, const char*, ( S32 index ),,
-   "Retrieve the value of a static field by index.\n"
+   "Retrieve the name of a static field by index.\n"
    "@param index The index of the static field.\n"
-   "@return The value of the static field with the given index or \"\"." )
+   "@return The name of the static field with the given index or \"\"." )
 {
    const AbstractClassRep::FieldList &list = object->getFieldList();
    if( ( index < 0 ) || ( index >= list.size() ) )

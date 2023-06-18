@@ -994,6 +994,9 @@ class SimObject: public ConsoleObject, public TamlCallbacks
 
       // EngineObject.
       virtual void destroySelf();
+
+      //Value binding
+      void setFieldBindingValue(StringTableEntry bindingName, StringTableEntry assignedValue);
 protected:
    bool   is_temp_clone;
 public:

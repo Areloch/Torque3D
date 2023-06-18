@@ -572,6 +572,14 @@ inline void SimSetIterator::Stack::push_back(SimSet* set)
 
 //-----------------------------------------------------------------------------
 
+void SimSet::setFieldBindingValue(StringTableEntry bindingName, StringTableEntry assignedValue, bool recurseChildren)
+{
+
+
+}
+
+//-----------------------------------------------------------------------------
+
 SimSetIterator::SimSetIterator(SimSet* set)
 {
    VECTOR_SET_ASSOCIATION(stack);
@@ -1133,4 +1141,15 @@ DefineEngineMethod( SimSet, acceptsAsChild, bool, ( SimObject* obj ),,
       return false;
    
    return object->acceptsAsChild( obj );
+}
+
+//-----------------------------------------------------------------------------
+
+DefineEngineMethod(SimSet, setFieldBindingValue, void, (const char* bindingName, const char* assignedValue, bool recurseChildren), ("", "", true),
+   "Iterates over the fields of the object and finds any fields who's values match the binding name string, and then replaces it with the assignedValue\n"
+   "@param bindingName The needle string to look through the object's fields for.\n"
+   "@param assignedValue The value to replace the bindingName string with.\n"
+   "@param recurseChildren Does this apply to all children as well.\n")
+{
+   object->setFieldBindingValue(StringTable->insert(bindingName), StringTable->insert(assignedValue), recurseChildren);
 }

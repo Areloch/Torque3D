@@ -348,6 +348,20 @@ function GuiInspectorTypeImageAssetPtr::onControlDropped( %this, %payload, %posi
    EWorldEditor.isDirty = true;
 }
 
+function AssetBrowser::onImageAssetGUIEditorDropped(%this, %assetDef, %position)
+{
+   %ctrl = new guiBitmapCtrl()
+   {
+      position = %position;
+      bitmap = %assetDef.getAssetId();  
+   };
+
+   GuiEditor.getContentControl().add(%ctrl);
+      
+   GuiEditor.clearSelection();
+   GuiEditor.schedule(32, "addSelection", %ctrl );
+}
+
 function parseImageSuffixes(%assetItem)
 {
    //diffuse

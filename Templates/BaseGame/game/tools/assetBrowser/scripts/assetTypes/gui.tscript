@@ -112,6 +112,9 @@ function AssetBrowser::editGUIAsset(%this, %assetDef)
    if( !$InGuiEditor && !GuiEditorIsActive() )
       GuiEditor.open();
       
+   GuiEditor.editAsset = %assetDef;
+   GuiEditor.editTemplateCtrl = "";
+      
    GuiEditContent(%assetDef.assetName);  
 }
 

@@ -116,6 +116,9 @@ function GuiEditorTreeView::onRightMouseDown( %this, %item, %pts, %obj )
       %popup.item[ 6 ] = "Add New Controls Here" TAB "" TAB "GuiEditor.setCurrentAddSet( " @ %obj @ ");";
       %popup.item[ 7 ] = "Add Child Controls to Selection" TAB "" TAB "GuiEditor.selectAllControlsInSet( " @ %obj @ ", false );";
       %popup.item[ 8 ] = "Remove Child Controls from Selection" TAB "" TAB "GuiEditor.selectAllControlsInSet( " @ %obj @ ", true );";
+      %popup.item[ 9 ] = "-";
+      %popup.item[ 10 ] = "Convert to GUI Template" TAB "" TAB "GuiEditor.makeSelectionGUITemplate( " @ %obj @ " );";
+      %popup.item[ 11 ] = "Explode GUI Template" TAB "" TAB "GuiEditor.explodeGuiTemplates( " @ %obj @ " );";
       
       %popup.checkItem( 3, %obj.locked );
       %popup.checkItem( 4, !%obj.isVisible() );
@@ -123,6 +126,9 @@ function GuiEditorTreeView::onRightMouseDown( %this, %item, %pts, %obj )
       %popup.enableItem( 6, %obj.isContainer );
       %popup.enableItem( 7, %obj.getCount() > 0 );
       %popup.enableItem( 8, %obj.getCount() > 0 );
+      
+      %popup.enableItem( 10, !%obj.isMemberOfClass("GUITemplateCtrl") );
+       %popup.enableItem( 11, %obj.isMemberOfClass("GUITemplateCtrl") );
       
       %popup.reloadItems();
       

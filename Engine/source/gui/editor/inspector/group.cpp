@@ -29,6 +29,7 @@
 #include "T3D/assets/ShapeAsset.h"
 #include "T3D/assets/ImageAsset.h"
 #include "T3D/assets/SoundAsset.h"
+#include "T3D/assets/GUITemplateAsset.h"
 
 IMPLEMENT_CONOBJECT(GuiInspectorGroup);
 
@@ -604,6 +605,8 @@ void GuiInspectorGroup::addInspectorField(StringTableEntry name, StringTableEntr
       fieldType = TypeShapeAssetId;
    else if (typeName == StringTable->insert("sound"))
       fieldType = TypeSoundAssetId;
+   else if (typeName == StringTable->insert("guiTemplate"))
+      fieldType = TypeGUITemplateAssetId;
    else if (typeName == StringTable->insert("bool"))
       fieldType = TypeBool;
    else if (typeName == StringTable->insert("object"))

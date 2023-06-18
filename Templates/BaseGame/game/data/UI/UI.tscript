@@ -73,6 +73,8 @@ function UI::initClient(%this)
    %this.queueExec("./guis/startupGui");
    %this.queueExec("./guis/startupGui.gui");
    
+   %this.queueExec("./scripts/menuList");
+   
    // Load Editor Dialogs
    %this.queueExec("./guis/messageBoxDlg.gui");
    

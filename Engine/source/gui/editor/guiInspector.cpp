@@ -802,6 +802,10 @@ S32 GuiInspector::createInspectorGroup(StringTableEntry groupName, S32 index)
 
    addObject(newGroup);
 
+   //ensure the actual stack gets updated as well if we're setting a specific position
+   if(index != -1 && index < mGroups.size() - 1)
+      reOrder(newGroup, mGroups[index + 1]);
+   
    return newGroup->getId();
 }
 
@@ -971,6 +975,14 @@ DefineEngineMethod(GuiInspector, findExistentGroup, S32, (const char* groupName)
 {
    GuiInspectorGroup* group = object->findExistentGroup(StringTable->insert(groupName));
    return group ? group->getId() : 0;
+}
+
+DefineEngineMethod(GuiInspector, findExistentGroupIndex, S32, (const char* groupName), ,
+   "Finds an existing GuiInspectorGroup if it exists and returns it's index.\n"
+   "@param groupName Name of the new GuiInspectorGroup to find in this Inspector."
+   "@return index of the named GuiInspectorGroup")
+{
+   return object->findExistentGroupIndex(StringTable->insert(groupName));
 }
 
 DefineEngineMethod(GuiInspector, removeGroup, void, (const char* groupName), ,

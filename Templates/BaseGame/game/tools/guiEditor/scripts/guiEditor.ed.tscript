@@ -345,7 +345,7 @@ function GuiEditor::editProfile( %this, %profile )
 
 function GuiEditor::createControl( %this, %className )
 {
-   %ctrl = eval( "return new " @ %className @ "();" );
+   %ctrl = eval( "new " @ %className @ "();" );
    if( !isObject( %ctrl ) )
       return;
       
@@ -565,6 +565,7 @@ function GuiEditor::toggleFlagInAllSelectedObjects( %this, %flagFieldName )
 
 function GuiEditor::onDelete(%this)
 {
+   GuiEditorInspectFields.groupFilters = "";
    GuiEditorTreeView.update();
    // clear out the gui inspector.
    GuiEditorInspectFields.update(0);
@@ -588,6 +589,7 @@ function GuiEditor::onSelectionResized( %this, %ctrl )
 
 function GuiEditor::onSelect(%this, %ctrl)
 {
+   GuiEditorInspectFields.groupFilters = "";
    if( !%this.dontSyncTreeViewSelection )
    {
       GuiEditorTreeView.clearSelection();
@@ -634,6 +636,8 @@ function GuiEditor::onRemoveSelected( %this, %ctrl )
 
 function GuiEditor::onClearSelected( %this )
 { 
+   GuiEditorInspectFields.groupFilters = "";
+   
    if( !%this.dontSyncTreeViewSelection )
       GuiEditorTreeView.clearSelection();
       
@@ -754,6 +758,77 @@ function GuiEditor::doFileDropProcessing(%this)
    ImportAssetWindow.refresh();
 }
 
+//
+function GuiEditor::makeSelectionGUITemplate( %this, %obj )
+{
+   if( %this.getSelection().getCount() == 0)
+      return;
+      
+   %this.newTemplateTargetObjs = %this.getSelection();
+      
+   AssetBrowser.setupCreateNewAsset("GUITemplateAsset", AssetBrowser.selectedModule, "GuiEditor.finishMakeSelectionGUITemplate");
+}
+
+function GuiEditor::finishMakeSelectionGUITemplate( %this, %newGUIAssetId )
+{
+   %targetObjs = %this.newTemplateTargetObjs;
+   
+   %minPosition = Canvas.getExtent();
+   %maxExtent = "0 0";
+   for(%i=0; %i < %targetObjs.getCount(); %i++)
+   {
+      %obj = %targetObjs.getObject(%i);
+      if(%obj.position.x < %minPosition.x)
+         %minPosition.x = %obj.position.x;
+      if(%obj.position.y < %minPosition.y)
+         %minPosition.y = %obj.position.y;
+         
+      if(%obj.extent.x > %maxExtent.x)
+         %maxExtent.x = %obj.extent.x;
+      if(%obj.extent.y > %maxExtent.y)
+         %maxExtent.y = %obj.extent.y;
+   }
+   
+   %ctrl = new GUITemplateCtrl()
+   {
+      position = %minPosition;
+      extent = %maxExtent;  
+      templateAsset = %newGUIAssetId;
+   };
+   
+   for(%i=0; %i < %targetObjs.getCount(); %i++)
+   {
+      %obj = %targetObjs.getObject(%i);
+      %parent = %obj.getParent();
+      %parent.remove(%obj);
+   }
+   
+   %this.getContentControl().add(%ctrl);
+   
+   %this.schedule(32, "addSelection", %ctrl );  
+}
+
+function GuiEditor::explodeGuiTemplates(%this)
+{
+   if( %this.getSelection().getCount() == 0)
+      return;
+      
+   for(%i=%this.getSelection().getCount()-1; %i >= 0; %i--)
+   {
+      %obj = %this.getSelection().getObject(%i);
+      
+      if(%obj.isMemberOfClass("GUITemplateCtrl"))
+      {
+         %childCtrls = %obj.getChildObjects().deepClone();
+         
+         %parent = %obj.getParent();
+         %parent.add(%childCtrls);
+         %childCtrls.position = %obj.position;
+         
+         %obj.delete();
+      }
+   }
+}
 //
 
 //=============================================================================================

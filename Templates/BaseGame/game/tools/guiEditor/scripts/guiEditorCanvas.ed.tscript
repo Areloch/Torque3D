@@ -363,121 +363,135 @@ function GuiEditCanvas::save( %this, %selectedOnly, %noPrompt )
    %currentObject.canSaveDynamicFields = true; // Make sure the guides get saved out.
    
    // Construct a base filename.
-   
-   if( %currentObject.getName() !$= "" )
-      %name =  %currentObject.getName() @ ".gui";
-   else
-      %name = "Untitled.gui";
-      
-   // Construct a path.
-   
-   if( %selectedOnly
-       && %currentObject != GuiEditorContent.getObject( 0 )
-       && %currentObject.getFileName() $= GuiEditorContent.getObject( 0 ).getFileName() )
+   if(isObject(GuiEditor.editAsset) && AssetDatabase.getAssetType(GuiEditor.editAsset.getAssetId()) $= "GuiTemplateAsset")
    {
-      // Selected child control that hasn't been yet saved to its own file.
+      %curObjParent = %currentObject.getParent();
+      GuiEditor.editAsset.clear();
+      %currentObject.setName(""); //wipe the name for the save
+      GuiEditor.editAsset.add(%currentObject);
       
-      %currentFile = GuiEditor.LastPath @ "/" @ %name;
-      %currentFile = makeRelativePath( %currentFile, getMainDotCsDir() );
+      GuiEditor.editAsset.saveAsset();
+      
+      %currentObject.setName(GuiEditor.editAsset.assetName);
+      %curObjParent.add(%currentObject);
    }
    else
    {
-      %currentFile = %currentObject.getFileName();
-      if( %currentFile $= "")
-      {
-         // No file name set on control.  Force a prompt.
-         %noPrompt = false;
+      if( %currentObject.getName() !$= "" )
+         %name =  %currentObject.getName() @ ".gui";
+      else
+         %name = "Untitled.gui";
          
-         if( GuiEditor.LastPath !$= "" )
-         {
-            %currentFile = GuiEditor.LastPath @ "/" @ %name;
-            %currentFile = makeRelativePath( %currentFile, getMainDotCsDir() );
-         }
-         else
-            %currentFile = expandFileName( %name );
+      // Construct a path.
+      
+      if( %selectedOnly
+          && %currentObject != GuiEditorContent.getObject( 0 )
+          && %currentObject.getFileName() $= GuiEditorContent.getObject( 0 ).getFileName() )
+      {
+         // Selected child control that hasn't been yet saved to its own file.
+         
+         %currentFile = GuiEditor.LastPath @ "/" @ %name;
+         %currentFile = makeRelativePath( %currentFile, getMainDotCsDir() );
       }
       else
-         %currentFile = expandFileName( %currentFile );
-   }
-   
-   // Get the filename.
-   
-   if( !%noPrompt )
-   {
-      %filename = GuiBuilder::getSaveName( %currentFile );
-      if( %filename $= "" )
-         return;
-   }
-   else
-      %filename = %currentFile;
-      
-   // Save the Gui.
-   
-   if( isWriteableFileName( %filename ) )
-   {
-      //
-      // Extract any existent TorqueScript before writing out to disk
-      //
-      %fileObject = new FileObject();
-      %fileObject.openForRead( %filename );      
-      %skipLines = true;
-      %beforeObject = true;
-      // %var++ does not post-increment %var, in torquescript, it pre-increments it,
-      // because ++%var is illegal. 
-      %lines = -1;
-      %beforeLines = -1;
-      %skipLines = false;
-      while( !%fileObject.isEOF() )
       {
-         %line = %fileObject.readLine();
-         if( %line $= "//--- OBJECT WRITE BEGIN ---" )
-            %skipLines = true;
-         else if( %line $= "//--- OBJECT WRITE END ---" )
+         %currentFile = %currentObject.getFileName();
+         if( %currentFile $= "")
          {
-            %skipLines = false;
-            %beforeObject = false;
-         }
-         else if( %skipLines == false )
-         {
-            if(%beforeObject)
-               %beforeNewFileLines[ %beforeLines++ ] = %line;
+            // No file name set on control.  Force a prompt.
+            %noPrompt = false;
+            
+            if( GuiEditor.LastPath !$= "" )
+            {
+               %currentFile = GuiEditor.LastPath @ "/" @ %name;
+               %currentFile = makeRelativePath( %currentFile, getMainDotCsDir() );
+            }
             else
-               %newFileLines[ %lines++ ] = %line;
+               %currentFile = expandFileName( %name );
          }
-      }      
-      %fileObject.close();
-      %fileObject.delete();
-     
-      %fo = new FileObject();
-      if(!%fo.openForWrite(%filename))
-      {
-        error("GuiEditCanvas::save() - Unable to save, file location not open for writing.");
-        %fo.close();
-             
-        return false;
+         else
+            %currentFile = expandFileName( %currentFile );
       }
       
-      // Write out the captured TorqueScript that was before the object before the object
-      for( %i = 0; %i <= %beforeLines; %i++)
-         %fo.writeLine( %beforeNewFileLines[ %i ] );
+      // Get the filename.
+      
+      if( !%noPrompt )
+      {
+         %filename = GuiBuilder::getSaveName( %currentFile );
+         if( %filename $= "" )
+            return;
+      }
+      else
+         %filename = %currentFile;
          
-      %fo.writeLine("//--- OBJECT WRITE BEGIN ---");
-      %fo.writeObject(%currentObject, "$guiContent = ");
-      %fo.writeLine("//--- OBJECT WRITE END ---");
+      // Save the Gui.
       
-      // Write out captured TorqueScript below Gui object
-      for( %i = 0; %i <= %lines; %i++ )
-         %fo.writeLine( %newFileLines[ %i ] );
-               
-      %fo.close();
-      %fo.delete();
-      
-      %currentObject.setFileName( makeRelativePath( %filename, getMainDotCsDir() ) );
-      
-      GuiEditorStatusBar.print( "Saved file '" @ %currentObject.getFileName() @ "'" );
+      if( isWriteableFileName( %filename ) )
+      {
+         //
+         // Extract any existent TorqueScript before writing out to disk
+         //
+         %fileObject = new FileObject();
+         %fileObject.openForRead( %filename );      
+         %skipLines = true;
+         %beforeObject = true;
+         // %var++ does not post-increment %var, in torquescript, it pre-increments it,
+         // because ++%var is illegal. 
+         %lines = -1;
+         %beforeLines = -1;
+         %skipLines = false;
+         while( !%fileObject.isEOF() )
+         {
+            %line = %fileObject.readLine();
+            if( %line $= "//--- OBJECT WRITE BEGIN ---" )
+               %skipLines = true;
+            else if( %line $= "//--- OBJECT WRITE END ---" )
+            {
+               %skipLines = false;
+               %beforeObject = false;
+            }
+            else if( %skipLines == false )
+            {
+               if(%beforeObject)
+                  %beforeNewFileLines[ %beforeLines++ ] = %line;
+               else
+                  %newFileLines[ %lines++ ] = %line;
+            }
+         }      
+         %fileObject.close();
+         %fileObject.delete();
+        
+         %fo = new FileObject();
+         if(!%fo.openForWrite(%filename))
+         {
+           error("GuiEditCanvas::save() - Unable to save, file location not open for writing.");
+           %fo.close();
+                
+           return false;
+         }
+         
+         // Write out the captured TorqueScript that was before the object before the object
+         for( %i = 0; %i <= %beforeLines; %i++)
+            %fo.writeLine( %beforeNewFileLines[ %i ] );
+            
+         %fo.writeLine("//--- OBJECT WRITE BEGIN ---");
+         %fo.writeObject(%currentObject, "$guiContent = ");
+         %fo.writeLine("//--- OBJECT WRITE END ---");
+         
+         // Write out captured TorqueScript below Gui object
+         for( %i = 0; %i <= %lines; %i++ )
+            %fo.writeLine( %newFileLines[ %i ] );
+                  
+         %fo.close();
+         %fo.delete();
+         
+         %currentObject.setFileName( makeRelativePath( %filename, getMainDotCsDir() ) );
+         
+         GuiEditorStatusBar.print( "Saved file '" @ %currentObject.getFileName() @ "'" );
+      }
+      else
+         MessageBox( "Error writing to file", "There was an error writing to file '" @ %currentFile @ "'. The file may be read-only.", "Ok", "Error" );   
    }
-   else
-      MessageBox( "Error writing to file", "There was an error writing to file '" @ %currentFile @ "'. The file may be read-only.", "Ok", "Error" );   
 }
 
 //---------------------------------------------------------------------------------------------

@@ -37,6 +37,7 @@ function initializeAssetBrowser()
       AssetFilterTypeList.add("CubemapAsset");
       AssetFilterTypeList.add("GameObjectAsset");
       AssetFilterTypeList.add("GUIAsset");
+      AssetFilterTypeList.add("GUITemplateAsset");
       AssetFilterTypeList.add("ImageAsset");
       AssetFilterTypeList.add("LevelAsset");
       AssetFilterTypeList.add("MaterialAsset");
@@ -93,6 +94,7 @@ function initializeAssetBrowser()
    exec("./scripts/assetTypes/cpp." @ $TorqueScriptFileExtension);
    exec("./scripts/assetTypes/gameObject." @ $TorqueScriptFileExtension);   
    exec("./scripts/assetTypes/gui." @ $TorqueScriptFileExtension);
+   exec("./scripts/assetTypes/guiTemplate." @ $TorqueScriptFileExtension);
    exec("./scripts/assetTypes/image." @ $TorqueScriptFileExtension);  
    exec("./scripts/assetTypes/level." @ $TorqueScriptFileExtension); 
    exec("./scripts/assetTypes/material." @ $TorqueScriptFileExtension);   

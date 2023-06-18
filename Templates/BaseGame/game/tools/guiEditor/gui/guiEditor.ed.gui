@@ -614,6 +614,50 @@ $guiContent = new GuiControl(GuiEditorGui, EditorGuiGroup) {
                   hovertime = "1000";
                   canSaveDynamicFields = "0";
             };
+            new GuiBitmapButtonCtrl() {
+                  bitmapAsset = "ToolsModule:selection_to_prefab_n_image";
+                  bitmapMode = "Centered";
+                  autoFitExtents = "0";
+                  groupNum = "-1";
+                  buttonType = "PushButton";
+                  useMouseEvents = "0";
+                  isContainer = "0";
+                  profile = "ToolsGuiCheckBoxProfile";
+                  horizSizing = "right";
+                  vertSizing = "bottom";
+                  position = "25 0";
+                  extent = "29 27";
+                  minExtent = "8 2";
+                  canSave = "1";
+                  visible = "1";
+                  command = "GuiEditor.makeSelectionGUITemplate();";
+                  tooltipProfile = "ToolsGuiToolTipProfile";
+                  ToolTip = "Make Selection a GuiTemplate";
+                  hovertime = "1000";
+                  canSaveDynamicFields = "0";
+            };
+            new GuiBitmapButtonCtrl() {
+                  bitmapAsset = "ToolsModule:explode_prefab_n_image";
+                  bitmapMode = "Centered";
+                  autoFitExtents = "0";
+                  groupNum = "-1";
+                  buttonType = "PushButton";
+                  useMouseEvents = "0";
+                  isContainer = "0";
+                  profile = "ToolsGuiCheckBoxProfile";
+                  horizSizing = "right";
+                  vertSizing = "bottom";
+                  position = "25 0";
+                  extent = "29 27";
+                  minExtent = "8 2";
+                  canSave = "1";
+                  visible = "1";
+                  command = "GuiEditor.explodeGuiTemplates();";
+                  tooltipProfile = "ToolsGuiToolTipProfile";
+                  ToolTip = "Explode Selected GUITemplate";
+                  hovertime = "1000";
+                  canSaveDynamicFields = "0";
+            };
          };
          //---------------------
          new GuiEditorRuler(GuiEditorTopRuler) {

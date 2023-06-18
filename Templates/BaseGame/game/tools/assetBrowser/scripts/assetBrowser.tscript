@@ -2454,22 +2454,23 @@ function EWorldEditor::onControlDropped( %this, %payload, %position )
    
    if(AssetBrowser.isMethod("on" @ %assetType @ "EditorDropped"))
    {
+      %buildCommand = AssetBrowser @ ".on" @ %assetType @ "EditorDropped(";
       if(%assetType $= "Datablock")
       {
-         %buildCommand = AssetBrowser @ ".on" @ %assetType @ "EditorDropped(" @ %asset @ ",\"" @ %position @ "\");";
+         %buildCommand = %buildCommand @ %asset @ ",\"" @ %position @ "\");";
       }
       else if(%assetType $= "Prefab")
       {
-         %buildCommand = AssetBrowser @ ".on" @ %assetType @ "EditorDropped(\"" @ %module @ "/" @ %asset @ "\",\"" @ %position @ "\");";
+         %buildCommand = %buildCommand @ "\"" @ %module @ "/" @ %asset @ "\",\"" @ %position @ "\");";
       }
       else if(%assetType $= "Creator")
       {
-         %buildCommand = AssetBrowser @ ".on" @ %assetType @ "EditorDropped(" @ %module @ ",\"" @ %position @ "\");";
+         %buildCommand = %buildCommand @ %module @ ",\"" @ %position @ "\");";
       }
       else
       {
          %assetDef = AssetDatabase.acquireAsset(%module @ ":" @ %asset);
-         %buildCommand = AssetBrowser @ ".on" @ %assetType @ "EditorDropped(" @ %assetDef @ ",\"" @ %position @ "\");";
+         %buildCommand = %buildCommand @ %assetDef @ ",\"" @ %position @ "\");";
       }
       eval(%buildCommand);
       
@@ -2494,41 +2495,62 @@ function GuiEditor::onControlDropped(%this, %payload, %position)
    if( %payload.dragSourceControl == %this )
       return;
 
+   %assetType = %payload.assetType;
    %pos = %payload.getGlobalPosition();
    %x = getWord(%pos, 0);
    %y = getWord(%pos, 1);
    
+   %module = %payload.moduleName;
+   %asset = %payload.assetName;
+   
    if(%payload.assetType !$= "Creator")
    {
-      //dealing with an actual asset, so build the assetName
-      %assetId = %payload.moduleName @ ":" @ %payload.assetName;
-      %assetType = AssetDatabase.getAssetType(%assetId);
-      
-      if(%assetType $= "ImageAsset")
+      if(AssetBrowser.isMethod("on" @ %assetType @ "GUIEditorDropped"))
       {
-         %cmd = "return new guiBitmapCtrl();";
-         %ctrl = eval( %cmd ); 
-         %ctrl.bitmap = %assetId;
+         %buildCommand = AssetBrowser @ ".on" @ %assetType @ "GUIEditorDropped(";
+         if(%assetType $= "Datablock")
+         {
+            %buildCommand = %buildCommand @ %asset @ ",\"" @ %position @ "\");";
+         }
+         else if(%assetType $= "Prefab")
+         {
+            %buildCommand = %buildCommand @ "\"" @ %module @ "/" @ %asset @ "\",\"" @ %position @ "\");";
+         }
+         else if(%assetType $= "Creator")
+         {
+            %buildCommand = %buildCommand @ %module @ ",\"" @ %position @ "\");";
+         }
+         else
+         {
+            %assetDef = AssetDatabase.acquireAsset(%module @ ":" @ %asset);
+            %buildCommand = %buildCommand @ %assetDef @ ",\"" @ %position @ "\");";
+         }
+         eval(%buildCommand);
+         
+         if(EditorSettings.value("AssetManagement/Assets/closeBrowserOnDragAction", false))
+         {
+            AssetBrowser.hideDialog();  
+         }
       }
    }
    else
    {
-      %className = %payload.assetName;
+      %className = %asset;
       if(%payload.altCommand !$= "")
       {
          %cmd = %payload.altCommand;
       }
       else
       {
-      %cmd = "return new " @ %className @ "();";
+         %cmd = "return new " @ %className @ "();";
       }
       %ctrl = eval( %cmd );
-   }
+      
+      %this.addNewCtrl(%ctrl);
 
-   %this.addNewCtrl(%ctrl);
-   
-   %ctrl.setPositionGlobal(%x, %y);
-   %this.setFirstResponder();
+      %ctrl.setPositionGlobal(%x, %y);
+      %this.setFirstResponder();
+   }
    
    if(EditorSettings.value("AssetManagement/Assets/closeBrowserOnDragAction", false))
    {
