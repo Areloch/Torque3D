@@ -42,8 +42,9 @@ void GUITemplateCtrl::onRemove()
 {
    Parent::onRemove();
 
-   if(mTemplateData.isValid())
-      mTemplateData->safeDeleteObject();
+   if (mTemplateData.size())
+      for (U32 i = 0; i < mTemplateData.size(); i++)
+         mTemplateData[i]->safeDeleteObject();
 }
 
 void GUITemplateCtrl::onEditorEnable()
@@ -64,18 +65,17 @@ void GUITemplateCtrl::onInspect(GuiInspector* inspector)
    Parent::onInspect(inspector);
 
    //iterate over children to get their special onInspect invokes when we inspect this template object
-   for (U32 i = 0; i < mTemplateData->size(); i++)
+   for (U32 i = 0; i < mTemplateData.size(); i++)
    {
-      GuiControl* child = dynamic_cast<GuiControl*>(mTemplateData->at(i));
-      if (child)
+      if (mTemplateData[i].isValid())
       {
-         child->onInspect(inspector);
+         mTemplateData[i]->onInspect(inspector);
 
          ConsoleValue args[2];
          args[0].setInt(inspector->getId());
          args[1].setInt(getId());
 
-         child->callOnChildren("onInspect", 2, args);
+         mTemplateData[i]->callOnChildren("onInspect", 2, args);
       }
    }
 }
@@ -90,11 +90,12 @@ void GUITemplateCtrl::_loadTemplateData(bool addFileNotify)
       return;
    }
 
-   if (mTemplateData.isValid())
-      mTemplateData->safeDeleteObject();
+   if (mTemplateData.size())
+      for(U32 i=0; i < mTemplateData.size(); i++)
+         mTemplateData[i]->safeDeleteObject();
 
    mTemplateData = mTemplateAsset->instantiateTemplate();
-   if (!mTemplateData.isValid())
+   if (!mTemplateData.size())
    {
       Con::errorf("GUITemplateCtrl::_loadTemplateData() - attempted to instantiate template controls, but failed!");
       return;
@@ -108,15 +109,22 @@ void GUITemplateCtrl::_loadTemplateData(bool addFileNotify)
 
 void GUITemplateCtrl::onRender(Point2I offset, const RectI& updateRect)
 {
-   mTemplateData->onRender(offset, updateRect);
+   if (mTemplateData.size())
+   {
+      for(U32 i= 0; i < mTemplateData.size(); i++)
+         mTemplateData[i]->onRender(offset, updateRect);
+   }
 
    Parent::onRender(offset, updateRect);
 }
 
 bool GUITemplateCtrl::resize(const Point2I& newPosition, const Point2I& newExtent)
 {
-   if (mTemplateData.isValid())
-      mTemplateData->resize(newPosition, newExtent);
+   if (mTemplateData.size())
+   {
+      for (U32 i = 0; i < mTemplateData.size(); i++)
+         mTemplateData[i]->resize(newPosition, newExtent);
+   }
 
    if (!Parent::resize(newPosition, newExtent))
       return false;
@@ -137,18 +145,38 @@ GuiControl* GUITemplateCtrl::findHitControl(const Point2I& pt, S32 initialLayer)
       }
    }
 
-   if (mTemplateData.isValid())
-      return mTemplateData->findHitControl(pt, initialLayer);
+   if (mTemplateData.size())
+   {
+      for (U32 i = 0; i < mTemplateData.size(); i++)
+      {
+         GuiControl* hitCtrl = mTemplateData[i]->findHitControl(pt, initialLayer);
+         if (hitCtrl != nullptr)
+            return hitCtrl;
+      }
+   }
+
    return Parent::findHitControl(pt, initialLayer);
 }
 
 //
-DefineEngineMethod(GUITemplateCtrl, getChildObjects, S32, (), ,
+DefineEngineMethod(GUITemplateCtrl, getChildObjects, const char*, (), ,
    "Instantiates the template object and returns the SimObjectId of the copy.\n"
    "@return SimObjectId of the instantiated copy.")
 {
-   SimObjectPtr<GuiControl> temp = object->getTemplateData();
-   if (temp)
-      return temp->getId();
-   return 0;
+   Vector<SimObjectPtr<GuiControl>> temp = object->getTemplateData();
+
+   char* returnBuffer = Con::getReturnBuffer(1024);
+   
+
+   String ids;
+   for (U32 i = 0; i < temp.size(); i++)
+   {
+      ids += temp[i]->getIdString();
+      if (i < temp.size() - 1)
+         ids += " ";
+   }
+
+   dSprintf(returnBuffer, 1024, "%s", ids.c_str());
+
+   return returnBuffer;
 }

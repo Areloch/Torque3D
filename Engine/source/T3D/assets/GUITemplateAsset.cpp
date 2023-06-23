@@ -116,15 +116,14 @@ ConsoleSetType(TypeGUITemplateAssetId)
 
 GUITemplateAsset::GUITemplateAsset()
 {
-   mTemplateData = nullptr;
 }
 
 //-----------------------------------------------------------------------------
 
 GUITemplateAsset::~GUITemplateAsset()
 {
-   if(!mTemplateData.isNull())
-      mTemplateData->safeDeleteObject();
+   for (U32 i = 0; i < mTemplateData.size(); i++)
+      mTemplateData[i]->safeDeleteObject();
 }
 
 //-----------------------------------------------------------------------------
@@ -153,25 +152,34 @@ void GUITemplateAsset::onAssetRefresh()
 
 void GUITemplateAsset::loadGUiTemplate()
 {
-   if (mTemplateData.isValid())
-   {
-      mTemplateData->safeDeleteObject();
-   }
+   for(U32 i=0; i < mTemplateData.size(); i++)
+      mTemplateData[i]->safeDeleteObject();
 
-   if (size() != 0)
+   mLoadedState = NotLoaded;
+
+   for (U32 i = 0; i < size(); i++)
    {
-      for (U32 i = 0; i < size(); i++)
+      GuiControl* ctrl = dynamic_cast<GuiControl*>(getObject(i));
+      if (ctrl)
       {
-         mTemplateData = dynamic_cast<GuiControl*>(getObject(i));
-         if (mTemplateData)
-         {
-            mLoadedState = Ok;
-            return;
-         }
+         mTemplateData.push_back(ctrl);
+      }
+      else
+      {
+         mLoadedState = Failed;
+         break;
       }
    }
 
-   mLoadedState = Failed;
+   if (mLoadedState == Failed)
+   {
+      for (U32 i = 0; i < mTemplateData.size(); i++)
+         mTemplateData[i]->safeDeleteObject();
+
+      mTemplateData.clear();
+   }
+   else
+      mLoadedState = Ok;
 }
 
 //------------------------------------------------------------------------------
@@ -182,28 +190,35 @@ void GUITemplateAsset::copyTo(SimObject* object)
    Parent::copyTo(object);
 }
 
-SimObjectPtr<GuiControl> GUITemplateAsset::instantiateTemplate()
+Vector<SimObjectPtr<GuiControl>> GUITemplateAsset::instantiateTemplate()
 {
-   if (!mTemplateData)
-      return nullptr;
-
-   GuiControl* controls = dynamic_cast<GuiControl*>(mTemplateData->deepClone());
+   Vector<SimObjectPtr<GuiControl>> controls;
+   for (U32 i = 0; i < mTemplateData.size(); i++)
+   {
+      if (mTemplateData[i].isValid())
+      {
+         GuiControl* ctrl = dynamic_cast<GuiControl*>(mTemplateData[i]->deepClone());
+         if (ctrl)
+         {
+            controls.push_back(ctrl);
+         }
+      }
+   }
 
    return controls;
 }
 
 Point2I GUITemplateAsset::getExtents()
 {
-   if (!mTemplateData)
+   if (!mTemplateData.size())
       return Point2I::Zero;
 
    Point2I extents = Point2I::Zero;
-   for (U32 i = 0; i < mTemplateData->size(); i++)
+   for (U32 i = 0; i < mTemplateData.size(); i++)
    {
-      GuiControl* control = dynamic_cast<GuiControl*>(mTemplateData->at(i));
-      if (control)
+      if (mTemplateData[i].isValid())
       {
-         Point2I ctrlExt = control->getExtent();
+         Point2I ctrlExt = mTemplateData[i]->getExtent();
 
          if(ctrlExt.x > extents.x)
             extents.x = ctrlExt.x;
@@ -215,14 +230,25 @@ Point2I GUITemplateAsset::getExtents()
    return extents;
 }
 
-DefineEngineMethod(GUITemplateAsset, instantiate, S32, (), ,
+DefineEngineMethod(GUITemplateAsset, instantiate, const char*, (), ,
    "Instantiates the template object and returns the SimObjectId of the copy.\n"
    "@return SimObjectId of the instantiated copy.")
 {
-   SimObjectPtr<GuiControl> temp = object->instantiateTemplate();
-   if (temp)
-      return temp->getId();
-   return 0;
+   Vector<SimObjectPtr<GuiControl>> temp = object->instantiateTemplate();
+
+   char* returnBuffer = Con::getReturnBuffer(1024);
+
+   String ids;
+   for (U32 i = 0; i < temp.size(); i++)
+   {
+      ids += temp[i]->getIdString();
+      if (i < temp.size() - 1)
+         ids += " ";
+   }
+
+   dSprintf(returnBuffer, 1024, "%s", ids.c_str());
+
+   return returnBuffer;
 }
 
 DefineEngineMethod(GUITemplateAsset, getExtents, Point2F, (), ,

@@ -2344,7 +2344,7 @@ void SimObject::onInspect(GuiInspector* inspector)
 //-----------------------------------------------------------------------------
 void SimObject::setFieldBindingValue(StringTableEntry bindingName, StringTableEntry assignedValue)
 {
-   /*if (mFlags.test(ModStaticFields))
+   if (mFlags.test(ModStaticFields))
    {
       const AbstractClassRep::FieldList& list = getFieldList();
       const AbstractClassRep::Field* f;
@@ -2361,38 +2361,63 @@ void SimObject::setFieldBindingValue(StringTableEntry bindingName, StringTableEn
          StringTableEntry fieldVal = StringTable->EmptyString();
          if (f)
          {
-            for(U32 i=0; i < )
-            if (array1 == -1 && fld->elementCount == 1)
-               return (*fld->getDataFn)(this, Con::getData(fld->type, (void*)(((const char*)this) + fld->offset), 0, fld->table, fld->flag));
-            if (array1 >= 0 && array1 < fld->elementCount)
-               return (*fld->getDataFn)(this, Con::getData(fld->type, (void*)(((const char*)this) + fld->offset), array1, fld->table, fld->flag));// + typeSizes[fld.type] * array1));
-            return "";
+            if (f->elementCount == 1)
+            {
+               String currentValue = (*f->getDataFn)(this, Con::getData(f->type, (void*)(((const char*)this) + f->offset), 0, f->table, f->flag));
+               String moddedValue = currentValue;
+               moddedValue.replace(bindingName, assignedValue);
+
+               if(!moddedValue.equal(currentValue))
+               {
+                  setDataField(f->pFieldname, nullptr, moddedValue.c_str());
+               }
+            }
+            else
+            {
+
+               for (U32 i = 0; i < f->elementCount; i++)
+               {
+                  String currentValue = (*f->getDataFn)(this, Con::getData(f->type, (void*)(((const char*)this) + f->offset), i, f->table, f->flag));// + typeSizes[fld.type] * array1));
+                  String moddedValue = currentValue.replace(bindingName, assignedValue);
+
+                  if (!moddedValue.equal(currentValue))
+                  {
+                     //convert the i integer to a const char* utilizing sprintf
+                     char arrayIndex[4];
+                     dSprintf(arrayIndex, 4, "%d", i);
+                       
+                     setDataField(f->pFieldname, arrayIndex, moddedValue.c_str());
+                  }
+               }
+            }
          }
       }
-
-      return list.size() - numDummyEntries;
    }
 
    if (mFlags.test(ModDynamicFields))
    {
       if (!mFieldDictionary)
-         return "";
+         return;
 
-      if (!array)
+      SimFieldDictionaryIterator itr(mFieldDictionary);
+      SimFieldDictionary::Entry* entry;
+
+      while ((entry = *itr) != NULL)
       {
-         if (const char* val = mFieldDictionary->getFieldValue(slotName))
-            return val;
+         StringTableEntry fieldName = entry->slotName;
+         String currentValue = entry->value;
+
+         String moddedValue = currentValue;
+         moddedValue.replace(bindingName, assignedValue);
+
+         if (!moddedValue.equal(currentValue))
+         {
+            setDataField(fieldName, nullptr, moddedValue.c_str());
+         }
       }
-      else
-      {
-         static char buf[256];
-         dStrcpy(buf, slotName, 256);
-         dStrcat(buf, array, 256);
-         if (const char* val = mFieldDictionary->getFieldValue(StringTable->insert(buf)))
-            return val;
-      }
-   }*/
+   }
 }
+
 //-----------------------------------------------------------------------------
 DefineEngineMethod( SimObject, dumpGroupHierarchy, void, (),,
    "Dump the hierarchy of this object up to RootGroup to the console." )
@@ -3134,7 +3159,11 @@ DefineEngineMethod(SimObject, setFieldBindingValue, void, (const char* bindingNa
    "@param bindingName The needle string to look through the object's fields for.\n"
    "@param assignedValue The value to replace the bindingName string with.\n")
 {
-   object->setFieldBindingValue(StringTable->insert(bindingName), StringTable->insert(assignedValue));
+   String formattedBindingName = bindingName;
+   if (!formattedBindingName.startsWith("#"))
+      formattedBindingName = String("#") + formattedBindingName;
+
+   object->setFieldBindingValue(StringTable->insert(formattedBindingName.c_str(), true), StringTable->insert(assignedValue, true));
 }
 
 //-----------------------------------------------------------------------------

@@ -778,10 +778,11 @@ function GuiEditor::finishMakeSelectionGUITemplate( %this, %newGUIAssetId )
    for(%i=0; %i < %targetObjs.getCount(); %i++)
    {
       %obj = %targetObjs.getObject(%i);
-      if(%obj.position.x < %minPosition.x)
-         %minPosition.x = %obj.position.x;
-      if(%obj.position.y < %minPosition.y)
-         %minPosition.y = %obj.position.y;
+      %objPos = %obj.getPosition();
+      if(%objPos.x < %minPosition.x)
+         %minPosition.x = %objPos.x;
+      if(%objPos.y < %minPosition.y)
+         %minPosition.y = %objPos.y;
          
       if(%obj.extent.x > %maxExtent.x)
          %maxExtent.x = %obj.extent.x;

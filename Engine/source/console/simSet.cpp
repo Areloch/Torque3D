@@ -574,8 +574,19 @@ inline void SimSetIterator::Stack::push_back(SimSet* set)
 
 void SimSet::setFieldBindingValue(StringTableEntry bindingName, StringTableEntry assignedValue, bool recurseChildren)
 {
+   Parent::setFieldBindingValue(bindingName, assignedValue);
 
-
+   if (recurseChildren)
+   {
+      for (iterator i = begin(); i != end(); i++)
+      {
+         SimSet* childSet = dynamic_cast<SimSet*>(*i);
+         if (childSet)
+            childSet->setFieldBindingValue(bindingName, assignedValue, recurseChildren);
+         else
+            (*i)->setFieldBindingValue(bindingName, assignedValue);
+      }
+   }
 }
 
 //-----------------------------------------------------------------------------
@@ -1151,5 +1162,9 @@ DefineEngineMethod(SimSet, setFieldBindingValue, void, (const char* bindingName,
    "@param assignedValue The value to replace the bindingName string with.\n"
    "@param recurseChildren Does this apply to all children as well.\n")
 {
-   object->setFieldBindingValue(StringTable->insert(bindingName), StringTable->insert(assignedValue), recurseChildren);
+   String formattedBindingName = bindingName;
+   if (!formattedBindingName.startsWith("#"))
+      formattedBindingName = String("#") + formattedBindingName;
+
+   object->setFieldBindingValue(StringTable->insert(formattedBindingName.c_str(), true), StringTable->insert(assignedValue, true), recurseChildren);
 }

@@ -41,6 +41,8 @@
             <Setting
                 name="doubleClickAction">Edit Asset</Setting>
             <Setting
+                name="LastPosExt">204 80 615 608</Setting>
+            <Setting
                 name="previewTileSize">1</Setting>
             <Setting
                 name="showCoreModule">1</Setting>
@@ -122,11 +124,6 @@
                 name="documentationReference">../../../Documentation/Torque 3D - Script Manual.chm</Setting>
             <Setting
                 name="documentationURL">http://www.garagegames.com/products/torque-3d/documentation/user</Setting>
-        </Group>
-        <Group
-            name="Library">
-            <Setting
-                name="viewType">Categorized</Setting>
         </Group>
         <Group
             name="Rendering">

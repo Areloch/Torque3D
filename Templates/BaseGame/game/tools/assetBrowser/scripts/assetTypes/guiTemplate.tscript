@@ -22,12 +22,6 @@ function AssetBrowser::createGUITemplateAsset(%this)
       versionId = 1;
    };
    
-   //Now, we create a container ctrl and add our selection to it
-   %container = new GuiControl()
-   {
-      class=%assetName;
-   };
-   
    %minPosition = Canvas.getExtent();
    %maxExtent = "0 0";
    for(%i=0; %i < %objCount; %i++)
@@ -42,22 +36,21 @@ function AssetBrowser::createGUITemplateAsset(%this)
          %maxExtent.x = %obj.extent.x;
       if(%obj.extent.y > %maxExtent.y)
          %maxExtent.y = %obj.extent.y;
-         
-      %container.add(%obj);
    }
    
    //now we offset the difference to make everything fit to the
-   //new container root
+   //new root
    for(%i=0; %i < %objCount; %i++)
    {
       %obj = GuiEditor.newTemplateTargetObjs.getObject(%i);
     
       %obj.setPosition(%obj.position.x - %minPosition.x, %obj.position.y - %minPosition.y);  
+      
+      %dupedObj = %obj.deepClone();
+      %dupedObj.setName(""); //clear names
+      %dupedObj.callOnChildren("setName", ""); //clear names
+      %asset.add(%dupedObj);
    }
-   
-   %container.extent = %maxExtent;
-   
-   %asset.add(%container.deepClone());
    
    TamlWrite(%asset, %tamlpath);
 	

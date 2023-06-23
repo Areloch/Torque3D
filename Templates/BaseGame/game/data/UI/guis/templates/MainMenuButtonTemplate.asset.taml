@@ -1,20 +1,12 @@
 <GUITemplateAsset
     AssetName="MainMenuButtonTemplate"
     VersionId="1">
-    <GuiControl
-        extent="1024 768"
+    canSaveDynamicFields="true">
+    <GuiButtonCtrl
+        text="#Text"
+        extent="400 55"
         horizSizing="width"
-        profile="GuiDefaultProfile"
-        tooltipProfile="GuiToolTipProfile"
-        isContainer="true"
-        class="MainMenuButtonTemplate"
-        canSaveDynamicFields="true">
-        <GuiButtonCtrl
-            text="#Text"
-            extent="400 55"
-            horizSizing="width"
-            profile="GuiMenuButtonProfile"
-            command="#Command"
-            tooltipProfile="GuiToolTipProfile"/>
-    </GuiControl>
+        profile="GuiMenuButtonProfile"
+        command="#Command"
+        tooltipProfile="GuiToolTipProfile"/>
 </GUITemplateAsset>

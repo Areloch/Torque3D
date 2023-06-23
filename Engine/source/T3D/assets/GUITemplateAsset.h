@@ -33,7 +33,7 @@ class GUITemplateAsset : public AssetBase
 {
    typedef AssetBase Parent;
 
-   SimObjectPtr<GuiControl> mTemplateData;
+   Vector<SimObjectPtr<GuiControl>> mTemplateData;
 
 public:
    GUITemplateAsset();
@@ -43,7 +43,7 @@ public:
    static void initPersistFields();
    virtual void copyTo(SimObject* object);
 
-   SimObjectPtr<GuiControl> instantiateTemplate();
+   Vector<SimObjectPtr<GuiControl>> instantiateTemplate();
 
    Point2I getExtents();
 

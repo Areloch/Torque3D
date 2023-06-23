@@ -1,6 +1,6 @@
 function MenuListTemplate::onWake(%this)
 {
-   //%this.refresh();
+   %this.refresh();
 }
 
 function MenuListTemplate::refresh(%this)
@@ -11,35 +11,42 @@ function MenuListTemplate::refresh(%this)
    if(!AssetDatabase.isDeclaredAsset(%this.instanceTemplateAsset))
       return;
       
+   %this.getChildObjects()-->list.clear();
+      
    %templateDef = AssetDatabase.acquireAsset(%this.instanceTemplateAsset);
    
    for(%i=0; %i < %this.instanceDataObject.count(); %i++)
    {
       %data = %this.instanceDataObject.getKey(%i);
       
-      %ctrl = %templateDef.instantiate();
+      %ctrls = %templateDef.instantiate();
       
-      %bindingsCount = getFieldCount(%data);
-      for(%f=0; %f < %bindingsCount; %f++)
+      for(%c=0; %c < getWordCount(%ctrls); %c++)
       {
-         %bindingData = getField(%data, %f);
+         %ctrl = getWord(%ctrls, %c);
          
-         %bindingName = getToken(%bindingData, "=", 0);
-         %bindingValue = getToken(%bindingData, "=", 1);
-         //now do the binding work
-         %ctrl.setBindingValue(%bindingName, %bindingValue, true);
+         %bindingsCount = getFieldCount(%data);
+         for(%f=0; %f < %bindingsCount; %f++)
+         {
+            %bindingData = getField(%data, %f);
+            
+            %bindingName = getToken(%bindingData, "=", 0);
+            %bindingValue = getToken(%bindingData, "=", 1);
+            //now do the binding work
+            %ctrl.setFieldBindingValue(%bindingName, %bindingValue, true);
+         }
+         
+         %listCtrl = %this.getChildObjects()-->list;
+         %listWidth = %listCtrl.extent.x;
+         %ctrl.setExtent(%listWidth, %ctrl.extent.y);
+         %this.getChildObjects()-->list.add(%ctrl);
       }
-      
-      %listCtrl = %this.getChildObjects()-->list;
-      %listWidth = %listCtrl.extent.x;
-      %ctrl.setExtent(%listWidth, %ctrl.extent.y);
-      %this.getChildObjects()-->list.add(%ctrl);
    }
    
    AssetDatabase.releaseAsset(%this.instanceTemplateAsset);
 }
 
-function SimObject::setBindingValue(%this, %bindingName, %assignedValue, %doRecursive)
+/*function SimObject::setBindingValue(%this, %bindingName, %assignedValue, %doRecursive)
 {
    if(startsWith(%bindingName, "#"))
       %formattedBindingName = %bindingName;
@@ -83,7 +90,7 @@ function SimObject::setBindingValue(%this, %bindingName, %assignedValue, %doRecu
          %child.setBindingValue(%bindingName, %assignedValue, %doRecursive);
       }
    }
-}
+}*/
 
 function MenuList::onInspect(%this, %inspector, %templateObj)
 {

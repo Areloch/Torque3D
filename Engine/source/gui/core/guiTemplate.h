@@ -18,7 +18,7 @@ private:
    StringTableEntry mTemplateAssetId;
    AssetPtr<GUITemplateAsset> mTemplateAsset;
 
-   SimObjectPtr<GuiControl> mTemplateData;
+   Vector<SimObjectPtr<GuiControl>> mTemplateData;
 
 public:
    GUITemplateCtrl();
@@ -41,7 +41,7 @@ public:
 
    GuiControl* findHitControl(const Point2I& pt, S32 initialLayer);
 
-   SimObjectPtr<GuiControl> getTemplateData() { return mTemplateData; }
+   Vector<SimObjectPtr<GuiControl>>& getTemplateData() { return mTemplateData; }
 
 protected:
    //DECLARE_CALLBACK(void, onLoad, (SimGroup* children));

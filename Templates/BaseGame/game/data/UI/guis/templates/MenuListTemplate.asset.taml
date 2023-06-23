@@ -1,34 +1,25 @@
 <GUITemplateAsset
     AssetName="MenuListTemplate"
     VersionId="1">
-    <GuiControl
-        extent="1024 768"
+    <GuiScrollCtrl
+        hScrollBar="alwaysOff"
+        vScrollBar="dynamic"
+        extent="417 554"
         horizSizing="width"
         vertSizing="height"
-        profile="GuiDefaultProfile"
+        profile="GuiMenuScrollProfile"
         tooltipProfile="GuiToolTipProfile"
-        isContainer="true"
-        canSaveDynamicFields="true">
-        <GuiScrollCtrl
-            hScrollBar="alwaysOff"
-            vScrollBar="dynamic"
-            extent="417 554"
+        internalName="Scroll">
+        <GuiStackControl
+            padding="5"
+            changeChildSizeToFit="false"
+            position="1 1"
+            extent="402 30"
             horizSizing="width"
             vertSizing="height"
-            profile="GuiMenuScrollProfile"
+            profile="GuiDefaultProfile"
             tooltipProfile="GuiToolTipProfile"
-            internalName="Scroll">
-            <GuiStackControl
-                padding="5"
-                changeChildSizeToFit="false"
-                position="1 1"
-                extent="402 30"
-                horizSizing="width"
-                vertSizing="height"
-                profile="GuiDefaultProfile"
-                tooltipProfile="GuiToolTipProfile"
-                internalName="list"
-                superClass="MenuList"/>
-        </GuiScrollCtrl>
-    </GuiControl>
+            internalName="list"
+            superClass="MenuList"/>
+    </GuiScrollCtrl>
 </GUITemplateAsset>
