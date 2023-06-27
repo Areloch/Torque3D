@@ -175,7 +175,7 @@ GuiInspectorField* GuiInspectorGroup::constructField( S32 fieldType )
 
       // return our new datablock field with correct datablock type enumeration info
       return dbFieldClass;
-}
+   }
 
    // Nope, not a datablock. So maybe it has a valid inspector field override we can use?
    if(!cbt->getInspectorFieldType())
@@ -187,6 +187,66 @@ GuiInspectorField* GuiInspectorGroup::constructField( S32 fieldType )
    GuiInspectorField *gif = dynamic_cast<GuiInspectorField*>(co);
 
    if(!gif)
+   {
+      // Wasn't appropriate type, bail.
+      delete co;
+      return NULL;
+   }
+
+   return gif;
+}
+
+GuiInspectorField* GuiInspectorGroup::constructField(StringTableEntry fieldTypeName)
+{
+   // See if we can construct a field of this type
+   ConsoleBaseType* cbt = ConsoleBaseType::getTypeByClassName(fieldTypeName);
+   if (!cbt)
+      return NULL;
+
+   // Alright, is it a datablock?
+   if (cbt->isDatablock())
+   {
+      // Default to GameBaseData
+      StringTableEntry typeClassName = cbt->getTypeClassName();
+
+      if (mParent->getNumInspectObjects() == 1 && !dStricmp(typeClassName, "GameBaseData"))
+      {
+         // Try and setup the classname based on the object type
+         char className[256];
+         dSprintf(className, 256, "%sData", mParent->getInspectObject(0)->getClassName());
+         // Walk the ACR list and find a matching class if any.
+         AbstractClassRep* walk = AbstractClassRep::getClassList();
+         while (walk)
+         {
+            if (!dStricmp(walk->getClassName(), className))
+               break;
+
+            walk = walk->getNextClass();
+         }
+
+         // We found a valid class
+         if (walk)
+            typeClassName = walk->getClassName();
+
+      }
+
+
+      GuiInspectorDatablockField* dbFieldClass = new GuiInspectorDatablockField(typeClassName);
+
+      // return our new datablock field with correct datablock type enumeration info
+      return dbFieldClass;
+   }
+
+   // Nope, not a datablock. So maybe it has a valid inspector field override we can use?
+   if (!cbt->getInspectorFieldType())
+      // Nothing, so bail.
+      return NULL;
+
+   // Otherwise try to make it!
+   ConsoleObject* co = create(cbt->getInspectorFieldType());
+   GuiInspectorField* gif = dynamic_cast<GuiInspectorField*>(co);
+
+   if (!gif)
    {
       // Wasn't appropriate type, bail.
       delete co;
@@ -569,13 +629,27 @@ AbstractClassRep* GuiInspectorGroup::findCommonAncestorClass()
    return classRep;
 }
 
-GuiInspectorField* GuiInspectorGroup::createInspectorField()
+GuiInspectorField* GuiInspectorGroup::createInspectorField(StringTableEntry typeName)
 {
-   GuiInspectorField* newField = new GuiInspectorField();
+   GuiInspectorField* newField;
+   
+   if (typeName == StringTable->insert("string") || typeName == StringTable->EmptyString())
+      newField = new GuiInspectorField();
+   else
+      newField = constructField(typeName);
+
+   if (newField == nullptr)
+   {
+      Con::errorf("GuiInspectorGroup::createInspectorField() - failed to create field of type: %s", typeName);
+      return NULL;
+   }
 
    newField->init(mParent, this);
 
    newField->setSpecialEditField(true);
+
+   if(typeName != StringTable->insert("string") && typeName != StringTable->EmptyString())
+      newField->setSpecialEditVariableType(typeName);
 
    if (newField->registerObject())
    {
@@ -587,7 +661,7 @@ GuiInspectorField* GuiInspectorGroup::createInspectorField()
 
 void GuiInspectorGroup::addInspectorField(StringTableEntry name, StringTableEntry typeName, const char* description, const char* callbackName)
 {
-   S32 fieldType = -1;
+   /*S32 fieldType = -1;
 
    if (typeName == StringTable->insert("int"))
       fieldType = TypeS32;
@@ -624,17 +698,14 @@ void GuiInspectorGroup::addInspectorField(StringTableEntry name, StringTableEntr
    else if (typeName == StringTable->insert("filename"))
       fieldType = TypeStringFilename;
    else
-      fieldType = -1;
+      fieldType = -1;*/
 
    GuiInspectorField* fieldGui;
 
-   //Currently the default GuiInspectorField IS the string type, so we'll control
-   //for that type here. If it's not TypeString, we allow the normal creation process
-   //to continue
-   if (fieldType == TypeString)
+   if(typeName == StringTable->insert("string"))
       fieldGui = new GuiInspectorField();
    else
-      fieldGui = constructField(fieldType);
+      fieldGui = constructField(typeName);
 
    if (fieldGui == nullptr)
    {
@@ -701,9 +772,9 @@ void GuiInspectorGroup::removeInspectorField(StringTableEntry name)
    }
 }
 
-DefineEngineMethod(GuiInspectorGroup, createInspectorField, GuiInspectorField*, (), , "createInspectorField()")
+DefineEngineMethod(GuiInspectorGroup, createInspectorField, GuiInspectorField*, (const char* typeName), (""), "createInspectorField(typeName)")
 {
-   return object->createInspectorField();
+   return object->createInspectorField(StringTable->insert(typeName));
 }
 
 DefineEngineMethod(GuiInspectorGroup, addField, void, (const char* fieldName, const char* fieldTypeName, const char* description, const char* callbackName),

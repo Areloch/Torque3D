@@ -10,7 +10,7 @@ $guiContent = new GuiChunkedBitmapCtrl(MainMenuGui) {
    isContainer = "1";
    superClass = "UINavigation";
    canSaveDynamicFields = "1";
-      menuButtonsArray = "17139";
+      MenuButtonsArray = "17139";
       pageStack = "17503";
       resizePages = "1";
       rootPage = "MainMenuButtons";
@@ -213,9 +213,12 @@ $guiContent = new GuiChunkedBitmapCtrl(MainMenuGui) {
       profile = "GuiDefaultProfile";
       tooltipProfile = "GuiToolTipProfile";
       superClass = "MenuListTemplate";
+      canSaveDynamicFields = "1";
       TemplateAsset = "UI:MenuListTemplate";
-      instanceTemplateAsset = "UI:MainMenuButtonTemplate";
-      instanceDataObject = "MenuButtonsArray";
+         instanceDataObject = "MenuButtonsArray";
+         instanceTemplateAsset = "UI:MainMenuButtonTemplate";
+         entryListCount = "1";
+         menuListEntry0 = "test";
    };
 };
 //--- OBJECT WRITE END ---

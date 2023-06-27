@@ -58,6 +58,7 @@ public:
    DECLARE_CATEGORY( "Gui Editor" );
 
    virtual GuiInspectorField* constructField( S32 fieldType );
+   virtual GuiInspectorField* constructField(StringTableEntry fieldTypeName);
    virtual GuiInspectorField* findField( const char *fieldName );
 
    // Publicly Accessible Information about this group
@@ -76,7 +77,7 @@ public:
    
    U32 getNumFields() const { return mChildren.size(); }
 
-   GuiInspectorField* createInspectorField();
+   GuiInspectorField* createInspectorField(StringTableEntry typeName);
    void addInspectorField(StringTableEntry name, StringTableEntry typeName, const char* description, const char* callbackName);
    void addInspectorField(GuiInspectorField* field);
    void removeInspectorField(StringTableEntry name);

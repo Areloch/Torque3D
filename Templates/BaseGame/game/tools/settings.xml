@@ -41,7 +41,7 @@
             <Setting
                 name="doubleClickAction">Edit Asset</Setting>
             <Setting
-                name="LastPosExt">204 80 615 608</Setting>
+                name="LastPosExt">-35 142 615 608</Setting>
             <Setting
                 name="previewTileSize">1</Setting>
             <Setting
@@ -100,13 +100,15 @@
         name="DatablockEditor">
         <Setting
             name="libraryTab">1</Setting>
+        <Setting
+            name="selectedDatablock">testTriggerDB</Setting>
     </Group>
     <Group
         name="GuiEditor">
         <Setting
             name="lastPath">tools/RPGDialogEditor/gui</Setting>
         <Setting
-            name="previewResolution">1024 768</Setting>
+            name="previewResolution">640 480</Setting>
         <Group
             name="EngineDevelopment">
             <Setting

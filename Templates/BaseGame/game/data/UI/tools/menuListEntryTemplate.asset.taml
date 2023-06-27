@@ -1,0 +1,56 @@
+<GUITemplateAsset
+    AssetName="menuListEntryTemplate"
+    VersionId="1">
+    <GuiStackControl
+        extent="250 60"
+        minExtent="16 50"
+        profile="ToolsGuiDefaultProfile"
+        tooltipProfile="GuiToolTipProfile">
+        <GuiControl
+            extent="250 20"
+            horizSizing="width"
+            profile="GuiDefaultProfile"
+            tooltipProfile="GuiToolTipProfile"
+            isContainer="true">
+            <GuiIconButtonCtrl
+                BitmapAsset="ToolsModule:iconCancel_image"
+                iconLocation="Center"
+                position="230 0"
+                extent="20 20"
+                profile="ToolsGuiButtonProfile"
+                tooltipProfile="GuiToolTipProfile"/>
+        </GuiControl>
+        <GuiControl
+            position="0 20"
+            extent="250 20"
+            horizSizing="width"
+            profile="GuiDefaultProfile"
+            tooltipProfile="GuiToolTipProfile"
+            isContainer="true"
+            internalName="">
+            <GuiTextEditCtrl
+                extent="204 18"
+                profile="ToolsGuiTextEditProfile"
+                tooltipProfile="GuiToolTipProfile"/>
+            <GuiButtonCtrl
+                text="..."
+                position="208 0"
+                extent="20 20"
+                profile="ToolsGuiButtonProfile"
+                tooltipProfile="GuiToolTipProfile"/>
+            <GuiBitmapButtonCtrl
+                BitmapAsset="ToolsModule:GameTSCtrl_image"
+                position="230 0"
+                extent="20 20"
+                profile="GuiDefaultProfile"
+                tooltipProfile="GuiToolTipProfile"/>
+        </GuiControl>
+        <GuiStackControl
+            position="0 40"
+            extent="250 20"
+            minExtent="16 20"
+            profile="GuiDefaultProfile"
+            tooltipProfile="GuiToolTipProfile"
+            internalName="bindingList"/>
+    </GuiStackControl>
+</GUITemplateAsset>

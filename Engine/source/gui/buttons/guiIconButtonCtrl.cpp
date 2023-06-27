@@ -247,8 +247,8 @@ void GuiIconButtonCtrl::renderButton( Point2I &offset, const RectI& updateRect )
       {
          if (mProfile->mBorder != 0)
             renderFilledBorder(boundsRect, borderColor, fillColor, mProfile->mBorderThickness);
-         else
-            GFX->getDrawUtil()->drawRectFill(boundsRect, mProfile->mFillColor);
+         //else
+         //   GFX->getDrawUtil()->drawRectFill(boundsRect, mProfile->mFillColor);
       }
    }
    else if(mHighlighted && mActive)
@@ -263,8 +263,8 @@ void GuiIconButtonCtrl::renderButton( Point2I &offset, const RectI& updateRect )
       {
          if (mProfile->mBorder != 0)
             renderFilledBorder(boundsRect, borderColor, fillColor, mProfile->mBorderThickness);
-         else
-            GFX->getDrawUtil()->drawRectFill(boundsRect, mProfile->mFillColor);
+         //else
+         //   GFX->getDrawUtil()->drawRectFill(boundsRect, mProfile->mFillColor);
       }
    }
    else

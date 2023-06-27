@@ -69,6 +69,8 @@ GuiInspectorField::GuiInspectorField( GuiInspector* inspector,
    
    if( field != NULL )
       _setFieldDocs( field->pFieldDocs );
+
+   mCaptionPad = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -128,6 +130,8 @@ bool GuiInspectorField::onAdd()
       fieldHeight = mHeightOverride;
 
    setBounds(0,0,100, fieldHeight);
+
+   mCaptionPad = 0;
 
    // Add our edit as a child
    addObject( mEdit );
@@ -199,7 +203,9 @@ void GuiInspectorField::onRender( Point2I offset, const RectI &updateRect )
          String clippedText( mCaption );
          clipText( clippedText, clipRect.extent.x );
 
-         renderJustifiedText( offset + mProfile->mTextOffset, getExtent(), clippedText );
+         Point2I offsetVal = offset + mProfile->mTextOffset;
+         offsetVal.x += mCaptionPad;
+         renderJustifiedText(offsetVal, getExtent(), clippedText );
 
          // Restore modulation color
          drawer->setBitmapModulation( currColor );
@@ -783,6 +789,11 @@ DefineEngineMethod(GuiInspectorField, setCaption, void, (String newCaption),, "(
    object->setCaption(StringTable->insert(newCaption.c_str()));
 }
 
+DefineEngineMethod(GuiInspectorField, setCaptionPad, void, (S32 captionPad), (0), "() - Sets the inset padding for the field's caption")
+{
+   object->setCaptionPad(captionPad);
+}
+
 DefineEngineMethod(GuiInspectorField, setSpecialEditVariableName, void, (String newCaption), , "() - Sets the variable name for special edit fields.")
 {
    object->setSpecialEditVariableName(StringTable->insert(newCaption.c_str()));
@@ -808,7 +819,16 @@ DefineEngineMethod(GuiInspectorField, setHeightOverride, void, (bool useOverride
    object->setHeightOverride(useOverride, heightOverride);
 }
 
-DefineEngineMethod(GuiInspectorField, setEditControl, void, (GuiControl* editCtrl), (nullAsType<GuiControl*>()), "() - Reset to default value.")
+DefineEngineMethod(GuiInspectorField, setEditControl, void, (GuiControl* editCtrl), (nullAsType<GuiControl*>()), "() - Sets the EditControl for this inspectorField.")
 {
    object->setEditControl(editCtrl);
+}
+
+DefineEngineMethod(GuiInspectorField, getEditControl, S32, (),, "() - Gets the EditControl inside the InspectorField.")
+{
+   GuiControl* editCtrl = object->getEditCtrl();
+   if (editCtrl)
+      return editCtrl->getId();
+   else
+      return 0;
 }

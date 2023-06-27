@@ -389,15 +389,18 @@ new GuiControlProfile( ToolsGuiIconButtonProfile )
 {
    opaque = true;
    border = true;
-   fontColor = EditorSettings.value("Theme/fieldTextColor");
-   fontColorHL = EditorSettings.value("Theme/fieldTextHLColor");
-   fontColorNA = EditorSettings.value("Theme/fieldTextSELColor");
-   fixedExtent = false;
+   fontColor = "185 185 185 255";
+   fontColorHL = "255 255 255 255";
+   fontColorNA = "255 255 255 255";
+   fixedExtent = 0;
    justify = "center";
    canKeyFocus = false;
 	bitmapAsset = "ToolsModule:iconbutton_image";
    hasBitmapArray = true;
    category = "Tools";
+   fontColors[0] = "185 185 185 255";
+   fontColors[1] = "255 255 255 255";
+   fontColors[2] = "255 255 255 255";
 };
 
 if( !isObject( ToolsGuiIconButtonSmallProfile ) )

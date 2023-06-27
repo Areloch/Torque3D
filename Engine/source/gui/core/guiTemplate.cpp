@@ -160,8 +160,8 @@ GuiControl* GUITemplateCtrl::findHitControl(const Point2I& pt, S32 initialLayer)
 
 //
 DefineEngineMethod(GUITemplateCtrl, getChildObjects, const char*, (), ,
-   "Instantiates the template object and returns the SimObjectId of the copy.\n"
-   "@return SimObjectId of the instantiated copy.")
+   "Gets a list of child objects from tbe instantiated template\n"
+   "@return A space deliniated list of guiControls")
 {
    Vector<SimObjectPtr<GuiControl>> temp = object->getTemplateData();
 
@@ -179,4 +179,25 @@ DefineEngineMethod(GUITemplateCtrl, getChildObjects, const char*, (), ,
    dSprintf(returnBuffer, 1024, "%s", ids.c_str());
 
    return returnBuffer;
+}
+
+DefineEngineMethod(GUITemplateCtrl, getChildObjectByInternalName, S32, (const char* internalName), (""),
+   "Gets the child objet with the requested internalName\n"
+   "@param internalName The internalName to look for\n"
+   "@return SimObjectId of the found guiControl.")
+{
+   Vector<SimObjectPtr<GuiControl>>& temp = object->getTemplateData();
+
+   StringTableEntry internalNameStr = StringTable->insert(internalName);
+
+   for (U32 i = 0; i < temp.size(); i++)
+   {
+      SimObjectPtr<GuiControl>& child = temp[i];
+
+      SimObject* foundObj = child->findObjectByInternalName(internalNameStr, true);
+      if (foundObj != nullptr)
+         return foundObj->getId();
+   }
+
+   return 0;
 }

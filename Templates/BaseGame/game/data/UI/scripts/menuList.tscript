@@ -92,7 +92,24 @@ function MenuListTemplate::refresh(%this)
    }
 }*/
 
-function MenuList::onInspect(%this, %inspector, %templateObj)
+function MenuListTemplate::onInspect(%this, %inspector)
+{
+   %inspector.groupFilters = "-Dynamic Fields";
+   %controlGroup = %inspector.findExistentGroupIndex("Control");
+   
+   %group = %inspector.createGroup("Menu List", %controlGroup+1);
+   
+   %group.addField("CreateEntries", "menuListEntryAddButton");
+   
+   for(%i=0; %i < %this.entryListCount; %i++)
+   {
+      %group.addField("menuListEntry" @ %i @ "", "menuListEntry", "", "");
+   }
+   
+   //%group.addField("testFieldType", "GUITemplateAssetId", "A testaroo", "");
+}
+
+/*function MenuList::onInspect(%this, %inspector, %templateObj)
 {
    %inspector.groupFilters = "-Dynamic Fields";
    %controlGroup = %inspector.findExistentGroupIndex("Control");
@@ -103,6 +120,12 @@ function MenuList::onInspect(%this, %inspector, %templateObj)
    
    //%group.addField("instanceTemplateAsset", "guiTemplate", "If defined, then when the list populates the list utilizing this template asset", "setMenuListInstanceTemplateAsset");
    //%group.addField("instanceDataObject", "string", "If defined, will iterate over the list dataset to populate items into the stack of the MenuList", "setMenuListInstanceDataObject");
+}*/
+
+function MenuListTemplate::addNewFieldEntry(%this, %inspectorGroup)
+{
+   %inspectorGroup.addField("menuListEntry" @ %this.entryListCount @ "", "menuListEntry" /*"menuListEntry"*/, "", "");
+   %this.entryListCount++;
 }
 
 function GuiEditorInspectFields::setMenuListInstanceTemplateAsset(%this, %variable, %data, %obj)

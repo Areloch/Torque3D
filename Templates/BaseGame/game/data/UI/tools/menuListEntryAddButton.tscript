@@ -1,0 +1,68 @@
+
+function GuiInspectorGroup::buildMenuListEntryAddButtonField(%this, %fieldName, %fieldLabel, %fieldDesc, %fieldDefaultVal, %fieldDataVals, %callbackName, %ownerObj)
+{
+   %extent = 200;
+   
+   %fieldCtrl = %this.createInspectorField();
+   
+   %extent = %this.stack.getExtent();
+   
+   %width = mRound(%extent/2);
+   %height = 20;
+   %inset = 10;
+   
+   %editControl = new GuiIconButtonCtrl() {
+      class = "MenuListEntryAddButton";
+      HorizSizing = "left";
+      VertSizing = "bottom";
+      Position = %fieldCtrl.edit.position;
+      Extent = "24 24";
+      MinExtent = "8 2";
+      canSave = "1";
+      Visible = "1";
+      tooltipprofile = "ToolsGuiToolTipProfile";
+      Profile = "ToolsGuiButtonProfile";
+      tooltip = ""; //%tooltip;
+      hovertime = "1000";
+      ownerObject = %ownerObj;
+      fieldName = %fieldName;
+      callbackName = %callbackName;
+      sizeIconToButton = "0";
+      bitmapAsset = "ToolsModule:iconAdd_image";
+      iconLocation = "Center";
+      tooltip = "Add a new menu entry to the selected MenuList to the object";
+      tooltipProfile = "EditorToolTipProfile";
+   };
+
+   %fieldCtrl.setCaption(%fieldLabel);
+   %fieldCtrl.setEditControl(%editControl);
+   
+   %inspector = %this.getParent();
+   %menuListObj = %inspector.getInspectObject();
+   
+   %editControl.command = %menuListObj @ ".addNewFieldEntry(" @ %this @ ");";
+   
+   //echo("GuiInspectorListField - " @ %editControl.getID() @ " - " @ %fieldName);
+
+   %this.addInspectorField(%fieldCtrl);
+}
+
+function guiInspectorListField::onSelect( %this, %id, %text )
+{   
+   if(getSubStr(%this.fieldName, 0, 1) $= "$")
+   {
+      //ah, a global var, just do it straight, then
+      %setCommand = %this.fieldName @ " = \"" @ %text @ "\";";
+   }
+   else if(isObject(%this.ownerObject))
+   {
+      //regular variable
+      %setCommand = %this.ownerObject @ "." @ %this.fieldName @ " = \"" @ %text @ "\";";
+   }
+   else if(%this.callbackName !$= "")
+   {
+      %setCommand = %this.callbackName @ "(\"" @ %this.fieldName @ "\",\"" @ %text @"\");";
+   }
+   
+   eval(%setCommand);
+}

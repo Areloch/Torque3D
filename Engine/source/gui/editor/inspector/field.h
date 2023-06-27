@@ -84,6 +84,9 @@ class GuiInspectorField : public GuiControl
       ///
       bool mHighlighted;
 
+      ///
+      S32 mCaptionPad;
+
       //These are so we can special-case our height for additional room on certain field-types
       bool mUseHeightOverride;
       U32 mHeightOverride;
@@ -220,6 +223,8 @@ class GuiInspectorField : public GuiControl
       StringTableEntry getSpecialEditVariableType() { return mVariableType; }
 
       void setSpecialEditCallbackName(StringTableEntry callName) { mCallbackName = callName; }
+
+      void setCaptionPad(S32 captionPad) { mCaptionPad = captionPad; }
 
       DECLARE_CONOBJECT( GuiInspectorField );
       DECLARE_CATEGORY( "Gui Editor" );

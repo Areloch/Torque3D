@@ -84,7 +84,7 @@ ConsoleSetType(TypeGUITemplateAssetPtr)
 }
 
 
-ConsoleType(assetIdString, TypeGUITemplateAssetId, const char*, ASSET_ID_FIELD_PREFIX)
+ConsoleType(GUITemplateAssetId, TypeGUITemplateAssetId, const char*, ASSET_ID_FIELD_PREFIX)
 
 ConsoleGetType(TypeGUITemplateAssetId)
 {
