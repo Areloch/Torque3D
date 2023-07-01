@@ -2347,65 +2347,55 @@ void SimObject::setFieldBindingValue(StringTableEntry bindingName, StringTableEn
    if (mFlags.test(ModStaticFields))
    {
       const AbstractClassRep::FieldList& list = getFieldList();
-      const AbstractClassRep::Field* f;
-      U32 numDummyEntries = 0;
 
-      for (S32 i = 0; i < list.size(); i++)
+      for (U32 fieldIndex = 0; fieldIndex < list.size(); ++fieldIndex)
       {
-         f = &list[i];
+         // Fetch Field.
+         const AbstractClassRep::Field& f = list[fieldIndex];
 
          // The special field types do not need to be counted.
-         if (f->type >= AbstractClassRep::ARCFirstCustomField)
+         if (f.type >= AbstractClassRep::ARCFirstCustomField)
             continue;
 
          StringTableEntry fieldVal = StringTable->EmptyString();
-         if (f)
+         if (f.elementCount == 1)
          {
-            if (f->elementCount == 1)
-            {
-               String currentValue = (*f->getDataFn)(this, Con::getData(f->type, (void*)(((const char*)this) + f->offset), 0, f->table, f->flag));
-               String moddedValue = currentValue;
-               moddedValue.replace(bindingName, assignedValue);
+            String currentValue = (*f.getDataFn)(this, Con::getData(f.type, (void*)(((const char*)this) + f.offset), 0, f.table, f.flag));
+            String moddedValue = currentValue;
+            moddedValue.replace(bindingName, assignedValue);
 
-               if(!moddedValue.equal(currentValue))
-               {
-                  setDataField(f->pFieldname, nullptr, moddedValue.c_str());
-               }
+            if(!moddedValue.equal(currentValue))
+            {
+               setDataField(f.pFieldname, nullptr, moddedValue.c_str());
             }
-            else
+         }
+         else
+         {
+
+            for (U32 i = 0; i < f.elementCount; i++)
             {
+               String currentValue = (*f.getDataFn)(this, Con::getData(f.type, (void*)(((const char*)this) + f.offset), i, f.table, f.flag));// + typeSizes[fld.type] * array1));
+               String moddedValue = currentValue.replace(bindingName, assignedValue);
 
-               for (U32 i = 0; i < f->elementCount; i++)
+               if (!moddedValue.equal(currentValue))
                {
-                  String currentValue = (*f->getDataFn)(this, Con::getData(f->type, (void*)(((const char*)this) + f->offset), i, f->table, f->flag));// + typeSizes[fld.type] * array1));
-                  String moddedValue = currentValue.replace(bindingName, assignedValue);
-
-                  if (!moddedValue.equal(currentValue))
-                  {
-                     //convert the i integer to a const char* utilizing sprintf
-                     char arrayIndex[4];
-                     dSprintf(arrayIndex, 4, "%d", i);
+                  //convert the i integer to a const char* utilizing sprintf
+                  char arrayIndex[4];
+                  dSprintf(arrayIndex, 4, "%d", i);
                        
-                     setDataField(f->pFieldname, arrayIndex, moddedValue.c_str());
-                  }
+                  setDataField(f.pFieldname, arrayIndex, moddedValue.c_str());
                }
             }
          }
       }
    }
 
-   if (mFlags.test(ModDynamicFields))
+   if (mFlags.test(ModDynamicFields) && mFieldDictionary)
    {
-      if (!mFieldDictionary)
-         return;
-
-      SimFieldDictionaryIterator itr(mFieldDictionary);
-      SimFieldDictionary::Entry* entry;
-
-      while ((entry = *itr) != NULL)
+      for (SimFieldDictionaryIterator itr(mFieldDictionary); *itr; ++itr)
       {
-         StringTableEntry fieldName = entry->slotName;
-         String currentValue = entry->value;
+         StringTableEntry fieldName = (*itr)->slotName;
+         String currentValue = (*itr)->value;
 
          String moddedValue = currentValue;
          moddedValue.replace(bindingName, assignedValue);
@@ -2416,6 +2406,56 @@ void SimObject::setFieldBindingValue(StringTableEntry bindingName, StringTableEn
          }
       }
    }
+}
+
+Vector<StringTableEntry> SimObject::getFieldBindingNames()
+{
+   Vector<StringTableEntry> fieldNames;
+
+   if (mFlags.test(ModStaticFields))
+   {
+      const AbstractClassRep::FieldList& list = getFieldList();
+
+      for (U32 fieldIndex = 0; fieldIndex < list.size(); ++fieldIndex)
+      {
+         // Fetch Field.
+         const AbstractClassRep::Field& f = list[fieldIndex];
+
+         // The special field types do not need to be counted.
+         if (f.type >= AbstractClassRep::ARCFirstCustomField)
+            continue;
+
+         if (f.elementCount == 1)
+         {
+            String currentValue = (*f.getDataFn)(this, Con::getData(f.type, (void*)(((const char*)this) + f.offset), 0, f.table, f.flag));
+            if(currentValue.startsWith("#"))
+               fieldNames.push_back(StringTable->insert(currentValue.c_str()));
+         }
+         else
+         {
+
+            for (U32 i = 0; i < f.elementCount; i++)
+            {
+               String currentValue = (*f.getDataFn)(this, Con::getData(f.type, (void*)(((const char*)this) + f.offset), i, f.table, f.flag));// + typeSizes[fld.type] * array1));
+               if (currentValue.startsWith("#"))
+                  fieldNames.push_back(StringTable->insert(currentValue.c_str()));
+            }
+         }
+      }
+   }
+
+   if (mFlags.test(ModDynamicFields) && mFieldDictionary)
+   {
+      for (SimFieldDictionaryIterator itr(mFieldDictionary); *itr; ++itr)
+      {
+         String currentValue = (*itr)->value;
+
+         if (currentValue.startsWith("#"))
+            fieldNames.push_back(StringTable->insert(currentValue.c_str()));
+      }
+   }
+
+   return fieldNames;
 }
 
 //-----------------------------------------------------------------------------
@@ -3164,6 +3204,26 @@ DefineEngineMethod(SimObject, setFieldBindingValue, void, (const char* bindingNa
       formattedBindingName = String("#") + formattedBindingName;
 
    object->setFieldBindingValue(StringTable->insert(formattedBindingName.c_str(), true), StringTable->insert(assignedValue, true));
+}
+
+DefineEngineMethod(SimObject, getFieldBindingNames, const char*, (),,
+   "Iterates over the fields of the object and finds any fields who's values begin with a #, indicating a bindable field and returns the list.")
+{
+   char* returnBuffer = Con::getReturnBuffer(1024);
+
+   Vector<StringTableEntry> fieldNames = object->getFieldBindingNames();
+
+   String returnString = "";
+   for (Vector<StringTableEntry>::iterator i = fieldNames.begin(); i != fieldNames.end(); i++)
+   {
+      if (i != fieldNames.begin())
+         returnString += " ";
+      returnString += *i;
+   }
+
+   dSprintf(returnBuffer, 1024, "%s", returnString.c_str());
+
+   return returnBuffer;
 }
 
 //-----------------------------------------------------------------------------

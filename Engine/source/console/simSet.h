@@ -269,6 +269,7 @@ class SimSet : public SimObject, public TamlChildren
       #endif
 
       void setFieldBindingValue(StringTableEntry bindingName, StringTableEntry assignedValue, bool recurseChildren);
+      Vector<StringTableEntry> getFieldBindingNames(bool recurseChildren);
 
       // SimObject.
       DECLARE_CONOBJECT( SimSet );

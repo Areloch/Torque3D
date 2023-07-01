@@ -108,7 +108,7 @@
         <Setting
             name="lastPath">tools/RPGDialogEditor/gui</Setting>
         <Setting
-            name="previewResolution">640 480</Setting>
+            name="previewResolution">1600 1200</Setting>
         <Group
             name="EngineDevelopment">
             <Setting

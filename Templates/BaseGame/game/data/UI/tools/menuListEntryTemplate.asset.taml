@@ -4,6 +4,7 @@
     <GuiStackControl
         extent="250 60"
         minExtent="16 50"
+        horizSizing="width"
         profile="ToolsGuiDefaultProfile"
         tooltipProfile="GuiToolTipProfile">
         <GuiControl
@@ -17,6 +18,8 @@
                 iconLocation="Center"
                 position="230 0"
                 extent="20 20"
+                horizSizing="left"
+                command="#removeListEntryButtonCommand"
                 profile="ToolsGuiButtonProfile"
                 tooltipProfile="GuiToolTipProfile"/>
         </GuiControl>
@@ -30,25 +33,35 @@
             internalName="">
             <GuiTextEditCtrl
                 extent="204 18"
+                horizSizing="width"
+                text="#instanceTemplateAssetId"
                 profile="ToolsGuiTextEditProfile"
-                tooltipProfile="GuiToolTipProfile"/>
+                tooltipProfile="GuiToolTipProfile"
+                internalName="assetId"/>
             <GuiButtonCtrl
                 text="..."
                 position="208 0"
                 extent="20 20"
+                horizSizing="left"
+                command="#browseAssetButtonCommand"
                 profile="ToolsGuiButtonProfile"
-                tooltipProfile="GuiToolTipProfile"/>
+                tooltipProfile="GuiToolTipProfile"
+                internalName="browseButton"/>
             <GuiBitmapButtonCtrl
                 BitmapAsset="ToolsModule:GameTSCtrl_image"
                 position="230 0"
                 extent="20 20"
+                horizSizing="left"
+                command="#editAssetButtonCommand"
                 profile="GuiDefaultProfile"
-                tooltipProfile="GuiToolTipProfile"/>
+                tooltipProfile="GuiToolTipProfile"
+                internalName="editButton"/>
         </GuiControl>
         <GuiStackControl
             position="0 40"
             extent="250 20"
             minExtent="16 20"
+            horizSizing="width"
             profile="GuiDefaultProfile"
             tooltipProfile="GuiToolTipProfile"
             internalName="bindingList"/>

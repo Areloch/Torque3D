@@ -589,6 +589,33 @@ void SimSet::setFieldBindingValue(StringTableEntry bindingName, StringTableEntry
    }
 }
 
+Vector<StringTableEntry> SimSet::getFieldBindingNames(bool recurseChildren)
+{
+   Vector<StringTableEntry> fieldNames = Parent::getFieldBindingNames();
+
+   if (recurseChildren)
+   {
+      for (iterator i = begin(); i != end(); i++)
+      {
+         SimSet* childSet = dynamic_cast<SimSet*>(*i);
+         Vector<StringTableEntry> childFieldNames;
+
+         if (childSet)
+            childFieldNames = childSet->getFieldBindingNames(recurseChildren);
+         else
+            childFieldNames = (*i)->getFieldBindingNames();
+
+         for (Vector<StringTableEntry>::iterator ci = childFieldNames.begin(); ci != childFieldNames.end(); ci++)
+         {
+            fieldNames.push_back(*ci);
+         }
+      }
+   }
+
+   return fieldNames;
+}
+
+
 //-----------------------------------------------------------------------------
 
 SimSetIterator::SimSetIterator(SimSet* set)
@@ -1167,4 +1194,24 @@ DefineEngineMethod(SimSet, setFieldBindingValue, void, (const char* bindingName,
       formattedBindingName = String("#") + formattedBindingName;
 
    object->setFieldBindingValue(StringTable->insert(formattedBindingName.c_str(), true), StringTable->insert(assignedValue, true), recurseChildren);
+}
+
+DefineEngineMethod(SimSet, getFieldBindingNames, const char*, (bool recurseChildren), (true),
+   "Iterates over the fields of the object and finds any fields who's values begin with a #, indicating a bindable field and returns the list.")
+{
+   char* returnBuffer = Con::getReturnBuffer(1024);
+
+   Vector<StringTableEntry> fieldNames = object->getFieldBindingNames(recurseChildren);
+
+   String returnString = "";
+   for (Vector<StringTableEntry>::iterator i = fieldNames.begin(); i != fieldNames.end(); i++)
+   {
+      if (i != fieldNames.begin())
+         returnString += " ";
+      returnString += *i;
+   }
+
+   dSprintf(returnBuffer, 1024, "%s", returnString.c_str());
+
+   return returnBuffer;
 }

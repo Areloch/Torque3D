@@ -89,6 +89,7 @@ function UI::initClient(%this)
    {
       %this.queueExec("./tools/creator.tscript");
       %this.queueExec("./tools/menuListEntryAddButton.tscript");
+      %this.queueExec("./tools/menuList.tscript");
       %this.queueExec("./tools/menuListEntry.tscript");
    }
 }

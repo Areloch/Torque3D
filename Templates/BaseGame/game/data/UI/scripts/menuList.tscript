@@ -5,135 +5,46 @@ function MenuListTemplate::onWake(%this)
 
 function MenuListTemplate::refresh(%this)
 {
-   if(!isObject(%this.instanceDataObject))
-      return;
-   
-   if(!AssetDatabase.isDeclaredAsset(%this.instanceTemplateAsset))
-      return;
-      
-   %this.getChildObjects()-->list.clear();
-      
-   %templateDef = AssetDatabase.acquireAsset(%this.instanceTemplateAsset);
-   
-   for(%i=0; %i < %this.instanceDataObject.count(); %i++)
-   {
-      %data = %this.instanceDataObject.getKey(%i);
-      
-      %ctrls = %templateDef.instantiate();
-      
-      for(%c=0; %c < getWordCount(%ctrls); %c++)
-      {
-         %ctrl = getWord(%ctrls, %c);
-         
-         %bindingsCount = getFieldCount(%data);
-         for(%f=0; %f < %bindingsCount; %f++)
-         {
-            %bindingData = getField(%data, %f);
-            
-            %bindingName = getToken(%bindingData, "=", 0);
-            %bindingValue = getToken(%bindingData, "=", 1);
-            //now do the binding work
-            %ctrl.setFieldBindingValue(%bindingName, %bindingValue, true);
-         }
-         
-         %listCtrl = %this.getChildObjects()-->list;
-         %listWidth = %listCtrl.extent.x;
-         %ctrl.setExtent(%listWidth, %ctrl.extent.y);
-         %this.getChildObjects()-->list.add(%ctrl);
-      }
-   }
-   
-   AssetDatabase.releaseAsset(%this.instanceTemplateAsset);
-}
-
-/*function SimObject::setBindingValue(%this, %bindingName, %assignedValue, %doRecursive)
-{
-   if(startsWith(%bindingName, "#"))
-      %formattedBindingName = %bindingName;
-   else
-      %formattedBindingName = "#" @ %bindingName;
-   
-   %staticFieldCount = %this.getFieldCount();
-   for(%i=0; %i < %staticFieldCount; %i++)
-   {
-      %fieldName = %this.getField(%i);
-      %fieldValue = %this.getFieldValue(%fieldName);
-      
-      %needlePos = strpos(%fieldValue, %formattedBindingName);
-      if(%needlePos != -1)
-      {
-         %updatedValue = strreplace(%fieldValue, %formattedBindingName, %assignedValue);
-         %this.setFieldValue(%fieldName, %updatedValue);
-      }
-   }
-   
-   %dynamicFieldCount = %this.getDynamicFieldCount();
-   for(%i=0; %i < %dynamicFieldCount; %i++)
-   {
-      %dynamicField = %this.getDynamicField(%i);
-      %fieldName = getField(%dynamicField, 0);
-      %fieldValue = getField(%dynamicField, 1);
-      
-      %needlePos = strpos(%fieldValue, %formattedBindingName);
-      if(%needlePos != -1)
-      {
-         %updatedValue = strreplace(%fieldName, %formattedBindingName, %assignedValue);
-         %this.setFieldValue(%fieldName, %updatedValue);
-      }
-   }
-   
-   if(%doRecursive)
-   {
-      for(%i=0; %i < %this.getCount(); %i++)
-      {
-         %child = %this.getObject(%i);
-         %child.setBindingValue(%bindingName, %assignedValue, %doRecursive);
-      }
-   }
-}*/
-
-function MenuListTemplate::onInspect(%this, %inspector)
-{
-   %inspector.groupFilters = "-Dynamic Fields";
-   %controlGroup = %inspector.findExistentGroupIndex("Control");
-   
-   %group = %inspector.createGroup("Menu List", %controlGroup+1);
-   
-   %group.addField("CreateEntries", "menuListEntryAddButton");
+   %listCtrl = %this.getChildObjects()-->list;
+   %listCtrl.clear();
    
    for(%i=0; %i < %this.entryListCount; %i++)
    {
-      %group.addField("menuListEntry" @ %i @ "", "menuListEntry", "", "");
+      %entryVar = "menuListEntry" @ %i;
+      %entryTemplateAsset = %this.getFieldValue(%entryVar);
+      
+      %templateDef = AssetDatabase.acquireAsset(%entryTemplateAsset);
+      %ctrls = %templateDef.instantiate();
+      AssetDatabase.releaseAsset(%entryTemplateAsset);
+      
+      %listWidth = %listCtrl.extent.x;
+      
+      for(%c=0; %c < getWordCount(%ctrls); %c++)
+      {
+         %entryCtrl = getWord(%ctrls, %c);
+      
+         %bindingsList = %entryCtrl.getFieldBindingNames();
+         for(%f=0; %f < getWordCount(%bindingsList); %f++)
+         {
+            %bindingName = getWord(%bindingsList, %f);
+            
+            if(startsWith(%bindingName, "#"))
+            {
+               %bindingName = getSubStr(%bindingName, 1, -1); 
+            }
+    
+            %bindingInstanceVar = "menuListEntry" @ %i @ "_" @ %bindingName;
+            
+            %bindingInstanceValue = %this.getFieldValue(%bindingInstanceVar);
+            
+            %entryCtrl.setFieldBindingValue("#" @ %bindingName, %bindingInstanceValue);
+         }
+
+         %entryCtrl.extent.x = %listWidth;
+         //.setExtent(%listWidth, %entryCtrl.extent.y);
+         %listCtrl.add(%entryCtrl);
+      }
    }
    
-   //%group.addField("testFieldType", "GUITemplateAssetId", "A testaroo", "");
-}
-
-/*function MenuList::onInspect(%this, %inspector, %templateObj)
-{
-   %inspector.groupFilters = "-Dynamic Fields";
-   %controlGroup = %inspector.findExistentGroupIndex("Control");
-   
-   %group = %inspector.createGroup("Menu List", %controlGroup+1);
-   
-   %group.addField("CreateEntries", "menuListEntryAddButton");
-   
-   //%group.addField("instanceTemplateAsset", "guiTemplate", "If defined, then when the list populates the list utilizing this template asset", "setMenuListInstanceTemplateAsset");
-   //%group.addField("instanceDataObject", "string", "If defined, will iterate over the list dataset to populate items into the stack of the MenuList", "setMenuListInstanceDataObject");
-}*/
-
-function MenuListTemplate::addNewFieldEntry(%this, %inspectorGroup)
-{
-   %inspectorGroup.addField("menuListEntry" @ %this.entryListCount @ "", "menuListEntry" /*"menuListEntry"*/, "", "");
-   %this.entryListCount++;
-}
-
-function GuiEditorInspectFields::setMenuListInstanceTemplateAsset(%this, %variable, %data, %obj)
-{
-   %obj.refresh();
-}
-
-function GuiEditorInspectFields::setMenuListInstanceDataObject(%this, %variable, %data,  %obj)
-{
-   %obj.refresh();
+   %listCtrl.updateStack();
 }

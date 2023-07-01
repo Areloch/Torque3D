@@ -1,0 +1,22 @@
+function MenuListTemplate::onInspect(%this, %inspector)
+{
+   %inspector.groupFilters = "-Dynamic Fields";
+   %controlGroup = %inspector.findExistentGroupIndex("Control");
+   
+   %group = %inspector.createGroup("Menu List", %controlGroup+1);
+   
+   %group.addField("CreateEntries", "menuListEntryAddButton");
+   
+   for(%i=0; %i < %this.entryListCount; %i++)
+   {
+      %group.addField("menuListEntry" @ %i @ "", "menuListEntry", "", "");
+   }
+   
+   //%group.addField("testFieldType", "GUITemplateAssetId", "A testaroo", "");
+}
+
+function MenuListTemplate::addNewFieldEntry(%this, %inspectorGroup)
+{
+   %inspectorGroup.addField("menuListEntry" @ %this.entryListCount @ "", "menuListEntry" /*"menuListEntry"*/, "", "");
+   %this.entryListCount++;
+}

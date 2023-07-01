@@ -997,6 +997,7 @@ class SimObject: public ConsoleObject, public TamlCallbacks
 
       //Value binding
       virtual void setFieldBindingValue(StringTableEntry bindingName, StringTableEntry assignedValue);
+      virtual Vector<StringTableEntry> getFieldBindingNames();
 protected:
    bool   is_temp_clone;
 public:

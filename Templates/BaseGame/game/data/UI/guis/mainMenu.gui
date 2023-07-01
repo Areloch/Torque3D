@@ -1,7 +1,7 @@
 //--- OBJECT WRITE BEGIN ---
 $guiContent = new GuiChunkedBitmapCtrl(MainMenuGui) {
    BitmapAsset = "UI:backgrounddark_image";
-   extent = "1024 768";
+   extent = "1600 1200";
    minExtent = "8 8";
    horizSizing = "width";
    vertSizing = "height";
@@ -17,7 +17,7 @@ $guiContent = new GuiChunkedBitmapCtrl(MainMenuGui) {
 
    new GuiBitmapCtrl(MainMenuAppLogo) {
       BitmapAsset = "UI:Torque_3D_logo_alt_image";
-      position = "550 30";
+      position = "1126 30";
       extent = "443 139";
       horizSizing = "left";
       profile = "GuiDefaultProfile";
@@ -32,7 +32,7 @@ $guiContent = new GuiChunkedBitmapCtrl(MainMenuGui) {
          useStates = "1";
    };
    new GuiControl(MainMenuButtonHolder) {
-      position = "144 711";
+      position = "432 1143";
       extent = "736 40";
       horizSizing = "center";
       vertSizing = "top";
@@ -121,7 +121,7 @@ $guiContent = new GuiChunkedBitmapCtrl(MainMenuGui) {
       sendBreakEvents = "1";
       ignoreMouseEvents = "1";
       position = "-50 0";
-      extent = "10 10";
+      extent = "586 442";
       horizSizing = "width";
       vertSizing = "height";
       profile = "GuiInputCtrlProfile";
@@ -129,7 +129,7 @@ $guiContent = new GuiChunkedBitmapCtrl(MainMenuGui) {
       class = "MenuInputHandler";
    };
    new GuiControl(MainMenuButtons) {
-      extent = "1024 768";
+      extent = "1600 1200";
       horizSizing = "width";
       vertSizing = "height";
       profile = "GuiNonModalDefaultProfile";
@@ -142,7 +142,7 @@ $guiContent = new GuiChunkedBitmapCtrl(MainMenuGui) {
       new GuiStackControl(MainMenuButtonList) {
          padding = "15";
          dynamicSize = "0";
-         position = "312 145";
+         position = "600 361";
          extent = "400 477";
          horizSizing = "center";
          vertSizing = "center";
@@ -208,17 +208,17 @@ $guiContent = new GuiChunkedBitmapCtrl(MainMenuGui) {
       };
    };
    new GUITemplateCtrl(MenuTest) {
-      position = "39 163";
+      position = "40 162";
       extent = "255 437";
       profile = "GuiDefaultProfile";
       tooltipProfile = "GuiToolTipProfile";
       superClass = "MenuListTemplate";
       canSaveDynamicFields = "1";
       TemplateAsset = "UI:MenuListTemplate";
-         instanceDataObject = "MenuButtonsArray";
-         instanceTemplateAsset = "UI:MainMenuButtonTemplate";
          entryListCount = "1";
-         menuListEntry0 = "test";
+         menuListEntry0 = "UI:MainMenuButtonTemplate";
+         menuListEntry0_Command = "openSinglePlayerMenu();";
+         menuListEntry0_Text = "Singleplayer";
    };
 };
 //--- OBJECT WRITE END ---
