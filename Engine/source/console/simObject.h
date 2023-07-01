@@ -980,6 +980,7 @@ class SimObject: public ConsoleObject, public TamlCallbacks
       
       DECLARE_CONOBJECT( SimObject );
       DECLARE_CALLBACK(void, onInspectPostApply, (SimObject* obj));
+      DECLARE_CALLBACK(void, onDataModified, (StringTableEntry slotName, StringTableEntry value));
       
       static SimObject* __findObject( const char* id ) { return Sim::findObject( id ); }
       static const char* __getObjectId( ConsoleObject* object )

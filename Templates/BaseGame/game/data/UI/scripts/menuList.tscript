@@ -13,6 +13,9 @@ function MenuListTemplate::refresh(%this)
       %entryVar = "menuListEntry" @ %i;
       %entryTemplateAsset = %this.getFieldValue(%entryVar);
       
+      if(%entryTemplateAsset $= "" || !AssetDatabase.isDeclaredAsset(%entryTemplateAsset))
+         continue;
+         
       %templateDef = AssetDatabase.acquireAsset(%entryTemplateAsset);
       %ctrls = %templateDef.instantiate();
       AssetDatabase.releaseAsset(%entryTemplateAsset);
@@ -39,12 +42,14 @@ function MenuListTemplate::refresh(%this)
             
             %entryCtrl.setFieldBindingValue("#" @ %bindingName, %bindingInstanceValue);
          }
-
+         
          %entryCtrl.extent.x = %listWidth;
-         //.setExtent(%listWidth, %entryCtrl.extent.y);
          %listCtrl.add(%entryCtrl);
       }
    }
    
    %listCtrl.updateStack();
+   
+   //ensure we comply to dimensions
+   %listCtrl.extent.x = %this.extent.x;
 }

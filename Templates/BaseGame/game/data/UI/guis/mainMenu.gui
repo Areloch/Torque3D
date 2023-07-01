@@ -215,10 +215,13 @@ $guiContent = new GuiChunkedBitmapCtrl(MainMenuGui) {
       superClass = "MenuListTemplate";
       canSaveDynamicFields = "1";
       TemplateAsset = "UI:MenuListTemplate";
-         entryListCount = "1";
+         entryListCount = "2";
          menuListEntry0 = "UI:MainMenuButtonTemplate";
          menuListEntry0_Command = "openSinglePlayerMenu();";
          menuListEntry0_Text = "Singleplayer";
+         menuListEntry1 = "UI:MainMenuButtonTemplate";
+         menuListEntry1_Command = "openJoinServerMenu();";
+         menuListEntry1_Text = "Join Server";
    };
 };
 //--- OBJECT WRITE END ---

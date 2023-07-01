@@ -994,7 +994,13 @@ function AssetBrowser::changeAsset(%this)
       if(%inspectorObject.getNumInspectObjects() != 0)
       {
          %targetObject = %inspectorObject.getInspectObject();
-         %inspectorObject.setObjectField(%this.fieldTargetName, %this.selectedAsset);
+         
+         //Check if it's a normal static field. If it is, set as normal.
+         //if it's not, it's probably a dynamic field, and we'll just wanna set the value direct
+         if(%targetObject.isField(%this.fieldTargetName))
+            %inspectorObject.setObjectField(%this.fieldTargetName, %this.selectedAsset);
+         else
+            %targetObject.setFieldValue(%this.fieldTargetName, %this.selectedAsset);
       }
       else if(startsWith(%this.fieldTargetName, "$"))
       {

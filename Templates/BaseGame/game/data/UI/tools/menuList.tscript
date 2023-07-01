@@ -5,18 +5,142 @@ function MenuListTemplate::onInspect(%this, %inspector)
    
    %group = %inspector.createGroup("Menu List", %controlGroup+1);
    
-   %group.addField("CreateEntries", "menuListEntryAddButton");
+   %group.addField("Create Entries", "menuListEntryAddButton");
    
    for(%i=0; %i < %this.entryListCount; %i++)
    {
       %group.addField("menuListEntry" @ %i @ "", "menuListEntry", "", "");
    }
-   
-   //%group.addField("testFieldType", "GUITemplateAssetId", "A testaroo", "");
+}
+
+function MenuListTemplate::onDataModified(%this, %fieldName, %value)
+{
+   if(startsWith(%fieldName, "menuListEntry"))
+   {
+      GuiEditorInspectFields.schedule(0, "removeInspect", %this);
+      GuiEditorInspectFields.schedule(33, "inspect", %this);
+      
+      %this.schedule(32, "refresh");  
+   } 
+}
+
+function MenuListTemplate::onInspectPostApply(%this)
+{
+    GuiEditorInspectFields.refresh();
 }
 
 function MenuListTemplate::addNewFieldEntry(%this, %inspectorGroup)
 {
-   %inspectorGroup.addField("menuListEntry" @ %this.entryListCount @ "", "menuListEntry" /*"menuListEntry"*/, "", "");
+   %inspectorGroup.addField("menuListEntry" @ %this.entryListCount @ "", "menuListEntry", "", "");
    %this.entryListCount++;
+}
+
+
+function GuiInspectorGroup::buildMenuListEntryField(%this, %fieldName, %fieldLabel, %fieldDesc, %fieldDefaultVal, %fieldDataVals, %callbackName, %ownerObj)
+{
+   %extent = 200;
+   %inspector = %this.getParent();
+   //%menuListObj = %inspector.getInspectObject();
+   
+   %fieldCtrl = %this.createInspectorField();
+   
+   %extent = %this.stack.getExtent();
+   
+   %width = mRound(%extent/2);
+   %height = 40;
+   %inset = 10;
+   
+   %entryIndex = getTrailingNumber(%fieldName);
+   
+   %templateDef = AssetDatabase.acquireAsset("UI:menuListEntryTemplate");
+   
+   %editControl = %templateDef.instantiate();
+   %bindingListExtents = %editControl-->bindingList.extent;
+   
+   %editControl.setFieldBindingValue("#browseAssetButtonCommand", "AssetBrowser.showDialog(\"GUITemplateAsset\", \"AssetBrowser.changeAsset\", " @ %inspector @ ", " @ %fieldName @ ");");
+   
+   //get the associatedAsset
+   %boundAsset = %ownerObj.getFieldValue(%fieldName);
+   
+   %editControl-->assetId.inspector = %inspector;
+   %editControl-->assetId.entryIndex = %entryIndex;
+   %editControl-->assetId.menuListObj = %ownerObj;
+   %editControl-->assetId.fieldName = %fieldName;
+   %editControl-->assetId.setText(%boundAsset);
+   
+   if(%boundAsset !$= "")
+   {
+      %instanceTemplateDef = AssetDatabase.acquireAsset(%boundAsset);  
+      
+      if(isObject(%instanceTemplateDef))
+      {
+         %editControl.setFieldBindingValue("#editAssetButtonCommand", "AssetBrowser.editAsset(" @ %instanceTemplateDef @ ");");
+         
+         %bindableFields = %instanceTemplateDef.getFieldBindingNames(true);
+         for(%fld = 0; %fld < getWordCount(%bindableFields); %fld++)
+         {
+            %bindableName = getWord(%bindableFields, %fld);
+            
+            if(startsWith(%bindableName, "#"))
+               %bindableName = getSubstr(%bindableName, 1, -1);
+               
+            %bindingValue = %ownerObj.getFieldValue("menuListEntry" @ %entryIndex @ "_" @ %bindableName);
+            
+            %textBinding = new GuiControl() {
+               extent = %bindingListExtents SPC 20;
+               horizSizing="width";
+               profile = ToolsGuiDefaultProfile;
+               
+               new GuiTextCtrl(){
+                  text = "   " @ %bindableName;
+                  extent = %bindingListExtents/2 SPC 20;
+                  horizSizing="width";
+                  profile = ToolsGuiTextProfile;
+               };
+               
+               new GuiTextEditCtrl() {
+                  class="bindingFieldTextEdit";
+                  position = %bindingListExtents/2 SPC 0;
+                  extent = %bindingListExtents/2 SPC 20;
+                  horizSizing="left";
+                  profile = ToolsGuiTextEditProfile;
+                  bindingFieldName = %bindableName;
+                  entryIndex = %entryIndex;
+                  menuListObj = %ownerObj;
+                  text = %bindingValue;
+               };
+            };
+            
+            %editControl-->bindingList.add(%textBinding);
+            
+            %height += 20;
+         }
+      }
+   }
+   
+   //
+   %fieldCtrl.setCaption(%fieldLabel);
+   %fieldCtrl.setEditControl(%editControl);
+   
+   %fieldCtrl.setHeightOverride(true, %height);
+   
+   %fieldCtrl.setCaptionPad(10);
+   
+   %this.addInspectorField(%fieldCtrl);
+}
+
+function bindingFieldTextEdit::onValidate( %this )
+{   
+   %targetObj = %this.menuListObj;
+   %bindVar = "menuListEntry" @ %this.entryIndex @ "_" @ %this.bindingFieldName;
+   %bindValue = %this.getText();
+   %targetObj.setFieldValue(%bindVar, %bindValue);
+}
+
+function menuListEntryTemplateAssetIdTxt::onValidate(%this)
+{
+   %targetObj = %this.menuListObj;
+   %fieldName =  %this.fieldName;
+   %assetId = %this.getText();
+   %targetObj.setFieldValue(%fieldName, %assetId);
 }

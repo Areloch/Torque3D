@@ -60,6 +60,7 @@ SimObjectId SimObject::smForcedId = 0;
 bool SimObject::preventNameChanging = false;
 
 IMPLEMENT_CALLBACK(SimObject, onInspectPostApply, void, (SimObject* obj), (obj), "Generic callback for when an object is edited");
+IMPLEMENT_CALLBACK(SimObject, onDataModified, void, (StringTableEntry slotName, const char* newValue), (slotName, newValue), "Generic callback for when an object's data is modified");
 
 namespace Sim
 {
@@ -1672,12 +1673,14 @@ void SimObject::onNameChange(const char*)
 
 void SimObject::onStaticModified(const char* slotName, const char* newValue)
 {
+   onDataModified_callback(slotName, newValue);
 }
 
 //-----------------------------------------------------------------------------
 
 void SimObject::onDynamicModified(const char* slotName, const char* newValue)
 {
+   onDataModified_callback(slotName, newValue);
 }
 
 //=============================================================================

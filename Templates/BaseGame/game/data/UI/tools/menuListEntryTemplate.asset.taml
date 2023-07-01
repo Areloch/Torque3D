@@ -2,11 +2,17 @@
     AssetName="menuListEntryTemplate"
     VersionId="1">
     <GuiStackControl
-        extent="250 60"
-        minExtent="16 50"
+        extent="250 65"
+        minExtent="16 60"
         horizSizing="width"
         profile="ToolsGuiDefaultProfile"
         tooltipProfile="GuiToolTipProfile">
+        <GuiBitmapCtrl
+            extent="250 3"
+            horizSizing="width"
+            profile="GuiDefaultProfile"
+            color="80 80 80 255"
+            bitmapAsset="ToolsModule:separator_v_image"/>
         <GuiControl
             extent="250 20"
             horizSizing="width"
@@ -34,10 +40,10 @@
             <GuiTextEditCtrl
                 extent="204 18"
                 horizSizing="width"
-                text="#instanceTemplateAssetId"
                 profile="ToolsGuiTextEditProfile"
                 tooltipProfile="GuiToolTipProfile"
-                internalName="assetId"/>
+                internalName="assetId"
+                className="menuListEntryTemplateAssetIdTxt"/>
             <GuiButtonCtrl
                 text="..."
                 position="208 0"
