@@ -2756,3 +2756,148 @@ function getAssetPreviewImage(%asset)
    
    return %previewPath;
 }
+
+//
+//
+//
+function AssetBrowser::onBeginDropFiles( %this )
+{   
+   if(!AssetBrowser.isAwake() || !AssetBrowser.isVisible())
+   {
+      if(GuiEditorIsActive())
+         GuiEditor.onBeginDropFiles();
+      else if(EditorIsActive())
+         EWorldEditor.onBeginDropFiles();
+      return;
+   }
+      
+   error("% DragDrop - Beginning files dropping.");
+   AssetImporterGUI.showDialog();
+}
+
+function AssetBrowser::onDropFile( %this, %filePath )
+{
+   if(fileExt(%filePath) $= "")
+   {
+      //we're dealing with a folder, so we gotta parse through it  
+      
+      %file = findFirstFile( %filePath @ "/*" );
+      while( %file !$= "" )
+      {      
+         %this.onDropFile(%file);
+         %file = findNextFile( %filePath @ "/*" );
+      }
+      
+      return;
+   }
+   
+   if(!AssetBrowser.isAwake() || !AssetBrowser.isVisible())
+   {
+      if(GuiEditorIsActive())
+         GuiEditor.onDropFile(%filePath);
+      else if(EditorIsActive())
+         EWorldEditor.onDropFile(%filePath);
+      return;
+   }
+      
+   AssetImporterGUI.addImportingFile(%filePath);
+}
+
+function AssetBrowser::onDropZipFile(%this, %filePath)
+{
+   if(!AssetBrowser.isAwake() || !AssetBrowser.isVisible())
+   {
+      if(GuiEditorIsActive())
+         GuiEditor.onDropZipFile(%filePath);
+      else if(EditorIsActive())
+         EWorldEditor.onDropZipFile(%filePath);
+      return;
+   }
+      
+   %zip = new ZipObject();
+   %zip.openArchive(%filePath);
+   %count = %zip.getFileEntryCount();
+   
+   echo("Dropped in a zip file with" SPC %count SPC "files inside!");
+   
+   for (%i = 0; %i < %count; %i++)
+   {
+      %fileEntry = %zip.getFileEntry(%i);
+      %fileFrom = getField(%fileEntry, 0);
+      
+      %fileTo = expandFilename("^tools/assetBrowser/importTemp/") @ %fileFrom;
+      %zip.extractFile(%fileFrom, %fileTo);
+      //exec(%fileTo);
+   }
+   
+   %zip.delete();
+   
+   //Next, we loop over the files and import them
+}
+
+function AssetBrowser::onDropFolder(%this, %filePath)
+{
+   if(!AssetBrowser.isAwake() || !AssetBrowser.isVisible())
+   {
+      if(GuiEditorIsActive())
+         GuiEditor.onDropFolder(%filePath);
+      else if(EditorIsActive())
+         EWorldEditor.onDropFolder(%filePath);
+      return;
+   }
+      
+   %zip = new ZipObject();
+   %zip.openArchive(%filePath);
+   %count = %zip.getFileEntryCount();
+   
+   echo("Dropped in a zip file with" SPC %count SPC "files inside!");
+   
+   return;
+   for (%i = 0; %i < %count; %i++)
+   {
+      %fileEntry = %zip.getFileEntry(%i);
+      %fileFrom = getField(%fileEntry, 0);
+      
+      //First, we wanna scan to see if we have modules to contend with. If we do, we'll just plunk them in wholesale
+      //and not process their contents.
+      
+      // TODO
+      %fileExt = "";
+
+      //If not modules, it's likely an art pack or other mixed files, so we'll import them as normal
+      if( (%fileExt $= ".png") || (%fileExt $= ".jpg") || (%fileExt $= ".bmp") || (%fileExt $= ".dds") )
+         %this.importAssetListArray.add("ImageAsset", %filePath);
+      else if( (%fileExt $= ".dae") || (%fileExt $= ".dts"))
+         %this.importAssetListArray.add("ShapeAsset", %filePath);
+      else if( (%fileExt $= ".ogg") || (%fileExt $= ".wav") || (%fileExt $= ".mp3"))
+         %this.importAssetListArray.add("SoundAsset", %filePath);
+      else if( (%fileExt $= ".gui") || (%fileExt $= ".gui.dso"))
+         %this.importAssetListArray.add("GUIAsset", %filePath);
+      //else if( (%fileExt $= "." @ $TorqueScriptFileExtension) || (%fileExt $= ".dso"))
+      //   %this.importAssetListArray.add("Script", %filePath);
+      else if( (%fileExt $= ".mis"))
+         %this.importAssetListArray.add("LevelAsset", %filePath);
+         
+      // For now, if it's a .tscript file, we'll assume it's a behavior.
+      if (fileExt(%fileFrom) !$= "." @ $TorqueScriptFileExtension)
+         continue;
+      
+      %fileTo = expandFilename("^game/behaviors/") @ fileName(%fileFrom);
+      %zip.extractFile(%fileFrom, %fileTo);
+      exec(%fileTo);
+   }
+}
+
+function AssetBrowser::onEndDropFiles( %this )
+{
+   if(!AssetBrowser.isAwake() || !AssetBrowser.isVisible())
+   {
+      if(GuiEditorIsActive())
+         GuiEditor.onEndDropFiles();
+      else if(EditorIsActive())
+         EWorldEditor.onEndDropFiles();
+      return;
+   }
+      
+   AssetImporterGUI.refresh();
+}

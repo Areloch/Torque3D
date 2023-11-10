@@ -23,10 +23,12 @@ function initializeImporter()
 {
    echo(" % - Initializing Importer");  
    
-   exec("./assetImporter/scripts/assetImporter." @ $TorqueScriptFileExtension);
-   exec("./assetImporter/scripts/assetImporterConfigEditor." @ $TorqueScriptFileExtension);
-   exec("./assetImporter/guis/assetImporter.gui");
+   exec("./assetImporter/guis/AssetImporterGUI." @ $TorqueScriptFileExtension);
+   exec("./assetImporter/guis/AssetImporterGUI.gui");
+   exec("./assetImporter/guis/AssetImporterConfigEditor." @ $TorqueScriptFileExtension);
    exec("./assetImporter/guis/AssetImporterConfigEditor.gui");
+   
+   exec("./assetImporter/scripts/assetImporter");
    
    new ScriptObject( ImporterPlugin )
    {

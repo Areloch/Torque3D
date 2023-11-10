@@ -1,0 +1,7 @@
+<MaterialAsset
+    canSave="true"
+    canSaveDynamicFields="true"
+    AssetName="DaySkyMat"
+    scriptFile="@assetFile=DaySkyMat.tscript"
+    materialDefinitionName="DaySkyMat"
+    VersionId="1" />

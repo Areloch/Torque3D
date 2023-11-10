@@ -74,10 +74,18 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
             profile = "GuiDefaultProfile";
             tooltipProfile = "GuiToolTipProfile";
 
+            new GuiTextCtrl() {
+               position = "4 2";
+               extent = "696 35";
+               profile = "ToolsGuiHeaderTextProfile";
+               tooltipProfile = "GuiToolTipProfile";
+               internalName = "configTaskListTitle";
+            };
             new GuiScrollCtrl() {
                hScrollBar = "dynamic";
                vScrollBar = "dynamic";
-               extent = "696 764";
+               position = "0 35";
+               extent = "696 729";
                horizSizing = "width";
                vertSizing = "height";
                profile = "ToolsGuiScrollProfile";
@@ -85,7 +93,7 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
 
                new GuiStackControl(AICE_TasksList) {
                   padding = "5";
-                  extent = "696 764";
+                  extent = "696 729";
                   horizSizing = "width";
                   vertSizing = "height";
                   profile = "GuiDefaultProfile";
@@ -149,7 +157,7 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
                   hScrollBar = "dynamic";
                   vScrollBar = "dynamic";
                   position = "0 32";
-                  extent = "500 732";
+                  extent = "500 683";
                   horizSizing = "width";
                   vertSizing = "height";
                   profile = "ToolsGuiScrollProfile";
@@ -164,6 +172,16 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
                      tooltipProfile = "GuiToolTipProfile";
                   };
                };
+               new GuiMLTextCtrl() {
+                  lineSpacing = "3";
+                  position = "6 718";
+                  extent = "281 14";
+                  horizSizing = "width";
+                  vertSizing = "top";
+                  profile = "GuiInspectorFieldInfoMLTextProfile";
+                  tooltipProfile = "ToolsGuiToolTipProfile";
+                  internalName = "fieldInfo";
+               };
             };
             new GuiContainer(AICE_NewTasksContainer) {
                extent = "500 764";
@@ -172,8 +190,16 @@ $guiContent = new GuiControl(AssetImporterConfigEditor) {
                tooltipProfile = "GuiToolTipProfile";
                hidden = "1";
 
+               new GuiTextCtrl() {
+                  position = "4 0";
+                  extent = "500 35";
+                  profile = "ToolsGuiHeaderTextProfile";
+                  tooltipProfile = "GuiToolTipProfile";
+                  internalName = "newTaskTitle";
+               };
                new GuiScrollCtrl() {
-                  extent = "500 764";
+                  position = "0 35";
+                  extent = "500 726";
                   profile = "GuiScrollProfile";
                   tooltipProfile = "GuiToolTipProfile";
 

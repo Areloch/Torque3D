@@ -1,9 +1,376 @@
-function AssetImporterConfigEditor::onWake(%this)
+function AssetImporterConfigEditor::onWake()
 {
-    
+   AssetImporterConfigEditor::refresh();
 }
 
-function AssetImporterConfigEditor::onSleep(%this)
+function AssetImporterConfigEditor::refresh()
 {
-    
+   AICE_ConfigsList.populate();
+   AICE_TasksList.populate();
+   AICE_Properties.clearFields();
+   
+   AICE_NewTasksContainer.setHidden(true);
+   AICE_PropertiesContainer.setHidden(true);
+}
+
+function AssetImporterConfigEditor::open()
+{
+   // "Load" the configs list
+   if(!isObject(AssetImporterConfigEditor.configList))
+   {
+      AssetImporterConfigEditor.configList = new SimGroup(){};
+   }      
+   
+   Canvas.pushDialog(AssetImporterConfigEditor);  
+   
+   AICE_addConfigWindow.setHidden(true);
+   
+   AssetImporterConfigEditor.isDirty = false;
+}
+
+function AssetImporterConfigEditor::close()
+{
+   Canvas.popDialog(AssetImporterConfigEditor);  
+}
+
+function AssetImporterConfigEditor::save(%this)
+{
+   //loop over the list of configs and the serialize them out to file
+   TAMLWrite(AssetImporterConfigEditor.configList, "tools/importer/assetImporter/scripts/importConfigs.taml");
+   
+   %this.isDirty = false;
+}
+
+function AssetImporterConfigEditor::promptNewConfig(%this)
+{
+   AICE_addConfigWindow.setHidden(false);
+   AICE_addConfigWindow.schedule(32, selectWindow);
+   
+   AICE_addConfigWindow-->configName.text = "";
+   AICE_addConfigWindow-->configName.setFirstResponder();
+}
+
+function AssetImporterConfigEditor::addNewConfig(%this)
+{
+   %newConfigName = AICE_addConfigWindow-->configName.getText();
+   if(%newConfigName $= "")
+   {
+      toolsMessageBoxOK("", "An Asset Import Config requires a name");
+      return;  
+   }
+   
+   %config = new SimGroup()
+   {
+      internalName = %newConfigName;      
+   };
+   
+   for(%i=0; %i < AssetImporterAssetTypes.count(); %i++)
+   {
+      %assetType = AssetImporterAssetTypes.getKey(%i); 
+      
+      %assetTypeGroup = new SimGroup()
+      {
+         internalName = %assetType;      
+      };
+      
+      %config.add(%assetTypeGroup);
+   }
+   
+   %this.configList.add(%config);
+   
+   %this.isDirty = true;
+   
+   AICE_addConfigWindow.setHidden(true);
+   %this.refresh();
+   
+   AICE_ConfigsList.setSelectedById(%this.configList.getCount()-1);
+}
+
+function AssetImporterConfigEditor::promptDeleteConfig(%this)
+{
+   %currentConfig = AssetImporterConfigEditor.currentConfig;
+   toolsMessageBoxOKCancel("Delete Asset Import Config?", "This will delete the " @ %currentConfig.internalName @ " asset import config. Do you want to continue?", %this @ ".deleteConfig();", "");
+}
+
+function AssetImporterConfigEditor::deleteConfig(%this)
+{
+   AssetImporterConfigEditor.currentConfig.delete();
+   %this.isDirty = true;
+   %this.refresh();
+}
+//
+//
+//
+function AICE_ConfigsList::populate(%this)
+{
+   %this.clear();
+   
+   for(%i=0; %i < AssetImporterConfigEditor.configList.getCount(); %i++)
+   {
+      %config = AssetImporterConfigEditor.configList.getObject(%i);
+      
+      %this.addRow(%this.rowCount(), %config.internalName);
+   }
+}
+
+function AICE_ConfigsList::onSelect(%this, %id, %text)
+{
+   //load the particular config here
+   
+   %config = AssetImporterConfigEditor.configList.getObject(%id);
+   AssetImporterConfigEditor.currentConfig = %config;
+   
+   AICE_TasksList.populate();
+}
+
+//
+//
+//
+function AICE_TasksList::populate(%this)
+{
+   %this.clear();
+   
+   //if we don't have a selected config, just exit
+   if(!isObject(AssetImporterConfigEditor.currentConfig))
+      return;
+      
+   AssetImporterConfigEditor-->configTaskListTitle.setText("Task List for " @ AssetImporterConfigEditor.currentConfig.internalName @ ":");
+   
+   for(%i=0; %i < AssetImporterConfigEditor.currentConfig.getCount(); %i++)
+   {
+      %assetTypeGroup = AssetImporterConfigEditor.currentConfig.getObject(%i);
+      %assetType = %assetTypeGroup.internalName;
+      
+      %assetRoll = new GuiRolloutCtrl() { 
+         caption = %assetType @ "s";
+         extent = MainViewStack.extent.x SPC 40;
+         profile = GuiInspectorGroupProfile;
+         margin = "5 5 5 5";
+      
+         new GuiStackControl() {
+            internalName = %assetType @ "Stack";
+            assetTypeGroup = %assetTypeGroup;
+            padding = "5";
+         
+            new GuiIconButtonCtrl() {
+               BitmapAsset = "ToolsModule:iconAdd_image";
+               textLocation = "Right";
+               text = "Add Task";
+               profile = "ToolsGuiIconButtonProfile";
+               tooltipProfile = "GuiToolTipProfile";
+               command = "AssetImporterConfigEditor.showAddNewTaskPanel(" @ %assetTypeGroup @ ");";
+            };
+         };
+      };
+      
+      for(%t = 0; %t < %assetTypeGroup.getCount(); %t++)
+      {
+         %task = %assetTypeGroup.getObject(%t);
+         
+         %card = AssetImporterConfigEditor::createAddTaskCard(%task, AssetImporterConfigEditor @ ".editTask(" @ %task @ ");");
+
+         %assetRoll.findObjectByInternalName(%assetType @ "Stack").add(%card);
+      }
+      
+      %this.add(%assetRoll);
+   }
+   
+   AICE_PropertiesContainer-->moveTaskUpBtn.setHidden(true);
+   AICE_PropertiesContainer-->moveTaskDownBtn.setHidden(true);
+   AICE_PropertiesContainer-->removeTaskBtn.setHidden(true);
+}
+
+function AICE_Properties::onFieldSelected( %this, %fieldName, %fieldTypeStr, %fieldDoc )
+{
+   AssetImporterConfigEditor-->fieldInfo.setText( "<font:Arial Bold:14>" @ %fieldName NL "<font:Arial:14>" @ %fieldDoc );
+}
+
+function AssetImporterConfigEditor::showAddNewTaskPanel(%this, %assetTypeGroup)
+{
+   AICE_PropertiesContainer.setHidden(true);
+   AICE_NewTasksContainer.setHidden(false);
+   AICE_NewTasksList.clear();
+   
+   %this-->newTaskTitle.setText("Select New Task for " @ %assetTypeGroup.internalName);
+   
+   for(%i=0; %i < AssetImporterRegisteredTasks.count(); %i++)
+   {
+      %task = AssetImporterRegisteredTasks.getKey(%i);
+      if(%task.type $= %assetTypeGroup.internalName || %task.type $= "any" || %task.type $= "")
+      {
+         %card = AssetImporterConfigEditor::createAddTaskCard(%task, %this @ ".addNewTask($ThisControl, " @ %assetTypeGroup @ ");");
+         AICE_NewTasksList.add(%card);
+      }
+   }
+}
+
+function AssetImporterConfigEditor::addNewTask(%this, %taskEntry, %assetTypeGroup)
+{
+   %taskCopy = %taskEntry.getParent().taskObject.clone();
+   %taskCopy.setName("");
+   %taskCopy.superClass = %taskEntry.getParent().taskObject.getName();
+   %assetTypeGroup.add(%taskCopy);
+   
+   AICE_NewTasksContainer.setHidden(true);
+   AICE_PropertiesContainer.setHidden(false);
+   
+   AssetImporterConfigEditor::refresh();
+}
+
+function AssetImporterConfigEditor::editTask(%this, %taskObject)
+{
+   AICE_NewTasksContainer.setHidden(true);
+   AICE_PropertiesContainer.setHidden(false);
+   AssetImporterConfigEditor.editedTask = %taskObject;
+   
+   //%this.clearTaskSelection();
+   //%taskCtrl.setHighlighted(true);
+   %taskObject.populateFields();  
+   
+   %tasksCount = %taskObject.parentGroup.getCount();
+   %taskIndex = %taskObject.parentGroup.getObjectIndex(%taskObject);
+   
+   AICE_PropertiesContainer-->moveTaskUpBtn.setHidden(%taskIndex < 1);
+   AICE_PropertiesContainer-->moveTaskDownBtn.setHidden(%taskIndex >= %tasksCount-1);
+      
+   AICE_PropertiesContainer-->removeTaskBtn.setHidden(false);
+}
+
+function AssetImporterConfigEditor::moveTaskUp(%this)
+{
+   %task = AssetImporterConfigEditor.editedTask;
+   %taskIndex = %task.parentGroup.getObjectIndex(%task);
+   
+   %prevTask = %task.parentGroup.getObject(%taskIndex-1);
+   
+   %task.parentGroup.reorderChild(%task, %prevTask);
+   
+   %this.isDirty = true;
+   %this.refresh();
+}
+
+function AssetImporterConfigEditor::moveTaskDown(%this)
+{
+   %task = AssetImporterConfigEditor.editedTask;
+   %taskIndex = %task.parentGroup.getObjectIndex(%task);
+   
+   %nextTask = %task.parentGroup.getObject(%taskIndex+1);
+   
+   %task.parentGroup.reorderChild(%nextTask, %task);
+   
+   %this.isDirty = true;
+   %this.refresh();
+}
+
+function AssetImporterConfigEditor::promptRemoveTask(%this)
+{
+   %task = AssetImporterConfigEditor.editedTask;
+   toolsMessageBoxOKCancel("Remove Task?", "This will remove the " @ %task.DisplayName @ " task from the Import Configuration. Do you want to continue?", %this @ ".removeTask();", "");
+}
+
+function AssetImporterConfigEditor::removeTask(%this)
+{
+   %task = AssetImporterConfigEditor.editedTask;
+   %task.parentGroup.remove(%task);
+   %this.isDirty = true;
+   %this.refresh();
+}
+
+function AssetImporterConfigEditor::clearTaskSelection(%this)
+{
+   /*for(%i=0; %i < AssetImporterActiveTasks.count(); %i++)
+   {
+      %type = AssetImporterActiveTasks.getKey(%i);
+      %task = AssetImporterActiveTasks.getValue(%i);
+      
+      %typeGroup = %this.findObjectByInternalName(%type @ "Stack", true);
+      
+      for(%b=0; %b < %typeGroup.getCount(); %b++)
+      {
+         %typeGroup.getObject(%b)-->btn.setHighlighted(false);
+      }
+   }*/
+}
+
+function AssetImporterConfigEditor::createTaskCard(%taskObject)
+{
+   %name = %taskObject.DisplayName;
+   %description = %taskObject.Description;
+   
+   %pad = 5;
+   %cardRowHeight = 20;
+   %cardHeight = %cardRowHeight * 2;
+   %engineBuildCardButtonSize = 40;
+   %engineBuildTextHeight = %cardHeight;
+   %actionCtrlWidth = 150;
+   
+   %navArrowMargin = (%cardHeight > (%cardRowHeight * 2)) ? 20 : 8;
+      
+   %ctrl = new GuiControl() {
+      position = "0 0";
+      extent = MainViewStack.extent.x SPC %cardHeight;
+      horizSizing = "width";
+      vertSizing = "bottom";
+      profile = GuiMenuButtonProfile;
+      minExtent = "100" SPC %cardHeight;
+      taskObject = %taskObject;
+      
+      new GuiIconButtonCtrl() {
+         horizSizing = "width";
+         vertSizing = "height";
+         iconLocation = "Right";
+         sizeIconToButton = true;
+         makeIconSquare = true;
+         buttonMargin = "0" SPC %navArrowMargin;
+         position = "0 0";
+         extent = MainViewStack.extent.x SPC %cardHeight;
+         profile = ToolsGuiIconButtonProfile;
+         internalName = "btn";
+      };
+      
+      new GuiTextCtrl() { 
+         text = "  " @ %name;
+         position = "0 0";
+         extent = MainViewStack.extent.x -(%engineBuildCardButtonSize * 2) SPC %engineBuildTextHeight;
+         horizSizing = "width";
+         vertSizing = "bottom";
+         profile = ToolsGuiTextBoldNonModalProfile;
+         internalName = "label";
+         margin = "0 10 0 0";
+      };
+   };
+   
+   //ensure the height is right for the button
+   %ctrl-->btn.extent = %ctrl.extent;
+   
+   if(%description !$= "")
+   {
+      //add the additional text line for our local path display  
+      
+      %ctrl-->label.extent.y = %cardRowHeight;
+      
+      %subTextLine = new GuiTextCtrl() { 
+         text = "  " @ %description;
+         position = "0" SPC %cardRowHeight;
+         extent = MainViewStack.extent.x - (%engineBuildCardButtonSize * 2) SPC %cardRowHeight;
+         horizSizing = "width";
+         vertSizing = "bottom";
+         profile = ToolsGuiTextNonModalProfile;
+         internalName = "tooltip";
+         margin = "0 10 0 0";
+      };
+      
+      %ctrl.add(%subTextLine);
+   }
+
+   return %ctrl;
+}
+
+function AssetImporterConfigEditor::createAddTaskCard(%taskObject, %command)
+{
+   %ctrl = AssetImporterConfigEditor::createTaskCard(%taskObject);
+   
+   %ctrl-->btn.command = %command;
+
+   return %ctrl;
 }

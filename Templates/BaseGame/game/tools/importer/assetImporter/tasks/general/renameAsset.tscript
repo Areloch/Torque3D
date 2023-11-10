@@ -1,0 +1,39 @@
+if(!isObject(RenameAssetTask))
+{
+   new ScriptObject(RenameAssetTask)
+   {
+      superClass = "AssetImporterTask";
+      DisplayName = "Rename Asset";
+      Description = "This task will rename the asset based on the provided parameters";
+      type = "Any";
+   };
+   
+   RenameAssetTask.registerTask();
+}
+
+function RenameAssetTask::populateFields(%this)
+{
+   AICE_Properties.clearFields();
+   
+   AICE_Properties.startGroup(%this.DisplayName @ " Properties");
+   AICE_Properties.addField("Enabled", "Is Enabled", "bool", "Is this task enabled", "1", "", %this);
+   AICE_Properties.addField("Prefix", "Add Prefix", "string", "Adds this prefix to the importing asset's name", "", "", %this);
+   AICE_Properties.addField("Suffix", "Add Suffix", "string", "Adds this suffix to the importing asset's name", "", "", %this);
+   AICE_Properties.addField("DoFolderPrefix", "Add Dest Folder Name Prefix", "bool", "If true, will add the destination folder's name to the importing asset's name as a prefix", "0", "", %this);
+   AICE_Properties.endGroup();
+   
+   AICE_Properties.update();
+}
+
+function RenameAssetTask::runTask(%this, %assetItem)
+{
+   if(!%this.enabled)
+      return;
+   
+   %assetItem.assetName = %this.prefix @ %assetItem.assetName @ %this.suffix;
+   
+   if(%this.doFolderPrefix)
+   {
+      %assetItem.assetName = %assetItem.destinationFolder @ "_" @ %assetItem.assetName;  
+   }
+}

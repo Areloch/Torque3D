@@ -59,7 +59,7 @@ function initializeAssetBrowser()
    exec("./guis/newAsset.gui");
    exec("./guis/newComponentAsset.gui");
    exec("./guis/editAsset.gui");
-   exec("./guis/assetImport.gui");
+   //exec("./guis/assetImport.gui");
    //exec("./guis/assetImportConfigEditor.gui");
    exec("./guis/selectModule.gui");
    exec("./guis/selectPath.gui");
@@ -74,8 +74,8 @@ function initializeAssetBrowser()
    exec("./scripts/assetBrowser." @ $TorqueScriptFileExtension);
    exec("./scripts/popupMenus." @ $TorqueScriptFileExtension);
    exec("./scripts/addModuleWindow." @ $TorqueScriptFileExtension);
-   exec("./scripts/assetImport." @ $TorqueScriptFileExtension);
-   exec("./scripts/assetImportConfig." @ $TorqueScriptFileExtension);
+   //exec("./scripts/assetImport." @ $TorqueScriptFileExtension);
+   //exec("./scripts/assetImportConfig." @ $TorqueScriptFileExtension);
    exec("./scripts/gameObjectCreator." @ $TorqueScriptFileExtension);
    exec("./scripts/newAsset." @ $TorqueScriptFileExtension);
    exec("./scripts/editAsset." @ $TorqueScriptFileExtension);

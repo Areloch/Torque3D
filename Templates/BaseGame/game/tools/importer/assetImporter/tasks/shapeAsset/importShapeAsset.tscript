@@ -1,0 +1,36 @@
+if(!isObject(ImportShapeAssetTask))
+{
+   new ScriptObject(ImportShapeAssetTask)
+   {
+      superClass = "AssetImporterTask";
+      DisplayName = "Import Shape Asset";
+      Description = "This task will import a valid shape file as a ShapeAsset into a destination module";
+      type = "ShapeAsset";
+   };
+   
+   ImportShapeAssetTask.registerTask();
+}
+
+function ImportShapeAssetTask::populateFields(%this)
+{
+   AICE_Properties.clearFields();
+   
+   AICE_Properties.startGroup(%this.DisplayName @ " Properties");
+   AICE_Properties.addField("Enabled", "Is Enabled", "bool", "Is this task enabled", "1", "", %this);
+   AICE_Properties.addField("validFileExtensions", "Valid File Extensions", "string", "Semi-colon delinated list of valid file extensions this importer will try and import", "fbx;dae;obj;gtlf;glb", 
+            "", %this);
+   AICE_Properties.endGroup();
+   
+   AICE_Properties.startGroup("Shape Asset Configuration");
+   AICE_Properties.addField("LODType", "LOD Parsing Type", "list", 
+      "Is this task enabled", "Trailing Number", "Trailing Number;Set Number", %this);
+   AICE_Properties.endGroup();
+   
+   AICE_Properties.update();
+}
+
+function ImportShapeAssetTask::runTask(%this, %assetItem)
+{
+   if(!%this.enabled)
+      return;
+}

@@ -1,0 +1,15 @@
+singleton CubemapData( DaySkyCubemap )
+{
+   cubeMapFaceAsset[0] = "Core_Rendering:DaySkybox_nx";
+   cubeMapFaceAsset[1] = "Core_Rendering:DaySkybox_px";
+   cubeMapFaceAsset[2] = "Core_Rendering:DaySkybox_pz";
+   cubeMapFaceAsset[3] = "Core_Rendering:DaySkybox_nz";
+   cubeMapFaceAsset[4] = "Core_Rendering:DaySkybox_py";
+   cubeMapFaceAsset[5] = "Core_Rendering:DaySkybox_ny";
+};
+
+singleton Material( DaySkyMat )
+{
+   cubemap = DaySkyCubemap;
+   materialTag0 = "Skies";
+};

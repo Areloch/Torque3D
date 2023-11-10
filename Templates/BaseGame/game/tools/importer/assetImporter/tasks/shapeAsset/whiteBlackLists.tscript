@@ -1,0 +1,39 @@
+if(!isObject(WhiteAndBlackListsShapeAssetTask))
+{
+   new ScriptObject(WhiteAndBlackListsShapeAssetTask)
+   {
+      superClass = "AssetImporterTask";
+      DisplayName = "White/Black Lists";
+      Description = "This task will configure elements of the mesh that should be white or black listed during import";
+      type = "ShapeAsset";
+   };
+   
+   WhiteAndBlackListsShapeAssetTask.registerTask();
+}
+
+function ImportShapeAssetTask::populateFields(%this)
+{
+   AICE_Properties.clearFields();
+   
+   AICE_Properties.startGroup(%this.DisplayName @ " Properties");
+   AICE_Properties.addField("Enabled", "Is Enabled", "bool", "Is this task enabled", "1", "", %this);
+   
+   AICE_Properties.addField("alwaysImportedNodes", "Always Imported Nodes", "string", "Semi-colon delinated list of names that the importer will always import for nodes in the shape. Supports wildcard characters.", "", 
+            "", %this);
+   AICE_Properties.addField("neverImportedNodes", "Never Imported Nodes", "string", "Semi-colon delinated list of names that the importer will never import for nodes in the shape. Supports wildcard characters.", "", 
+            "", %this);
+            
+   AICE_Properties.addField("alwaysImportedMeshes", "Always Imported Meshes", "string", "Semi-colon delinated list of names that the importer will always import for mesh elements in the shape. Supports wildcard characters.", "", 
+            "", %this);
+   AICE_Properties.addField("neverImportedMeshes", "Never Imported Meshes", "string", "Semi-colon delinated list of names that the importer will never import for mesh elements in the shape. Supports wildcard characters.", "", 
+            "", %this);
+   AICE_Properties.endGroup();
+   
+   AICE_Properties.update();
+}
+
+function ImportShapeAssetTask::runTask(%this, %assetItem)
+{
+   if(!%this.enabled)
+      return;
+}

@@ -176,8 +176,7 @@ function AssetBrowser::onBeginDropFiles( %this )
    }
       
    error("% DragDrop - Beginning files dropping.");
-   if(!ImportAssetWindow.isAwake())
-      ImportAssetWindow.showDialog();
+   AssetImporterGUI.showDialog();
 }
 
 function AssetBrowser::onDropFile( %this, %filePath )
@@ -205,7 +204,7 @@ function AssetBrowser::onDropFile( %this, %filePath )
       return;
    }
       
-   ImportAssetWindow.importer.addImportingFile(%filePath);
+   AssetImporterGUI.addImportingFile(%filePath);
 }
 
 function AssetBrowser::onDropZipFile(%this, %filePath)
@@ -304,7 +303,7 @@ function AssetBrowser::onEndDropFiles( %this )
       return;
    }
       
-   ImportAssetWindow.refresh();
+   AssetImporterGUI.refresh();
 }
 
 //

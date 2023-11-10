@@ -215,6 +215,13 @@ new GuiControlProfile (ToolsGuiTextBoldProfile : ToolsGuiTextProfile)
    fontType = "Arial Bold";
 };
 
+if( !isObject( ToolsGuiHeaderTextProfile ) )
+new GuiControlProfile (ToolsGuiHeaderTextProfile : ToolsGuiTextProfile)
+{
+   fontType = "Arial Bold";
+   fontSize = 18;
+};
+
 if( !isObject( ToolsGuiTextBoldNonModalProfile ) )
 new GuiControlProfile (ToolsGuiTextBoldNonModalProfile : ToolsGuiTextNonModalProfile)
 {

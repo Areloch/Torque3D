@@ -1,0 +1,44 @@
+if(!isObject(OverrideShapeTask))
+{
+   new ScriptObject(OverrideShapeTask)
+   {
+      superClass = "AssetImporterTask";
+      DisplayName = "Override Shape Settings";
+      Description = "This task will override certain properties of a shape file so it's configured properly for game use";
+      type = "ShapeAsset";
+   };
+   
+   OverrideShapeTask.registerTask();
+}
+
+function OverrideShapeTask::populateFields(%this)
+{
+   AICE_Properties.clearFields();
+   
+   AICE_Properties.startGroup(%this.DisplayName @ " Properties");
+   AICE_Properties.addField("Enabled", "Is Enabled", "bool", "Is this task enabled", "1", "", %this);
+   
+   AICE_Properties.addField("OverrideUpAxis", "Override Up Axis", "list", 
+      "Override the Up axis direction", "No Override", "No Override;-Y;+Y;-Z;+Z;-X;+X", %this);
+   AICE_Properties.addField("OverrideScale", "Override Scale", "int", 
+      "Override the scale of the shape", "1", "", %this);
+   AICE_Properties.addField("AdjustCenter", "Adjust Center", "bool", 
+      "Adjusts the center of the shape", "0", "", %this);
+   AICE_Properties.addField("AdjustFloor", "Adjust Floor", "bool", 
+      "Adjusts the floor of the shape", "0", "", %this);
+   
+   AICE_Properties.addField("ConvertLeftHandCoords", "Convert to Left-hand Coordinates", "bool", 
+      "Converts the coordinate layout of the shape to the Left-Handed orientation", "0", "", %this);
+    
+   AICE_Properties.addField("InvertNormals", "Invert Normals", "bool", 
+      "Inverts the normals of the faces of the shape", "0", "", %this);
+   AICE_Properties.endGroup();
+   
+   AICE_Properties.update();
+}
+
+function OverrideShapeTask::runTask(%this, %assetItem)
+{
+   if(!%this.enabled)
+      return;
+}

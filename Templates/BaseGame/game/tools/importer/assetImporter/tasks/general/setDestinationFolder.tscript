@@ -1,0 +1,31 @@
+if(!isObject(SetDestinationTask))
+{
+   new ScriptObject(SetDestinationTask)
+   {
+      superClass = "AssetImporterTask";
+      DisplayName = "Set Asset Destination";
+      Description = "This task will forcefully set the importing asset's task to a specified folder in the target module, even if that wasn't the original import destination.";
+      type = "any";
+   };
+   
+   SetDestinationTask.registerTask();
+}
+
+function SetDestinationTask::populateFields(%this)
+{
+   AICE_Properties.clearFields();
+   
+   AICE_Properties.startGroup(%this.DisplayName @ " Properties");
+   AICE_Properties.addField("Enabled", "Is Enabled", "bool", "Is this task enabled", "1", "", %this);
+   AICE_Properties.addField("destinationFolder", "Destination Folder", "string", "Destination folder relative to the target module for assets of this type to be forcefully imported into.", "", 
+            "", %this);
+   AICE_Properties.endGroup();
+   
+   AICE_Properties.update();
+}
+
+function SetDestinationTask::runTask(%this, %assetItem)
+{
+   if(!%this.enabled)
+      return;
+}

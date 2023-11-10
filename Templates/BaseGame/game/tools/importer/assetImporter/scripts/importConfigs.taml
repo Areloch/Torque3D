@@ -1,0 +1,24 @@
+<SimGroup>
+    <SimGroup
+        internalName="Default Import Config">
+        <SimGroup
+            internalName="ShapeAsset">
+            <ScriptObject
+                superClass="RenameAssetTask"
+                description="This task will rename the asset based on the provided parameters"
+                displayName="Rename Asset"
+                doFolderPrefix="0"
+                Enabled="1"
+                prefix="Test_"
+                type="Any"/>
+        </SimGroup>
+        <SimGroup
+            internalName="MaterialAsset"/>
+        <SimGroup
+            internalName="ImageAsset"/>
+        <SimGroup
+            internalName="AnimationAsset"/>
+        <SimGroup
+            internalName="SoundAsset"/>
+    </SimGroup>
+</SimGroup>

@@ -1,0 +1,85 @@
+function AssetImporterGUI::onWake(%this)
+{
+    toggleImportWindowVizBtn.setStateOn(EditorSettings.value("Assets/AutoImport"));
+}
+
+function AssetImporterGUI::onSleep(%this)
+{
+    
+}
+
+function AssetImporterGUI::showDialog(%this)
+{
+   if(!isObject(%this.incomingFilesArray))
+   {
+      %this.incomingFilesArray = new ArrayObject(){};
+   }
+   
+   if(!isObject(%this.assetItemsArray))
+   {
+      %this.assetItemsArray = new ArrayObject(){};
+   }
+   
+   //If we're being shown, initialize a new importer session 
+   %this-->IncomingFilesList.clear();  
+   %this-->OutgoingAssetsList.clear();  
+   
+   %this.incomingFilesArray.empty();
+   %this.assetItemsArray.empty();
+   
+   Canvas.pushDialog(%this); 
+}
+
+function AssetImporterGUI::addImportingFile(%this, %filePath)
+{
+   %this.incomingFilesArray.add(%filePath);
+}
+
+function AssetImporterGUI::refresh(%this)
+{
+   %this-->IncomingFilesList.clear(); 
+   %this-->OutgoingAssetsList.clear();
+   
+   //run through the files and process them
+   for(%i=0; %i < %this.incomingFilesArray.count(); %i++)
+   {
+      %file = %this.incomingFilesArray.getKey(%i);
+      
+      %assetItem = new ScriptObject() {
+         assetName = "wake_image";
+         destinationPath = "/data/MODULE/images/";
+         originalPath = %file; 
+         
+         logString = "This is where the log information for this particular asset's import process goes";
+      };
+      
+      %this.assetItemsArray.add(%assetItem);
+   }
+   
+   //prep display
+   for(%i=0; %i < %this.assetItemsArray.count(); %i++)
+   {
+      %assetItem = %this.assetItemsArray.getKey(%i);
+      
+      %this-->IncomingFilesList.addRow(%i, %assetItem.originalPath);
+      %this-->OutgoingAssetsList.addRow(%i, %assetItem.destinationPath @ " | MODULE:" @ %assetItem.assetName);
+   }
+}
+
+//
+// GUI Management
+//
+function AssetImporterFilesListCtrl::onSelect(%this, %id, %text)
+{
+   //Ensure we select the row in both lists for coherency
+   %selectedRow = AssetImporterGUI-->IncomingFilesList.getSelectedRow();
+   if(%selectedRow != %id)
+      AssetImporterGUI-->IncomingFilesList.setSelectedRow(%id);
+      
+   %selectedRow = AssetImporterGUI-->OutgoingAssetsList.getSelectedRow();
+   if(%selectedRow != %id)
+      AssetImporterGUI-->OutgoingAssetsList.setSelectedRow(%id);
+      
+   %selectedAssetItem = AssetImporterGUI.assetItemsArray.getKey(%id);
+   AssetImporterGUI-->importerLog.setText(%selectedAssetItem.logString);
+}

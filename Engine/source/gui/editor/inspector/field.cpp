@@ -665,6 +665,8 @@ void GuiInspectorField::_executeSelectedCallback()
 {
    if( mField )
       Con::executef( mInspector, "onFieldSelected", mField->pFieldname, ConsoleBaseType::getType(mField->type)->getTypeName(), mFieldDocs.c_str() );
+   else if(mCaption != StringTable->EmptyString()) //this could be special field override cases, so just pass down the data we do have
+      Con::executef(mInspector, "onFieldSelected", mCaption, "", mFieldDocs.c_str());
 }
 
 //-----------------------------------------------------------------------------

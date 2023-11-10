@@ -125,8 +125,8 @@ bool GuiInspectorVariableGroup::inspectGroup()
       bNewItems = true;
 
       fieldGui = constructField(mFields[i]->mFieldType);
-      if (fieldGui == NULL)
-         fieldGui = new GuiInspectorField();
+      if (fieldGui == nullptr)
+         fieldGui = new GuiInspectorVariableField();
 
       fieldGui->init(mParent, this);
 
