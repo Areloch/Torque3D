@@ -1,0 +1,147 @@
+function GuiFormBuilder::createWindow(%title, %pos, %ext)
+{
+   %base = new GuiControl(TestForm)
+   {
+      profile = ToolsGuiDefaultNonModalProfile;
+      horizSizing = "width";
+      vertSizing = "height";
+   };
+   
+   if(%pos $= "")
+      %pos = "25 25";
+   
+   if(%ext $= "")
+      %ext = "200 400";
+   
+   %window = new GuiWindowCtrl()
+   {
+      profile = ToolsGuiWindowCollapseProfile;
+      text = %title;
+      position = %pos;
+      extent = %ext;
+      internalName = "GBFB_" @ %title;  
+   };
+   %base.add(%window);
+   
+   %content = new GuiPanel()
+   {
+      profile = ToolsGuiEditorTabPage;
+      superClass = GuiFormBuilder;
+      position = $GUIFormBuilder::edgePad SPC 20;
+      extent = (%window.extent.x - ($GUIFormBuilder::edgePad * 2)) SPC (%window.extent.y - 20 - $GUIFormBuilder::edgePad);
+      horizSizing = "width";
+      vertSizing = "height";
+   };
+   %window.add(%content);
+   
+   Canvas.pushDialog(%base);
+   
+   return %content;
+}
+
+function GuiFormBuilder::createLayoutWindow(%title, %pos, %ext)
+{
+   if(%pos $= "")
+      %pos = "25 25";
+   
+   if(%ext $= "")
+      %ext = "200 400";
+   
+   %window = new GuiWindowCtrl()
+   {
+      superClass = GuiFormBuilder;
+      class = GuiFormBuilderLayoutWindow;
+      profile = ToolsGuiWindowCollapseProfile;
+      text = %title;
+      position = %pos;
+      extent = %ext;
+      internalName = "GBFB_" @ %title;  
+   };
+   
+   %content = new GuiPanel()
+   {
+      profile = ToolsGuiEditorTabPage;
+      superClass = GuiFormBuilder;
+      position = $GUIFormBuilder::edgePad SPC 20;
+      extent = (%window.extent.x - ($GUIFormBuilder::edgePad * 2)) SPC (%window.extent.y - 20 - $GUIFormBuilder::edgePad);
+      horizSizing = "width";
+      vertSizing = "height";
+      internalName = "content";
+   };
+   %window.add(%content);
+   
+   return %window;
+}
+
+function GuiFormBuilderLayoutWindow::onMouseDragged(%this)
+{
+   //container it in a dnd control
+   echo("GuiFormBuilderLayoutWindow::onMouseDragged()");
+   
+   if(!isObject(EditorDragAndDropLayer))
+   {
+      new GuiControl(EditorDragAndDropLayer)
+      {
+         position = "0 0";
+         extent = Canvas.extent;
+      };
+   }
+   
+   %cursorpos = Canvas.getCursorPos();
+   %xPos = getWord( %cursorpos, 0 );
+   %yPos = getWord( %cursorpos, 1 );
+   
+   // Create the drag control.
+   %ctrl = new GuiDragAndDropControl()
+   {
+      canSaveDynamicFields    = "0";
+      Profile                 = "GuiSolidDefaultProfile";
+      HorizSizing             = "right";
+      VertSizing              = "bottom";
+      Position                = %xPos SPC %yPos;
+      extent                  = %this.extent;
+      MinExtent               = "4 4";
+      canSave                 = "1";
+      Visible                 = "1";
+      hovertime               = "1000";
+
+      // Let the GuiDragAndDropControl delete itself on mouse-up.  When the drag is aborted,
+      // this not only deletes the drag control but also our payload.
+      deleteOnMouseUp         = true;
+      
+      useWholeCanvas = true;
+
+      // To differentiate drags, use the namespace hierarchy to classify them.
+      // This will allow a color swatch drag to tell itself apart from a file drag, for example.
+      class                   = "GuiFormBuilderCustomLayoutDrop";
+   };
+   
+   // Add the temporary color swatch to the drag control as the payload.
+   %ctrl.add( %this );
+   
+   %this.position = "0 0";
+   
+   // Start drag by adding the drag control to the canvas and then calling startDragging().
+   //Canvas.getContent().add( %ctrl );
+   EditorDragAndDropLayer.add(%ctrl);
+   Canvas.pushDialog(EditorDragAndDropLayer);
+   
+   %ctrl.startDragging( 0, 0);
+   
+   $EditorGui::draggingWindowCtrl = %ctrl;
+   
+   
+   Canvas.repaint();
+}
+
+function GuiFormBuilderCustomLayoutDrop::onControlDragCancelled(%this)
+{
+   %window = %this.getObject(0);
+   
+   %window.position = %this.position;
+   
+   Canvas.getContent().add(%window);
+   
+   $EditorGui::draggingWindowCtrl = "";
+}
+

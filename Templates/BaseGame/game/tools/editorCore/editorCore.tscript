@@ -2,8 +2,10 @@
 function EditorCore::onCreate(%this)
 {
    exec("./scripts/menuBar/menuBuilder.ed.tscript");
+   exec("./scripts/formBuilder/formBuilder.ed.tscript");
    
    MenuBuilder::init();
+   GuiFormBuilder::init();
 }
 
 function EditorCore::onDestroy(%this)

@@ -153,6 +153,8 @@ class GuiWindowCtrl : public GuiContainer
       bool mMouseResizeHeight;
       bool mMinimized;
       bool mMaximized;
+
+      bool mShowHeader;
 		
 		Point2I mMousePosition;
       Point2I mMouseDownPosition;
@@ -280,6 +282,11 @@ class GuiWindowCtrl : public GuiContainer
 		virtual void onMouseMove(const GuiEvent &event);
       virtual bool onKeyDown(const GuiEvent &event);
       virtual void onRender(Point2I offset, const RectI &updateRect);
+
+      void showHeader(bool show)
+      {
+         mShowHeader = show;
+      }
 
       DECLARE_CONOBJECT( GuiWindowCtrl );
       DECLARE_DESCRIPTION( "A control that shows an independent window inside the canvas." );
