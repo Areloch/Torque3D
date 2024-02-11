@@ -1,20 +1,11 @@
 //--- OBJECT WRITE BEGIN ---
 $guiContent = new GuiControl(ProfilerGui) {
    extent = "1280 720";
-   profile = "GuiDefaultProfile";
+   profile = GuiModelessDialogProfile;
    tooltipProfile = "GuiToolTipProfile";
    isContainer = "1";
    canSaveDynamicFields = "1";
 
-   new GuiGraphCtrl(MetricsGraph) {
-      plotColor[0] = "0 0 1 1";
-      position = "2 519";
-      extent = "1276 200";
-      horizSizing = "width";
-      vertSizing = "top";
-      profile = "MetricsGraphProfile";
-      tooltipProfile = "GuiToolTipProfile";
-   };
    new GuiWindowCtrl(ppProfilerWindow) {
       text = "Profiler Manager";
       resizeWidth = "0";
@@ -23,7 +14,7 @@ $guiContent = new GuiControl(ProfilerGui) {
       canMaximize = "0";
       closeCommand = "Canvas.popDialog(ProfilerGui);";
       edgeSnap = "0";
-      position = "432 260";
+      position = "4 272";
       extent = "415 199";
       minExtent = "8 8";
       horizSizing = "center";
@@ -117,7 +108,7 @@ $guiContent = new GuiControl(ProfilerGui) {
       };
       new GuiTextEditCtrl(MetricsPollingRate) {
          text = "32";
-         position = "249 72";
+         position = "286 72";
          extent = "53 18";
          profile = "GuiTextEditProfile";
          tooltipProfile = "GuiToolTipProfile";
@@ -134,8 +125,8 @@ $guiContent = new GuiControl(ProfilerGui) {
       };
       new GuiTextCtrl(MetricsPollingRateLabel) {
          text = "Polling Rate[ms]";
-         position = "200 72";
-         extent = "39 21";
+         position = "200 71";
+         extent = "76 21";
          profile = "GuiTextRightProfile";
          tooltipProfile = "GuiToolTipProfile";
       };
@@ -151,6 +142,40 @@ $guiContent = new GuiControl(ProfilerGui) {
          position = "249 144";
          extent = "53 18";
          profile = "GuiTextEditProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+   };
+   new GuiContainer() {
+      position = "2 503";
+      extent = "1276 216";
+      horizSizing = "width";
+      vertSizing = "top";
+      profile = "GuiDefaultProfile";
+      tooltipProfile = "GuiToolTipProfile";
+
+      new GuiPanel() {
+         extent = "1277 24";
+         horizSizing = "width";
+         profile = "GuiMenuPanelProfile";
+         tooltipProfile = "GuiToolTipProfile";
+
+         new GuiStackControl(MetricsGraphLegendStack) {
+            stackingType = "Horizontal";
+            changeChildSizeToFit = "0";
+            extent = "88 24";
+            horizSizing = "width";
+            vertSizing = "height";
+            profile = "GuiDefaultProfile";
+            tooltipProfile = "GuiToolTipProfile";
+         };
+      };
+      new GuiGraphCtrl(MetricsGraph) {
+         plotColor[0] = "0 0 1 1";
+         position = "0 24";
+         extent = "1276 191";
+         horizSizing = "width";
+         vertSizing = "top";
+         profile = "MetricsGraphProfile";
          tooltipProfile = "GuiToolTipProfile";
       };
    };
