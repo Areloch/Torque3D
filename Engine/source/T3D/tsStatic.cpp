@@ -58,6 +58,7 @@
 
 #include "gui/editor/inspector/group.h"
 #include "console/typeValidators.h"
+#include "util/metricsTracker.h"
 using namespace Torque;
 
 extern bool gEditingMission;
@@ -105,6 +106,8 @@ bool TSStatic::smUseStaticObjectFade = false;
 F32 TSStatic::smStaticObjectFadeStart = 50;
 F32 TSStatic::smStaticObjectFadeEnd = 75;
 F32 TSStatic::smStaticObjectUnfadeableSize = 75;
+
+extern U32 gTestVar = 0;
 
 TSStatic::TSStatic()
    :
@@ -341,6 +344,10 @@ bool TSStatic::onAdd()
             fieldDict->setFieldValue(slotName, "");
          }
       }
+
+      gMetricsTracker.addMetric(StringTable->insert("TSStatic"), "$numTSStatics", "Number of TSStatics(Server Side)");
+
+      Con::setIntVariable("$numTSStatics", ++gTestVar);
    }
 
    if (!Parent::onAdd())

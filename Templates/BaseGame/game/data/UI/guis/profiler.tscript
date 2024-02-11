@@ -31,6 +31,13 @@ $MetricsParamArray[7] = "net ";
 $EnableProfiler = false;
 $string = ""; //string used to collet the parameters for metrics function
 
+new GuiControlProfile (MetricsGraphProfile)
+{
+   border = true;
+   opaque = true;
+   fillColor = "100 100 100 200";
+};
+
 function showMetrics(%var)
 {
 	$string = "";
@@ -134,6 +141,11 @@ $guiContent = new GuiControl(FrameOverlayGui) {
 // just add a function with a name in the form 
 // XXXXMetricsCallback which can be enabled via
 // metrics( XXXX )
+
+addMetric("FPS", "$fps::real", "fps");
+addMetric("FPS", "$fps::realMax", "max");
+addMetric("FPS", "$fps::realMin", "min");
+addMetric("FPS", "1000 / $fps::real", "mspf");
 
 function fpsMetricsCallback()
 {
@@ -356,6 +368,8 @@ function metrics( %expr )
          %metricsExpr = %metricsExpr @ " @ \" \"";
    }
    
+   echo(%metricsExpr);
+   
    if( %metricsExpr !$= "" )
    {
       $GameCanvas.pushDialog( FrameOverlayGui, 1000 );
@@ -363,4 +377,77 @@ function metrics( %expr )
    }
    else
       $GameCanvas.popDialog(FrameOverlayGui);
+}
+
+function ProfilerGui::onWake(%this)
+{
+   MetricsGraph.updateStats();
+}
+
+function MetricsGraph::updateStats()
+{
+  $MetricsGraphThread = MetricsGraph.schedule(MetricsPollingRate.getText(), "updateStats");
+
+  if(isobject(MetricsGraph))
+  {
+    MetricsGraph.addDatum(0,$fps::real);
+    //GhostsActive.setText("Ghosts Active: " @ ServerConnection.getGhostsActive());
+    MetricsGraph.addDatum(1, 1000 / $fps::real);
+    /*GhostUpdates.setText("Ghost Updates: " @ $Stats::netGhostUpdates);
+    NetGraph.addDatum(2,$Stats::netBitsSent);
+    BitsSent.setText("Bytes Sent: " @ $Stats::netBitsSent);
+    NetGraph.addDatum(3,$Stats::netBitsReceived);
+    BitsReceived.setText("Bytes Received: " @ $Stats::netBitsReceived);
+    NetGraph.matchScale(2,3);
+    NetGraph.addDatum(4,ServerConnection.getPing());
+    Latency.setText("Latency: " @ ServerConnection.getPing());
+    NetGraph.addDatum(5,ServerConnection.getPacketLoss());
+    PacketLoss.setText("Packet Loss: " @ ServerConnection.getPacketLoss());*/
+  }
+}
+
+function advancedMetrics(%val)
+{
+   
+}
+
+function testMetrics()
+{
+   $testGlobalVar = 5;
+   $testGlobalVar2 = 17;
+   addMetric("test", "$testGlobalVar", "Test Metric:");
+   addMetric("test", "$fps::real", "FPS Test:");
+   
+   %out = getMetricsInGroup("test", 0);
+   
+   echo("input metrics data: " @ %out);
+   
+   showMetric("test");
+}
+
+function showMetric(%metricGroup, %forceNewLines)
+{
+   if(%forceNewLines $= "")
+      %forceNewLines = false;
+      
+   %metricsData = "\"| " @ %metricGroup @ " |\"";
+   %count = getMetricsCount(%metricGroup);
+   
+   if(%count > 0)
+      %metricsData = %metricsData @ " NL";
+   for(%i=0; %i < %count; %i++)
+   {
+      if(%i != 0)
+      {
+         if(%forceNewLines)
+            %metricsData = %metricsData @ " NL ";
+         else
+            %metricsData = %metricsData @ " TAB ";
+      }
+      %metricsData = %metricsData @ "\"" @ getMetricsDescription(%metricGroup, %i) @ "\" SPC " SPC getMetricsVariable(%metricGroup, %i);
+   }
+   
+   echo("Trying metrics data:" @ %metricsData);
+   $GameCanvas.pushDialog( FrameOverlayGui, 1000 );
+   TextOverlayControl.setValue( %metricsData );
 }
