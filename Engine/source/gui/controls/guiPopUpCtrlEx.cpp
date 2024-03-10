@@ -1236,7 +1236,7 @@ void GuiPopUpMenuCtrlEx::onRender(Point2I offset, const RectI &updateRect)
             {
                localStart.x = getWidth() - txt_w - 12;
             }
-         } 
+         }
          else
          {
             localStart.x = mProfile->mTextOffset.x; //  Use mProfile->mTextOffset as a controlable margin for the control's text.

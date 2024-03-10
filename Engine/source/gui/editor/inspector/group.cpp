@@ -282,7 +282,7 @@ bool GuiInspectorGroup::inspectGroup()
             bGrabItems = false;
          continue;
       }
-      
+
       // Skip field if it has the HideInInspectors flag set.
 
       if (field->flag.test(AbstractClassRep::FIELD_HideInInspectors))

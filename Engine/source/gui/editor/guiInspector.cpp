@@ -629,7 +629,7 @@ void GuiInspector::refresh()
                GuiInspectorGroup *newGroup = new GuiInspectorGroup( itr->pGroupname, this );
                newGroup->setForcedArrayIndex(mForcedArrayIndex);
 
-			   newGroup->registerObject();
+			      newGroup->registerObject();
                if( !newGroup->getNumFields() )
                {
                   #ifdef DEBUG_SPEW

@@ -497,10 +497,10 @@ void Material::initPersistFields()
    endGroup("Behavioral (All Layers)");
 
    // For backwards compatibility.  
-   //
-   // They point at the new 'map' fields, but reads always return
-   // an empty string and writes only apply if the value is not empty.
-   //
+  //
+  // They point at the new 'map' fields, but reads always return
+  // an empty string and writes only apply if the value is not empty.
+  //
    addProtectedField("baseTex", TypeImageFilename, Offset(mDiffuseMapName, Material),
       defaultProtectedSetNotEmptyFn, emptyStringProtectedGetFn, MAX_STAGES,
       "For backwards compatibility.\n@see diffuseMap\n", AbstractClassRep::FIELD_HideInInspectors);
