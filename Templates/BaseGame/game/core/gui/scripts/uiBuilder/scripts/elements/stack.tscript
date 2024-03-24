@@ -10,7 +10,7 @@ function UIBuilder::Stack(%base)
    
    %stack = new GuiStackControl()
    {
-      profile = ToolsGuiDefaultProfile;
+      profile = $UIBuilder::profilePrefix @ GuiDefaultProfile;
       position = "0 0";
       extent = %baseCtrl.extent;
       internalName = "content";

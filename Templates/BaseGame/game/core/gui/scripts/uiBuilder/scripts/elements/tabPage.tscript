@@ -1,6 +1,6 @@
 function UIBuilder::TabPage(%title, %forceCreate)
 {
-   if(UIBuilderStack.count() == 0)
+   if(UIBuilderStack.count() == 0 && !%forceCreate)
    {
       error("UIBuilder::TabPage() - attempting to create element, but we have no containing control to add it to!");
       return false;
@@ -17,7 +17,7 @@ function UIBuilder::TabPage(%title, %forceCreate)
    %page = new GuiTabPageCtrl()
    {
       text = %title;
-      profile = ToolsGuiEditorTabPage;
+      profile = $UIBuilder::profilePrefix @ GuiEditorTabPage;
       position = "0 20";
       extent = %baseCtrl.extent.x SPC %baseCtrl.extent.y - 20;
       internalName = "page";  

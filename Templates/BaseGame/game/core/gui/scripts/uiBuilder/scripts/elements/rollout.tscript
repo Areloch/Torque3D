@@ -10,7 +10,7 @@ function UIBuilder::Rollout(%title)
    %rollout = new GuiRolloutCtrl()
    {
       caption = %title;
-      profile = GuiInspectorGroupProfile;
+      profile = $UIBuilder::profilePrefix @ GuiInspectorGroupProfile;
       position = "0 0";
       extent = %baseCtrl.extent.x SPC 50;
       internalName = "rollout";  
@@ -21,7 +21,7 @@ function UIBuilder::Rollout(%title)
    
    %content = new GuiStackControl()
    {
-      profile = ToolsGuiStackControl;
+      profile = $UIBuilder::profilePrefix @ GuiStackControl;
       position = $UIBuilder::edgePad SPC 20;
       extent = (%baseCtrl.extent.x - ($UIBuilder::edgePad * 2)) SPC (%baseCtrl.extent.y - 20 - $UIBuilder::edgePad);
       horizSizing = "width";

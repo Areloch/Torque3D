@@ -11,10 +11,12 @@ function UIBuilder::TabBook(%allowReorder, %doActionButton)
    echo("UIBuilder::TabBook() - baseCtrl: " @ %baseCtrl.getClassName());
    echo("    extent: " @ %baseCtrl.extent);
    
+   %classNameOverride = $UIBuilder::classOverride["GuiTabBookCtrl"];
+   
    %book = new GuiTabBookCtrl()
    {
-      class = UIBuilderTabBook;
-      profile = ToolsGuiTabBookProfile;
+      class = %classNameOverride;
+      profile = $UIBuilder::profilePrefix @ GuiTabBookProfile;
       position = "0 0";
       extent = %baseCtrl.extent;
       internalName = "book";  

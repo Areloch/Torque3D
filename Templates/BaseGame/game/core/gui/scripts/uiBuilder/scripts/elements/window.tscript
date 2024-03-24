@@ -12,7 +12,7 @@ function UIBuilder::Window(%title, %pos, %ext, %dockable)
    %window = new GuiWindowCtrl()
    {
       class = UIBuilderWindow;
-      profile = ToolsGuiWindowCollapseProfile;
+      profile = $UIBuilder::profilePrefix @ GuiWindowCollapseProfile;
       text = %title;
       position = %pos;
       extent = %ext;
@@ -23,7 +23,7 @@ function UIBuilder::Window(%title, %pos, %ext, %dockable)
 
    %scroll = new GuiScrollCtrl()
    {
-      profile = ToolsGuiScrollProfile;
+      profile = $UIBuilder::profilePrefix @ GuiScrollProfile;
       position = $UIBuilder::edgePad SPC 20;
       extent = (%window.extent.x - ($UIBuilder::edgePad * 2)) SPC (%window.extent.y - 20 - $UIBuilder::edgePad);
       internalName = "scroll";  
@@ -34,42 +34,13 @@ function UIBuilder::Window(%title, %pos, %ext, %dockable)
    
    %content = new GuiStackControl()
    {
-      profile = ToolsGuiStackControl;
+      profile = $UIBuilder::profilePrefix @ GuiStackControl;
       position = "1 0";
       extent = %scroll.extent.x - 14 SPC %scroll.extent.y; // -10 for the v scroll bar
       horizSizing = "width";
       vertSizing = "height";
    };
    %scroll.add(%content);
-   
-   if(%dockable)
-   {
-      %layoutButton = new GuiBitmapButtonCtrl() {
-         canSaveDynamicFields = "0";
-         internalName = "";
-         Enabled = "1";
-         isContainer = "0";
-         Profile = "ToolsGuiButtonProfile";
-         HorizSizing = "left";
-         VertSizing = "bottom";
-         Position = %ext.x - 75 SPC 1;
-         Extent = "18 18";
-         MinExtent = "8 8";
-         canSave = "1";
-         Visible = "1";
-         Command = "$ThisControl.getParent().doDockingAction();";
-         tooltipprofile = "ToolsGuiToolTipProfile";
-         ToolTip = "Detach Panel";
-         hovertime = "1000";
-         bitmapAsset = "ToolsModule:panel_undock_n_image";
-         text = "";
-         groupNum = "-1";
-         buttonType = "PushButton";
-         useMouseEvents = "0";
-      };
-      
-      %window.add(%layoutButton);
-   }
    
    UIBuilderStack.push_back(%content);
    

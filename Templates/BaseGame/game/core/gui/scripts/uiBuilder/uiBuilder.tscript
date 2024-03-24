@@ -20,7 +20,7 @@ function UIBuilder::init()
    exec("./scripts/elements/dropDown.tscript");
    exec("./scripts/elements/treeView.tscript"); 
    exec("./scripts/elements/splitContainer.tscript"); 
-   exec("./scripts/elements/customLayout.tscript");
+   //exec("./scripts/elements/customLayout.tscript");
    exec("./scripts/elements/inspector.tscript");
    exec("./scripts/elements/label.tscript");
    exec("./scripts/elements/layout.tscript");

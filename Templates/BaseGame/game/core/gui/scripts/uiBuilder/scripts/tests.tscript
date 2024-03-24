@@ -125,6 +125,8 @@ function UIBuilder::test4()
 
 function UIBuilder::test5()
 {
+   UIBuilder::SetGuiProfilePrefix("Tools");
    UIBuilder::test4();
    UIBuilder::test1();
+   UIBuilder::SetGuiProfilePrefix("");
 }

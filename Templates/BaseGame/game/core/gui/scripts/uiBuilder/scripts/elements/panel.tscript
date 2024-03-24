@@ -10,7 +10,7 @@ function UIBuilder::Panel()
    
    %panel = new GuiPanel()
    {
-      profile = ToolsGuiPaneProfile;
+      profile = $UIBuilder::profilePrefix @ GuiPaneProfile;
       position = "0 0";
       extent = %baseCtrl.extent.x SPC %baseCtrl.extent.y;
       internalName = "panel";  

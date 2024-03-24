@@ -1,6 +1,5 @@
 function UIBuilder::PopupMenuList(%pos)
 {
-   
    %popupMenuList = new GuiInputCtrl() {
       class = PopupMenuListInputHandler;
       ignoreMouseEvents = "0";

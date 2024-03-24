@@ -19,7 +19,7 @@ function UIBuilder::TextField(%labelText, %variableName)
    
    %label = new GuiTextCtrl()
    {
-      profile = ToolsGuiTextProfile;
+      profile = $UIBuilder::profilePrefix @ GuiTextProfile;
       position = "0 0";
       extent = (%baseCtrl.extent.x / 2) SPC $UIBuilder::rowHeight;
       text = %labelText;
@@ -33,7 +33,7 @@ function UIBuilder::TextField(%labelText, %variableName)
    
    %edit = new GuiTextEditCtrl()
    {
-      profile = ToolsGuiTextEditProfile;
+      profile = $UIBuilder::profilePrefix @ GuiTextEditProfile;
       position = (%baseCtrl.extent.x / 2) SPC 0;
       extent = (%baseCtrl.extent.x / 2) SPC $UIBuilder::rowHeight; 
       text = %defaultValue;

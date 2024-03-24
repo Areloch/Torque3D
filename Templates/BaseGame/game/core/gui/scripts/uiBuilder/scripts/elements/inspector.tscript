@@ -10,7 +10,7 @@ function UIBuilder::Inspector(%Name)
    
    %inspector = new GuiInspector(%Name)
    {
-      profile = GuiInspectorProfile;
+      profile = $UIBuilder::profilePrefix @ GuiInspectorProfile;
       position = "0 0";
       extent = %baseCtrl.extent;
       internalName = "content";

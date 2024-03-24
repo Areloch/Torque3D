@@ -9,7 +9,7 @@ else
 }
 
 //--- OBJECT WRITE BEGIN ---
-$guiContent = new GuiWindowCollapseCtrl(ShapeEdAdvancedWindow, EditorGuiGroup) {
+$guiContent = new GuiWindowCtrl(ShapeEdAdvancedWindow, EditorGuiGroup) {
    text = "::  Shape Editor - Advanced Properties";
    resizeWidth = "0";
    resizeHeight = "0";
@@ -31,7 +31,7 @@ $guiContent = new GuiWindowCollapseCtrl(ShapeEdAdvancedWindow, EditorGuiGroup) {
    HorizSizing = "windowRelative";
    VertSizing = "windowRelative";
    Profile = "ToolsGuiWindowProfile";
-   Visible = "0";
+   Visible = "1";
    tooltipprofile = "ToolsGuiToolTipProfile";
    hovertime = "1000";
    isContainer = "1";

@@ -183,6 +183,8 @@ class GuiWindowCtrl : public GuiContainer
 		bool mIsCollapsed;
 		bool mIsMouseResizing;
 
+      bool mIsTitleBarHidden;
+
 		S32 getCollapseGroupNum() { return mCollapseGroupNum; }
 
 		void moveFromCollapseGroup();

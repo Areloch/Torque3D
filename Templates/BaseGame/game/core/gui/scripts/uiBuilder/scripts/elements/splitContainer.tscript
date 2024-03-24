@@ -8,12 +8,14 @@ function UIBuilder::SplitContainer(%orientation, %splitPoint)
    
    if(%orientation $= "")
       %orientation = "Horizontal";
+      
+   echo("UIBuilder::SplitContainer() - profile prefix: " @ $UIBuilder::profilePrefix);
    
    %baseCtrl = UIBuilderStack.getKey(UIBuilderStack.count()-1);
    
    %split = new GuiSplitContainer()
    {
-      profile = GuiMenuPanelProfile;
+      profile = $UIBuilder::profilePrefix @ "GuiDefaultProfile";
       position = "0 0";
       extent = %baseCtrl.extent;
       internalName = "splitContainer";
@@ -36,7 +38,7 @@ function UIBuilder::SplitContainer(%orientation, %splitPoint)
          minExtent = "0 0";
          horizSizing = "right";
          vertSizing = "bottom";
-         profile = "ToolsGuiSolidDefaultProfile";
+         profile = $UIBuilder::profilePrefix @ "GuiDefaultProfile";
          visible = "1";
          active = "1";
          tooltipProfile = "GuiToolTipProfile";
@@ -59,7 +61,7 @@ function UIBuilder::SplitContainer(%orientation, %splitPoint)
          minExtent = "0 0";
          horizSizing = "right";
          vertSizing = "bottom";
-         profile = "ToolsGuiSolidDefaultProfile";
+         profile = $UIBuilder::profilePrefix @ "GuiDefaultProfile";
          visible = "1";
          active = "1";
          tooltipProfile = "GuiToolTipProfile";

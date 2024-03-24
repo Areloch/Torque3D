@@ -15,7 +15,7 @@ function GuiFormBuilder::TreeView(%base, %rootName)
    
    %tree= new GuiTreeViewCtrl()
    {
-      profile = ToolsGuiTreeViewProfile;
+      profile = $UIBuilder::profilePrefix @ GuiTreeViewProfile;
       superClass = GuiFormBuilderTreeView;
       position = "0 0";
       extent = %scroll.extent.x - 15 SPC %scroll.extent.y - 1; //a little bit of pad to ensure we don't accidently always force the scroll bars on

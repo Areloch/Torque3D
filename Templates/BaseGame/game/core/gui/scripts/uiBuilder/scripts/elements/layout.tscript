@@ -2,7 +2,7 @@ function UIBuilder::LayoutContainer(%pos, %ext)
 {
    %container = new GuiContainer()
    {
-      profile = ToolsGuiFrameSetProfile;
+      profile = $UIBuilder::profilePrefix @ "GuiFrameSetProfile";
       class = UIBuilderLayout;
       position = %pos;
       extent = %ext;
@@ -13,10 +13,13 @@ function UIBuilder::LayoutContainer(%pos, %ext)
 
    UIBuilderStack.push_back(%container);
    
+   UIBuilder::SetClassTypeOverride("GuiTabBookCtrl", UIBldrLayoutTabbook);
+   
    %layoutTabbook = UIBuilder::TabBook(true, true);
-   %layoutTabbook.class = UIBldrLayoutTabbook;
    %layoutTabbook.internalName = "LayoutTabbook";
    %layoutTabbook.allowReorder = true;
+   
+   UIBuilder::SetClassTypeOverride("GuiTabBookCtrl", "");
    
    //%baseCtrl.add(%container);
    
@@ -233,7 +236,12 @@ function UIBldrLayoutTab::onControlDropped(%this, %payload, %point)
 
 function UIBldrLayoutTabbook::dock(%this, %dockObject, %position)
 {
+   UIBuilder::SetClassTypeOverride("GuiTabPageCtrl", UIBldrLayoutTab);
+   UIBuilder::SetClassTypeOverride("GuiTabBookCtrl", UIBldrLayoutTabbook);
+   
    %layout = %this.getParent();
+   
+   echo("dock object class: " @ %dockObject.getClassName());
    
    if(%dockObject.getClassName() $= "GuiTabPageCtrl")
    {
@@ -242,24 +250,21 @@ function UIBldrLayoutTabbook::dock(%this, %dockObject, %position)
    }
    else if(%dockObject.getClassName() $= "GuiWindowCtrl")
    {
-      %tabObj = new GuiTabPageCtrl()
-      {
-         text = %dockObject.text;
-         profile = ToolsGuiEditorTabPage;
-         position = "0 20";
-         extent = %dockObject.extent;
-         internalName = "page";  
-         horizSizing = "width";
-         vertSizing = "height";
-         fitBook = true;
-         margin = $UIBuilder::edgePad SPC $UIBuilder::edgePad SPC $UIBuilder::edgePad SPC $UIBuilder::edgePad;
-      };
+      %tabObj = UIBuilder::TabPage(%dockObject.text, true);
+      %dockObject.extent = %tabObj.extent;
+      %dockObject.oldSizingOptions = %dockObject.horizSizing TAB %dockObject.vertSizing;
+      %dockObject.horizSizing = "Height";
+      %dockObject.horizSizing = "Width";
+      %dockObject.oldConfig = %dockObject.resizeWidth TAB %dockObject.resizeHeight TAB %dockObject.canMove;
+      %dockObject.resizeWidth = false;
+      %dockObject.resizeHeight = false;
+      %dockObject.canMove = false;
+      UIBuilder::End();
       
-      for(%i=0; %i < %dockObject.getCount(); %i++)
-      {
-         %childObj = %dockObject.getObject(%i);
-         %tabObj.add(%childObj);
-      }
+      %tabObj.add(%dockObject);
+      %dockObject.isTitlebarHidden = true;
+      %dockObject.position = "0 -20";
+      %dockObject.extent.y += 20;
       
       %tabOldParent = %dockObject;
    }
@@ -297,14 +302,14 @@ function UIBldrLayoutTabbook::dock(%this, %dockObject, %position)
       
       UIBuilder::Set(%newBookPanel);
          %newBook = UIBuilder::TabBook(true, true);
-         %newBook.class = UIBldrLayoutTabbook;
          %newBook.add(%tabObj);
-         
+
          //%newBook.resize(0,0,%newBookPanel.extent.x,%newBookPanel.extent.y);
          %tabObj.resize(0,0,%newBook.extent.x,%newBook.extent.y);
          UIBuilder::End();
       UIBuilder::End();
       
+      echo("moveCurrentPanel " @ %moveCurrentToPanel);
       %moveCurrentToPanel.add(%this);
       if(isObject(%this.actionButton))
       {
@@ -322,10 +327,13 @@ function UIBldrLayoutTabbook::dock(%this, %dockObject, %position)
       %this.add(%tabObj);
    }
    
+   UIBuilder::SetClassTypeOverride("GuiTabPageCtrl", "");
+   UIBuilder::SetClassTypeOverride("GuiTabBookCtrl", "");
+   
    if(%tabOldParent.getClassName() $= "GuiTabbookCtrl")
       %tabOldParent.undock(%tabObj);
-   else if(%tabOldParent.getClassName() $= "GuiWindowCtrl")
-      %tabOldParent.delete();
+   //else if(%tabOldParent.getClassName() $= "GuiWindowCtrl")
+   //   %tabOldParent.delete();
 }
 
 function UIBldrLayoutTabbook::undock(%this, %tabObj)
@@ -409,4 +417,40 @@ function performLayoutUndock()
    %tabObj.delete();
    
    TabBookActionPopup.tabbookId.undock(%tabObj);
+}
+
+function UIBuilder::loadLayout(%file)
+{
+   %xmlDoc = new SimXMLDocument();
+   if(%xmlDoc.loadFile($AssetBrowser::importConfigsFile))
+   {
+      //StateMachine element
+      if(!%xmlDoc.pushFirstChildElement("AssetImportSettings"))
+      {
+         error("Invalid Import Configs file");
+         return;  
+      }
+      
+      //Config Groups
+      %configCount = 0;
+      %hasGroup = %xmlDoc.pushFirstChildElement("Group");
+      while(%hasGroup)
+      {
+         %configName = %xmlDoc.attribute("name");
+         
+         ImportAssetWindow.importConfigsList.add(%configName);
+         ImportAssetConfigList.add(%configName);
+         
+         %hasGroup = %xmlDoc.nextSiblingElement("Group");
+      }
+
+      %xmlDoc.popElement();
+   }
+   
+   %xmlDoc.delete();  
+}
+
+function UIBuilder::saveLayout(%file)
+{
+   
 }

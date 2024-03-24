@@ -78,3 +78,66 @@ function UIBuilder::FitAllOnLine()
       %object.extent.x = %widthSlice;
    }
 }
+
+function UIBuilder::SetClassTypeOverride(%class, %override)
+{
+   $UIBuilder::classOverride[%class] = %override;
+}
+
+function UIBuilder::SetGuiProfilePrefix(%prefix)
+{
+   $UIBuilder::profilePrefix = %prefix;
+}
+
+// Searches the UIBuilderStack for a GuiTabPageCtrl that contains a control with the specified name.
+// @param stack The ArrayObject representing the stack of GUI controls.
+// @param searchedName The name of the control to search for.
+// @return The GuiTabPageCtrl containing the control with the searched name, or 0 if not found.
+function UIBuilder::findTabPageWithControl(%searchedName) 
+{
+    // Iterate through each item in the stack.
+    for (%i = 0; %i < UIBuilderStack.count(); %i++) 
+    {
+        %control = UIBuilderStack.getKey(%i); // Assuming this gets the current control from the stack
+        
+        // Check if this is a GuiTabPageCtrl, then search its children.
+         %result = searchControlInChildren(%control, %searchedName);
+         if (%result != 0) 
+         {
+            // If the control was found in this tab page, return it.
+            return %result.getParent();
+         }
+    }
+    
+    // If no matching control was found in any tab page, return 0.
+    return 0;
+}
+
+// Recursively searches children of a control for a control with the specified name.
+// @param control The control to search within.
+// @param searchedName The name of the control to search for.
+// @return The control with the searched name, or 0 if not found.
+function searchControlInChildren(%control, %searchedName) 
+{
+    // Check if the control itself is the one we're looking for.
+    if (%control.getName() $= %searchedName) 
+    {
+        return %control;
+    }
+    
+    // If not, iterate through its children.
+    for (%i = 0; %i < %control.getCount(); %i++) 
+    {
+        %childControl = %control.getObject(%i);
+        // Recursively search in this child.
+        %result = searchControlInChildren(%childControl, %searchedName);
+        if (%result != 0) 
+        {
+            // If the control was found in this child, return it.
+            return %result;
+        }
+    }
+    
+    // If the control was not found in this control or any of its children, return 0.
+    return 0;
+}

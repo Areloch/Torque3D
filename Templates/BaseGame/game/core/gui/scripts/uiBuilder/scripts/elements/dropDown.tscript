@@ -13,7 +13,7 @@ function UIBuilder::Dropdown(%list, %variableName, %changeCommand)
    %edit = new GuiPopUpMenuCtrlEx()
    {
       class = UIBuilderDropdown;
-      profile = ToolsGuiPopUpMenuProfile;
+      profile = $UIBuilder::profilePrefix @ GuiPopUpMenuProfile;
       extent = %baseCtrl.extent.x SPC $UIBuilder::rowHeight; 
       text = %defaultValue;
       variable = %variableName;

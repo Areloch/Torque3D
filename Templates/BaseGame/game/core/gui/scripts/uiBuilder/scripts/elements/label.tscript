@@ -10,7 +10,7 @@ function UIBuilder::Label(%labelText)
    
    %label = new GuiTextCtrl()
    {
-      profile = ToolsGuiTextProfile;
+      profile = $UIBuilder::profilePrefix @ "GuiTextProfile";
       position = "0 0";
       extent = (%baseCtrl.extent.x / 2) SPC $UIBuilder::rowHeight;
       text = %labelText;

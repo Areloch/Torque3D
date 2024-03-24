@@ -42,23 +42,55 @@ function initializeShapeEditor()
    exec("./scripts/shapeEditorHints.ed." @ $TorqueScriptFileExtension);
    exec("./scripts/shapeEditorActions.ed." @ $TorqueScriptFileExtension);
 
+   echo("BUILDING SHAPE EDITOR LAYOUT");
+   echo("==================================================");
    // Add windows to editor gui
-   ShapeEdPreviewGui.setVisible(false);
-   ShapeEdAnimWindow.setVisible(false);
-   ShapeEdSelectWindow.setVisible(false);
-   ShapeEdPropWindow.setVisible(false);
+   UIBuilder::SetGuiProfilePrefix("Tools");
+   UIBuilder::Set(EditorGuiMainTabBook);
 
-   MainSceneTabPanel.add(ShapeEdPreviewGui);
-   MainSceneTabPanel.add(ShapeEdAnimWindow);
-   MainSceneTabPanel.add(ShapeEdAdvancedWindow);
+      %shapeEdTab = UIBuilder::TabPage("Shape Editor");
 
-   MainSceneTabPanel.add(ShapeEdSelectWindow);
-   MainSceneTabPanel.add(ShapeEdPropWindow);
+         %edLayout = UIBuilder::LayoutContainer("0 0", EditorGuiMainTabBook.extent);
+         %shapeEdTab.add(%edLayout);
+         
+            %tabbook = %edLayout-->layoutTabbook;
+
+            UIBuilder::Set(%tabbook);
+               %mainTab = UIBuilder::TabPage("Shape Editor Content");
+               echo("%mainTab: " @ %mainTab);
+                  %mainTab.add(ShapeEdPreviewGui);
+                  %mainTab.add(ShapeEdAnimWindow);
+                  %mainTab.add(ShapeEditorToolbar);
+               UIBuilder::End();
+            UIBuilder::End();
+         UIBuilder::End();
+         
+         %mainBook = %mainTab.getParent();
+         
+         %mainBook.dock(ShapeEdSelectWindow, "right");
+         
+         %rightTab = UIBuilder::findTabPageWithControl(ShapeEdSelectWindow);
+         if(%rightTab)
+         {
+            %rightTabbook = %rightTab.getParent();
+            %rightTabbook.dock(ShapeEdAdvancedWindow, "tab");
+            %rightTabbook.dock(ShapeEdPropWindow, "bottom");
+         }
+         
+         %mainTab = UIBuilder::findTabPageWithControl(ShapeEdPreviewGui);
+         %mainSplit = %mainTab.getParent().getParent().getParent();
+         echo("%mainSplit: " @ %mainSplit @ " | " @ %mainSplit.getClassName());
+         %mainSplit.setSplitPoint(EditorGuiMainTabBook.extent.x*0.75 SPC EditorGuiMainTabBook.extent.y/2);
+
+      UIBuilder::End();
+   UIBuilder::End();
+   UIBuilder::SetGuiProfilePrefix("");
 
    new ScriptObject(ShapeEditorPlugin)
    {
       superClass = "EditorPlugin";
       editorGui = ShapeEdShapeView;
+      editorTab = %shapeEdTab;
    };
 
    %map = new ActionMap();
@@ -121,8 +153,8 @@ function ShapeEditorPlugin::onWorldEditorStartup(%this)
    exec( "./gui/ShapeEditorSettingsTab.gui" );
    //ESettingsWindow.addTabPage( EShapeEditorSettingsPage );
 
-   GuiWindowCtrl::attach(ShapeEdPropWindow, ShapeEdSelectWindow);
-   ShapeEdAnimWindow.resize( -1, 526, 593, 53 );
+   //GuiWindowCtrl::attach(ShapeEdPropWindow, ShapeEdSelectWindow);
+   //ShapeEdAnimWindow.resize( -1, 526, 593, 53 );
    
    // Initialise gui
    ShapeEdSeqNodeTabBook.selectPage(0);
@@ -181,12 +213,13 @@ function ShapeEditorPlugin::open(%this, %shapeAsset)
       ShapeEdShapeTreeView.open(getScene(0));
       ShapeEdShapeTreeView.buildVisibleTree(true);
 
-      ShapeEdPreviewGui.setVisible(true);
-      ShapeEdSelectWindow.setVisible(true);
-      ShapeEdPropWindow.setVisible(true);
-      ShapeEdAnimWindow.setVisible(true);
-      ShapeEdAdvancedWindow.setVisible(ShapeEditorToolbar-->showAdvanced.getValue());
-      MainSceneTabPanel.bringToFront(ShapeEdPreviewGui);
+      //ShapeEdPreviewGui.setVisible(true);
+      //ShapeEdSelectWindow.setVisible(true);
+      //ShapeEdPropWindow.setVisible(true);
+      //ShapeEdAnimWindow.setVisible(true);
+      //ShapeEdAdvancedWindow.setVisible(ShapeEditorToolbar-->showAdvanced.getValue());
+      //MainSceneTabPanel.bringToFront(ShapeEdPreviewGui);
+      %this.editorTab.select();
 
       ToolsPaletteArray->WorldEditorMove.performClick();
       %this.map.push();
@@ -253,8 +286,11 @@ function ShapeEditorPlugin::onActivated(%this)
       }
    }
    
-   EditorGuiToolbarStack.remove( EWorldEditorToolbar );
-   EditorGuiToolbarStack.add( ShapeEditorToolbar );
+   EWTreeWindow.setVisible(false);
+   EWInspectorWindow.setVisible(false);
+   
+   //EditorGuiToolbarStack.remove( EWorldEditorToolbar );
+   //EditorGuiToolbarStack.add( ShapeEditorToolbar );
 }
 
 function ShapeEditorPlugin::initStatusBar(%this)
@@ -275,14 +311,14 @@ function ShapeEditorPlugin::onDeactivated(%this)
 
    ShapeEdMaterials.updateSelectedMaterial(false);
    
-   EditorGuiToolbarStack.add( EWorldEditorToolbar );
-   EditorGuiToolbarStack.remove( ShapeEditorToolbar );
+   //EditorGuiToolbarStack.add( EWorldEditorToolbar );
+   //EditorGuiToolbarStack.remove( ShapeEditorToolbar );
 
-   ShapeEdPreviewGui.setVisible(false);
-   ShapeEdSelectWindow.setVisible(false);
-   ShapeEdPropWindow.setVisible(false);
-   ShapeEdAnimWindow.setVisible(false);
-   ShapeEdAdvancedWindow.setVisible(false);
+   //ShapeEdPreviewGui.setVisible(false);
+   //ShapeEdSelectWindow.setVisible(false);
+   //ShapeEdPropWindow.setVisible(false);
+   //ShapeEdAnimWindow.setVisible(false);
+   //ShapeEdAdvancedWindow.setVisible(false);
    
    if( EditorGui-->MatEdPropertiesWindow.visible )
    {
