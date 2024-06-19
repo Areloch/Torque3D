@@ -21,7 +21,7 @@
 # -----------------------------------------------------------------------------
 
 # this is a template file that should help you write a new cmake build script for a new library
-
+message("Tools/Cmake/template.cmake is being run!")
 
 # 1st thing: the project name
 project(pcre)

@@ -1,3 +1,7 @@
+message("./CMakeLists.txt is being run!")
+
+include("${CMAKE_SOURCE_DIR}/Tools/CMake/torque_macros.cmake")
+include("${CMAKE_SOURCE_DIR}/Tools/CMake/torque_configs.cmake")
 cmake_minimum_required (VERSION 3.10.2)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS TRUE)
@@ -12,4 +16,5 @@ endif()
 
 project(${TORQUE_APP_NAME})
 
+add_subdirectory(Engine)
 add_subdirectory(Tools/CMake)

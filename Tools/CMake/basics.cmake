@@ -161,89 +161,6 @@ macro(_process_defs)
 endmacro()
 
 ###############################################################################
-###  Source Library Handling
-###############################################################################
-macro(addLibSrc libPath)
-    set(cached_project_name ${PROJECT_NAME})
-    include(${libPath})
-    project(${cached_project_name})
-endmacro()
-
-###############################################################################
-### Linked Library Handling
-###############################################################################
-macro(addLib libs)
-   foreach(lib ${libs})
-        # check if we can build it ourselfs
-        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libraries/${lib}.cmake")
-            addLibSrc("${CMAKE_CURRENT_SOURCE_DIR}/libraries/${lib}.cmake")
-        endif()
-        # then link against it
-        # two possibilities: a) target already known, so add it directly, or b) target not yet known, so add it to its cache
-        if(TARGET ${PROJECT_NAME})
-            target_link_libraries(${PROJECT_NAME} "${lib}")
-        else()
-            list(APPEND ${PROJECT_NAME}_libs ${lib})
-        endif()
-   endforeach()
-endmacro()
-
-#addLibRelease will add to only release builds
-macro(addLibRelease libs)
-   foreach(lib ${libs})
-        # check if we can build it ourselfs
-        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libraries/${lib}.cmake")
-            addLibSrc("${CMAKE_CURRENT_SOURCE_DIR}/libraries/${lib}.cmake")
-        endif()
-        # then link against it
-        # two possibilities: a) target already known, so add it directly, or b) target not yet known, so add it to its cache
-        if(TARGET ${PROJECT_NAME})
-            target_link_libraries(${PROJECT_NAME} optimized "${lib}")
-        else()
-            list(APPEND ${PROJECT_NAME}_libsRelease ${lib})
-        endif()
-   endforeach()
-endmacro()
-
-#addLibDebug will add to only debug builds
-macro(addLibDebug libs)
-   foreach(lib ${libs})
-        # check if we can build it ourselfs
-        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libraries/${lib}.cmake")
-            addLibSrc("${CMAKE_CURRENT_SOURCE_DIR}/libraries/${lib}.cmake")
-        endif()
-        # then link against it
-        # two possibilities: a) target already known, so add it directly, or b) target not yet known, so add it to its cache
-        if(TARGET ${PROJECT_NAME})
-            target_link_libraries(${PROJECT_NAME} debug "${lib}")
-        else()
-            list(APPEND ${PROJECT_NAME}_libsDebug ${lib})
-        endif()
-   endforeach()
-endmacro()
-
-# this applies cached definitions onto the target
-macro(_process_libs)
-    if(DEFINED ${PROJECT_NAME}_libs)
-        target_link_libraries(${PROJECT_NAME} "${${PROJECT_NAME}_libs}")
-    endif()
-    if(DEFINED ${PROJECT_NAME}_libsRelease)
-        target_link_libraries(${PROJECT_NAME} optimized "${${PROJECT_NAME}_libsRelease}")
-    endif()
-    if(DEFINED ${PROJECT_NAME}_libsDebug)
-        target_link_libraries(${PROJECT_NAME} debug "${${PROJECT_NAME}_libsDebug}")
-    endif()
-
-endmacro()
-
-# apple frameworks
-macro(addFramework framework)
-	if (APPLE)
-		addLib("-framework ${framework}")
-	endif()
-endmacro()
-
-###############################################################################
 ### Include Handling
 ###############################################################################
 macro(addInclude incPath)
@@ -266,12 +183,6 @@ endmacro()
 macro(_postTargetProcess)
     _process_includes()
     _process_defs()
-    _process_libs()
-endmacro()
-
-# adds a path to search for libs
-macro(addLibPath dir)
-    link_directories(${dir})
 endmacro()
 
 # creates a proper filter for VS
@@ -316,49 +227,6 @@ macro(generateFiltersSpecial relDir)
             source_group("${SRCGR}" FILES ${f})
         endif()
     endforeach()
-endmacro()
-
-# macro to add a static library
-macro(finishLibrary)
-    # more paths?
-    if(${ARGC} GREATER 0)
-        foreach(dir ${ARGV0})
-            addPath("${dir}")
-        endforeach()
-    endif()
-    # now inspect the paths we got
-    set(firstDir "")
-    foreach(dir ${${PROJECT_NAME}_paths})
-        if("${firstDir}" STREQUAL "")
-            set(firstDir "${dir}")
-        endif()
-    endforeach()
-    generateFilters("${firstDir}")
-
-    # set per target compile flags
-    if(TORQUE_CXX_FLAGS_${PROJECT_NAME})
-        set_source_files_properties(${${PROJECT_NAME}_files} PROPERTIES COMPILE_FLAGS "${TORQUE_CXX_FLAGS_${PROJECT_NAME}}")
-    else()
-        set_source_files_properties(${${PROJECT_NAME}_files} PROPERTIES COMPILE_FLAGS "${TORQUE_CXX_FLAGS_LIBS}")
-    endif()
-
-    if(TORQUE_STATIC)
-        add_library("${PROJECT_NAME}" STATIC ${${PROJECT_NAME}_files})
-    else()
-        add_library("${PROJECT_NAME}" SHARED ${${PROJECT_NAME}_files})
-    endif()
-
-    target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_11)
-
-    # omg - only use the first folder ... otherwise we get lots of header name collisions
-    #foreach(dir ${${PROJECT_NAME}_paths})
-    addInclude("${firstDir}")
-    #endforeach()
-
-    _postTargetProcess()
-
-    #set the folder property name
-    set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER ${TORQUE_LIBS_FOLDER_NAME})
 endmacro()
 
 # macro to add an executable
@@ -435,8 +303,8 @@ if(WIN32)
     set(TORQUE_CXX_FLAGS_EXECUTABLES "/wd4018 /wd4100 /wd4121 /wd4127 /wd4130 /wd4244 /wd4245 /wd4389 /wd4511 /wd4512 /wd4800 /wd4995 " CACHE STRING "")
     mark_as_advanced(TORQUE_CXX_FLAGS_EXECUTABLES)
 
-    set(TORQUE_CXX_FLAGS_LIBS "/W0" CACHE STRING "")
-    mark_as_advanced(TORQUE_CXX_FLAGS_LIBS)
+    #set(TORQUE_CXX_FLAGS_LIBS "/W0" CACHE STRING "")
+    #mark_as_advanced(TORQUE_CXX_FLAGS_LIBS)
 
     set(TORQUE_CXX_FLAGS_COMMON_DEFAULT "-DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS /MP /O2 /Ob2 /Oi /Ot /Oy /GT /Zi /W4 /nologo /GF /EHsc /GS- /Gy- /Qpar- /fp:precise /fp:except- /GR /Zc:wchar_t-" )
     if( TORQUE_CPU_X32 )
@@ -450,22 +318,6 @@ if(WIN32)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_CXX_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "/LARGEADDRESSAWARE")
     #set(STATIC_LIBRARY_FLAGS "/OPT:NOREF")
-
-    # Force static runtime libraries
-    if(TORQUE_STATIC)
-        FOREACH(flag
-            CMAKE_C_FLAGS_RELEASE
-            CMAKE_C_FLAGS_RELWITHDEBINFO
-            CMAKE_C_FLAGS_DEBUG
-            CMAKE_C_FLAGS_DEBUG_INIT
-            CMAKE_CXX_FLAGS_RELEASE
-            CMAKE_CXX_FLAGS_RELWITHDEBINFO
-            CMAKE_CXX_FLAGS_DEBUG
-            CMAKE_CXX_FLAGS_DEBUG_INIT)
-            STRING(REPLACE "/MD"  "/MT" "${flag}" "${${flag}}")
-            SET("${flag}" "${${flag}} /EHsc")
-        ENDFOREACH()
-    endif()
 else()
     if(${CMAKE_VERSION} VERSION_LESS "3.16.0")
         macro(CHECK_OBJC_SOURCE_COMPILES SOURCE VAR)

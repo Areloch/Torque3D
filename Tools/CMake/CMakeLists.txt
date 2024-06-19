@@ -19,6 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # -----------------------------------------------------------------------------
+message("Tools/Cmake/CMakeLists.txt is being run!")
 
 cmake_minimum_required(VERSION 3.12)
 
