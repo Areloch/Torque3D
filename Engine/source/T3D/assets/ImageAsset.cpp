@@ -104,7 +104,7 @@ ConsoleSetType(TypeImageAssetId)
    }
 
    // Warn.
-   Con::warnf("(TypeAssetId) - Cannot set multiple args to a single asset.");
+   Con::warnf("(TypeImageAssetId) - Cannot set multiple args to a single asset.");
 }
 //-----------------------------------------------------------------------------
 

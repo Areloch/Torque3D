@@ -1,8 +1,15 @@
 #include "Scene.h"
 #include "T3D/assets/LevelAsset.h"
+#include "T3D/gameBase/gameConnection.h"
+#include "T3D/gameMode.h"
 
 Scene * Scene::smRootScene = nullptr;
 Vector<Scene*> Scene::smSceneList;
+
+IMPLEMENT_CALLBACK(Scene, onSaving, void, (const char* fileName), (fileName),
+   "@brief Called when a scene is saved to allow scenes to special-handle prepwork for saving if required.\n\n"
+
+   "@param fileName The level file being saved\n");
 
 IMPLEMENT_CO_NETOBJECT_V1(Scene);
 
@@ -14,7 +21,7 @@ Scene::Scene() :
    mIsDirty(false),
    mEditPostFX(0)
 {
-   mGameModeName = StringTable->EmptyString();
+   mGameModesNames = StringTable->EmptyString();
 }
 
 Scene::~Scene()
@@ -34,7 +41,7 @@ void Scene::initPersistFields()
    endGroup("Internal");
 
    addGroup("Gameplay");
-   addField("gameModeName", TypeString, Offset(mGameModeName, Scene), "The name of the gamemode that this scene utilizes");
+   addField("gameModes", TypeGameModeList, Offset(mGameModesNames, Scene), "The game modes that this Scene is associated with.");
    endGroup("Gameplay");
 
    addGroup("PostFX");
@@ -50,6 +57,8 @@ bool Scene::onAdd()
 
    smSceneList.push_back(this);
    mSceneId = smSceneList.size() - 1;
+
+   GameMode::findGameModes(mGameModesNames, &mGameModesList);
 
    /*if (smRootScene == nullptr)
    {
@@ -67,6 +76,11 @@ bool Scene::onAdd()
 
 void Scene::onRemove()
 {
+   for (U32 i = 0; i < mGameModesList.size(); i++)
+   {
+      mGameModesList[i]->onSceneUnloaded_callback();
+   }
+
    Parent::onRemove();
 
    smSceneList.remove(this);
@@ -87,12 +101,19 @@ void Scene::onRemove()
             smRootScene->mSubScenes.erase(i);
       }
    }*/
+
+   
 }
 
 void Scene::onPostAdd()
 {
    if (isMethod("onPostAdd"))
       Con::executef(this, "onPostAdd");
+
+   for (U32 i = 0; i < mGameModesList.size(); i++)
+   {
+      mGameModesList[i]->onSceneLoaded_callback();
+   }
 }
 
 bool Scene::_editPostEffects(void* object, const char* index, const char* data)
@@ -110,11 +131,12 @@ bool Scene::_editPostEffects(void* object, const char* index, const char* data)
 void Scene::addObject(SimObject* object)
 {
    //Child scene
-   Scene* scene = dynamic_cast<Scene*>(object);
+   SubScene* scene = dynamic_cast<SubScene*>(object);
    if (scene)
    {
       //We'll keep these principly separate so they don't get saved into each other
       mSubScenes.push_back(scene);
+      Parent::addObject(object);
       return;
    }
 
@@ -135,7 +157,7 @@ void Scene::addObject(SimObject* object)
 void Scene::removeObject(SimObject* object)
 {
    //Child scene
-   Scene* scene = dynamic_cast<Scene*>(object);
+   SubScene* scene = dynamic_cast<SubScene*>(object);
    if (scene)
    {
       //We'll keep these principly separate so they don't get saved into each other
@@ -180,7 +202,55 @@ void Scene::interpolateTick(F32 delta)
 
 void Scene::processTick()
 {
+   if (!isServerObject())
+      return;
 
+   //iterate over our subscenes to update their status of loaded or unloaded based on if any control objects intersect their bounds
+   for (U32 i = 0; i < mSubScenes.size(); i++)
+   {
+      bool hasClients = false;
+
+      SimGroup* pClientGroup = Sim::getClientGroup();
+      for (SimGroup::iterator itr = pClientGroup->begin(); itr != pClientGroup->end(); itr++)
+      {
+         GameConnection* gc = dynamic_cast<GameConnection*>(*itr);
+         if (gc)
+         {
+            GameBase* controlObj = gc->getControlObject();
+            if (controlObj == nullptr)
+            {
+               controlObj = gc->getCameraObject();
+            }
+
+            if (controlObj != nullptr)
+            {
+               if (mSubScenes[i]->testBox(controlObj->getWorldBox()))
+               {
+                  //we have a client controlling object in the bounds, so we ensure the contents are loaded
+                  hasClients = true;
+                  break;
+               }
+            }
+         }
+      }
+
+      if (hasClients)
+      {
+         mSubScenes[i]->setUnloadTimeMS(-1);
+         mSubScenes[i]->load();
+      }
+      else
+      {
+         if (mSubScenes[i]->isLoaded() && mSubScenes[i]->getUnloadTimsMS() == -1)
+         {
+            Con::printf("Scene::processTick() - marked a scene to be unloaded");
+            mSubScenes[i]->setUnloadTimeMS(Sim::getCurrentTime());
+         }
+
+         if (Sim::getCurrentTime() - mSubScenes[i]->getUnloadTimsMS() > 5000)
+            mSubScenes[i]->unload();
+      }
+   }
 }
 
 void Scene::advanceTime(F32 timeDelta)
@@ -257,6 +327,21 @@ bool Scene::saveScene(StringTableEntry fileName)
       fileName = getOriginatingFile();
    }
 
+   //Inform our objects we're saving, so if they do any special stuff
+   //they can do it before the actual write-out
+   for (U32 i = 0; i < mPermanentObjects.size(); i++)
+   {
+      SceneObject* obj = mPermanentObjects[i];
+      obj->onSaving_callback(fileName);
+   }
+
+   //Inform our subscenes we're saving so they can do any
+   //special work required as well
+   for (U32 i = 0; i < mSubScenes.size(); i++)
+   {
+      mSubScenes[i]->save();
+   }
+
    bool saveSuccess = save(fileName);
 
    if (!saveSuccess)
@@ -286,9 +371,12 @@ bool Scene::saveScene(StringTableEntry fileName)
       dSprintf(depValue, sizeof(depValue), "%s=%s", ASSET_ID_SIGNATURE, utilizedAssetsList[i]);
 
       levelAssetDef->setDataField(StringTable->insert(depSlotName), NULL, StringTable->insert(depValue));
-
    }
 
+   //update the gamemode list as well
+
+
+   //Finally, save
    saveSuccess = levelAssetDef->saveAsset();
 
    return saveSuccess;
@@ -413,8 +501,6 @@ DefineEngineMethod(Scene, getLevelAsset, const char*, (), ,
 DefineEngineMethod(Scene, save, bool, (const char* fileName), (""),
    "Save out the object to the given file.\n"
    "@param fileName The name of the file to save to."
-   "@param selectedOnly If true, only objects marked as selected will be saved out.\n"
-   "@param preAppendString Text which will be preprended directly to the object serialization.\n"
    "@param True on success, false on failure.")
 {
    return object->saveScene(StringTable->insert(fileName));

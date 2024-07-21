@@ -12,6 +12,10 @@
 
 #include "scene/sceneObject.h"
 
+#ifndef SUB_SCENE_H
+#include "SubScene.h"
+#endif
+
 /// Scene
 /// This object is effectively a smart container to hold and manage any relevent scene objects and data
 /// used to run things.
@@ -23,7 +27,7 @@ class Scene : public NetObject, public virtual ITickable
 
    Scene* mParentScene;
 
-   Vector<Scene*> mSubScenes;
+   Vector<SubScene*> mSubScenes;
 
    Vector<SceneObject*> mPermanentObjects;
 
@@ -37,7 +41,8 @@ class Scene : public NetObject, public virtual ITickable
 
    bool mEditPostFX;
 
-   StringTableEntry mGameModeName;
+   StringTableEntry mGameModesNames;
+   Vector<GameMode*> mGameModesList;
 
 protected:
    static Scene * smRootScene;
@@ -96,6 +101,8 @@ public:
    }
 
    static Vector<Scene*> smSceneList;
+
+   DECLARE_CALLBACK(void, onSaving, (const char* fileName));
 };
 
 

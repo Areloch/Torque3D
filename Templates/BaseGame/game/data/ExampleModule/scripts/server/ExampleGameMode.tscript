@@ -1,11 +1,5 @@
-function ExampleGameMode::onCreateGame()
-{
-   // Note: The Game object will be cleaned up by MissionCleanup.  Therefore its lifetime is
-   // limited to that of the mission.
-   new ScriptObject(ExampleGameMode){};
-
-   return ExampleGameMode;
-}
+if(!isObject(ExampleGameMode))
+   new GameMode(ExampleGameMode){};
 
 //-----------------------------------------------------------------------------
 // The server has started up so do some game start up
