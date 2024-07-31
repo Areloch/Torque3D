@@ -69,7 +69,7 @@ class LevelAsset : public AssetBase
    bool                    mIsSubLevel;
    StringTableEntry        mMainLevelAsset;
 
-   StringTableEntry        mGamemodeName;
+   StringTableEntry        mGameModesNames;
 
    Vector<AssetBase*>      mAssetDependencies;
 

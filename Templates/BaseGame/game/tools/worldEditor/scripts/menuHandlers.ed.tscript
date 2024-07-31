@@ -329,9 +329,6 @@ function EditorSaveMission()
 
    if(EWorldEditor.isDirty || ETerrainEditor.isMissionDirty)
    {
-      //Inform objects a save is happening, in case there is any special pre-save behavior a class needs to do
-      getScene(0).callOnChildren("onSaving", $Server::MissionFile);
-   
       getScene(0).save($Server::MissionFile);
       
    }

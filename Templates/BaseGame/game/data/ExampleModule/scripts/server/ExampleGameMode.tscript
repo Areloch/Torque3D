@@ -153,6 +153,30 @@ function ExampleGameMode::onInitialControlSet(%this)
    
 }
 
+function ExampleGameMode::onSceneLoaded(%this)
+{
+   echo("===================================");
+   echo("ExampleGameMode - Scene is loaded");  
+}
+
+function ExampleGameMode::onSceneUnloaded(%this)
+{
+   echo("===================================");
+   echo("ExampleGameMode - Scene is unloaded");  
+}
+
+function ExampleGameMode::onSubsceneLoaded(%this)
+{
+   echo("===================================");
+   echo("ExampleGameMode - Subscene is loaded");  
+}
+
+function ExampleGameMode::onSubsceneUnloaded(%this)
+{
+   echo("===================================");
+   echo("ExampleGameMode - Subscene is unloaded");  
+}
+
 function ExampleGameMode::spawnCamera(%this, %client, %spawnPoint)
 {
    // Set the control object to the default camera

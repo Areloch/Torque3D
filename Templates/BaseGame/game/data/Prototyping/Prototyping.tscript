@@ -51,3 +51,15 @@ function Prototyping::onCreateClientConnection(%this)
 function Prototyping::onDestroyClientConnection(%this)
 {
 }
+
+function testDump()
+{
+   %arrayObj = Prototyping.dumpMethods();
+   
+   for(%i=0; %i < %arrayObj.count(); %i++)
+   {
+      echo(%arrayObj.getKey(%i));  
+      echo(%arrayObj.getValue(%i));
+      echo("================================"); 
+   }
+}

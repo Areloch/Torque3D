@@ -2103,6 +2103,14 @@ function EditorTree::onRightMouseUp( %this, %itemId, %mouse, %obj )
                   %popup.enableItem(15, true);
                }
             }
+            else if(%obj.getClassName() $= "SimGroup" || 
+                    %obj.getClassName() $= "SceneGroup")
+            {
+               //if it's ACTUALLY a SimGroup or SceneGroup, have the ability to
+               //upconvert to SubScene  
+               %popup.item[ 12 ] = "-";
+               %popup.item[ 13 ] = "Convert to SubScene" TAB "" TAB "EWorldEditor.createSelectedAsSubScene( " @ %popup.object @ " );";
+            }
          }  
       }
    }

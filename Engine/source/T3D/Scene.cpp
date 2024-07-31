@@ -374,7 +374,7 @@ bool Scene::saveScene(StringTableEntry fileName)
    }
 
    //update the gamemode list as well
-
+   levelAssetDef->setDataField(StringTable->insert("gameModesNames"), NULL, StringTable->insert(mGameModesNames));
 
    //Finally, save
    saveSuccess = levelAssetDef->saveAsset();

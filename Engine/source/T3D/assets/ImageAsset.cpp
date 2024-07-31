@@ -748,7 +748,7 @@ void GuiInspectorTypeImageAssetPtr::setPreviewImage(StringTableEntry assetId)
 IMPLEMENT_CONOBJECT(GuiInspectorTypeImageAssetId);
 
 ConsoleDocClass(GuiInspectorTypeImageAssetId,
-   "@brief Inspector field type for Shapes\n\n"
+   "@brief Inspector field type for Images\n\n"
    "Editor use only.\n\n"
    "@internal"
 );

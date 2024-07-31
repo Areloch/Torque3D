@@ -1,0 +1,105 @@
+function AssetBrowser::createGameMode(%this)
+{
+   %moduleName = AssetBrowser.newAssetSettings.moduleName;
+      
+   %assetName = AssetBrowser.newAssetSettings.assetName;   
+   %assetPath = NewAssetTargetAddress.getText() @ "/";
+   
+   %tamlpath = %assetPath @ %assetName @ ".asset.taml";
+   %scriptPath = %assetPath @ %assetName @ "." @ $TorqueScriptFileExtension;
+   %hlslPath = %assetPath @ %assetName @ "P.hlsl";
+   %glslPath = %assetPath @ %assetName @ "P.glsl";
+   
+   %asset = new PostEffectAsset()
+   {
+      AssetName = %assetName;
+      versionId = 1;
+      scriptFile = %assetName @ "." @ $TorqueScriptFileExtension;
+      hlslShader = %assetName @ "P.hlsl";
+      glslShader = %assetName @ "P.glsl";
+   };
+   
+   TamlWrite(%asset, %tamlpath);
+   
+   %moduleDef = ModuleDatabase.findModule(%moduleName, 1);
+	AssetDatabase.addDeclaredAsset(%moduleDef, %tamlpath);
+
+   %file = new FileObject();
+	%templateFile = new FileObject();
+	
+   %postFXTemplateCodeFilePath = %this.templateFilesPath @ "postFXFile." @ $TorqueScriptFileExtension @ ".template";
+   
+   if(%file.openForWrite(%scriptPath) && %templateFile.openForRead(%postFXTemplateCodeFilePath))
+   {
+      while( !%templateFile.isEOF() )
+      {
+         %line = %templateFile.readline();
+         %line = strreplace( %line, "@@", %assetName );
+         
+         %file.writeline(%line);
+         echo(%line);
+      }
+      
+      %file.close();
+      %templateFile.close();
+   }
+   else
+   {
+      %file.close();
+      %templateFile.close();
+      
+      warnf("CreatePostFXAsset - Something went wrong and we couldn't write the PostFX script file!");
+   }
+   
+   //hlsl shader
+   %postFXTemplateCodeFilePath = %this.templateFilesPath @ "postFXFileP.hlsl.template";
+   
+   if(%file.openForWrite(%hlslPath) && %templateFile.openForRead(%postFXTemplateCodeFilePath))
+   {
+      while( !%templateFile.isEOF() )
+      {
+         %line = %templateFile.readline();
+         %line = strreplace( %line, "@@", %assetName );
+         
+         %file.writeline(%line);
+         echo(%line);
+      }
+      
+      %file.close();
+      %templateFile.close();
+   }
+   else
+   {
+      %file.close();
+      %templateFile.close();
+      
+      warnf("CreatePostFXAsset - Something went wrong and we couldn't write the PostFX hlsl file!");
+   }
+   
+   //glsl shader
+   %postFXTemplateCodeFilePath = %this.templateFilesPath @ "postFXFileP.glsl.template";
+   
+   if(%file.openForWrite(%glslPath) && %templateFile.openForRead(%postFXTemplateCodeFilePath))
+   {
+      while( !%templateFile.isEOF() )
+      {
+         %line = %templateFile.readline();
+         %line = strreplace( %line, "@@", %assetName );
+         
+         %file.writeline(%line);
+         echo(%line);
+      }
+      
+      %file.close();
+      %templateFile.close();
+   }
+   else
+   {
+      %file.close();
+      %templateFile.close();
+      
+      warnf("CreatePostFXAsset - Something went wrong and we couldn't write the PostFX glsl file!");
+   }
+   
+	return %tamlpath;
+}

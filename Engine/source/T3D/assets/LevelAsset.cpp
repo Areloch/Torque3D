@@ -49,7 +49,7 @@
 
 IMPLEMENT_CONOBJECT(LevelAsset);
 
-ConsoleType(LevelAssetPtr, TypeLevelAssetPtr, const char*, ASSET_ID_FIELD_PREFIX)
+ConsoleType(LevelAssetPtr, TypeLevelAssetPtr, const char*, "")
 
 //-----------------------------------------------------------------------------
 
@@ -115,7 +115,7 @@ LevelAsset::LevelAsset() : AssetBase(), mIsSubLevel(false)
    mForestPath = StringTable->EmptyString();
    mNavmeshPath = StringTable->EmptyString();
 
-   mGamemodeName = StringTable->EmptyString();
+   mGameModesNames = StringTable->EmptyString();
    mMainLevelAsset = StringTable->EmptyString();
 
    mEditorFile = StringTable->EmptyString();
@@ -158,7 +158,7 @@ void LevelAsset::initPersistFields()
       &setBakedSceneFile, &getBakedSceneFile, "Path to the level file with the objects generated as part of the baking process");
 
    addField("isSubScene", TypeBool, Offset(mIsSubLevel, LevelAsset), "Is this a sublevel to another Scene");
-   addField("gameModeName", TypeString, Offset(mGamemodeName, LevelAsset), "Name of the Game Mode to be used with this level");
+   addField("gameModesNames", TypeString, Offset(mGameModesNames, LevelAsset), "Name of the Game Mode to be used with this level");
 }
 
 //------------------------------------------------------------------------------
@@ -526,7 +526,7 @@ bool GuiInspectorTypeLevelAssetPtr::updateRects()
 IMPLEMENT_CONOBJECT(GuiInspectorTypeLevelAssetId);
 
 ConsoleDocClass(GuiInspectorTypeLevelAssetId,
-   "@brief Inspector field type for Shapes\n\n"
+   "@brief Inspector field type for Levels\n\n"
    "Editor use only.\n\n"
    "@internal"
 );
@@ -535,5 +535,5 @@ void GuiInspectorTypeLevelAssetId::consoleInit()
 {
    Parent::consoleInit();
 
-   ConsoleBaseType::getType(TypeImageAssetId)->setInspectorFieldType("GuiInspectorTypeLevelAssetId");
+   ConsoleBaseType::getType(TypeLevelAssetId)->setInspectorFieldType("GuiInspectorTypeLevelAssetId");
 }

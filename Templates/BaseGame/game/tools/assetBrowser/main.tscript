@@ -110,6 +110,7 @@ function initializeAssetBrowser()
    exec("./scripts/assetTypes/looseFiles." @ $TorqueScriptFileExtension); 
    exec("./scripts/assetTypes/prefab." @ $TorqueScriptFileExtension); 
    exec("./scripts/assetTypes/creatorObj." @ $TorqueScriptFileExtension); 
+   exec("./scripts/assetTypes/gameMode." @ $TorqueScriptFileExtension); 
    
    new ScriptObject( AssetBrowserPlugin )
    {

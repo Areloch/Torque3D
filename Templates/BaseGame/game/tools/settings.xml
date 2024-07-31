@@ -41,7 +41,7 @@
             <Setting
                 name="doubleClickAction">Edit Asset</Setting>
             <Setting
-                name="LastPosExt">0 634 1560 360</Setting>
+                name="LastPosExt">0 1047 2024 360</Setting>
             <Setting
                 name="previewTileSize">1</Setting>
             <Setting
@@ -368,11 +368,17 @@
         <Setting
             name="EditorLayoutMode">Modern</Setting>
         <Setting
+            name="forceLoadDAE">0</Setting>
+        <Setting
             name="forceSidebarToSide">1</Setting>
+        <Setting
+            name="lastEditedLevel">ExampleModule:NewLevelTest</Setting>
         <Setting
             name="orthoFOV">1.21430779</Setting>
         <Setting
             name="orthoShowGrid">1</Setting>
+        <Setting
+            name="recentLevelsList">ExampleModule:NewLevelTest</Setting>
         <Setting
             name="startupMode">Blank Level</Setting>
         <Setting

@@ -91,3 +91,8 @@ function UI::registerGameMenus(%this, %menusArrayObj)
 {
    %menusArrayObj.add("System", SystemMenu);
 }
+
+function listLevelsAndGameModes()
+{
+   
+}
