@@ -79,7 +79,7 @@ function AssetBrowser_addModuleWindow::CreateNewModule(%this)
          %line = strreplace( %line, "@@", %newModuleName );
          
          %file.writeline(%line);
-         echo(%line);
+         //echo(%line);
       }
       
       %file.close();

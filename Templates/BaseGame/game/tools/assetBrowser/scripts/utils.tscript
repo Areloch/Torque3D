@@ -1,309 +1,254 @@
-function ToolUtilityScripts::appendLineToFunction(%nameSpace, %functionName, %append)
+function testRpl()
 {
-   if ( $ProjectImporter::fileObject.openForRead( %file ) ) 
+   ToolUtilityScripts::appendLineToFunction("data/prototyping/prototyping.tscript", "Prototyping", "onDestroyGameServer", "//AAAAAAAAAAAAAAAAAAAAA");
+}
+
+function Tools::appendLineToFunction(%file, %nameSpace, %functionName, %appendLine)
+{
+   %fileOutput = new ArrayObject(){};
+   %fileObj = new FileObject(){};
+   
+   %insideFunction = false;
+   %scopeDepth = 0;
+   
+   if ( %fileObj.openForRead( %file ) ) 
+   {
+      while ( !%fileObj.isEOF() ) 
       {
-         echo("Processing File: " @ %file);
-         echo("-------------------------------------");
+         %line = %fileObj.readLine();
          
-         while ( !$ProjectImporter::fileObject.isEOF() ) 
+         if(strIsMatchExpr("*function *(*)*", %line))
          {
-            %line = $ProjectImporter::fileObject.readLine();
+            %fileOutput.add(%line);
             
-            if(strIsMatchExpr("*new *(*)*", %line))
+            %start = strpos(%line, "function ");
+            %end = strpos(%line, "(", %start);
+            
+            %scannedFunctionName = "";
+
+            if(%start != -1 && %end != -1)
             {
-               %start = strpos(%line, "new ");
-               %end = strpos(%line, "(", %start);
-
-               if(%start != -1 && %end != -1)
-               {
-                  %className = getSubStr(%line, %start + 4, %end-%start-4);
-               }
-               
-               if(%className $= "")
-               {
-                  //we clearly have some unusual formatting, potentially a programmatic 
-                  //object block creation going on here. so we'll just skip it and move on  
-                  %currentFileSectionObject.add(%line);
-                  continue;
-               }
-               
-               %nameEnd = strpos(%line, ")", %end);
-               
-               %objectName = getSubStr(%line, %end+1, %nameEnd-%end-1);
-               
-               %parentName = "";
-               %inheritanceSplit = strpos(%objectName, ":");
-               if(%inheritanceSplit != -1)
-               {
-                  %parentName = getSubStr(%objectName, %inheritanceSplit + 1);
-                  %objectName = getSubStr(%objectName, 0, %inheritanceSplit);
-               }
-               
-               %objectName = trim(%objectName);
-               
-               %parentFileSectionObject = %currentFileSectionObject;
-               
-               %currentFileSectionObject = new ArrayObject();
-               %currentFileSectionObject.elementType = "object";
-               %currentFileSectionObject.classType = %className;
-               %currentFileSectionObject.objectName = %objectName;
-               %currentFileSectionObject.parentName = %parentName;
-               %currentFileSectionObject.fileName = %file;
-               %currentFileSectionObject.skip = false;
-               %currentFileSectionObject.fileDestination = %rootFileSectionObject.fileDestination;
-               %insideObjectBlock = true;
-               
-               %currentFileSectionObject.add(%line);
-
-               %parentFileSectionObject.add(%currentFileSectionObject);
-               %currentFileSectionObject.parentElement = %parentFileSectionObject;
-               
-               //Now for a sanity check, see if we kill the object on the same line as we make it
-               //sometimes people try and be 'efficient' with their code linecount wise
-               if(strIsMatchExpr("*};*", %line))
-               {
-                  %currentFileSectionObject = %parentFileSectionObject;
-                  
-                  %insideFunction = false;
-                  %insideObjectBlock = false;
-                  
-                  if(%currentFileSectionObject.elementType $= "function")
-                     %insideFunction = true;
-                  if(%currentFileSectionObject.elementType $= "object")
-                     %insideObjectBlock = true;
-               }
+               %scannedFunctionName = getSubStr(%line, %start + 9, %end-%start-9);
             }
-            else if(strIsMatchExpr("*datablock *(*)*", %line))
+            
+            %matchesFunctionSig = false;
+            if(%nameSpace !$= "")
             {
-               %start = strpos(%line, "datablock ");
-               %end = strpos(%line, "(", %start);
-
-               if(%start != -1 && %end != -1)
-               {
-                  %className = getSubStr(%line, %start + 10, %end-%start-10);
-               }
-               
-               if(%className $= "")
-               {
-                  //we clearly have some unusual formatting, potentially a programmatic 
-                  //object block creation going on here. so we'll just skip it and move on  
-                  %currentFileSectionObject.add(%line);
-                  continue;
-               }
-               
-               %nameEnd = strpos(%line, ")", %end);
-               
-               %objectName = getSubStr(%line, %end+1, %nameEnd-%end-1);
-               
-               %parentName = "";
-               %inheritanceSplit = strpos(%objectName, ":");
-               if(%inheritanceSplit != -1)
-               {
-                  %parentName = getSubStr(%objectName, %inheritanceSplit + 1);
-                  %objectName = getSubStr(%objectName, 0, %inheritanceSplit);
-               }
-               
-               %objectName = trim(%objectName);
-               
-               %parentFileSectionObject = %currentFileSectionObject;
-               
-               %currentFileSectionObject = new ArrayObject();
-               %currentFileSectionObject.elementType = "object";
-               %currentFileSectionObject.classType = %className;
-               %currentFileSectionObject.objectName = %objectName;
-               %currentFileSectionObject.parentName = %parentName;
-               %currentFileSectionObject.fileName = %file;
-               %currentFileSectionObject.skip = false;
-               %currentFileSectionObject.fileDestination = %rootFileSectionObject.fileDestination;
-               %insideObjectBlock = true;
-               
-               %currentFileSectionObject.add(%line);
-
-               %parentFileSectionObject.add(%currentFileSectionObject);
-               %currentFileSectionObject.parentElement = %parentFileSectionObject;
-               
-               //Now for a sanity check, see if we kill the object on the same line as we make it
-               //sometimes people try and be 'efficient' with their code linecount wise
-               if(strIsMatchExpr("*};*", %line))
-               {
-                  %currentFileSectionObject = %parentFileSectionObject;
-                  
-                  %insideFunction = false;
-                  %insideObjectBlock = false;
-                  
-                  if(%currentFileSectionObject.elementType $= "function")
-                     %insideFunction = true;
-                  if(%currentFileSectionObject.elementType $= "object")
-                     %insideObjectBlock = true;
-               }
-            }
-            else if(strIsMatchExpr("*singleton *(*)*", %line))
-            {
-               %start = strpos(%line, "singleton ");
-               %end = strpos(%line, "(", %start);
-
-               if(%start != -1 && %end != -1)
-               {
-                  %className = getSubStr(%line, %start + 10, %end-%start-10);
-               }
-               
-               if(%className $= "")
-               {
-                  //we clearly have some unusual formatting, potentially a programmatic 
-                  //object block creation going on here. so we'll just skip it and move on  
-                  %currentFileSectionObject.add(%line);
-                  continue;
-               }
-               
-               %nameEnd = strpos(%line, ")", %end);
-               
-               %objectName = getSubStr(%line, %end+1, %nameEnd-%end-1);
-               
-               %parentName = "";
-               %inheritanceSplit = strpos(%objectName, ":");
-               if(%inheritanceSplit != -1)
-               {
-                  %parentName = getSubStr(%objectName, %inheritanceSplit + 1);
-                  %objectName = getSubStr(%objectName, 0, %inheritanceSplit);
-               }
-
-               %objectName = trim(%objectName);
-
-               %parentFileSectionObject = %currentFileSectionObject;
-               
-               %currentFileSectionObject = new ArrayObject();
-               %currentFileSectionObject.elementType = "object";
-               %currentFileSectionObject.classType = %className;
-               %currentFileSectionObject.objectName = %objectName;
-               %currentFileSectionObject.parentName = %parentName;
-               %currentFileSectionObject.fileName = %file;
-               %currentFileSectionObject.skip = false;
-               %currentFileSectionObject.fileDestination = %rootFileSectionObject.fileDestination;
-               %insideObjectBlock = true;
-               
-               %currentFileSectionObject.add(%line);
-
-               %parentFileSectionObject.add(%currentFileSectionObject);
-               %currentFileSectionObject.parentElement = %parentFileSectionObject;
-               
-               //Now for a sanity check, see if we kill the object on the same line as we make it
-               //sometimes people try and be 'efficient' with their code linecount wise
-               if(strIsMatchExpr("*};*", %line))
-               {
-                  %currentFileSectionObject = %parentFileSectionObject;
-                  
-                  %insideFunction = false;
-                  %insideObjectBlock = false;
-                  
-                  if(%currentFileSectionObject.elementType $= "function")
-                     %insideFunction = true;
-                  if(%currentFileSectionObject.elementType $= "object")
-                     %insideObjectBlock = true;
-               }
-            }
-            else if(strIsMatchExpr("*function *(*)*", %line))
-            {
-               %start = strpos(%line, "function ");
-               %end = strpos(%line, "(", %start);
-
-               if(%start != -1 && %end != -1)
-               {
-                  %functionName = getSubStr(%line, %start + 9, %end-%start-9);
-               }
-               
-               %parentFileSectionObject = %currentFileSectionObject;
-               
-               %currentFileSectionObject = new ArrayObject();
-               %currentFileSectionObject.elementType = "function";
-               %currentFileSectionObject.functionName = %functionName;
-               %currentFileSectionObject.fileDestination = %rootFileSectionObject.fileDestination;
-               %currentFileSectionObject.scopeDepth = 0;
-               
-               %insideFunction = true;
-               %insideObjectBlock = false;
-               
-               %currentFileSectionObject.add(%line);
-               
-               %parentFileSectionObject.add(%currentFileSectionObject);
-               %currentFileSectionObject.parentElement = %parentFileSectionObject;
-               
-               if(strIsMatchExpr("*{*", %line))
-               {
-                  %currentFileSectionObject.scopeDepth++;
-               }
-               if(strIsMatchExpr("*}*", %line))
-               {
-                  %currentFileSectionObject.scopeDepth--;
-                  
-                  if(%currentFileSectionObject.scopeDepth == 0) //we've fully backed out of the function scope, so resolve back to the parent
-                  {
-                     %currentFileSectionObject = %parentFileSectionObject;
-                  
-                     %insideFunction = false;
-                     %insideObjectBlock = false;
-                     
-                     if(%currentFileSectionObject.elementType $= "function")
-                        %insideFunction = true;
-                     if(%currentFileSectionObject.elementType $= "object")
-                        %insideObjectBlock = true;
-                  }
-               }
-            }
+               if(%scannedFunctionName $= (%nameSpace @ "::" @ %functionName))
+                  %matchesFunctionSig = true;
+            }  
             else
             {
-               %currentFileSectionObject.add(%line);
+               if(%scannedFunctionName $= %functionName)
+                  %matchesFunctionSig = true;
+            }
+            
+            if(!%matchesFunctionSig)
+               continue;
                
-               if(%insideFunction && strIsMatchExpr("*{*", %line))
+            %insideFunction = true;
+               
+            if(strIsMatchExpr("*{*", %line))
+            {
+               %scopeDepth++;
+            }
+            if(strIsMatchExpr("*}*", %line))
+            {
+               %scopeDepth--;
+            }
+         }
+         else
+         {
+            if(%insideFunction && strIsMatchExpr("*{*", %line))
+            {
+               %scopeDepth++;
+            }
+            if(%insideFunction && strIsMatchExpr("*}*", %line))
+            {
+               %scopeDepth--;
+               
+               if(%scopeDepth == 0) //we've fully backed out of the function scope, so resolve back to the parent
                {
-                  %currentFileSectionObject.scopeDepth++;
-               }
-               if(%insideFunction && strIsMatchExpr("*}*", %line))
-               {
-                  %currentFileSectionObject.scopeDepth--;
-                  
-                  if(%currentFileSectionObject.scopeDepth == 0) //we've fully backed out of the function scope, so resolve back to the parent
-                  {
-                     %currentFileSectionObject = %parentFileSectionObject;
-                  
-                     %insideFunction = false;
-                     %insideObjectBlock = false;
-                     
-                     if(%currentFileSectionObject.elementType $= "function")
-                        %insideFunction = true;
-                     if(%currentFileSectionObject.elementType $= "object")
-                        %insideObjectBlock = true;
-                  }
-               }
-               else if(%insideObjectBlock && strIsMatchExpr("*};*", %line) && !strIsMatchExpr("*\"*};*\";*", %line))
-               {
-                  %currentFileSectionObject = %parentFileSectionObject;
-                  
                   %insideFunction = false;
-                  %insideObjectBlock = false;
-                  
-                  if(%currentFileSectionObject.elementType $= "function")
-                     %insideFunction = true;
-                  if(%currentFileSectionObject.elementType $= "object")
-                     %insideObjectBlock = true;
+
+                  %fileOutput.add(%appendLine);
                }
-               else if(!%insideFunction && !%insideObjectBlock)
+            }
+            
+            %fileOutput.add(%line);
+         }
+      }
+      %fileObj.close();
+   }
+   
+   if ( %fileObj.openForWrite( %file ) )
+   {
+      for(%i=0; %i < %fileOutput.count(); %i++)
+      {
+         %line = %fileOutput.getKey(%i);
+         
+         %fileObj.writeLine(%line);  
+      }
+      %fileObj.close();
+   }
+}
+
+function Tools::findInFile(%file, %findText, %startingLineId)
+{
+   if(%startingLineId $= "")
+      %startingLineId = 0;
+      
+   %fileObj = new FileObject(){};
+      
+   if ( %fileObj.openForRead( %file ) ) 
+   {
+      %lineId = 0;
+      while ( !%fileObj.isEOF() ) 
+      {
+         if(%lineId >= %startingLineId)
+         {
+            %line = %fileObj.readLine();
+            
+            if(strIsMatchExpr(%findText, %line))
+            {
+               return %lineId;
+            }
+         }
+         
+         %lineId++;
+      }
+      %fileObj.close();
+   }
+   
+   return -1;
+}
+
+function Tools::findInFunction(%file, %nameSpace, %functionName, %findText)
+{
+   %fileObj = new FileObject(){};
+   
+   %insideFunction = false;
+   %scopeDepth = 0;
+   
+   if ( %fileObj.openForRead( %file ) ) 
+   {
+      %lineId = -1;
+      while ( !%fileObj.isEOF() ) 
+      {
+         %line = %fileObj.readLine();
+         %lineId++;
+         
+         if(strIsMatchExpr("*function *(*)*", %line))
+         {
+            %start = strpos(%line, "function ");
+            %end = strpos(%line, "(", %start);
+            
+            %scannedFunctionName = "";
+
+            if(%start != -1 && %end != -1)
+            {
+               %scannedFunctionName = getSubStr(%line, %start + 9, %end-%start-9);
+            }
+            
+            %matchesFunctionSig = false;
+            if(%nameSpace !$= "")
+            {
+               if(%scannedFunctionName $= (%nameSpace @ "::" @ %functionName))
+                  %matchesFunctionSig = true;
+            }  
+            else
+            {
+               if(%scannedFunctionName $= %functionName)
+                  %matchesFunctionSig = true;
+            }
+            
+            if(!%matchesFunctionSig)
+               continue;
+               
+            %insideFunction = true;
+               
+            if(strIsMatchExpr("*{*", %line))
+            {
+               %scopeDepth++;
+            }
+            if(strIsMatchExpr("*}*", %line))
+            {
+               %scopeDepth--;
+            }
+         }
+         else
+         {
+            if(%insideFunction && strIsMatchExpr("*{*", %line))
+            {
+               %scopeDepth++;
+            }
+            if(%insideFunction && strIsMatchExpr("*}*", %line))
+            {
+               %scopeDepth--;
+               
+               if(%scopeDepth == 0) //we've fully backed out of the function scope, so resolve back to the parent
                {
-                  if(strIsMatchExpr("*/\**", %line))
-                  {
-                     %insideCommentBlock = true;
-                  }
-                  else if(%insideCommentBlock && strIsMatchExpr("*\*/*", %line))
-                  {
-                     %insideCommentBlock = false;
-                  }
-                  else if(!%insideCommentBlock && !strIsMatchExpr("*//*", %line))
-                  {
-                     %rootFileSectionObject.hasNonCommentFloatingCode = true;
-                  }
+                  %insideFunction = false;
+                  break;
                }
+            }
+            
+            if(%insideFunction && strIsMatchExpr(%findText, %line))
+            {
+               break;
             }
          }
       }
-      
-      $ProjectImporter::fileObject.close();
+      %fileObj.close();
+   }
+   
+   return %lineId;
+}
+
+function Tools::insertInFile(%file, %insertLineId, %insertText, %insertBefore)
+{
+   %fileOutput = new ArrayObject(){};
+   %fileObj = new FileObject(){};
+
+   if ( %fileObj.openForRead( %file ) ) 
+   {
+      %lineId = 0;
+      while ( !%fileObj.isEOF() ) 
+      {
+         %line = %fileObj.readLine();
+         
+         if(%insertLineId == %lineId)
+         {
+            if(!%insertBefore || %insertBefore $= "")
+            {
+               %fileOutput.add(%line);
+               %fileOutput.add(%insertText);
+            }
+            else
+            {
+               %fileOutput.add(%insertText);
+               %fileOutput.add(%line);
+            }
+         }
+         else
+         {
+            %fileOutput.add(%line);
+         }
+         
+         %lineId++;
+      }
+      %fileObj.close();
+   }
+   
+   if ( %fileObj.openForWrite( %file ) )
+   {
+      for(%i=0; %i < %fileOutput.count(); %i++)
+      {
+         %line = %fileOutput.getKey(%i);
+         echo(%line);
+         
+         %fileObj.writeLine(%line);  
+      }
+      %fileObj.close();
+   }
 }

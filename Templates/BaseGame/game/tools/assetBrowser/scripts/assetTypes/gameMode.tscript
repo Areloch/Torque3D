@@ -5,29 +5,12 @@ function AssetBrowser::createGameMode(%this)
    %assetName = AssetBrowser.newAssetSettings.assetName;   
    %assetPath = NewAssetTargetAddress.getText() @ "/";
    
-   %tamlpath = %assetPath @ %assetName @ ".asset.taml";
    %scriptPath = %assetPath @ %assetName @ "." @ $TorqueScriptFileExtension;
-   %hlslPath = %assetPath @ %assetName @ "P.hlsl";
-   %glslPath = %assetPath @ %assetName @ "P.glsl";
-   
-   %asset = new PostEffectAsset()
-   {
-      AssetName = %assetName;
-      versionId = 1;
-      scriptFile = %assetName @ "." @ $TorqueScriptFileExtension;
-      hlslShader = %assetName @ "P.hlsl";
-      glslShader = %assetName @ "P.glsl";
-   };
-   
-   TamlWrite(%asset, %tamlpath);
-   
-   %moduleDef = ModuleDatabase.findModule(%moduleName, 1);
-	AssetDatabase.addDeclaredAsset(%moduleDef, %tamlpath);
 
    %file = new FileObject();
 	%templateFile = new FileObject();
 	
-   %postFXTemplateCodeFilePath = %this.templateFilesPath @ "postFXFile." @ $TorqueScriptFileExtension @ ".template";
+   %postFXTemplateCodeFilePath = %this.templateFilesPath @ "gameMode." @ $TorqueScriptFileExtension @ ".template";
    
    if(%file.openForWrite(%scriptPath) && %templateFile.openForRead(%postFXTemplateCodeFilePath))
    {
@@ -37,7 +20,6 @@ function AssetBrowser::createGameMode(%this)
          %line = strreplace( %line, "@@", %assetName );
          
          %file.writeline(%line);
-         echo(%line);
       }
       
       %file.close();
@@ -48,58 +30,67 @@ function AssetBrowser::createGameMode(%this)
       %file.close();
       %templateFile.close();
       
-      warnf("CreatePostFXAsset - Something went wrong and we couldn't write the PostFX script file!");
+      warnf("createGameMode - Something went wrong and we couldn't write the gameMode script file!");
    }
    
-   //hlsl shader
-   %postFXTemplateCodeFilePath = %this.templateFilesPath @ "postFXFileP.hlsl.template";
+   //Inject and execute the script file for our module
+   %moduleDef = ModuleDatabase.findModule(%moduleName, 1);
    
-   if(%file.openForWrite(%hlslPath) && %templateFile.openForRead(%postFXTemplateCodeFilePath))
+   %execLine = "   %this.queueExec(\"" @ %scriptPath @ "\");";
+   
+   %moduleScriptPath = %moduleDef.ModuleScriptFilePath @ "." @ $TorqueScriptFileExtension;
+   
+   echo("Attempting exec insert for file: " @ %moduleScriptPath);
+   
+   %lineIdx = Tools::findInFile(%moduleScriptPath, "*function*" @ %moduleName @ "::initClient*");
+   if(%lineIdx != -1)
    {
-      while( !%templateFile.isEOF() )
+      echo("INIT CLIENT FUNCTION LINE FOUND ON: " @ %lineIdx);
+      
+      %insertLineIdx = Tools::findInFunction(%moduleScriptPath, %moduleName, "initClient", "*//--FILE EXEC END--*");
+      echo("FILE EXEC END LINE FOUND ON: " @ %insertLineIdx);
+      
+      if(%insertLineIdx == -1)
       {
-         %line = %templateFile.readline();
-         %line = strreplace( %line, "@@", %assetName );
-         
-         %file.writeline(%line);
-         echo(%line);
+         //If there are not 'blocking' comments, then just slap the exec on the end of the function def
+         //as it doesn't really matter now
+         Tools::appendLineToFunction(%moduleScriptPath, %moduleName, "initClient", %execLine);
       }
-      
-      %file.close();
-      %templateFile.close();
-   }
-   else
-   {
-      %file.close();
-      %templateFile.close();
-      
-      warnf("CreatePostFXAsset - Something went wrong and we couldn't write the PostFX hlsl file!");
-   }
-   
-   //glsl shader
-   %postFXTemplateCodeFilePath = %this.templateFilesPath @ "postFXFileP.glsl.template";
-   
-   if(%file.openForWrite(%glslPath) && %templateFile.openForRead(%postFXTemplateCodeFilePath))
-   {
-      while( !%templateFile.isEOF() )
+      else
       {
-         %line = %templateFile.readline();
-         %line = strreplace( %line, "@@", %assetName );
-         
-         %file.writeline(%line);
-         echo(%line);
+         Tools::insertInFile(%moduleScriptPath, %insertLineIdx, %execLine, true);
       }
-      
-      %file.close();
-      %templateFile.close();
-   }
-   else
-   {
-      %file.close();
-      %templateFile.close();
-      
-      warnf("CreatePostFXAsset - Something went wrong and we couldn't write the PostFX glsl file!");
    }
    
-	return %tamlpath;
+   %lineIdx = Tools::findInFile(%moduleScriptPath, "*function*" @ %moduleName @ "::initServer*");
+   if(%lineIdx != -1)
+   {
+      echo("INIT SERVER FUNCTION LINE FOUND ON: " @ %lineIdx);
+      
+      %insertLineIdx = Tools::findInFunction(%moduleScriptPath, %moduleName, "initServer", "*//--FILE EXEC END--*");
+      echo("FILE EXEC END LINE FOUND ON: " @ %insertLineIdx);
+      
+      if(%insertLineIdx == -1)
+      {
+         //If there are not 'blocking' comments, then just slap the exec on the end of the function def
+         //as it doesn't really matter now
+         Tools::appendLineToFunction(%moduleScriptPath, %moduleName, "initServer", %execLine);
+      }
+      else
+      {
+         Tools::insertInFile(%moduleScriptPath, %insertLineIdx, %execLine, true);
+      }
+   }
+   
+   //and we'll go ahead and force execute the script file so the gamemode is 'available' for use immediately
+   exec(%scriptPath);
+   
+   if(isObject(%assetName))
+   {
+      //it's possible it got moved to an instant group upon execution, so we'll just 
+      //shove it back to the RootGroup by force to be 100% sure
+      RootGroup.add(%assetName); 
+   }
+   
+	return %scriptPath;
 }

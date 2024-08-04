@@ -2150,7 +2150,7 @@ function EditorTree::isValidDragTarget( %this, %id, %obj )
    if( %obj.name $= "CameraBookmarks" )
       return EWorldEditor.areAllSelectedObjectsOfType( "CameraBookmark" );
    else
-      return ( %obj.getClassName() $= "SimGroup" || %obj.isMemberOfClass("Scene"));
+      return ( %obj.getClassName() $= "SimGroup" || %obj.isMemberOfClass("Scene") || %obj.isMemberOfClass("SceneGroup"));
 }
 
 function EditorTree::onBeginReparenting( %this )
@@ -2590,6 +2590,77 @@ function EWorldEditor::addSimGroup( %this, %groupCurrentSelection )
    %this.syncGui();
 }
 
+function EWorldEditor::addSceneGroup( %this, %groupCurrentSelection )
+{
+   %activeSelection = %this.getActiveSelection();
+   if ( %groupCurrentSelection && %activeSelection.getObjectIndex( getScene(0) ) != -1 )
+   {
+      toolsMessageBoxOK( "Error", "Cannot add Scene to a new SceneGroup" );
+      return;
+   }
+
+   // Find our parent.
+
+   %parent = getScene(0);
+   if( !%groupCurrentSelection && isObject( %activeSelection ) && %activeSelection.getCount() > 0 )
+   {
+      %firstSelectedObject = %activeSelection.getObject( 0 );
+      if( %firstSelectedObject.isMemberOfClass( "SimGroup" ) )
+         %parent = %firstSelectedObject;
+      else if( %firstSelectedObject.getId() != getScene(0).getId() )
+         %parent = %firstSelectedObject.parentGroup;
+   }
+   
+   // If we are about to do a group-selected as well,
+   // starting recording an undo compound.
+   
+   if( %groupCurrentSelection )
+      Editor.getUndoManager().pushCompound( "Group Selected" );
+   
+   // Create the SimGroup.
+   
+   %object = new SceneGroup()
+   {
+      parentGroup = %parent;
+   };
+   MECreateUndoAction::submit( %object );
+   
+   // Put selected objects into the group, if requested.
+   
+   if( %groupCurrentSelection && isObject( %activeSelection ) )
+   {
+      %undo = UndoActionReparentObjects::create( EditorTree );
+      
+      %numObjects = %activeSelection.getCount();
+      for( %i = 0; %i < %numObjects; %i ++ )
+      {
+         %sel = %activeSelection.getObject( %i );
+         %undo.add( %sel, %sel.parentGroup, %object );
+         %object.add( %sel );
+      }
+      
+      %undo.addToManager( Editor.getUndoManager() );
+   }
+      
+   // Stop recording for group-selected.
+   
+   if( %groupCurrentSelection )
+      Editor.getUndoManager().popCompound();
+   
+   // When not grouping selection, make the newly created SimGroup the
+   // current selection.
+   
+   if( !%groupCurrentSelection )
+   {
+      EWorldEditor.clearSelection();
+      EWorldEditor.selectObject( %object );
+   }
+
+   // Refresh the Gui.
+   
+   %this.syncGui();
+}
+
 function EWorldEditor::toggleLockChildren( %this, %simGroup )
 {
    foreach( %child in %simGroup )
@@ -2853,6 +2924,16 @@ function EWAddSimGroupButton::onDefaultClick( %this )
 function EWAddSimGroupButton::onCtrlClick( %this )
 {
    EWorldEditor.addSimGroup( true );
+}
+
+function EWAddSceneGroupButton::onDefaultClick( %this )
+{
+   EWorldEditor.addSceneGroup();
+}
+
+function EWAddSceneGroupButton::onCtrlClick( %this )
+{
+   EWorldEditor.addSceneGroup( true );
 }
 
 //------------------------------------------------------------------------------

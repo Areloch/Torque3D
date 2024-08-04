@@ -55,6 +55,7 @@ void GameMode::initPersistFields()
      Parent::initPersistFields();
 
      addField("gameModeName", TypeString, Offset(mGameModeName, GameMode), "Human-readable name of the gamemode");
+     addField("active", TypeBool, Offset(mIsActive, GameMode), "Is the gamemode active");
 }
 
 bool GameMode::onAdd()
@@ -101,6 +102,40 @@ void GameMode::setActive(const bool& active)
       onActivated_callback();
    else
       onDeactivated_callback();
+}
+
+DefineEngineMethod(GameMode, isActive, bool, (), ,
+   "Returns if the GameMode is currently active.\n"
+   "@return The active status of the GameMode")
+{
+   return object->isActive();
+}
+
+DefineEngineMethod(GameMode, setActive, void, (bool active), (true),
+   "Sets the active state of the GameMode.\n"
+   "@param active A bool of the state the GameMode should be set to")
+{
+   object->setActive(active);
+}
+
+DefineEngineFunction(getListOfGameModes, const char*, (), , "")
+{
+   char* returnBuffer = Con::getReturnBuffer(1024);
+
+   String formattedList;
+
+   for (SimGroup::iterator itr = Sim::getRootGroup()->begin(); itr != Sim::getRootGroup()->end(); itr++)
+   {
+      GameMode* gm = dynamic_cast<GameMode*>(*itr);
+      if (gm)
+      {
+         formattedList += String(gm->getName()) + ";";
+      }
+   }
+
+   dSprintf(returnBuffer, 1024, "%s", formattedList.c_str());
+
+   return returnBuffer;
 }
 
 //-----------------------------------------------------------------------------
