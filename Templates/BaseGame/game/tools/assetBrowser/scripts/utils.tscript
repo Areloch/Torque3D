@@ -245,7 +245,6 @@ function Tools::insertInFile(%file, %insertLineId, %insertText, %insertBefore)
       for(%i=0; %i < %fileOutput.count(); %i++)
       {
          %line = %fileOutput.getKey(%i);
-         echo(%line);
          
          %fileObj.writeLine(%line);  
       }

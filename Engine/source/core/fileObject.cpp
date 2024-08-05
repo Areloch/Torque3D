@@ -112,6 +112,11 @@ bool FileObject::openForWrite(const char *fileName, const bool append)
    if( !buffer[ 0 ] )
       return false;
 
+   if (!Torque::Path(buffer).isValid())
+   {
+      Con::errorf("Invalid file write location. start with either\n getMainDotCsDir(), getUserDataDirectory(), or getUserHomeDirectory()");
+      return false;
+   }
    if((mStream = FileStream::createAndOpen( fileName, append ? Torque::FS::File::WriteAppend : Torque::FS::File::Write )) == NULL)
       return false;
 

@@ -21,7 +21,8 @@
 //-----------------------------------------------------------------------------
 
 #include "core/util/path.h"
-
+#include "platform/platform.h"
+#include "console/console.h"
 
 namespace Torque
 {
@@ -368,6 +369,17 @@ bool Path::isRelative() const
 bool Path::isAbsolute() const
 {
    return (!mPath.isEmpty() && mPath.c_str()[0] == '/');
+}
+
+
+bool Path::isValid() const
+{
+   getFullPath();
+   if (mFullPath.isEmpty()) return false;
+   if (mFullPath.startsWith(Platform::getUserHomeDirectory()) || mFullPath.startsWith(Platform::getUserDataDirectory()) || mFullPath.startsWith(Platform::getMainDotCsDir()))
+      return true;
+
+   return false;
 }
 
 U32 Path::getDirectoryCount() const

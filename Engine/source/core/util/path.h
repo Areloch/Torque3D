@@ -113,6 +113,7 @@ public:
    bool isDirectory() const;
    bool isRelative() const;
    bool isAbsolute() const;
+   bool isValid() const;
    
    /// Appends the argument's path component to the object's
    /// path component. The object's root, filename and
@@ -142,7 +143,6 @@ String PathToPlatform(String file);
 /// Convert file/path name to use OS standard path separator
 ///@ingroup VolumeSystem
 String PathToOS(String file);
-
 } // Namespace
 #endif
 

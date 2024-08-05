@@ -1,18 +1,20 @@
 function AssetBrowser::createGameMode(%this)
 {
    %moduleName = AssetBrowser.newAssetSettings.moduleName;
+   %moduleDef = ModuleDatabase.findModule(%moduleName, 1);
       
    %assetName = AssetBrowser.newAssetSettings.assetName;   
    %assetPath = NewAssetTargetAddress.getText() @ "/";
    
    %scriptPath = %assetPath @ %assetName @ "." @ $TorqueScriptFileExtension;
+   %fullScriptPath = makeFullPath(%scriptPath);
 
    %file = new FileObject();
 	%templateFile = new FileObject();
 	
    %postFXTemplateCodeFilePath = %this.templateFilesPath @ "gameMode." @ $TorqueScriptFileExtension @ ".template";
    
-   if(%file.openForWrite(%scriptPath) && %templateFile.openForRead(%postFXTemplateCodeFilePath))
+   if(%file.openForWrite(%fullScriptPath) && %templateFile.openForRead(%postFXTemplateCodeFilePath))
    {
       while( !%templateFile.isEOF() )
       {
@@ -32,13 +34,11 @@ function AssetBrowser::createGameMode(%this)
       
       warnf("createGameMode - Something went wrong and we couldn't write the gameMode script file!");
    }
+
+   %localScriptPath = strReplace(%scriptPath, "data/" @ %moduleName @ "/", "./");
+   %execLine = "   %this.queueExec(\"" @ %localScriptPath @ "\");";
    
-   //Inject and execute the script file for our module
-   %moduleDef = ModuleDatabase.findModule(%moduleName, 1);
-   
-   %execLine = "   %this.queueExec(\"" @ %scriptPath @ "\");";
-   
-   %moduleScriptPath = %moduleDef.ModuleScriptFilePath @ "." @ $TorqueScriptFileExtension;
+   %moduleScriptPath = makeFullPath(%moduleDef.ModuleScriptFilePath @ "." @ $TorqueScriptFileExtension);
    
    echo("Attempting exec insert for file: " @ %moduleScriptPath);
    
