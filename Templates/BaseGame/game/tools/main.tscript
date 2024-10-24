@@ -189,6 +189,7 @@ function onStart()
    //Any common tool modules
    ModuleDatabase.scanModules( "tools", false );
    ModuleDatabase.LoadGroup( "Tools" );
+   callOnModules("initEditor", "Tools");
    
    //Now that we're done loading, we can set the instant group back
    popInstantGroup();

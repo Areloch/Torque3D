@@ -29,19 +29,29 @@ function initializeRoadEditor()
    exec( "./RoadEditorToolbar.gui");
    exec( "./roadEditorGui." @ $TorqueScriptFileExtension );
    
-   // Add ourselves to EditorGui, where all the other tools reside
-   RoadEditorGui.setVisible( false ); 
-   RoadEditorOptionsWindow.setVisible( false );
-   RoadEditorTreeWindow.setVisible( false );
+   /*if(!isObject(SplinesEditorTabPage))
+   {
+      %editorTab = new GuiTabPageCtrl(SplinesEditorTabPage) {
+         position = "0 18";
+         extent = MainSceneTabPanel.extent.x SPC MainSceneTabPanel.extent.y - 18;
+         horizSizing = "width";
+         vertSizing = "height";
+         profile = ToolsGuiTabPageProfile;
+         text = "Splines Editor";
+      };
+      
+      EditorGuiMainTabBook.add(%editorTab);
+   }
    
-   MainSceneTabPanel.add( RoadEditorGui );
-   MainSceneTabPanel.add( RoadEditorOptionsWindow );
-   MainSceneTabPanel.add( RoadEditorTreeWindow );
+   SplinesEditorTabPage.add( RoadEditorGui );
+   SplinesEditorTabPage.add( RoadEditorOptionsWindow );
+   SplinesEditorTabPage.add( RoadEditorTreeWindow );*/
    
    new ScriptObject( RoadEditorPlugin )
    {
       superClass = "EditorPlugin";
       editorGui = RoadEditorGui;
+      editorTab = SplinesEditorTabPage;
    };
    
    %map = new ActionMap();
@@ -89,16 +99,14 @@ function RoadEditorPlugin::onActivated( %this )
 {
    %this.readSettings();
    
+   %this.editorTab.select();
+   
    ToolsPaletteArray->RoadEditorAddRoadMode.performClick();
    EditorGui.bringToFront( RoadEditorGui );
    
-   RoadEditorGui.setVisible( true );
    RoadEditorGui.makeFirstResponder( true );
    EditorGuiToolbarStack.remove( EWorldEditorToolbar );
    EditorGuiToolbarStack.add( RoadEditorToolbar );
-   
-   RoadEditorOptionsWindow.setVisible( true );
-   RoadEditorTreeWindow.setVisible( true );
    
    RoadTreeView.open(ServerDecalRoadSet,true);
    
@@ -114,14 +122,10 @@ function RoadEditorPlugin::onActivated( %this )
 function RoadEditorPlugin::onDeactivated( %this )
 {
    %this.writeSettings();
-   
-   RoadEditorGui.setVisible( false );
-   
+
    EditorGuiToolbarStack.add( EWorldEditorToolbar );
    EditorGuiToolbarStack.remove( RoadEditorToolbar );
 
-   RoadEditorOptionsWindow.setVisible( false );
-   RoadEditorTreeWindow.setVisible( false );
    %this.map.pop();
    
    Parent::onDeactivated(%this);

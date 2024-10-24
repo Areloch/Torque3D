@@ -1,0 +1,11 @@
+<ModuleDefinition
+    ModuleId="splineEditor"
+    VersionId="1"
+    Group="Tools"
+    scriptFile="splineEditor.tscript"
+    CreateFunction="onCreate"
+    DestroyFunction="onDestroy">
+    <DeclaredAssets
+        Extension="asset.taml"
+        Recurse="true"/>
+</ModuleDefinition>

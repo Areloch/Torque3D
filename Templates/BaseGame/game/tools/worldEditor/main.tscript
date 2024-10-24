@@ -90,6 +90,7 @@ function initializeWorldEditor()
    {
       superClass = "WorldEditorPlugin";
       editorGui = EWorldEditor;
+      editorTab = MainSceneEditorTab;
    };   
    
    new ScriptObject( TerrainEditorPlugin )

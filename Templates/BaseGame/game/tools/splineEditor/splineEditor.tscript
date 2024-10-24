@@ -1,0 +1,204 @@
+function SplineEditor::onCreate(%this)
+{
+}
+
+function SplineEditor::onDestroy(%this)
+{
+}
+
+function SplineEditor::initEditor(%this)
+{
+   echo( " - Initializing Splines Editor" );
+   
+   //exec( "./roadEditor." @ $TorqueScriptFileExtension );
+   exec( "./SplinesEditorGui.gui" );
+   exec( "./guis/splineEditorToolbar.ed.gui");
+   //exec( "./roadEditorGui." @ $TorqueScriptFileExtension );
+   
+   if(!isObject(SplinesEditorTabPage))
+   {
+      %editorTab = new GuiTabPageCtrl(SplinesEditorTabPage) {
+         position = "0 18";
+         extent = MainSceneTabPanel.extent.x SPC MainSceneTabPanel.extent.y - 18;
+         horizSizing = "width";
+         vertSizing = "height";
+         profile = ToolsGuiTabPageProfile;
+         text = "Splines Editor";
+      };
+      
+      EditorGuiMainTabBook.add(%editorTab);
+   }
+   
+   SplinesEditorTabPage.add( SplinesEditorGui );
+   SplinesEditorTabPage.add( SplineEditorToolbar );
+   
+   new ScriptObject( SplinesEditorPlugin )
+   {
+      superClass = "EditorPlugin";
+      editorGui = SplinesEditorGui;
+      editorTab = SplinesEditorTabPage;
+   };
+   
+   %map = new ActionMap();
+   %map.bindCmd( keyboard, "backspace", "SplinesEditorGui.onDeleteKey();", "" );
+   %map.bindCmd( keyboard, "1", "SplinesEditorGui.prepSelectionMode();", "" );  
+   %map.bindCmd( keyboard, "2", "ToolsPaletteArray->SplinesEditorMoveMode.performClick();", "" );  
+   %map.bindCmd( keyboard, "4", "ToolsPaletteArray->SplinesEditorScaleMode.performClick();", "" );  
+   %map.bindCmd( keyboard, "5", "ToolsPaletteArray->SplinesEditorAddRoadMode.performClick();", "" );  
+   %map.bindCmd( keyboard, "=", "ToolsPaletteArray->SplinesEditorInsertPointMode.performClick();", "" );  
+   %map.bindCmd( keyboard, "numpadadd", "ToolsPaletteArray->SplinesEditorInsertPointMode.performClick();", "" );  
+   %map.bindCmd( keyboard, "-", "ToolsPaletteArray->SplinesEditorRemovePointMode.performClick();", "" );  
+   %map.bindCmd( keyboard, "numpadminus", "ToolsPaletteArray->SplinesEditorRemovePointMode.performClick();", "" );  
+   %map.bindCmd( keyboard, "z", "SplinesEditorShowSplineBtn.performClick();", "" );  
+   %map.bindCmd( keyboard, "x", "SplinesEditorWireframeBtn.performClick();", "" );  
+   %map.bindCmd( keyboard, "v", "SplinesEditorShowRoadBtn.performClick();", "" ); 
+   SplinesEditorPlugin.map = %map;
+   
+   SplinesEditorPlugin.initSettings();  
+}
+
+function SplinesEditorPlugin::onWorldEditorStartup( %this )
+{  
+   // Add ourselves to the window menu.
+   %accel = EditorGui.addToEditorsMenu( "Road and Path Editor", "", SplinesEditorPlugin );      
+   
+   // Add ourselves to the ToolsToolbar
+   %tooltip = "Road Editor (" @ %accel @ ")";   
+   EditorGui.addToToolsToolbar( "SplinesEditorPlugin", "SplinesEditorPalette", "ToolsModule:road_path_editor_n_image", %tooltip );
+   
+   //connect editor windows
+   GuiWindowCtrl::attach( SplinesEditorOptionsWindow, SplinesEditorTreeWindow);
+   
+   // Add ourselves to the Editor Settings window
+   exec( "./SplinesEditorSettingsTab.gui" );
+   //ESettingsWindow.addTabPage( ESplinesEditorSettingsPage );
+   
+   ESettingsWindow.addEditorSettingsPage("SplinesEditor", "Decal Road Editor");
+}
+
+function SplinesEditorPlugin::onActivated( %this )
+{
+   %this.readSettings();
+   
+   %this.editorTab.select();
+   
+   ToolsPaletteArray->SplinesEditorAddRoadMode.performClick();
+   EditorGui.bringToFront( SplinesEditorGui );
+   
+   SplinesEditorGui.makeFirstResponder( true );
+   //EditorGuiToolbarStack.remove( EWorldEditorToolbar );
+   //EditorGuiToolbarStack.add( SplinesEditorToolbar );
+   
+   RoadTreeView.open(ServerDecalRoadSet,true);
+   
+   %this.map.push();
+
+   // Set the status bar here until all tool have been hooked up
+   EditorGuiStatusBar.setInfo("Decal Road Editor.");
+   EditorGuiStatusBar.setSelection("");
+   
+   Parent::onActivated(%this);
+}
+
+function SplinesEditorPlugin::onDeactivated( %this )
+{
+   %this.writeSettings();
+
+   //EditorGuiToolbarStack.add( EWorldEditorToolbar );
+   //EditorGuiToolbarStack.remove( SplinesEditorToolbar );
+
+   %this.map.pop();
+   
+   Parent::onDeactivated(%this);
+}
+
+function SplinesEditorPlugin::onEditMenuSelect( %this, %editMenu )
+{
+   %hasSelection = false;
+   
+   if( isObject( SplinesEditorGui.road ) )
+      %hasSelection = true;
+   
+   %editMenu.enableItem( 3, false ); // Cut
+   %editMenu.enableItem( 4, false ); // Copy
+   %editMenu.enableItem( 5, false ); // Paste 
+   %editMenu.enableItem( 6, %hasSelection ); // Delete
+   %editMenu.enableItem( 8, false ); // Deselect 
+}
+
+function SplinesEditorPlugin::handleDelete( %this )
+{
+   SplinesEditorGui.onDeleteKey();
+}
+
+function SplinesEditorPlugin::handleEscape( %this )
+{
+   return SplinesEditorGui.onEscapePressed();  
+}
+
+function SplinesEditorPlugin::isDirty( %this )
+{
+   return SplinesEditorGui.isDirty;
+}
+
+function SplinesEditorPlugin::onSaveMission( %this, %missionFile )
+{
+   if( SplinesEditorGui.isDirty )
+   {
+      getScene(0).save( %missionFile );
+      SplinesEditorGui.isDirty = false;
+   }
+}
+
+function SplinesEditorPlugin::setEditorFunction( %this )
+{
+   %terrainExists = parseMissionGroup( "TerrainBlock" );
+
+   if( %terrainExists == false )
+      toolsMessageBoxYesNoCancel("No Terrain","Would you like to create a New Terrain?", "AssetBrowser.setupCreateNewAsset(\"TerrainAsset\", AssetBrowser.selectedModule, createTerrainBlock);");
+   
+   return %terrainExists;
+}
+
+//-----------------------------------------------------------------------------
+// Settings
+//-----------------------------------------------------------------------------
+
+function SplinesEditorPlugin::initSettings( %this )
+{
+   EditorSettings.beginGroup( "SplinesEditor", true );
+   
+   EditorSettings.setDefaultValue(  "DefaultWidth",         "10" );
+   EditorSettings.setDefaultValue(  "HoverSplineColor",     "255 0 0 255" );
+   EditorSettings.setDefaultValue(  "SelectedSplineColor",  "0 255 0 255" );
+   EditorSettings.setDefaultValue(  "HoverNodeColor",       "255 255 255 255" ); //<-- Not currently used
+   EditorSettings.setDefaultValue(  "MaterialName",         "DefaultDecalRoadMaterial" );
+   
+   EditorSettings.endGroup();
+}
+
+function SplinesEditorPlugin::readSettings( %this )
+{
+   EditorSettings.beginGroup( "SplinesEditor", true );
+   
+   SplinesEditorGui.DefaultWidth         = EditorSettings.value("DefaultWidth");
+   SplinesEditorGui.HoverSplineColor     = EditorSettings.value("HoverSplineColor");
+   SplinesEditorGui.SelectedSplineColor  = EditorSettings.value("SelectedSplineColor");
+   SplinesEditorGui.HoverNodeColor       = EditorSettings.value("HoverNodeColor");
+   SplinesEditorGui.materialName         = EditorSettings.value("MaterialName");   
+   
+   EditorSettings.endGroup();  
+}
+
+function SplinesEditorPlugin::writeSettings( %this )
+{
+   EditorSettings.beginGroup( "SplinesEditor", true );
+   
+   EditorSettings.setValue( "DefaultWidth",           SplinesEditorGui.DefaultWidth );
+   EditorSettings.setValue( "HoverSplineColor",       SplinesEditorGui.HoverSplineColor );
+   EditorSettings.setValue( "SelectedSplineColor",    SplinesEditorGui.SelectedSplineColor );
+   EditorSettings.setValue( "HoverNodeColor",         SplinesEditorGui.HoverNodeColor );
+   EditorSettings.setValue( "MaterialName",           SplinesEditorGui.materialName );
+   
+   EditorSettings.endGroup();
+}

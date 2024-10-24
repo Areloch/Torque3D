@@ -31,19 +31,27 @@ function initializeDecalEditor()
    exec( "./decalEditorGui." @ $TorqueScriptFileExtension );
    exec( "./decalEditorActions." @ $TorqueScriptFileExtension );
    
-   // Add ourselves to EditorGui, where all the other tools reside
-   DecalEditorGui.setVisible( false ); 
-   DecalPreviewWindow.setVisible( false );  
-   DecalEditorWindow.setVisible( false );
-   MainSceneTabPanel.add( DecalEditorGui );
-   MainSceneTabPanel.add( DecalEditorWindow );
-   MainSceneTabPanel.add( DecalPreviewWindow );
+   %editorTab = new GuiTabPageCtrl(DecalEditorTabPage) {
+      position = "0 18";
+      extent = MainSceneTabPanel.extent.x SPC MainSceneTabPanel.extent.y - 18;
+      horizSizing = "width";
+      vertSizing = "height";
+      profile = ToolsGuiTabPageProfile;
+      text = "Decal Editor";
+   };
+   
+   EditorGuiMainTabBook.add(%editorTab);
+   
+   %editorTab.add( DecalEditorGui );
+   %editorTab.add( DecalEditorWindow );
+   %editorTab.add( DecalPreviewWindow );
    DecalEditorTabBook.selectPage( 0 );
    
    new ScriptObject( DecalEditorPlugin )
    {
       superClass = "EditorPlugin";
       editorGui = DecalEditorGui;
+      editorTab = DecalEditorTabPage;
    };
    
    %map = new ActionMap();      
@@ -89,11 +97,7 @@ function DecalEditorPlugin::onWorldEditorStartup( %this )
 
 function DecalEditorPlugin::onActivated( %this )
 {   
-   EditorGui.bringToFront( DecalEditorGui );
-   DecalEditorGui.setVisible( true );
-   DecalEditorGui.makeFirstResponder( true );
-   DecalPreviewWindow.setVisible( true );
-   DecalEditorWindow.setVisible( true );
+   %this.editorTab.select();
    
    %this.map.push();
    
@@ -123,10 +127,6 @@ function DecalEditorPlugin::onActivated( %this )
 
 function DecalEditorPlugin::onDeactivated( %this )
 {   
-   DecalEditorGui.setVisible(false);
-   DecalPreviewWindow.setVisible( false );
-   DecalEditorWindow.setVisible( false );
-   
    %this.map.pop();
    
    // Remember last palette selection

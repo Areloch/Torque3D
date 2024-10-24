@@ -29,19 +29,31 @@ function initializeRiverEditor()
    exec( "./RiverEditorToolbar.gui" );
    exec( "./riverEditorGui." @ $TorqueScriptFileExtension );
    
-   // Add ourselves to EditorGui, where all the other tools reside
-   RiverEditorGui.setVisible( false );  
-   RiverEditorOptionsWindow.setVisible( false );
-   RiverEditorTreeWindow.setVisible( false );
+   // Add windows to editor gui
+   //make the tab for our editorstuffs
+   /*if(!isObject(SplinesEditorTabPage))
+   {
+      %editorTab = new GuiTabPageCtrl(SplinesEditorTabPage) {
+         position = "0 18";
+         extent = MainSceneTabPanel.extent.x SPC MainSceneTabPanel.extent.y - 18;
+         horizSizing = "width";
+         vertSizing = "height";
+         profile = ToolsGuiTabPageProfile;
+         text = "Splines Editor";
+      };
+      
+      EditorGuiMainTabBook.add(%editorTab);
+   }
    
-   MainSceneTabPanel.add( RiverEditorGui );
-   MainSceneTabPanel.add( RiverEditorOptionsWindow );
-   MainSceneTabPanel.add( RiverEditorTreeWindow );
+   SplinesEditorTabPage.add( RiverEditorGui );
+   SplinesEditorTabPage.add( RiverEditorOptionsWindow );
+   SplinesEditorTabPage.add( RiverEditorTreeWindow );*/
    
    new ScriptObject( RiverEditorPlugin )
    {
       superClass = "EditorPlugin";
       editorGui = RiverEditorGui;
+      editorTab = SplinesEditorTabPage;
    };
    
    %map = new ActionMap();
@@ -90,19 +102,17 @@ function RiverEditorPlugin::onActivated( %this )
 {
    %this.readSettings();
    
+   %this.editorTab.select();
+   
    $River::EditorOpen = true;   
    
    ToolsPaletteArray->RiverEditorAddRiverMode.performClick();
    EditorGui.bringToFront( RiverEditorGui );
    
-   RiverEditorGui.setVisible(true);
    RiverEditorGui.makeFirstResponder( true );
    
    EditorGuiToolbarStack.remove( EWorldEditorToolbar );
    EditorGuiToolbarStack.add( RiverEditorToolbar );
-   
-   RiverEditorOptionsWindow.setVisible( true );
-   RiverEditorTreeWindow.setVisible( true );
    
    RiverTreeView.open(ServerRiverSet,true);
    %this.map.push();
@@ -131,13 +141,9 @@ function RiverEditorPlugin::onDeactivated( %this )
    
    $River::EditorOpen = false;   
    
-   RiverEditorGui.setVisible(false);
-   
    EditorGuiToolbarStack.add( EWorldEditorToolbar );
    EditorGuiToolbarStack.remove( RiverEditorToolbar );
 
-   RiverEditorOptionsWindow.setVisible( false );
-   RiverEditorTreeWindow.setVisible( false );
    %this.map.pop();
    
    // Restore the previous Gizmo

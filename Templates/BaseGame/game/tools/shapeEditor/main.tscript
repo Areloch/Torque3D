@@ -43,22 +43,31 @@ function initializeShapeEditor()
    exec("./scripts/shapeEditorActions.ed." @ $TorqueScriptFileExtension);
 
    // Add windows to editor gui
-   ShapeEdPreviewGui.setVisible(false);
-   ShapeEdAnimWindow.setVisible(false);
-   ShapeEdSelectWindow.setVisible(false);
-   ShapeEdPropWindow.setVisible(false);
+   //make the tab for our editorstuffs
+   %editorTab = new GuiTabPageCtrl() {
+      position = "0 18";
+      extent = MainSceneTabPanel.extent.x SPC MainSceneTabPanel.extent.y - 18;
+      horizSizing = "width";
+      vertSizing = "height";
+      profile = ToolsGuiTabPageProfile;
+      text = "Shape Editor";
+   };
+   
+   EditorGuiMainTabBook.add(%editorTab);
 
-   MainSceneTabPanel.add(ShapeEdPreviewGui);
-   MainSceneTabPanel.add(ShapeEdAnimWindow);
-   MainSceneTabPanel.add(ShapeEdAdvancedWindow);
+   %editorTab.add(ShapeEdPreviewGui);
+   %editorTab.add(ShapeEdAnimWindow);
+   %editorTab.add(ShapeEdAdvancedWindow);
 
-   MainSceneTabPanel.add(ShapeEdSelectWindow);
-   MainSceneTabPanel.add(ShapeEdPropWindow);
+   %editorTab.add(ShapeEdSelectWindow);
+   %editorTab.add(ShapeEdPropWindow);
+   %editorTab.add(ShapeEditorToolbar);
 
    new ScriptObject(ShapeEditorPlugin)
    {
       superClass = "EditorPlugin";
       editorGui = ShapeEdShapeView;
+      editorTab = %editorTab;
    };
 
    %map = new ActionMap();
@@ -161,6 +170,8 @@ function ShapeEditorPlugin::open(%this, %shapeAsset)
    {
       // Activate the Shape Editor
       EditorGui.setEditor( %this, true );
+      
+      %this.editorTab.select();
 
       // Get editor settings (note the sun angle is not configured in the settings
       // dialog, so apply the settings here instead of in readSettings)
@@ -181,10 +192,6 @@ function ShapeEditorPlugin::open(%this, %shapeAsset)
       ShapeEdShapeTreeView.open(getScene(0));
       ShapeEdShapeTreeView.buildVisibleTree(true);
 
-      ShapeEdPreviewGui.setVisible(true);
-      ShapeEdSelectWindow.setVisible(true);
-      ShapeEdPropWindow.setVisible(true);
-      ShapeEdAnimWindow.setVisible(true);
       ShapeEdAdvancedWindow.setVisible(ShapeEditorToolbar-->showAdvanced.getValue());
       MainSceneTabPanel.bringToFront(ShapeEdPreviewGui);
 
@@ -253,8 +260,8 @@ function ShapeEditorPlugin::onActivated(%this)
       }
    }
    
-   EditorGuiToolbarStack.remove( EWorldEditorToolbar );
-   EditorGuiToolbarStack.add( ShapeEditorToolbar );
+   //EditorGuiToolbarStack.remove( EWorldEditorToolbar );
+   //EditorGuiToolbarStack.add( ShapeEditorToolbar );
 }
 
 function ShapeEditorPlugin::initStatusBar(%this)
@@ -275,15 +282,9 @@ function ShapeEditorPlugin::onDeactivated(%this)
 
    ShapeEdMaterials.updateSelectedMaterial(false);
    
-   EditorGuiToolbarStack.add( EWorldEditorToolbar );
-   EditorGuiToolbarStack.remove( ShapeEditorToolbar );
+   //EditorGuiToolbarStack.add( EWorldEditorToolbar );
+   //EditorGuiToolbarStack.remove( ShapeEditorToolbar );
 
-   ShapeEdPreviewGui.setVisible(false);
-   ShapeEdSelectWindow.setVisible(false);
-   ShapeEdPropWindow.setVisible(false);
-   ShapeEdAnimWindow.setVisible(false);
-   ShapeEdAdvancedWindow.setVisible(false);
-   
    if( EditorGui-->MatEdPropertiesWindow.visible )
    {
       ShapeEdMaterials.editSelectedMaterialEnd( true );

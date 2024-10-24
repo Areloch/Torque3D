@@ -39,22 +39,35 @@ function initializeNavEditor()
    exec("./NavEditorToolbar.gui");
    exec("./NavEditorConsoleDlg.gui");
    exec("./CreateNewNavMeshDlg.gui");
+   
+   %editorTab = new GuiTabPageCtrl(NavigationEditorTabPage) {
+      position = "0 18";
+      extent = MainSceneTabPanel.extent.x SPC MainSceneTabPanel.extent.y - 18;
+      horizSizing = "width";
+      vertSizing = "height";
+      profile = ToolsGuiTabPageProfile;
+      text = "Navigation Editor";
+   };
+   
+   EditorGuiMainTabBook.add(%editorTab);
 
    // Add ourselves to EditorGui, where all the other tools reside
-   NavEditorGui.setVisible(false);  
-   NavEditorOptionsWindow.setVisible(false);
-   NavEditorTreeWindow.setVisible(false);
-   NavEditorConsoleDlg.setVisible(false);
+   //NavEditorGui.setVisible(false);  
+   //NavEditorOptionsWindow.setVisible(false);
+   //NavEditorTreeWindow.setVisible(false);
+   //NavEditorConsoleDlg.setVisible(false);
 
-   MainSceneTabPanel.add(NavEditorGui);
-   MainSceneTabPanel.add(NavEditorOptionsWindow);
-   MainSceneTabPanel.add(NavEditorTreeWindow);
-   MainSceneTabPanel.add(NavEditorConsoleDlg);
+   %editorTab.add(NavEditorGui);
+   %editorTab.add(NavEditorOptionsWindow);
+   %editorTab.add(NavEditorTreeWindow);
+   %editorTab.add(NavEditorConsoleDlg);
+   %editorTab.add(NavEditorToolbar);
 
    new ScriptObject(NavEditorPlugin)
    {
       superClass = "EditorPlugin";
       editorGui = NavEditorGui;
+      editorTab = %editorTab;
    };
 
    // Bind shortcuts for the nav editor.
@@ -93,9 +106,9 @@ function NavEditorPlugin::onWorldEditorStartup(%this)
    // Add items to World Editor Creator
    ObjectCreator.beginGroup("Navigation");
 
-      ObjectCreator.registerMissionObject("CoverPoint", "Cover point");
-      ObjectCreator.registerMissionObject("NavPath", "Nav Path");
-	  ObjectCreator.registerMissionObject("NavMesh", "Navigation mesh");
+   ObjectCreator.registerMissionObject("CoverPoint", "Cover point");
+   ObjectCreator.registerMissionObject("NavPath", "Nav Path");
+   ObjectCreator.registerMissionObject("NavMesh", "Navigation mesh");
 
    ObjectCreator.endGroup();
 }
@@ -110,6 +123,8 @@ function ENavEditorSettingsPage::init(%this)
 
 function NavEditorPlugin::onActivated(%this)
 {
+   %this.editorTab.select();
+   
    %this.readSettings();
 
    // Set a global variable so everyone knows we're editing!
@@ -117,15 +132,15 @@ function NavEditorPlugin::onActivated(%this)
 
    // Start off in Select mode.
    ToolsPaletteArray->NavEditorSelectMode.performClick();
-   EditorGui.bringToFront(NavEditorGui);
+   //EditorGui.bringToFront(NavEditorGui);
 
-   NavEditorGui.setVisible(true);
-   NavEditorGui.makeFirstResponder(true);
-   EditorGuiToolbarStack.remove( EWorldEditorToolbar );
-   EditorGuiToolbarStack.add( NavEditorToolbar );
+   //NavEditorGui.setVisible(true);
+   //NavEditorGui.makeFirstResponder(true);
+   //EditorGuiToolbarStack.remove( EWorldEditorToolbar );
+   //EditorGuiToolbarStack.add( NavEditorToolbar );
 
-   NavEditorOptionsWindow.setVisible(true);
-   NavEditorTreeWindow.setVisible(true);
+   //NavEditorOptionsWindow.setVisible(true);
+   //NavEditorTreeWindow.setVisible(true);
 
    // Inspect the ServerNavMeshSet, which contains all the NavMesh objects
    // in the mission.
@@ -165,13 +180,13 @@ function NavEditorPlugin::onDeactivated(%this)
 
    $Nav::EditorOpen = false;   
 
-   NavEditorGui.setVisible(false);
+   //NavEditorGui.setVisible(false);
 
-   EditorGuiToolbarStack.add( EWorldEditorToolbar );
-   EditorGuiToolbarStack.remove( NavEditorToolbar );
+   //EditorGuiToolbarStack.add( EWorldEditorToolbar );
+   //EditorGuiToolbarStack.remove( NavEditorToolbar );
 
-   NavEditorOptionsWindow.setVisible(false);
-   NavEditorTreeWindow.setVisible(false);
+   //NavEditorOptionsWindow.setVisible(false);
+   //NavEditorTreeWindow.setVisible(false);
    %this.map.pop();
 
    // Restore the previous Gizmo alignment settings.

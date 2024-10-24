@@ -29,22 +29,29 @@ function initializeConvexEditor()
    exec( "./convexEditorToolbar.ed.gui" );
    exec( "./convexEditorGui." @ $TorqueScriptFileExtension );
    exec( "./convexEditorSidebarGui.gui" );
-
-   ConvexEditorGui.setVisible( false );  
-   ConvexEditorOptionsWindow.setVisible( false );  
-   ConvexEditorTreeWindow.setVisible( false ); 
    
-   ConvexEditorOptionsWindow.setVisible( false );
+   %editorTab = new GuiTabPageCtrl(ConvexEditorTabPage) {
+      position = "0 18";
+      extent = MainSceneTabPanel.extent.x SPC MainSceneTabPanel.extent.y - 18;
+      horizSizing = "width";
+      vertSizing = "height";
+      profile = ToolsGuiTabPageProfile;
+      text = "Convex Editor";
+   };
    
-   MainSceneTabPanel.add( ConvexEditorGui );
-   MainSceneTabPanel.add( ConvexEditorOptionsWindow );
-   MainSceneTabPanel.add( ConvexEditorTreeWindow );
-   MainSceneTabPanel.add( ConvexEditorOptionsWindow );
+   EditorGuiMainTabBook.add(%editorTab);
+   
+   %editorTab.add( ConvexEditorGui );
+   %editorTab.add( ConvexEditorOptionsWindow );
+   %editorTab.add( ConvexEditorTreeWindow );
+   %editorTab.add( ConvexEditorOptionsWindow );
+   %editorTab.add( ConvexEditorToolbar );
       
    new ScriptObject( ConvexEditorPlugin )
    {
       superClass = "EditorPlugin";
       editorGui = ConvexEditorGui;
+      editorTab = %editorTab;
    };
       
    // Note that we use the WorldEditor's Toolbar.
@@ -99,13 +106,11 @@ function ConvexEditorPlugin::onActivated( %this )
 {   
    %this.readSettings();
    
-   EditorGui.bringToFront( ConvexEditorGui );
-   ConvexEditorGui.setVisible( true );
+   %this.editorTab.select();
    
-   EditorGuiToolbarStack.remove( EWorldEditorToolbar );
-   EditorGuiToolbarStack.add( ConvexEditorToolbar );
+   //EditorGuiToolbarStack.remove( EWorldEditorToolbar );
+   //EditorGuiToolbarStack.add( ConvexEditorToolbar );
    
-   ConvexEditorOptionsWindow.setVisible( true );
    ConvexEditorGui.makeFirstResponder( true ); 
    %this.map.push();   
    
@@ -137,13 +142,8 @@ function ConvexEditorPlugin::onDeactivated( %this )
 {    
    %this.writeSettings();
    
-   ConvexEditorGui.setVisible( false );
-   
-   EditorGuiToolbarStack.add( EWorldEditorToolbar );
-   EditorGuiToolbarStack.remove( ConvexEditorToolbar );
-
-   ConvexEditorTreeWindow.setVisible( false );
-   ConvexEditorOptionsWindow.setVisible( false );
+   //EditorGuiToolbarStack.add( EWorldEditorToolbar );
+   //EditorGuiToolbarStack.remove( ConvexEditorToolbar );
    %this.map.pop();
    
    // Remove our menu.

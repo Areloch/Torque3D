@@ -1,0 +1,46 @@
+function initializeTerrainEditor()
+{
+   echo(" % - Initializing Terrain Editor");
+   
+  // $decalDataFile = "data/managedDecalData." @ $TorqueScriptFileExtension;
+     
+   //exec( "./decalEditor." @ $TorqueScriptFileExtension );
+   ////exec( "./decalEditorGui.gui" );
+   //exec( "./decalEditorGui." @ $TorqueScriptFileExtension );
+  // exec( "./decalEditorActions." @ $TorqueScriptFileExtension );
+   
+   %editorTab = new GuiTabPageCtrl(TerrainEditorTabPage) {
+      position = "0 18";
+      extent = MainSceneTabPanel.extent.x SPC MainSceneTabPanel.extent.y - 18;
+      horizSizing = "width";
+      vertSizing = "height";
+      profile = ToolsGuiTabPageProfile;
+      text = "Terrain Editor";
+   };
+   
+   EditorGuiMainTabBook.add(%editorTab);
+   
+   /*%editorTab.add( DecalEditorGui );
+   //%editorTab.add( DecalEditorWindow );
+   %editorTab.add( DecalPreviewWindow );
+   DecalEditorTabBook.selectPage( 0 );*/
+   
+   new ScriptObject( TerrainEditorPlugin )
+   {
+      superClass = "EditorPlugin";
+      editorGui = DecalEditorGui;
+      editorTab = TerrainEditorTabPage;
+   };
+   
+   /*%map = new ActionMap();      
+   %map.bindCmd( keyboard, "5", "EDecalEditorAddDecalBtn.performClick();", "" );  
+   %map.bindCmd( keyboard, "1", "EDecalEditorSelectDecalBtn.performClick();", "" );  
+   %map.bindCmd( keyboard, "2", "EDecalEditorMoveDecalBtn.performClick();", "" );  
+   %map.bindCmd( keyboard, "3", "EDecalEditorRotateDecalBtn.performClick();", "" );  
+   %map.bindCmd( keyboard, "4", "EDecalEditorScaleDecalBtn.performClick();", "" );
+   
+   DecalEditorPlugin.map = %map;*/
+   
+   //new PersistenceManager( DecalPMan );  
+    
+}

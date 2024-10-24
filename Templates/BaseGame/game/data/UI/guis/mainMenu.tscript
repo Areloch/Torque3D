@@ -10,6 +10,8 @@ function MainMenuGui::onWake(%this)
    $MenuList = MainMenuButtonList;
    $MenuList.listPosition = 0;
    
+   callOnModules("onMainMenuLoaded");
+   
    $MenuList.syncGui();
 }
 

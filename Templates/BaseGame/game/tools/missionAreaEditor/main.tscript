@@ -28,19 +28,31 @@ function initializeMissionAreaEditor()
    exec( "./missionAreaEditorGui.ed.gui" );
    exec( "./missionAreaEditorGui.ed." @ $TorqueScriptFileExtension );
    
-   // Add ourselves to EditorGui, where all the other tools reside
-   MissionAreaEditorGui.setVisible( false );  
-   MissionAreaEditorTerrainWindow.setVisible( false );
-   MissionAreaEditorPropertiesWindow.setVisible( false );
+   %editorTab = new GuiTabPageCtrl(MissionAreaEditorTabPage) {
+      position = "0 18";
+      extent = MainSceneTabPanel.extent.x SPC MainSceneTabPanel.extent.y - 18;
+      horizSizing = "width";
+      vertSizing = "height";
+      profile = ToolsGuiTabPageProfile;
+      text = "Mission Area Editor";
+   };
    
-   MainSceneTabPanel.add( MissionAreaEditorGui );
-   MainSceneTabPanel.add( MissionAreaEditorTerrainWindow );
-   MainSceneTabPanel.add( MissionAreaEditorPropertiesWindow );
+   EditorGuiMainTabBook.add(%editorTab);
+   
+   // Add ourselves to EditorGui, where all the other tools reside
+   //MissionAreaEditorGui.setVisible( false );  
+   //MissionAreaEditorTerrainWindow.setVisible( false );
+   //MissionAreaEditorPropertiesWindow.setVisible( false );
+   
+   %editorTab.add( MissionAreaEditorGui );
+   %editorTab.add( MissionAreaEditorTerrainWindow );
+   %editorTab.add( MissionAreaEditorPropertiesWindow );
    
    new ScriptObject( MissionAreaEditorPlugin )
    {
       superClass = "EditorPlugin";
       editorGui = MissionAreaEditorGui;
+      editorTab = %editorTab;
    };
 
    MissionAreaEditorPlugin.initSettings();
@@ -65,15 +77,17 @@ function MissionAreaEditorPlugin::onWorldEditorStartup( %this )
 
 function MissionAreaEditorPlugin::onActivated( %this )
 {
+   %this.editorTab.select();
+   
    %this.readSettings();
    
    EditorGui.bringToFront( MissionAreaEditorGui );
    
-   MissionAreaEditorGui.setVisible(true);
-   MissionAreaEditorGui.makeFirstResponder( true );
+   //MissionAreaEditorGui.setVisible(true);
+   //MissionAreaEditorGui.makeFirstResponder( true );
    
-   MissionAreaEditorTerrainWindow.setVisible( true );
-   MissionAreaEditorPropertiesWindow.setVisible( true );
+   //MissionAreaEditorTerrainWindow.setVisible( true );
+   //MissionAreaEditorPropertiesWindow.setVisible( true );
    
    // Set the status bar here until all tool have been hooked up
    EditorGuiStatusBar.setInfo("Mission Area Editor.");
@@ -89,9 +103,9 @@ function MissionAreaEditorPlugin::onDeactivated( %this )
 {
    %this.writeSettings();
    
-   MissionAreaEditorGui.setVisible(false);
-   MissionAreaEditorTerrainWindow.setVisible( false );
-   MissionAreaEditorPropertiesWindow.setVisible( false );
+   //MissionAreaEditorGui.setVisible(false);
+   //MissionAreaEditorTerrainWindow.setVisible( false );
+   //MissionAreaEditorPropertiesWindow.setVisible( false );
    
    // Allow the Gui to cleanup.
    MissionAreaEditorGui.onEditorDeactivated(); 

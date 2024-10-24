@@ -43,9 +43,9 @@ function EditorGui::init(%this)
       
       if( isObject( EWToolsPaletteWindow ) )
       {
-         MainSceneTabPanel.add( EWToolsPaletteWindow );
+         EditorGui.add( EWToolsPaletteWindow );
          EWToolsPaletteWindow.init();
-         EWToolsPaletteWindow.setVisible( false );
+         //EWToolsPaletteWindow.setVisible( false );
       }
    }
    
@@ -55,9 +55,9 @@ function EditorGui::init(%this)
       exec("~/worldEditor/gui/WorldEditorTreeWindow.ed.gui");
       if( isObject( EWTreeWindow ) )
       {
-         %this.add( EWTreeWindow );
+         MainSceneEditorTab.add( EWTreeWindow );
          EWTreeWindow-->EditorTree.selectPage( 0 );
-         EWTreeWindow.setVisible( false );
+         //EWTreeWindow.setVisible( false );
       }
    }
 
@@ -67,8 +67,8 @@ function EditorGui::init(%this)
       exec("~/worldEditor/gui/WorldEditorInspectorWindow.ed.gui");
       if( isObject( EWInspectorWindow ) )
       {
-         %this.add( EWInspectorWindow );
-         EWInspectorWindow.setVisible( false );
+         MainSceneEditorTab.add( EWInspectorWindow );
+         //EWInspectorWindow.setVisible( false );
       }
    }   
    
@@ -241,7 +241,7 @@ function EditorGui::init(%this)
    
    // make sure to show the default world editor guis
    EditorGui.bringToFront( EWorldEditor );
-   EWorldEditor.setVisible( false );  
+   //EWorldEditor.setVisible( false );  
    
    // Start up the settings window
    ESettingsWindow.startup();     
@@ -997,10 +997,10 @@ function WorldEditorPlugin::onActivated( %this )
    
    $scenesRootGroup.add(getScene(0));
    
-   EditorGui.bringToFront( EWorldEditor );
-   EWorldEditor.setVisible(true);
+   //EditorGui.bringToFront( EWorldEditor );
+   //EWorldEditor.setVisible(true);
    EditorGui.menuBar.insert( EditorGui.worldMenu, EditorGui.menuBar.dynamicItemInsertPos );
-   EWorldEditor.makeFirstResponder(true);
+   //EWorldEditor.makeFirstResponder(true);
    EditorTree.open($scenesRootGroup,true);
    ObjectCreator.setNewObjectGroup(getScene(0));
    
@@ -1025,10 +1025,10 @@ function WorldEditorPlugin::onActivated( %this )
 function WorldEditorPlugin::onDeactivated( %this )
 {
    // Hide the Transform Selection window from other editors
-   ETransformSelection.setVisible(false);
+   //ETransformSelection.setVisible(false);
    
-   EWorldEditor.setVisible( false );            
-   EditorGui.menuBar.remove( EditorGui.worldMenu );
+   //EWorldEditor.setVisible( false );            
+   //EditorGui.menuBar.remove( EditorGui.worldMenu );
    
    Parent::onDeactivated(%this);    
 }
@@ -1075,9 +1075,13 @@ function WorldEditorInspectorPlugin::onWorldEditorStartup( %this )
 function WorldEditorInspectorPlugin::onActivated( %this )
 {   
    Parent::onActivated( %this );
+   
+   MainSceneEditorTab.select();
+   
+   EditorTree.open(getRootScene(), true);
 
-   EditorGui-->InspectorWindow.setVisible( true );   
-   EditorGui-->TreeWindow.setVisible( true );
+   //EditorGui-->InspectorWindow.setVisible( true );   
+   //EditorGui-->TreeWindow.setVisible( true );
    EditorGui-->WorldEditorToolbar.setVisible( true );
    %this.map.push();
 }
@@ -1086,8 +1090,8 @@ function WorldEditorInspectorPlugin::onDeactivated( %this )
 {   
    Parent::onDeactivated( %this );
 
-   EditorGui-->InspectorWindow.setVisible( false );  
-   EditorGui-->TreeWindow.setVisible( false ); 
+   //EditorGui-->InspectorWindow.setVisible( false );  
+   //EditorGui-->TreeWindow.setVisible( false ); 
    EditorGui-->WorldEditorToolbar.setVisible( false );
    %this.map.pop();
 }

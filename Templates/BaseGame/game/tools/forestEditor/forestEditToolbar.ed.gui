@@ -1,7 +1,7 @@
 //--- OBJECT WRITE BEGIN ---
 $guiContent = new GuiControl(ForestEditToolbar,EditorGuiGroup) {
    isContainer = "1";
-   Profile = "ToolsGuiDefaultProfile";
+   Profile = "ToolsMenubarProfile";
    HorizSizing = "right";
    VertSizing = "bottom";
    Position = "306 0";

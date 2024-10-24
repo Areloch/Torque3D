@@ -1,11 +1,11 @@
 //--- OBJECT WRITE BEGIN ---
 $guiContent = new GuiControl(NavEditorToolbar,EditorGuiGroup) {
    position = "306 0";
-   extent = "800 32";
+   extent = "0 32";
    minExtent = "8 2";
    horizSizing = "right";
    vertSizing = "bottom";
-   profile = "GuiDefaultProfile";
+   profile = "ToolsMenubarProfile";
    visible = "1";
    active = "1";
    tooltipProfile = "GuiToolTipProfile";

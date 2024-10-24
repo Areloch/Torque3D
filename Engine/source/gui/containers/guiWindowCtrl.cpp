@@ -1311,7 +1311,7 @@ bool GuiWindowCtrl::onKeyDown(const GuiEvent &event)
 
 void GuiWindowCtrl::onRender(Point2I offset, const RectI &updateRect)
 {
-   if( !mProfile || mProfile->mFont == NULL || mProfile->mBitmapArrayRects.size() < NumBitmaps )
+   if( !mProfile || mProfile->mFont == NULL || mProfile->mBitmapArrayRects.size() < NumBitmaps || mBitmapBounds == NULL)
       return Parent::onRender( offset, updateRect );
 
    // Draw the outline

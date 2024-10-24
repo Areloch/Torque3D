@@ -31,18 +31,31 @@ function initializeForestEditor()
    exec( "./forestEditorGui." @ $TorqueScriptFileExtension );
    exec( "./tools." @ $TorqueScriptFileExtension );
    
-   ForestEditorGui.setVisible( false );   
-   ForestEditorPalleteWindow.setVisible( false );
-   ForestEditorPropertiesWindow.setVisible( false );
+   %editorTab = new GuiTabPageCtrl(ForestEditorTabPage) {
+      position = "0 18";
+      extent = MainSceneTabPanel.extent.x SPC MainSceneTabPanel.extent.y - 18;
+      horizSizing = "width";
+      vertSizing = "height";
+      profile = ToolsGuiTabPageProfile;
+      text = "Forest Editor";
+   };
    
-   MainSceneTabPanel.add( ForestEditorGui );
-   MainSceneTabPanel.add( ForestEditorPalleteWindow );
-   MainSceneTabPanel.add( ForestEditorPropertiesWindow );
+   EditorGuiMainTabBook.add(%editorTab);
+   
+   //ForestEditorGui.setVisible( false );   
+   //ForestEditorPalleteWindow.setVisible( false );
+   //ForestEditorPropertiesWindow.setVisible( false );
+   
+   %editorTab.add( ForestEditorGui );
+   %editorTab.add( ForestEditorPalleteWindow );
+   %editorTab.add( ForestEditorPropertiesWindow );
+   %editorTab.add( ForestEditToolbar );
             
    new ScriptObject( ForestEditorPlugin )
    {
       superClass = "EditorPlugin";
       editorGui = ForestEditorGui;
+      editorTab = %editorTab;
    };
    
    new SimSet(ForestTools)
@@ -116,14 +129,16 @@ function ForestEditorPlugin::onWorldEditorShutdown( %this )
 
 function ForestEditorPlugin::onActivated( %this )
 {
-   EditorGui.bringToFront( ForestEditorGui );
-   ForestEditorGui.setVisible( true );
-   ForestEditorPalleteWindow.setVisible( true );
-   ForestEditorPropertiesWindow.setVisible( true );
-   ForestEditorGui.makeFirstResponder( true );
+   %this.editorTab.select();
    
-   EditorGuiToolbarStack.remove( EWorldEditorToolbar );
-   EditorGuiToolbarStack.add( ForestEditToolbar );
+   //EditorGui.bringToFront( ForestEditorGui );
+   //ForestEditorGui.setVisible( true );
+   //ForestEditorPalleteWindow.setVisible( true );
+   //ForestEditorPropertiesWindow.setVisible( true );
+   //ForestEditorGui.makeFirstResponder( true );
+   
+   //EditorGuiToolbarStack.remove( EWorldEditorToolbar );
+   //EditorGuiToolbarStack.add( ForestEditToolbar );
 
    //Get our existing forest object in our current mission if we have one
    %forestObject = trim(parseMissionGroupForIds("Forest", ""));
@@ -192,13 +207,13 @@ function ForestEditorPlugin::onActivated( %this )
 
 function ForestEditorPlugin::onDeactivated( %this )
 {  
-   EditorGuiToolbarStack.add( EWorldEditorToolbar );
-   EditorGuiToolbarStack.remove( ForestEditToolbar );
+  //EditorGuiToolbarStack.add( EWorldEditorToolbar );
+   //EditorGuiToolbarStack.remove( ForestEditToolbar );
    
-   ForestEditorGui.setVisible( false );
+   //ForestEditorGui.setVisible( false );
    
-   ForestEditorPalleteWindow.setVisible( false );
-   ForestEditorPropertiesWindow.setVisible( false );
+   //ForestEditorPalleteWindow.setVisible( false );
+   //ForestEditorPropertiesWindow.setVisible( false );
    
    %tool = ForestEditorGui.getActiveTool();
    if ( isObject( %tool ) )

@@ -29,18 +29,29 @@ function initializeMeshRoadEditor()
    exec( "./meshRoadEditorToolbar.gui");
    exec( "./meshRoadEditorGui." @ $TorqueScriptFileExtension );
    
-   MeshRoadEditorGui.setVisible( false );  
-   MeshRoadEditorOptionsWindow.setVisible( false );  
-   MeshRoadEditorTreeWindow.setVisible( false ); 
-   
-   MainSceneTabPanel.add( MeshRoadEditorGui );
-   MainSceneTabPanel.add( MeshRoadEditorOptionsWindow );
-   MainSceneTabPanel.add( MeshRoadEditorTreeWindow );
+   /*if(!isObject(SplinesEditorTabPage))
+   {
+      %editorTab = new GuiTabPageCtrl(SplinesEditorTabPage) {
+         position = "0 18";
+         extent = MainSceneTabPanel.extent.x SPC MainSceneTabPanel.extent.y - 18;
+         horizSizing = "width";
+         vertSizing = "height";
+         profile = ToolsGuiTabPageProfile;
+         text = "Splines Editor";
+      };
+      
+      EditorGuiMainTabBook.add(%editorTab);
+   }
+
+   SplinesEditorTabPage.add( MeshRoadEditorGui );
+   SplinesEditorTabPage.add( MeshRoadEditorOptionsWindow );
+   SplinesEditorTabPage.add( MeshRoadEditorTreeWindow );*/
       
    new ScriptObject( MeshRoadEditorPlugin )
    {
       superClass = "EditorPlugin";
       editorGui = MeshRoadEditorGui;
+      editorTab = SplinesEditorTabPage;
    };
    
    %map = new ActionMap();
@@ -90,16 +101,15 @@ function MeshRoadEditorPlugin::onActivated( %this )
 {
    %this.readSettings();
    
+   %this.editorTab.select();
+   
    ToolsPaletteArray->MeshRoadEditorAddRoadMode.performClick();
    EditorGui.bringToFront( MeshRoadEditorGui );
-   MeshRoadEditorGui.setVisible( true );
    MeshRoadEditorGui.makeFirstResponder( true );
-   MeshRoadEditorOptionsWindow.setVisible( true );
    
    EditorGuiToolbarStack.remove( EWorldEditorToolbar );
    EditorGuiToolbarStack.add( MeshRoadEditorToolbar );
 
-   MeshRoadEditorTreeWindow.setVisible( true );
    MeshRoadTreeView.open(ServerMeshRoadSet,true);
    %this.map.push();
    
@@ -122,13 +132,9 @@ function MeshRoadEditorPlugin::onDeactivated( %this )
 {   
    %this.writeSettings();
    
-   MeshRoadEditorGui.setVisible( false );
-   MeshRoadEditorOptionsWindow.setVisible( false );
-   
    EditorGuiToolbarStack.add( EWorldEditorToolbar );
    EditorGuiToolbarStack.remove( MeshRoadEditorToolbar );
      
-   MeshRoadEditorTreeWindow.setVisible( false );
    %this.map.pop();
    
    // Restore the previous Gizmo

@@ -141,6 +141,8 @@ function toggleEditor(%make)
             displayEditorLoadingGui();
             
             Editor.open();
+            
+            MainSceneEditorTab.select(); //select main editor as default
 			
             // Cancel the scheduled event to prevent
             // the level from cycling after it's duration
