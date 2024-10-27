@@ -58,6 +58,21 @@ function NuMaterialEdPropInspector::refreshMaterial(%this)
 function NuMaterialEdPropInspector::onPostInspectorFieldModified(%this, %obj)
 {
    NuMaterialEditorWindow.syncGUI();
+   cancel(NuMaterialEdPropInspector.refreshing);
+   NuMaterialEdPropInspector.refreshing = NuMaterialEdPropInspector.schedule(32,"renew");
+}
+
+function NuMaterialEdPropInspector::renew(%this)
+{
+   %count = NuMaterialEdPropInspector.getNumInspectObjects();
+   %inspecting = NuMaterialEdPropInspector.getInspectObject(0);
+   for(%i=1; %i< %count;%i++)
+      %inspecting = %inspecting SPC NuMaterialEdPropInspector.getInspectObject(%i);
+
+   NuMaterialEdPropInspector.inspect(""); //clear
+   //readd
+   for(%i=0; %i<%count;%i++)
+      NuMaterialEdPropInspector.addInspect(getword(%inspecting,%i));
 }
 
 function NuMaterialEditorWindow::syncGUI(%this)
@@ -85,5 +100,4 @@ function NuMaterialEditorWindow::syncGUI(%this)
       %group.hideField("RoughMapAsset",false);
       %group.hideField("MetalMapAsset",false);
    }
-   NuMaterialEdPropInspector.refresh();
 }
