@@ -55,7 +55,7 @@ function NuMaterialEdPropInspector::refreshMaterial(%this)
    NuMaterialEditorWindow.syncGUI();
 }
 
-function NuMaterialEdPropInspector::onInspectorFieldModified(%this)
+function NuMaterialEdPropInspector::onPostInspectorFieldModified(%this, %obj)
 {
    NuMaterialEditorWindow.syncGUI();
 }
@@ -68,15 +68,22 @@ function NuMaterialEditorWindow::syncGUI(%this)
    if(%hideORMSliders)
    {
       %group = NuMaterialEdPropInspector.findExistentGroup("Light Influence Maps");
-      %group.removeField("roughness[" @ $MaterialEditor::currentLayer @ "]");
-      %group.removeField("metalness[" @ $MaterialEditor::currentLayer @ "]");
-      %group.removeField("AOMapAsset[" @ $MaterialEditor::currentLayer @ "]");
-      %group.removeField("RoughMapAsset[" @ $MaterialEditor::currentLayer @ "]");
-      %group.removeField("MetalMapAsset[" @ $MaterialEditor::currentLayer @ "]");
+      %group.hideField("isSRGb",false);
+      %group.hideField("roughness");
+      %group.hideField("metalness");
+      %group.hideField("AOMapAsset");
+      %group.hideField("RoughMapAsset");
+      %group.hideField("MetalMapAsset");
    }
    else
    {
       %group = NuMaterialEdPropInspector.findExistentGroup("Light Influence Maps");
-      %group.removeField("isSRGb[" @ $MaterialEditor::currentLayer @ "]");
+      %group.hideField("isSRGb");
+      %group.hideField("roughness",false);
+      %group.hideField("metalness",false);
+      %group.hideField("AOMapAsset",false);
+      %group.hideField("RoughMapAsset",false);
+      %group.hideField("MetalMapAsset",false);
    }
+   NuMaterialEdPropInspector.refresh();
 }

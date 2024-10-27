@@ -751,6 +751,26 @@ void GuiInspectorGroup::removeInspectorField(StringTableEntry name)
    }
 }
 
+void GuiInspectorGroup::hideInspectorField(StringTableEntry fieldName, bool setHidden)
+{
+   SimObject* inspectObj = mParent->getInspectObject();
+   if (inspectObj == nullptr)
+      return;
+
+   AbstractClassRep::Field* field = const_cast<AbstractClassRep::Field*>(inspectObj->getClassRep()->findField(fieldName));
+
+   if (field == NULL)
+   {
+      Con::errorf("fieldName not found: %s.%s", inspectObj->getName(), fieldName);
+      return;
+   }
+
+   if (setHidden)
+      field->flag.set(AbstractClassRep::FIELD_HideInInspectors);
+   else
+      field->flag.clear(AbstractClassRep::FIELD_HideInInspectors);
+}
+
 DefineEngineMethod(GuiInspectorGroup, createInspectorField, GuiInspectorField*, (), , "createInspectorField()")
 {
    return object->createInspectorField();
@@ -786,6 +806,16 @@ DefineEngineMethod(GuiInspectorGroup, removeField, void, (const char* fieldName)
       return;
 
    object->removeInspectorField(StringTable->insert(fieldName));
+}
+
+DefineEngineMethod(GuiInspectorGroup, hideField, void, (const char* fieldName, bool setHidden), (true),
+   "Removes a Inspector field to this group of a given name.\n"
+   "@param fieldName The name of the field to be removed.")
+{
+   if (dStrEqual(fieldName, ""))
+      return;
+
+   object->hideInspectorField(StringTable->insert(fieldName), setHidden);
 }
 
 DefineEngineMethod(GuiInspectorGroup, setForcedArrayIndex, void, (S32 arrayIndex), (-1),

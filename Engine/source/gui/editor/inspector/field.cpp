@@ -615,6 +615,8 @@ void GuiInspectorField::setData( const char* data, bool callbacks )
          
          // Give the target a chance to validate.
          target->inspectPostApply();
+
+         Con::executef(mInspector, "onPostInspectorFieldModified", mInspector->getIdString(), target->getIdString());
       }
       
       if( callbacks && numTargets > 1 )
