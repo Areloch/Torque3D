@@ -78,9 +78,17 @@ function NuMaterialEdPropInspector::renew(%this)
 function NuMaterialEditorWindow::syncGUI(%this)
 {
    //do some presentation adjustments
-   %hideORMSliders = $MaterialEditor::currentMaterial.ORMConfigMapAsset[$MaterialEditor::currentLayer] !$= "";
+   %ormMapPresent = $MaterialEditor::currentMaterial.ORMConfigMapAsset[$MaterialEditor::currentLayer] !$= "";
    
-   if(%hideORMSliders)
+   %hideORMSliders = %ormMapPresent;
+   if (!%hideORMSliders)
+      %hideORMSliders = $MaterialEditor::currentMaterial.AOMapAsset[$MaterialEditor::currentLayer] !$= "";
+   if (!%hideORMSliders)
+      %hideORMSliders = $MaterialEditor::currentMaterial.RoughMapAsset[$MaterialEditor::currentLayer] !$= "";
+   if (!%hideORMSliders)
+      %hideORMSliders = $MaterialEditor::currentMaterial.MetalMapAsset[$MaterialEditor::currentLayer] !$= "";
+        
+   if(%ormMapPresent)
    {
       %group = NuMaterialEdPropInspector.findExistentGroup("Light Influence Maps");
       %group.hideField("isSRGb",false);
@@ -94,8 +102,16 @@ function NuMaterialEditorWindow::syncGUI(%this)
    {
       %group = NuMaterialEdPropInspector.findExistentGroup("Light Influence Maps");
       %group.hideField("isSRGb");
-      %group.hideField("roughness",false);
-      %group.hideField("metalness",false);
+      if (%hideORMSliders)
+      {
+         %group.hideField("roughness");
+         %group.hideField("metalness");  
+      }
+      else
+      {
+         %group.hideField("roughness",false);
+         %group.hideField("metalness",false);      
+      }
       %group.hideField("AOMapAsset",false);
       %group.hideField("RoughMapAsset",false);
       %group.hideField("MetalMapAsset",false);
