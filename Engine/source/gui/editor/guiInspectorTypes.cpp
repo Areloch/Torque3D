@@ -41,7 +41,7 @@
 #include "math/mEase.h"
 #include "math/mathTypes.h"
 #include "sim/actionMap.h"
-
+#include "console/typeValidators.h"
 
 //-----------------------------------------------------------------------------
 // GuiInspectorTypeMenuBase
@@ -1350,6 +1350,52 @@ void GuiInspectorTypeS32::setValue( StringTableEntry newValue )
       ctrl->setText( newValue );
 }
 
+//-----------------------------------------------------------------------------
+// GuiInspectorTypeS32
+//-----------------------------------------------------------------------------
+IMPLEMENT_CONOBJECT(GuiInspectorTypeRangedF32);
+
+ConsoleDocClass(GuiInspectorTypeRangedF32,
+   "@brief Inspector field type for S32\n\n"
+   "Editor use only.\n\n"
+   "@internal"
+);
+
+void GuiInspectorTypeRangedF32::consoleInit()
+{
+   Parent::consoleInit();
+
+   ConsoleBaseType::getType(TypeRangedF32)->setInspectorFieldType("GuiInspectorTypeRangedF32");
+}
+
+GuiControl* GuiInspectorTypeRangedF32::constructEditControl()
+{
+   GuiControl* retCtrl = new GuiTextEditSliderCtrl();
+
+   retCtrl->setDataField(StringTable->insert("profile"), NULL, "GuiInspectorTextEditProfile");
+
+   // Don't forget to register ourselves
+   _registerEditControl(retCtrl);
+
+   char szBuffer[512];
+   dSprintf(szBuffer, 512, "%d.apply(%d.getText());", getId(), retCtrl->getId());
+   retCtrl->setField("AltCommand", szBuffer);
+   retCtrl->setField("Validate", szBuffer);
+   FRangeValidator* validator = dynamic_cast<FRangeValidator*>(mField->validator);
+   if (validator)
+   {
+      retCtrl->setField("range", String::ToString("%4.2f, %4.2f", validator->getMin(), validator->getMax()));
+      retCtrl->setField("increment", String::ToString("%4.2f", (validator->getMax()-validator->getMin())/100));
+   }
+   return retCtrl;
+}
+
+void GuiInspectorTypeRangedF32::setValue(StringTableEntry newValue)
+{
+   GuiTextEditSliderCtrl* ctrl = dynamic_cast<GuiTextEditSliderCtrl*>(mEdit);
+   if (ctrl != NULL)
+      ctrl->setText(newValue);
+}
 //-----------------------------------------------------------------------------
 // GuiInspectorTypeS32Mask
 //-----------------------------------------------------------------------------

@@ -648,6 +648,32 @@ void ConsoleObject::addFieldV(const char*  in_pFieldname,
    sg_tempFieldList.push_back(f);
 }
 
+void ConsoleObject::addFieldV(const char* in_pFieldname,
+   const U32 in_fieldType,
+   const dsize_t in_fieldOffset,
+   TypeValidator* v,
+   const U32 in_elementCount,
+   const char* in_pFieldDocs)
+{
+   AbstractClassRep::Field f;
+   f.pFieldname = StringTable->insert(in_pFieldname);
+   if (in_pFieldDocs)
+      f.pFieldDocs = in_pFieldDocs;
+   f.type = in_fieldType;
+   f.offset = in_fieldOffset;
+   f.elementCount = 1;
+   f.table = NULL;
+   f.setDataFn = &defaultProtectedSetFn;
+   f.getDataFn = &defaultProtectedGetFn;
+   f.writeDataFn = &defaultProtectedWriteFn;
+   f.elementCount = in_elementCount;
+   f.validator = v;
+   f.networkMask = 0;
+   v->fieldIndex = sg_tempFieldList.size();
+
+   sg_tempFieldList.push_back(f);
+}
+
 void ConsoleObject::addDeprecatedField(const char *fieldName)
 {
    AbstractClassRep::Field f;

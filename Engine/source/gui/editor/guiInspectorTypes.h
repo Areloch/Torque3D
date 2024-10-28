@@ -473,6 +473,20 @@ public:
    void setValue( StringTableEntry newValue ) override;
 };
 
+//------------------------------------------------------------------------------
+// TypeS32 GuiInspectorField class
+//------------------------------------------------------------------------------
+class GuiInspectorTypeRangedF32 : public GuiInspectorField
+{
+private:
+   typedef GuiInspectorField Parent;
+public:
+   DECLARE_CONOBJECT(GuiInspectorTypeRangedF32);
+   static void consoleInit();
+
+   GuiControl* constructEditControl() override;
+   void setValue(StringTableEntry newValue) override;
+};
 
 //------------------------------------------------------------------------------
 // TypeBitMask32 GuiInspectorField class

@@ -38,6 +38,7 @@
 #include "T3D/accumulationVolume.h"
 #include "gui/controls/guiTreeViewCtrl.h"
 #include <console/persistenceManager.h>
+#include "console/typeValidators.h"
 
 IMPLEMENT_CONOBJECT(Material);
 
@@ -264,7 +265,7 @@ void Material::initPersistFields()
    endGroup("Basic Texture Maps");
 
    addGroup("Light Influence Maps");
-      addField("roughness", TypeF32, Offset(mRoughness, Material), MAX_STAGES,
+      addFieldV("roughness", TypeRangedF32, Offset(mRoughness, Material),  &CommonValidators::NormalizedFloat,MAX_STAGES,
          "The degree of roughness when not using a ORMConfigMap.");
 
       addField("metalness", TypeF32, Offset(mMetalness, Material), MAX_STAGES,
