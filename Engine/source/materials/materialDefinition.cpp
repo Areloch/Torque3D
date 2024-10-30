@@ -265,7 +265,7 @@ void Material::initPersistFields()
    endGroup("Basic Texture Maps");
 
    addGroup("Light Influence Maps");
-      addFieldV("roughness", TypeRangedF32, Offset(mRoughness, Material),  &CommonValidators::NormalizedFloat,MAX_STAGES,
+      addFieldV("roughness", TypeRangedF32, Offset(mRoughness, Material),  &CommonValidators::ColorChanFloat,MAX_STAGES,
          "The degree of roughness when not using a ORMConfigMap.");
 
       addField("metalness", TypeF32, Offset(mMetalness, Material), MAX_STAGES,

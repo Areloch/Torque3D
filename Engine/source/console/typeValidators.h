@@ -46,16 +46,18 @@ class TypeValidator
 /// Floating point min/max range validator
 class FRangeValidator : public TypeValidator
 {
-   F32 minV, maxV;
+   F32 minV, maxV, mFidelity;
 public:
-   FRangeValidator(F32 minValue, F32 maxValue)
+   FRangeValidator(F32 minValue, F32 maxValue, F32 fidelity = 0)
    {
       minV = minValue;
       maxV = maxValue;
+      mFidelity = fidelity;
    }
    void validateType(SimObject *object, void *typePtr) override;
    F32 getMin() { return minV; };
    F32 getMax() { return maxV; };
+   F32 getFidelity() { return mFidelity; };
 };
 
 /// Signed integer min/max range validator
@@ -107,6 +109,7 @@ namespace CommonValidators
    extern FRangeValidator PositiveFloat;
    extern FRangeValidator PositiveNonZeroFloat;
    extern FRangeValidator NormalizedFloat;
+   extern FRangeValidator ColorChanFloat;
 
    // Other Math Types
    extern Point3NormalizeValidator NormalizedPoint3;

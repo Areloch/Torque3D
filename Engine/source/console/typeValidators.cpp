@@ -103,6 +103,7 @@ namespace CommonValidators
    FRangeValidator PositiveFloat(0.0f, F32_MAX);
    FRangeValidator PositiveNonZeroFloat((F32)POINT_EPSILON, F32_MAX);
    FRangeValidator NormalizedFloat(0.0f, 1.0f);
+   FRangeValidator ColorChanFloat(0.0f, 1.0f, 256.0);
    Point3NormalizeValidator NormalizedPoint3(1.0f);
 };
 

@@ -1384,8 +1384,10 @@ GuiControl* GuiInspectorTypeRangedF32::constructEditControl()
    FRangeValidator* validator = dynamic_cast<FRangeValidator*>(mField->validator);
    if (validator)
    {
-      retCtrl->setField("range", String::ToString("%4.2f, %4.2f", validator->getMin(), validator->getMax()));
-      retCtrl->setField("increment", String::ToString("%4.2f", (validator->getMax()-validator->getMin())/100));
+      retCtrl->setField("format", "%4.5f");
+      retCtrl->setField("range", String::ToString("%4.5f, %4.5f", validator->getMin(), validator->getMax()));
+      if (validator->getFidelity()>0.0f)
+         retCtrl->setField("increment", String::ToString("%g", (validator->getMax()-validator->getMin())/validator->getFidelity()));
    }
    return retCtrl;
 }
