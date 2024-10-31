@@ -269,20 +269,20 @@ void NavMesh::initPersistFields()
    addField("waterMethod", TYPEID<NavMeshWaterMethod>(), Offset(mWaterMethod, NavMesh),
       "The method to use to handle water surfaces.");
 
-   addFieldV("cellSize", TypeF32, Offset(mCellSize, NavMesh), &ValidCellSize,
+   addFieldV("cellSize", TypeRangedF32, Offset(mCellSize, NavMesh), &ValidCellSize,
       "Length/width of a voxel.");
-   addFieldV("cellHeight", TypeF32, Offset(mCellHeight, NavMesh), &ValidCellSize,
+   addFieldV("cellHeight", TypeRangedF32, Offset(mCellHeight, NavMesh), &ValidCellSize,
       "Height of a voxel.");
-   addFieldV("tileSize", TypeF32, Offset(mTileSize, NavMesh), &CommonValidators::PositiveNonZeroFloat,
+   addFieldV("tileSize", TypeRangedF32, Offset(mTileSize, NavMesh), &CommonValidators::PositiveNonZeroFloat,
       "The horizontal size of tiles.");
 
-   addFieldV("actorHeight", TypeF32, Offset(mWalkableHeight, NavMesh), &CommonValidators::PositiveFloat,
+   addFieldV("actorHeight", TypeRangedF32, Offset(mWalkableHeight, NavMesh), &CommonValidators::PositiveFloat,
       "Height of an actor.");
-   addFieldV("actorClimb", TypeF32, Offset(mWalkableClimb, NavMesh), &CommonValidators::PositiveFloat,
+   addFieldV("actorClimb", TypeRangedF32, Offset(mWalkableClimb, NavMesh), &CommonValidators::PositiveFloat,
       "Maximum climbing height of an actor.");
-   addFieldV("actorRadius", TypeF32, Offset(mWalkableRadius, NavMesh), &CommonValidators::PositiveFloat,
+   addFieldV("actorRadius", TypeRangedF32, Offset(mWalkableRadius, NavMesh), &CommonValidators::PositiveFloat,
       "Radius of an actor.");
-   addFieldV("walkableSlope", TypeF32, Offset(mWalkableSlope, NavMesh), &ValidSlopeAngle,
+   addFieldV("walkableSlope", TypeRangedF32, Offset(mWalkableSlope, NavMesh), &ValidSlopeAngle,
       "Maximum walkable slope in degrees.");
 
    addField("smallCharacters", TypeBool, Offset(mSmallCharacters, NavMesh),
@@ -321,22 +321,22 @@ void NavMesh::initPersistFields()
 
    addGroup("NavMesh Advanced Options");
 
-   addFieldV("borderSize", TypeS32, Offset(mBorderSize, NavMesh), &PositiveInt,
+   addFieldV("borderSize", TypeRangedS32, Offset(mBorderSize, NavMesh), &PositiveInt,
       "Size of the non-walkable border around the navigation mesh (in voxels).");
    addProtectedField("detailSampleDist", TypeF32, Offset(mDetailSampleDist, NavMesh),
       &setProtectedDetailSampleDist, &defaultProtectedGetFn,
       "Sets the sampling distance to use when generating the detail mesh.");
-   addFieldV("detailSampleError", TypeF32, Offset(mDetailSampleMaxError, NavMesh), &CommonValidators::PositiveFloat,
+   addFieldV("detailSampleError", TypeRangedF32, Offset(mDetailSampleMaxError, NavMesh), &CommonValidators::PositiveFloat,
       "The maximum distance the detail mesh surface should deviate from heightfield data.");
-   addFieldV("maxEdgeLen", TypeS32, Offset(mDetailSampleDist, NavMesh), &PositiveInt,
+   addFieldV("maxEdgeLen", TypeRangedS32, Offset(mDetailSampleDist, NavMesh), &PositiveInt,
       "The maximum allowed length for contour edges along the border of the mesh.");
-   addFieldV("simplificationError", TypeF32, Offset(mMaxSimplificationError, NavMesh), &CommonValidators::PositiveFloat,
+   addFieldV("simplificationError", TypeRangedF32, Offset(mMaxSimplificationError, NavMesh), &CommonValidators::PositiveFloat,
       "The maximum distance a simplfied contour's border edges should deviate from the original raw contour.");
-   addFieldV("minRegionArea", TypeS32, Offset(mMinRegionArea, NavMesh), &PositiveInt,
+   addFieldV("minRegionArea", TypeRangedS32, Offset(mMinRegionArea, NavMesh), &PositiveInt,
       "The minimum number of cells allowed to form isolated island areas.");
-   addFieldV("mergeRegionArea", TypeS32, Offset(mMergeRegionArea, NavMesh), &PositiveInt,
+   addFieldV("mergeRegionArea", TypeRangedS32, Offset(mMergeRegionArea, NavMesh), &PositiveInt,
       "Any regions with a span count smaller than this value will, if possible, be merged with larger regions.");
-   addFieldV("maxPolysPerTile", TypeS32, Offset(mMaxPolysPerTile, NavMesh), &NaturalNumber,
+   addFieldV("maxPolysPerTile", TypeRangedS32, Offset(mMaxPolysPerTile, NavMesh), &NaturalNumber,
       "The maximum number of polygons allowed in a tile.");
 
    endGroup("NavMesh Advanced Options");

@@ -167,13 +167,13 @@ void ParticleData::initPersistFields()
    endGroup("Basic");
 
    addGroup("Motion");
-      addFieldV("dragCoefficient", TYPEID< F32 >(), Offset(dragCoefficient, ParticleData), &dragCoefFValidator,
+      addFieldV("dragCoefficient", TypeRangedF32, Offset(dragCoefficient, ParticleData), &dragCoefFValidator,
          "Particle physics drag amount.");
       addField("windCoefficient", TYPEID< F32 >(), Offset(windCoefficient, ParticleData),
          "Strength of wind on the particles.");
-      addFieldV("gravityCoefficient", TYPEID< F32 >(), Offset(gravityCoefficient, ParticleData), &gravCoefFValidator,
+      addFieldV("gravityCoefficient", TypeRangedF32, Offset(gravityCoefficient, ParticleData), &gravCoefFValidator,
          "Strength of gravity on the particles.");
-      addFieldV("inheritedVelFactor", TYPEID< F32 >(), Offset(inheritedVelFactor, ParticleData), &CommonValidators::NormalizedFloat,
+      addFieldV("inheritedVelFactor", TypeRangedF32, Offset(inheritedVelFactor, ParticleData), &CommonValidators::NormalizedFloat,
          "Amount of emitter velocity to add to particle initial velocity.");
       addField("constantAcceleration", TYPEID< F32 >(), Offset(constantAcceleration, ParticleData),
          "Constant acceleration to apply to this particle.");
@@ -182,9 +182,9 @@ void ParticleData::initPersistFields()
    addGroup("Spin");
       addField("spinSpeed", TYPEID< F32 >(), Offset(spinSpeed, ParticleData),
          "Speed at which to spin the particle.");
-      addFieldV("spinRandomMin", TYPEID< F32 >(), Offset(spinRandomMin, ParticleData), &spinRandFValidator,
+      addFieldV("spinRandomMin", TypeRangedF32, Offset(spinRandomMin, ParticleData), &spinRandFValidator,
          "Minimum allowed spin speed of this particle, between -1000 and spinRandomMax.");
-      addFieldV("spinRandomMax", TYPEID< F32 >(), Offset(spinRandomMax, ParticleData), &spinRandFValidator,
+      addFieldV("spinRandomMax", TypeRangedF32, Offset(spinRandomMax, ParticleData), &spinRandFValidator,
          "Maximum allowed spin speed of this particle, between spinRandomMin and 1000.");
    endGroup("Spin");
   

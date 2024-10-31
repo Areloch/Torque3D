@@ -1351,12 +1351,12 @@ void GuiInspectorTypeS32::setValue( StringTableEntry newValue )
 }
 
 //-----------------------------------------------------------------------------
-// GuiInspectorTypeS32
+// GuiInspectorTypeRangedF32
 //-----------------------------------------------------------------------------
 IMPLEMENT_CONOBJECT(GuiInspectorTypeRangedF32);
 
 ConsoleDocClass(GuiInspectorTypeRangedF32,
-   "@brief Inspector field type for S32\n\n"
+   "@brief Inspector field type for range-clamped F32\n\n"
    "Editor use only.\n\n"
    "@internal"
 );
@@ -1393,6 +1393,54 @@ GuiControl* GuiInspectorTypeRangedF32::constructEditControl()
 }
 
 void GuiInspectorTypeRangedF32::setValue(StringTableEntry newValue)
+{
+   GuiTextEditSliderCtrl* ctrl = dynamic_cast<GuiTextEditSliderCtrl*>(mEdit);
+   if (ctrl != NULL)
+      ctrl->setText(newValue);
+}
+
+//-----------------------------------------------------------------------------
+// GuiInspectorTypeRangedS32
+//-----------------------------------------------------------------------------
+IMPLEMENT_CONOBJECT(GuiInspectorTypeRangedS32);
+
+ConsoleDocClass(GuiInspectorTypeRangedS32,
+   "@brief Inspector field type for range-clamped S32\n\n"
+   "Editor use only.\n\n"
+   "@internal"
+);
+
+void GuiInspectorTypeRangedS32::consoleInit()
+{
+   Parent::consoleInit();
+
+   ConsoleBaseType::getType(TypeRangedS32)->setInspectorFieldType("GuiInspectorTypeRangedF32");
+}
+
+GuiControl* GuiInspectorTypeRangedS32::constructEditControl()
+{
+   GuiControl* retCtrl = new GuiTextEditSliderCtrl();
+
+   retCtrl->setDataField(StringTable->insert("profile"), NULL, "GuiInspectorTextEditProfile");
+
+   // Don't forget to register ourselves
+   _registerEditControl(retCtrl);
+
+   char szBuffer[512];
+   dSprintf(szBuffer, 512, "%d.apply(%d.getText());", getId(), retCtrl->getId());
+   retCtrl->setField("AltCommand", szBuffer);
+   retCtrl->setField("Validate", szBuffer);
+   FRangeValidator* validator = dynamic_cast<FRangeValidator*>(mField->validator);
+   if (validator)
+   {
+      retCtrl->setField("range", String::ToString("%4.5f, %4.5f", validator->getMin(), validator->getMax()));
+      if (validator->getFidelity() > 0)
+         retCtrl->setField("increment", String::ToString("%g", (validator->getMax() - validator->getMin()) / validator->getFidelity()));
+   }
+   return retCtrl;
+}
+
+void GuiInspectorTypeRangedS32::setValue(StringTableEntry newValue)
 {
    GuiTextEditSliderCtrl* ctrl = dynamic_cast<GuiTextEditSliderCtrl*>(mEdit);
    if (ctrl != NULL)

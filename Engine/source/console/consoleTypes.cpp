@@ -432,7 +432,7 @@ ConsoleSetType( TypeF32 )
 }
 
 //-----------------------------------------------------------------------------
-// TypeF32
+// TypeRangedF32
 //-----------------------------------------------------------------------------
 ConsoleType(float, TypeRangedF32, F32, "")
 
@@ -450,6 +450,28 @@ ConsoleSetType(TypeRangedF32)
    else
       Con::printf("(TypeF32) Cannot set multiple args to a single F32.");
 }
+
+//-----------------------------------------------------------------------------
+// TypeRangedS32
+//-----------------------------------------------------------------------------
+ConsoleType(float, TypeRangedS32, F32, "")
+
+ConsoleGetType(TypeRangedS32)
+{
+   static const U32 bufSize = 512;
+   char* returnBuffer = Con::getReturnBuffer(bufSize);
+   dSprintf(returnBuffer, bufSize, "%d", *((S32*)dptr));
+   return returnBuffer;
+}
+
+ConsoleSetType(TypeRangedS32)
+{
+   if (argc == 1)
+      *((S32*)dptr) = dAtoi(argv[0]);
+   else
+      Con::printf("(TypeRangedS32) Cannot set multiple args to a single S32.");
+}
+
 
 //-----------------------------------------------------------------------------
 // TypeF32Vector

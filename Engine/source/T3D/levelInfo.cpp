@@ -136,7 +136,7 @@ void LevelInfo::initPersistFields()
       addField( "decalBias", TypeF32, Offset( mDecalBias, LevelInfo ),
          "NearPlane bias used when rendering Decal and DecalRoad. This should be tuned to the visibleDistance in your level." );
 
-      addFieldV("dampness", TypeF32, Offset(mDampness, LevelInfo), &ValiDampnessRange,
+      addFieldV("dampness", TypeRangedF32, Offset(mDampness, LevelInfo), &ValiDampnessRange,
          "@brief dampness influence");
    endGroup( "Visibility" );
 

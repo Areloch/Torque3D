@@ -218,9 +218,9 @@ void TSStatic::initPersistFields()
    addGroup("Animation");
    addField("playAmbient", TypeBool, Offset(mPlayAmbient, TSStatic),
       "Enables automatic playing of the animation sequence named \"ambient\" (if it exists) when the TSStatic is loaded.");
-   addFieldV("AnimOffset", TypeF32, Offset(mAnimOffset, TSStatic), &percentValidator,
+   addFieldV("AnimOffset", TypeRangedF32, Offset(mAnimOffset, TSStatic), &percentValidator,
       "Percent Animation Offset.");
-   addFieldV("AnimSpeed", TypeF32, Offset(mAnimSpeed, TSStatic), &speedValidator,
+   addFieldV("AnimSpeed", TypeRangedF32, Offset(mAnimSpeed, TSStatic), &speedValidator,
       "Percent Animation Speed.");
    endGroup("Animation");
 

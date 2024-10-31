@@ -368,7 +368,7 @@ void Precipitation::initPersistFields()
    docsURL;
    addGroup("Precipitation");
 
-      addFieldV( "numDrops", TypeS32, Offset(mNumDrops, Precipitation), &ValidNumDropsRange,
+      addFieldV( "numDrops", TypeRangedS32, Offset(mNumDrops, Precipitation), &ValidNumDropsRange,
          "@brief Maximum number of drops allowed to exist in the precipitation "
          "box at any one time.\n\n"
          "The actual number of drops in the effect depends on the current "

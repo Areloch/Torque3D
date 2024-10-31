@@ -110,7 +110,7 @@ void LightBase::initPersistFields()
 
       addField( "animate", TypeBool, Offset( mAnimState.active, LightBase ), "Toggles animation for the light on and off" );
       addField( "animationType", TYPEID< LightAnimData >(), Offset( mAnimationData, LightBase ), "Datablock containing light animation information (LightAnimData)" );
-      addFieldV( "animationPeriod", TypeF32, Offset( mAnimState.animationPeriod, LightBase ), &CommonValidators::PositiveNonZeroFloat, "The length of time in seconds for a single playback of the light animation (must be > 0)" );
+      addFieldV( "animationPeriod", TypeRangedF32, Offset( mAnimState.animationPeriod, LightBase ), &CommonValidators::PositiveNonZeroFloat, "The length of time in seconds for a single playback of the light animation (must be > 0)" );
       addField( "animationPhase", TypeF32, Offset( mAnimState.animationPhase, LightBase ), "The phase used to offset the animation start time to vary the animation of nearby lights." );      
 
    endGroup( "Light Animation" );

@@ -353,36 +353,36 @@ void afxMagicMissileData::initPersistFields()
    endGroup("Light Emitter");
 
    addGroup("Physics");
-      addNamedFieldV(lifetime,    TypeS32,              afxMagicMissileData,  &ticksFromMS);
-      addFieldV("casterSafetyTime", TypeS32, myOffset(caster_safety_time), &ticksFromMS);
+      addNamedFieldV(lifetime,    TypeRangedS32,              afxMagicMissileData,  &ticksFromMS);
+      addFieldV("casterSafetyTime", TypeRangedS32, myOffset(caster_safety_time), &ticksFromMS);
       addField("isBallistic", TypeBool,   Offset(isBallistic, afxMagicMissileData));
-      addNamedFieldV(muzzleVelocity,    TypeF32,      afxMagicMissileData,  &muzzleVelocityValidator);
-      addNamedFieldV(ballisticCoefficient,  TypeF32,    afxMagicMissileData,  &missileBallisticCoefficientValidator);
+      addNamedFieldV(muzzleVelocity,    TypeRangedF32,      afxMagicMissileData,  &muzzleVelocityValidator);
+      addNamedFieldV(ballisticCoefficient,  TypeRangedF32,    afxMagicMissileData,  &missileBallisticCoefficientValidator);
       addField("gravityMod", TypeF32, Offset(gravityMod, afxMagicMissileData));
       addField("collisionMask",         TypeS32,      myOffset(collision_mask));
       addField("startingVelocityVector",TypePoint3F,  myOffset(starting_vel_vec));
       addNamedField(acceleration,     TypeF32,  afxMagicMissileData);
-      addNamedFieldV(accelDelay,      TypeS32,  afxMagicMissileData,  &ticksFromMS);
-      addNamedFieldV(accelLifetime,   TypeS32,  afxMagicMissileData,  &ticksFromMS);
+      addNamedFieldV(accelDelay, TypeRangedS32,  afxMagicMissileData,  &ticksFromMS);
+      addNamedFieldV(accelLifetime, TypeRangedS32,  afxMagicMissileData,  &ticksFromMS);
       addField("reverseTargeting", TypeBool, myOffset(reverse_targeting));
    endGroup("Physics");
 
    addGroup("Physics-Tracking");
       addNamedField(isGuided,               TypeBool,   afxMagicMissileData);
-      addNamedFieldV(precision,             TypeF32,    afxMagicMissileData,  &missilePrecisionValidator); 
-      addNamedFieldV(trackDelay,            TypeS32,    afxMagicMissileData,  &missileTrackDelayValidator);
+      addNamedFieldV(precision,             TypeRangedF32,    afxMagicMissileData,  &missilePrecisionValidator);
+      addNamedFieldV(trackDelay,            TypeRangedS32,    afxMagicMissileData,  &missileTrackDelayValidator);
    endGroup("Physics-Tracking");
 
    addGroup("Physics-Avoidance");
       addField("followTerrain",             TypeBool, myOffset(followTerrain));
       addField("followTerrainHeight",       TypeF32,  myOffset(followTerrainHeight));
       addField("followTerrainAdjustRate",   TypeF32,  myOffset(followTerrainAdjustRate));
-      addFieldV("followTerrainAdjustDelay", TypeS32,  myOffset(followTerrainAdjustDelay), &ticksFromMS);
+      addFieldV("followTerrainAdjustDelay", TypeRangedS32,  myOffset(followTerrainAdjustDelay), &ticksFromMS);
 
       addField("hoverAltitude",       TypeF32,    myOffset(hover_altitude));
       addField("hoverAttackDistance", TypeF32,    myOffset(hover_attack_distance));
       addField("hoverAttackGradient", TypeF32,    myOffset(hover_attack_gradient));
-      addFieldV("hoverTime",          TypeS32,    myOffset(hover_time), &ticksFromMS); 
+      addFieldV("hoverTime", TypeRangedS32,    myOffset(hover_time), &ticksFromMS);
    endGroup("Physics-Avoidance");
 
    addGroup("Physics-Launch");

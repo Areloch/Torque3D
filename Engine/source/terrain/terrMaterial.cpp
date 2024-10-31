@@ -110,7 +110,7 @@ void TerrainMaterial::initPersistFields()
    addField("blendHeightContrast", TypeF32, Offset(mBlendContrast, TerrainMaterial), "A fixed value to add while blending using heightmap-based blending."
       "Higher numbers = larger blend radius.");
 
-   addFieldV("blendHeightHardness", TypeF32, Offset(mBlendHardness, TerrainMaterial), &hardnessValidator, "How sharply this layer blends with other textures."
+   addFieldV("blendHeightHardness", TypeRangedF32, Offset(mBlendHardness, TerrainMaterial), &hardnessValidator, "How sharply this layer blends with other textures."
       "0->1, soft->hard.");
 
    INITPERSISTFIELD_IMAGEASSET(DetailMap, TerrainMaterial, "Raises and lowers the RGB result of the Base Albedo up close.");
