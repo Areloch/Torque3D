@@ -1430,12 +1430,22 @@ GuiControl* GuiInspectorTypeRangedS32::constructEditControl()
    dSprintf(szBuffer, 512, "%d.apply(%d.getText());", getId(), retCtrl->getId());
    retCtrl->setField("AltCommand", szBuffer);
    retCtrl->setField("Validate", szBuffer);
-   FRangeValidator* validator = dynamic_cast<FRangeValidator*>(mField->validator);
+   IRangeValidator* validator = dynamic_cast<IRangeValidator*>(mField->validator);
    if (validator)
    {
-      retCtrl->setField("range", String::ToString("%4.5f, %4.5f", validator->getMin(), validator->getMax()));
+      retCtrl->setField("range", String::ToString("%i, %i", validator->getMin(), validator->getMax()));
       if (validator->getFidelity() > 0)
-         retCtrl->setField("increment", String::ToString("%g", (validator->getMax() - validator->getMin()) / validator->getFidelity()));
+         retCtrl->setField("increment", String::ToString("%i", (validator->getMax() - validator->getMin()) / validator->getFidelity()));
+   }
+   else
+   {
+      IRangeValidatorScaled* scaledValidator = dynamic_cast<IRangeValidatorScaled*>(mField->validator);
+      if (scaledValidator)
+      {
+         retCtrl->setField("range", String::ToString("%i, %i", scaledValidator->getMin(), scaledValidator->getMax()));
+         if (validator->getFidelity() > 0)
+            retCtrl->setField("increment", String::ToString("%i", scaledValidator->getScaleFactor()));
+      }
    }
    return retCtrl;
 }

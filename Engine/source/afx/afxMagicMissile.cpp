@@ -324,7 +324,7 @@ afxMagicMissileData* afxMagicMissileData::cloneAndPerformSubstitutions(const Sim
 
 FRangeValidator muzzleVelocityValidator(0, 10000);
 FRangeValidator missilePrecisionValidator(0.f, 100.f);
-FRangeValidator missileTrackDelayValidator(0, 100000);
+IRangeValidator missileTrackDelayValidator(0, 100000);
 FRangeValidator missileBallisticCoefficientValidator(0, 1);
 
 void afxMagicMissileData::initPersistFields()

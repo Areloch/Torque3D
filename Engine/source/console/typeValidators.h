@@ -63,16 +63,18 @@ public:
 /// Signed integer min/max range validator
 class IRangeValidator : public TypeValidator
 {
-   S32 minV, maxV;
+   S32 minV, maxV, mFidelity;
 public:
-   IRangeValidator(S32 minValue, S32 maxValue)
+   IRangeValidator(S32 minValue, S32 maxValue, S32 fidelity = 0)
    {
       minV = minValue;
       maxV = maxValue;
+      mFidelity = fidelity;
    }
    void validateType(SimObject *object, void *typePtr) override;
-   F32 getMin() { return minV; };
-   F32 getMax() { return maxV; };
+   S32 getMin() { return minV; };
+   S32 getMax() { return maxV; };
+   S32 getFidelity() { return mFidelity; };
 };
 
 /// Scaled integer field validator
@@ -91,6 +93,9 @@ public:
       factor = scaleFactor;
    }
    void validateType(SimObject *object, void *typePtr) override;
+   S32 getMin() { return minV; };
+   S32 getMax() { return maxV; };
+   S32 getScaleFactor() { return factor; };
 };
 
 /// Vector normalization validator
