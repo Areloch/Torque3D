@@ -446,17 +446,16 @@ bool ParticleData::protectedSetTimes( void *object, const char *index, const cha
    pData->times[i] = mClampF( val, 0.f, 1.f );
 
    pData->times[0] = 0.0f;
-   for (i = 1; i < PDC_NUM_KEYS; i++)
-   {
-      if (pData->times[i] < pData->times[i - 1])
-         pData->times[i] = pData->times[i - 1];
-   }
-   for (i = PDC_NUM_KEYS-2; i>1 ; i--)
-   {
-      if (pData->times[i] > pData->times[i + 1])
-         pData->times[i] = pData->times[i + 1];
-   }
 
+   S32 last = i - 1;
+   S32 next = i + 1;
+   if (last >= 0 && next < PDC_NUM_KEYS-1)
+   {
+      if ((pData->times[last] != -1.0f) && (pData->times[i] < pData->times[last]))
+         pData->times[i] = pData->times[last];
+      else if ((pData->times[next] != -1.0f) && (pData->times[i] > pData->times[next]))
+         pData->times[i] = pData->times[next];
+   }
    return false;
 }
 
