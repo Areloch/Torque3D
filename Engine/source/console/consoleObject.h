@@ -1004,6 +1004,28 @@ public:
       const char* in_pFieldDocs = NULL,
       U32 flags = 0);
 
+
+   static void addProtectedFieldV(const char* in_pFieldname,
+      const U32     in_fieldType,
+      const dsize_t in_fieldOffset,
+      AbstractClassRep::SetDataNotify in_setDataFn,
+      AbstractClassRep::GetDataNotify in_getDataFn = &defaultProtectedGetFn,
+      AbstractClassRep::WriteDataNotify in_writeDataFn = &defaultProtectedWriteFn,
+      TypeValidator* v  = NULL,
+      const U32     in_elementCount = 1,
+      const char* in_pFieldDocs = NULL,
+      U32 flags = 0);
+
+   static void addProtectedFieldV(const char* in_pFieldname,
+      const U32     in_fieldType,
+      const dsize_t in_fieldOffset,
+      AbstractClassRep::SetDataNotify in_setDataFn,
+      AbstractClassRep::GetDataNotify in_getDataFn = &defaultProtectedGetFn,
+      TypeValidator* v = NULL,
+      const U32     in_elementCount = 1,
+      const char* in_pFieldDocs = NULL,
+      U32 flags = 0);
+
    /// Add a deprecated field.
    ///
    /// A deprecated field will always be undefined, even if you assign a value to it. This

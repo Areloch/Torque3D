@@ -141,6 +141,8 @@ ParticleData::ParticleData()
 FRangeValidator dragCoefFValidator(0.f, 5.f);
 FRangeValidator gravCoefFValidator(-10.f, 10.f);
 FRangeValidator spinRandFValidator(-1000.f, 1000.f);
+FRangeValidator particleTimeFValidator(0.0f, 1.0f, 1<<8);
+FRangeValidator particleSizeFValidator(0.0f, MaxParticleSize, 1<<16);
 
 //-----------------------------------------------------------------------------
 // initPersistFields
@@ -223,16 +225,16 @@ void ParticleData::initPersistFields()
 
    // Interpolation variables
    addGroup("Over Time");
-      addProtectedField("times", TYPEID< F32 >(), Offset(times, ParticleData), &protectedSetTimes,
-         &defaultProtectedGetFn, PDC_NUM_KEYS,
+      addProtectedFieldV("times", TypeRangedF32, Offset(times, ParticleData), &protectedSetTimes,
+         &defaultProtectedGetFn, &particleTimeFValidator, PDC_NUM_KEYS,
          "@brief Time keys used with the colors and sizes keyframes.\n\n"
          "Values are from 0.0 (particle creation) to 1.0 (end of lifespace).");
       addField( "colors", TYPEID< LinearColorF >(), Offset(colors, ParticleData), PDC_NUM_KEYS,
          "@brief Particle RGBA color keyframe values.\n\n"
          "The particle color will linearly interpolate between the color/time keys "
          "over the lifetime of the particle." );
-      addProtectedField( "sizes", TYPEID< F32 >(), Offset(sizes, ParticleData), &protectedSetSizes, 
-         &defaultProtectedGetFn, PDC_NUM_KEYS,
+      addProtectedFieldV( "sizes", TypeRangedF32, Offset(sizes, ParticleData), &protectedSetSizes,
+         &defaultProtectedGetFn, &particleSizeFValidator, PDC_NUM_KEYS,
          "@brief Particle size keyframe values.\n\n"
          "The particle size will linearly interpolate between the size/time keys "
          "over the lifetime of the particle." );
@@ -442,6 +444,18 @@ bool ParticleData::protectedSetTimes( void *object, const char *index, const cha
       i = dAtoui(index);
 
    pData->times[i] = mClampF( val, 0.f, 1.f );
+
+   pData->times[0] = 0.0f;
+   for (i = 1; i < PDC_NUM_KEYS; i++)
+   {
+      if (pData->times[i] < pData->times[i - 1])
+         pData->times[i] = pData->times[i - 1];
+   }
+   for (i = PDC_NUM_KEYS-2; i>1 ; i--)
+   {
+      if (pData->times[i] > pData->times[i + 1])
+         pData->times[i] = pData->times[i + 1];
+   }
 
    return false;
 }
