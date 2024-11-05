@@ -629,29 +629,6 @@ void ConsoleObject::addProtectedFieldV(const char* in_pFieldname,
    const dsize_t in_fieldOffset,
    AbstractClassRep::SetDataNotify in_setDataFn,
    AbstractClassRep::GetDataNotify in_getDataFn,
-   TypeValidator* v,
-   const U32 in_elementCount,
-   const char* in_pFieldDocs,
-   U32 flags)
-{
-   addProtectedFieldV(
-      in_pFieldname,
-      in_fieldType,
-      in_fieldOffset,
-      in_setDataFn,
-      in_getDataFn,
-      &defaultProtectedWriteFn,
-      v,
-      in_elementCount,
-      in_pFieldDocs,
-      flags);
-}
-
-void ConsoleObject::addProtectedFieldV(const char* in_pFieldname,
-   const U32 in_fieldType,
-   const dsize_t in_fieldOffset,
-   AbstractClassRep::SetDataNotify in_setDataFn,
-   AbstractClassRep::GetDataNotify in_getDataFn,
    AbstractClassRep::WriteDataNotify in_writeDataFn,
    TypeValidator* v,
    const U32 in_elementCount,
@@ -680,6 +657,51 @@ void ConsoleObject::addProtectedFieldV(const char* in_pFieldname,
    f.table = conType->getEnumTable();
 
    sg_tempFieldList.push_back(f);
+}
+
+void ConsoleObject::addProtectedFieldV(const char* in_pFieldname,
+   const U32     in_fieldType,
+   const dsize_t in_fieldOffset,
+   AbstractClassRep::SetDataNotify in_setDataFn,
+   AbstractClassRep::GetDataNotify in_getDataFn,
+   TypeValidator* v,
+   const U32 in_elementCount,
+   const char* in_pFieldDocs,
+   U32 flags)
+{
+   addProtectedFieldV(
+      in_pFieldname,
+      in_fieldType,
+      in_fieldOffset,
+      in_setDataFn,
+      in_getDataFn,
+      &defaultProtectedWriteFn,
+      v,
+      in_elementCount,
+      in_pFieldDocs,
+      flags);
+}
+
+void ConsoleObject::addProtectedFieldV(const char* in_pFieldname,
+   const U32     in_fieldType,
+   const dsize_t in_fieldOffset,
+   AbstractClassRep::SetDataNotify in_setDataFn,
+   AbstractClassRep::GetDataNotify in_getDataFn,
+   TypeValidator* v,
+   const char* in_pFieldDocs,
+   U32 flags)
+{
+   addProtectedFieldV(
+      in_pFieldname,
+      in_fieldType,
+      in_fieldOffset,
+      in_setDataFn,
+      in_getDataFn,
+      &defaultProtectedWriteFn,
+      v,
+      1,
+      in_pFieldDocs,
+      flags);
 }
 
 void ConsoleObject::addFieldV(const char*  in_pFieldname,

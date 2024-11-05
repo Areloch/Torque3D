@@ -1385,9 +1385,11 @@ GuiControl* GuiInspectorTypeRangedF32::constructEditControl()
    if (validator)
    {
       retCtrl->setField("format", "%4.5f");
-      retCtrl->setField("range", String::ToString("%4.5f, %4.5f", validator->getMin(), validator->getMax()));
+      retCtrl->setField("range", String::ToString("%4.5f %4.5f", validator->getMin(), validator->getMax()));
       if (validator->getFidelity()>0.0f)
          retCtrl->setField("increment", String::ToString("%g", (validator->getMax()-validator->getMin())/validator->getFidelity()));
+      else
+         retCtrl->setField("increment", String::ToString("%g", POINT_EPSILON));
    }
    return retCtrl;
 }
@@ -1433,7 +1435,7 @@ GuiControl* GuiInspectorTypeRangedS32::constructEditControl()
    IRangeValidator* validator = dynamic_cast<IRangeValidator*>(mField->validator);
    if (validator)
    {
-      retCtrl->setField("range", String::ToString("%i, %i", validator->getMin(), validator->getMax()));
+      retCtrl->setField("range", String::ToString("%i %i", validator->getMin(), validator->getMax()));
       if (validator->getFidelity() > 0)
          retCtrl->setField("increment", String::ToString("%i", (validator->getMax() - validator->getMin()) / validator->getFidelity()));
    }
@@ -1442,7 +1444,7 @@ GuiControl* GuiInspectorTypeRangedS32::constructEditControl()
       IRangeValidatorScaled* scaledValidator = dynamic_cast<IRangeValidatorScaled*>(mField->validator);
       if (scaledValidator)
       {
-         retCtrl->setField("range", String::ToString("%i, %i", scaledValidator->getMin(), scaledValidator->getMax()));
+         retCtrl->setField("range", String::ToString("%i %i", scaledValidator->getMin(), scaledValidator->getMax()));
          if (validator->getFidelity() > 0)
             retCtrl->setField("increment", String::ToString("%i", scaledValidator->getScaleFactor()));
       }

@@ -229,6 +229,11 @@ bool NavMesh::setProtectedDetailSampleDist(void *obj, const char *index, const c
    F32 dist = dAtof(data);
    if(dist == 0.0f || dist >= 0.9f)
       return true;
+   if (dist > 0.0f && dist < 0.9f)
+   {
+      NavMesh* ptr = static_cast<NavMesh*>(obj);
+      ptr->mDetailSampleDist = 0.9f;
+   }
    Con::errorf("NavMesh::detailSampleDist must be 0 or greater than 0.9!");
    return false;
 }
@@ -253,10 +258,6 @@ bool NavMesh::setProtectedAlwaysRender(void *obj, const char *index, const char 
 }
 
 FRangeValidator ValidCellSize(0.01f, 10.0f);
-FRangeValidator ValidSlopeAngle(0.0f, 89.9f);
-IRangeValidator PositiveInt(0, S32_MAX);
-IRangeValidator NaturalNumber(1, S32_MAX);
-FRangeValidator CornerAngle(0.0f, 90.0f);
 
 void NavMesh::initPersistFields()
 {
@@ -282,7 +283,7 @@ void NavMesh::initPersistFields()
       "Maximum climbing height of an actor.");
    addFieldV("actorRadius", TypeRangedF32, Offset(mWalkableRadius, NavMesh), &CommonValidators::PositiveFloat,
       "Radius of an actor.");
-   addFieldV("walkableSlope", TypeRangedF32, Offset(mWalkableSlope, NavMesh), &ValidSlopeAngle,
+   addFieldV("walkableSlope", TypeRangedF32, Offset(mWalkableSlope, NavMesh), &CommonValidators::ValidSlopeAngle,
       "Maximum walkable slope in degrees.");
 
    addField("smallCharacters", TypeBool, Offset(mSmallCharacters, NavMesh),
@@ -321,22 +322,22 @@ void NavMesh::initPersistFields()
 
    addGroup("NavMesh Advanced Options");
 
-   addFieldV("borderSize", TypeRangedS32, Offset(mBorderSize, NavMesh), &PositiveInt,
+   addFieldV("borderSize", TypeRangedS32, Offset(mBorderSize, NavMesh), &CommonValidators::PositiveInt,
       "Size of the non-walkable border around the navigation mesh (in voxels).");
-   addProtectedField("detailSampleDist", TypeF32, Offset(mDetailSampleDist, NavMesh),
-      &setProtectedDetailSampleDist, &defaultProtectedGetFn,
+   addProtectedFieldV("detailSampleDist", TypeF32, Offset(mDetailSampleDist, NavMesh),
+      &setProtectedDetailSampleDist, &defaultProtectedGetFn, &CommonValidators::PositiveFloat,
       "Sets the sampling distance to use when generating the detail mesh.");
    addFieldV("detailSampleError", TypeRangedF32, Offset(mDetailSampleMaxError, NavMesh), &CommonValidators::PositiveFloat,
       "The maximum distance the detail mesh surface should deviate from heightfield data.");
-   addFieldV("maxEdgeLen", TypeRangedS32, Offset(mDetailSampleDist, NavMesh), &PositiveInt,
+   addFieldV("maxEdgeLen", TypeRangedS32, Offset(mDetailSampleDist, NavMesh), &CommonValidators::PositiveInt,
       "The maximum allowed length for contour edges along the border of the mesh.");
    addFieldV("simplificationError", TypeRangedF32, Offset(mMaxSimplificationError, NavMesh), &CommonValidators::PositiveFloat,
       "The maximum distance a simplfied contour's border edges should deviate from the original raw contour.");
-   addFieldV("minRegionArea", TypeRangedS32, Offset(mMinRegionArea, NavMesh), &PositiveInt,
+   addFieldV("minRegionArea", TypeRangedS32, Offset(mMinRegionArea, NavMesh), &CommonValidators::PositiveInt,
       "The minimum number of cells allowed to form isolated island areas.");
-   addFieldV("mergeRegionArea", TypeRangedS32, Offset(mMergeRegionArea, NavMesh), &PositiveInt,
+   addFieldV("mergeRegionArea", TypeRangedS32, Offset(mMergeRegionArea, NavMesh), &CommonValidators::PositiveInt,
       "Any regions with a span count smaller than this value will, if possible, be merged with larger regions.");
-   addFieldV("maxPolysPerTile", TypeRangedS32, Offset(mMaxPolysPerTile, NavMesh), &NaturalNumber,
+   addFieldV("maxPolysPerTile", TypeRangedS32, Offset(mMaxPolysPerTile, NavMesh), &CommonValidators::NaturalNumber,
       "The maximum number of polygons allowed in a tile.");
 
    endGroup("NavMesh Advanced Options");

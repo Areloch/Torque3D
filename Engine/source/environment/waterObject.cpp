@@ -44,7 +44,7 @@
 #include "sfx/sfxAmbience.h"
 #include "T3D/sfx/sfx3DWorld.h"
 #include "sfx/sfxTypes.h"
-
+#include "console/typeValidators.h"
 
 GFXImplementVertexFormat( GFXWaterVertex )
 {
@@ -272,13 +272,13 @@ WaterObject::~WaterObject()
    dFree_aligned(mMatrixSet);
 }
 
-
+FRangeValidator densityRange(0.0f,1000.0f);
 void WaterObject::initPersistFields()
 {
    docsURL;
    addGroup( "WaterObject" );
 
-      addProtectedField( "density", TypeF32, Offset( mDensity, WaterObject ), &WaterObject::_checkDensity, &defaultProtectedGetFn, "Affects buoyancy of an object, thus affecting the Z velocity of a player (jumping, falling, etc.");
+      addProtectedFieldV( "density", TypeRangedF32, Offset( mDensity, WaterObject ), &WaterObject::_checkDensity, &defaultProtectedGetFn, &densityRange, "Affects buoyancy of an object, thus affecting the Z velocity of a player (jumping, falling, etc.");
       addField( "viscosity", TypeF32, Offset( mViscosity, WaterObject ), "Affects drag force applied to an object submerged in this container." );
       addField( "liquidType", TypeRealString, Offset( mLiquidType, WaterObject ), "Liquid type of WaterBlock, such as water, ocean, lava"
 		  " Currently only Water is defined and used.");

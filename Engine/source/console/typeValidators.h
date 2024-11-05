@@ -48,7 +48,7 @@ class FRangeValidator : public TypeValidator
 {
    F32 minV, maxV, mFidelity;
 public:
-   FRangeValidator(F32 minValue, F32 maxValue, F32 fidelity = 0)
+   FRangeValidator(F32 minValue, F32 maxValue, F32 fidelity = 0.0f)
    {
       minV = minValue;
       maxV = maxValue;
@@ -116,6 +116,10 @@ namespace CommonValidators
    extern FRangeValidator NormalizedFloat;
    extern FRangeValidator ColorChanFloat;
 
+   extern FRangeValidator ValidSlopeAngle;
+   extern IRangeValidator PositiveInt;
+   extern IRangeValidator NaturalNumber;
+   extern FRangeValidator CornerAngle;
    // Other Math Types
    extern Point3NormalizeValidator NormalizedPoint3;
 };
