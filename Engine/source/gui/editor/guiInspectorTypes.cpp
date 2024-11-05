@@ -1380,7 +1380,6 @@ GuiControl* GuiInspectorTypeRangedF32::constructEditControl()
    char szBuffer[512];
    dSprintf(szBuffer, 512, "%d.apply(%d.getText());", getId(), retCtrl->getId());
    retCtrl->setField("AltCommand", szBuffer);
-   //retCtrl->setField("Validate", szBuffer);
    FRangeValidator* validator = dynamic_cast<FRangeValidator*>(mField->validator);
    if (validator)
    {
@@ -1416,7 +1415,7 @@ void GuiInspectorTypeRangedS32::consoleInit()
 {
    Parent::consoleInit();
 
-   ConsoleBaseType::getType(TypeRangedS32)->setInspectorFieldType("GuiInspectorTypeRangedF32");
+   ConsoleBaseType::getType(TypeRangedS32)->setInspectorFieldType("GuiInspectorTypeRangedS32");
 }
 
 GuiControl* GuiInspectorTypeRangedS32::constructEditControl()
@@ -1431,22 +1430,26 @@ GuiControl* GuiInspectorTypeRangedS32::constructEditControl()
    char szBuffer[512];
    dSprintf(szBuffer, 512, "%d.apply(%d.getText());", getId(), retCtrl->getId());
    retCtrl->setField("AltCommand", szBuffer);
-   //retCtrl->setField("Validate", szBuffer);
    IRangeValidator* validator = dynamic_cast<IRangeValidator*>(mField->validator);
+
+   retCtrl->setField("increment", "1");
+   retCtrl->setField("format", "%d");
+   retCtrl->setField("range", "-2147483648 2147483647");
+
    if (validator)
    {
-      retCtrl->setField("range", String::ToString("%i %i", validator->getMin(), validator->getMax()));
-      if (validator->getFidelity() > 0)
-         retCtrl->setField("increment", String::ToString("%i", (validator->getMax() - validator->getMin()) / validator->getFidelity()));
+      retCtrl->setField("range", String::ToString("%d %d", validator->getMin(), validator->getMax()));
+      if (validator->getFidelity() > 1)
+         retCtrl->setField("increment", String::ToString("%d", (validator->getMax() - validator->getMin()) / validator->getFidelity()));
    }
    else
    {
       IRangeValidatorScaled* scaledValidator = dynamic_cast<IRangeValidatorScaled*>(mField->validator);
       if (scaledValidator)
       {
-         retCtrl->setField("range", String::ToString("%i %i", scaledValidator->getMin(), scaledValidator->getMax()));
-         if (validator->getFidelity() > 0)
-            retCtrl->setField("increment", String::ToString("%i", scaledValidator->getScaleFactor()));
+         retCtrl->setField("range", String::ToString("%d %d", scaledValidator->getMin(), scaledValidator->getMax()));
+         if (validator->getFidelity() > 1)
+            retCtrl->setField("increment", String::ToString("%d", scaledValidator->getScaleFactor()));
       }
    }
    return retCtrl;

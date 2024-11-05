@@ -454,7 +454,7 @@ ConsoleSetType(TypeRangedF32)
 //-----------------------------------------------------------------------------
 // TypeRangedS32
 //-----------------------------------------------------------------------------
-ConsoleType(float, TypeRangedS32, F32, "")
+ConsoleType(int, TypeRangedS32, S32, "")
 
 ConsoleGetType(TypeRangedS32)
 {

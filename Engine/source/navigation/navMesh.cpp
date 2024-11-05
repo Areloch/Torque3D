@@ -324,7 +324,7 @@ void NavMesh::initPersistFields()
 
    addFieldV("borderSize", TypeRangedS32, Offset(mBorderSize, NavMesh), &CommonValidators::PositiveInt,
       "Size of the non-walkable border around the navigation mesh (in voxels).");
-   addProtectedFieldV("detailSampleDist", TypeF32, Offset(mDetailSampleDist, NavMesh),
+   addProtectedFieldV("detailSampleDist", TypeRangedF32, Offset(mDetailSampleDist, NavMesh),
       &setProtectedDetailSampleDist, &defaultProtectedGetFn, &CommonValidators::PositiveFloat,
       "Sets the sampling distance to use when generating the detail mesh.");
    addFieldV("detailSampleError", TypeRangedF32, Offset(mDetailSampleMaxError, NavMesh), &CommonValidators::PositiveFloat,

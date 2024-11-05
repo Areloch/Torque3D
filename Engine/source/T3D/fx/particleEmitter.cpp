@@ -272,10 +272,10 @@ void ParticleEmitterData::initPersistFields()
          "A random one of these datablocks is selected each time a particle is "
          "emitted." );
 
-      addField( "lifetimeMS", TYPEID< S32 >(), Offset(lifetimeMS, ParticleEmitterData),
+      addFieldV( "lifetimeMS", TypeRangedS32, Offset(lifetimeMS, ParticleEmitterData), &CommonValidators::NaturalNumber,
          "Lifetime of emitted particles (in milliseconds)." );
 
-      addField("lifetimeVarianceMS", TYPEID< S32 >(), Offset(lifetimeVarianceMS, ParticleEmitterData),
+      addFieldV("lifetimeVarianceMS", TypeRangedS32, Offset(lifetimeVarianceMS, ParticleEmitterData), &CommonValidators::NaturalNumber,
          "Variance in particle lifetime from 0 - lifetimeMS." );
 
       addField( "useEmitterSizes", TYPEID< bool >(), Offset(useEmitterSizes, ParticleEmitterData),

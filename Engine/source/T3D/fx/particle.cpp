@@ -162,9 +162,9 @@ void ParticleData::initPersistFields()
          "If true, particles blend like ParticleBlendStyle NORMAL, if false, "
          "blend like ParticleBlendStyle ADDITIVE.\n"
          "@note If ParticleEmitterData::blendStyle is set, it will override this value.");
-      addField("lifetimeMS", TYPEID< S32 >(), Offset(lifetimeMS, ParticleData),
+      addFieldV("lifetimeMS", TypeRangedS32, Offset(lifetimeMS, ParticleData), &CommonValidators::NaturalNumber,
          "Time in milliseconds before this particle is destroyed.");
-      addField("lifetimeVarianceMS", TYPEID< S32 >(), Offset(lifetimeVarianceMS, ParticleData),
+      addFieldV("lifetimeVarianceMS", TypeRangedS32, Offset(lifetimeVarianceMS, ParticleData), &CommonValidators::NaturalNumber,
          "Variance in lifetime of particle, from 0 - lifetimeMS.");
    endGroup("Basic");
 

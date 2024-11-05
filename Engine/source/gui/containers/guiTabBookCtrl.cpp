@@ -27,6 +27,7 @@
 #include "gui/controls/guiPopUpCtrl.h"
 #include "gui/core/guiDefaultControlRender.h"
 #include "gfx/gfxDrawUtil.h"
+#include "console/typeValidators.h"
 
 
 IMPLEMENT_CONOBJECT( GuiTabBookCtrl );
@@ -118,8 +119,8 @@ void GuiTabBookCtrl::initPersistFields()
       addField( "defaultPage",     TypeS32,  Offset( mDefaultPageNum, GuiTabBookCtrl ),
          "Index of page to select on first onWake() call (-1 to disable)." );
 
-      addProtectedField( "selectedPage", TypeS32, Offset( mSelectedPageNum, GuiTabBookCtrl ),
-         &_setSelectedPage, &defaultProtectedGetFn,
+      addProtectedFieldV( "selectedPage", TypeRangedS32, Offset( mSelectedPageNum, GuiTabBookCtrl ),
+         &_setSelectedPage, &defaultProtectedGetFn, &CommonValidators::NaturalNumber,
          "Index of currently selected page." );
 
       addField( "frontTabPadding", TypeS32, Offset( mFrontTabPadding, GuiTabBookCtrl ),

@@ -65,7 +65,7 @@ class IRangeValidator : public TypeValidator
 {
    S32 minV, maxV, mFidelity;
 public:
-   IRangeValidator(S32 minValue, S32 maxValue, S32 fidelity = 0)
+   IRangeValidator(S32 minValue, S32 maxValue, S32 fidelity = 1)
    {
       minV = minValue;
       maxV = maxValue;
@@ -119,6 +119,7 @@ namespace CommonValidators
    extern FRangeValidator ValidSlopeAngle;
    extern IRangeValidator PositiveInt;
    extern IRangeValidator NaturalNumber;
+   extern IRangeValidator S32Range;
    extern FRangeValidator CornerAngle;
    // Other Math Types
    extern Point3NormalizeValidator NormalizedPoint3;

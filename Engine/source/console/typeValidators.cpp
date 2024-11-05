@@ -108,6 +108,7 @@ namespace CommonValidators
    FRangeValidator ValidSlopeAngle(0.0f, 89.9f);
    IRangeValidator PositiveInt(0, S32_MAX);
    IRangeValidator NaturalNumber(1, S32_MAX);
+   IRangeValidator S32Range(S32_MIN, S32_MAX);
    FRangeValidator CornerAngle(0.0f, 90.0f);
 };
 
