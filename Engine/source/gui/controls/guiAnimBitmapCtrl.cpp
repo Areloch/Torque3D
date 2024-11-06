@@ -131,13 +131,13 @@ bool guiAnimBitmapCtrl::ptSetFrame(void *object, const char *index, const char *
    {
       if (pData->mLoop)
       {
-         int len = pData->mNumFrames-1;
+         int len = pData->mNumFrames;
          val = (val >= 0 ? val % len : -val % len ? len - (-val % len) : 0);
       }
       else
       {
          if (val < 0) val = 0;
-         if (val >=pData->mNumFrames) val = pData->mNumFrames-1;
+         if (val >pData->mNumFrames) val = pData->mNumFrames;
       }
       pData->mCurFrameIndex = val;
       return false;
