@@ -127,10 +127,18 @@ bool guiAnimBitmapCtrl::ptSetFrame(void *object, const char *index, const char *
 
    S32 val = dAtoi(data);
 
-   if ((val < 0) || (val > pData->mNumFrames))
+   if ((val < 0) || (val >=pData->mNumFrames))
    {
-      int len = pData->mNumFrames;
-      val = (val >= 0 ? val % len : -val % len ? len - (-val % len) : 0);
+      if (pData->mLoop)
+      {
+         int len = pData->mNumFrames-1;
+         val = (val >= 0 ? val % len : -val % len ? len - (-val % len) : 0);
+      }
+      else
+      {
+         if (val < 0) val = 0;
+         if (val >=pData->mNumFrames) val = pData->mNumFrames-1;
+      }
       pData->mCurFrameIndex = val;
       return false;
    }
