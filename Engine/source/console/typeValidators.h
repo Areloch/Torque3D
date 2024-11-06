@@ -111,18 +111,23 @@ public:
 namespace CommonValidators
 {
    // Floats
+   extern FRangeValidator F32Range;
    extern FRangeValidator PositiveFloat;
    extern FRangeValidator PositiveNonZeroFloat;
    extern FRangeValidator NormalizedFloat;
    extern FRangeValidator ColorChanFloat;
-
    extern FRangeValidator ValidSlopeAngle;
+   extern FRangeValidator CornerAngle;
+
+   extern IRangeValidator S32Range;
    extern IRangeValidator PositiveInt;
    extern IRangeValidator NaturalNumber;
-   extern IRangeValidator S32Range;
-   extern FRangeValidator CornerAngle;
    // Other Math Types
    extern Point3NormalizeValidator NormalizedPoint3;
+
+   // orbital mechanics
+   extern FRangeValidator azimuthV;
+   extern FRangeValidator elevationV;
 };
 
 #endif

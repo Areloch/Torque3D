@@ -42,6 +42,7 @@
 #include "materials/sceneData.h"
 #include "environment/timeOfDay.h"
 #include "materials/materialFeatureTypes.h"
+#include "console/typeValidators.h"
 
 
 ConsoleDocClass( ScatterSky,
@@ -360,16 +361,16 @@ void ScatterSky::initPersistFields()
 
    addGroup( "Orbit" );
 
-      addProtectedField( "azimuth", TypeF32, Offset( mSunAzimuth, ScatterSky ), &ScatterSky::ptSetAzimuth, &defaultProtectedGetFn,
+      addProtectedFieldV( "azimuth", TypeRangedF32, Offset( mSunAzimuth, ScatterSky ), &ScatterSky::ptSetAzimuth, &defaultProtectedGetFn, &azimuthV,
          "The horizontal angle of the sun measured clockwise from the positive Y world axis. This field is networked." );
 
-      addProtectedField( "elevation", TypeF32, Offset( mSunElevation, ScatterSky ), &ScatterSky::ptSetElevation, &defaultProtectedGetFn,
+      addProtectedFieldV( "elevation", TypeRangedF32, Offset( mSunElevation, ScatterSky ), &ScatterSky::ptSetElevation, &defaultProtectedGetFn, &elevationV,
          "The elevation angle of the sun above or below the horizon. This field is networked." );
 
-      addField( "moonAzimuth", TypeF32, Offset( mMoonAzimuth, ScatterSky ),
+      addFieldV( "moonAzimuth", TypeRangedF32, Offset( mMoonAzimuth, ScatterSky ), &azimuthV,
          "The horizontal angle of the moon measured clockwise from the positive Y world axis. This is not animated by time or networked." );
 
-      addField( "moonElevation", TypeF32, Offset( mMoonElevation, ScatterSky ),
+      addFieldV( "moonElevation", TypeRangedF32, Offset( mMoonElevation, ScatterSky ), &elevationV,
          "The elevation angle of the moon above or below the horizon. This is not animated by time or networked." );
 
    endGroup( "Orbit" );

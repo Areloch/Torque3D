@@ -268,7 +268,7 @@ void Material::initPersistFields()
       addFieldV("roughness", TypeRangedF32, Offset(mRoughness, Material),  &CommonValidators::ColorChanFloat,MAX_STAGES,
          "The degree of roughness when not using a ORMConfigMap.");
 
-      addField("metalness", TypeF32, Offset(mMetalness, Material), MAX_STAGES,
+      addFieldV("metalness", TypeRangedF32, Offset(mMetalness, Material), &CommonValidators::ColorChanFloat, MAX_STAGES,
          "The degree of Metalness when not using a ORMConfigMap.");
 
       addField("invertRoughness", TypeBool, Offset(mInvertRoughness, Material), MAX_STAGES,
