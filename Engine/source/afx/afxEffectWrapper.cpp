@@ -35,6 +35,7 @@
 #include "afx/afxEffectWrapper.h"
 #include "afx/util/afxAnimCurve.h"
 #include "afx/util/afxEase.h"
+#include "console/typeValidators.h"
 
 //~~~~~~~~~~~~~~~~~~~~//~~~~~~~~~~~~~~~~~~~~//~~~~~~~~~~~~~~~~~~~~//~~~~~~~~~~~~~~~~~~~~~//
 // afxEffectWrapperData
@@ -261,7 +262,7 @@ void afxEffectWrapperData::initPersistFields()
 
   addField("isLooping",         TypeBool,         myOffset(is_looping),
     "...");
-  addField("loopCount",         TypeS32,          myOffset(n_loops),
+  addFieldV("loopCount",         TypeS32,          myOffset(n_loops), &CommonValidators::PositiveInt,
     "...");
   addField("loopGapTime",       TypeF32,          myOffset(loop_gap_time),
     "...");

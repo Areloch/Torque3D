@@ -361,16 +361,16 @@ void ScatterSky::initPersistFields()
 
    addGroup( "Orbit" );
 
-      addProtectedFieldV( "azimuth", TypeRangedF32, Offset( mSunAzimuth, ScatterSky ), &ScatterSky::ptSetAzimuth, &defaultProtectedGetFn, &azimuthV,
+      addProtectedFieldV( "azimuth", TypeRangedF32, Offset( mSunAzimuth, ScatterSky ), &ScatterSky::ptSetAzimuth, &defaultProtectedGetFn, &CommonValidators::azimuthV,
          "The horizontal angle of the sun measured clockwise from the positive Y world axis. This field is networked." );
 
-      addProtectedFieldV( "elevation", TypeRangedF32, Offset( mSunElevation, ScatterSky ), &ScatterSky::ptSetElevation, &defaultProtectedGetFn, &elevationV,
+      addProtectedFieldV( "elevation", TypeRangedF32, Offset( mSunElevation, ScatterSky ), &ScatterSky::ptSetElevation, &defaultProtectedGetFn, &CommonValidators::elevationV,
          "The elevation angle of the sun above or below the horizon. This field is networked." );
 
-      addFieldV( "moonAzimuth", TypeRangedF32, Offset( mMoonAzimuth, ScatterSky ), &azimuthV,
+      addFieldV( "moonAzimuth", TypeRangedF32, Offset( mMoonAzimuth, ScatterSky ), &CommonValidators::azimuthV,
          "The horizontal angle of the moon measured clockwise from the positive Y world axis. This is not animated by time or networked." );
 
-      addFieldV( "moonElevation", TypeRangedF32, Offset( mMoonElevation, ScatterSky ), &elevationV,
+      addFieldV( "moonElevation", TypeRangedF32, Offset( mMoonElevation, ScatterSky ), &CommonValidators::elevationV,
          "The elevation angle of the moon above or below the horizon. This is not animated by time or networked." );
 
    endGroup( "Orbit" );

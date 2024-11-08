@@ -159,11 +159,11 @@ void afxSelectronData::initPersistFields()
     "...");
   addField("deselectDur",               TypeF32,    myOffset(deselect_dur),
     "...");
-  addField("mainRepeats",               TypeS32,    myOffset(n_main_loops),
+  addFieldV("mainRepeats",               TypeS32,    myOffset(n_main_loops), &CommonValidators::NaturalNumber,
     "...");
-  addField("selectRepeats",             TypeS32,    myOffset(n_select_loops),
+  addFieldV("selectRepeats",             TypeS32,    myOffset(n_select_loops), &CommonValidators::NaturalNumber,
     "...");
-  addField("deselectRepeats",           TypeS32,    myOffset(n_deselect_loops),
+  addFieldV("deselectRepeats",           TypeS32,    myOffset(n_deselect_loops), &CommonValidators::NaturalNumber,
     "...");
   addField("selectionTypeMask",         TypeS32,    myOffset(obj_type_mask),
     "...");
