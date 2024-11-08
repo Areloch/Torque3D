@@ -262,7 +262,7 @@ void afxEffectWrapperData::initPersistFields()
 
   addField("isLooping",         TypeBool,         myOffset(is_looping),
     "...");
-  addFieldV("loopCount",         TypeS32,          myOffset(n_loops), &CommonValidators::PositiveInt,
+  addFieldV("loopCount",         TypeRangedS32,          myOffset(n_loops), &CommonValidators::PositiveInt,
     "...");
   addField("loopGapTime",       TypeF32,          myOffset(loop_gap_time),
     "...");

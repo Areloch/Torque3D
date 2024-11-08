@@ -143,7 +143,7 @@ void afxEffectGroupData::initPersistFields()
    docsURL;
   addField("groupEnabled",   TypeBool,    myOffset(group_enabled),
     "...");
-  addFieldV("count",          TypeS32,     myOffset(group_count), &CommonValidators::NaturalNumber,
+  addFieldV("count", TypeRangedS32,     myOffset(group_count), &CommonValidators::NaturalNumber,
     "...");
   addField("indexOffset",    TypeS8,      myOffset(idx_offset),
     "...");
