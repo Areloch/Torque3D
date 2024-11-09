@@ -26,6 +26,7 @@
 #include "sfx/sfxTrack.h"
 #include "sfx/sfxSource.h"
 #include "sfx/sfxTypes.h"
+#include "console/typeValidators.h"
 
 #define TickMs      32
 
@@ -116,7 +117,7 @@ void GuiAudioCtrl::initPersistFields()
 {
    addGroup("Sounds");
       INITPERSISTFIELD_SOUNDASSET(Sound, GuiAudioCtrl, "Looping SoundAsset to play while GuiAudioCtrl is active.");
-      addField("tickPeriodMS", TypeS32, Offset(mTickPeriodMS, GuiAudioCtrl),
+      addFieldV("tickPeriodMS", TypeRangedS32, Offset(mTickPeriodMS, GuiAudioCtrl), &CommonValidators::MSTickRange,
          "@brief Time in milliseconds between calls to onTick().\n\n"
          "@see onTickTrigger()\n");
       addField("playIf", TypeCommand, Offset(mPlayIf, GuiAudioCtrl), "evaluation condition to trip playback (true/false)");

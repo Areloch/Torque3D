@@ -120,8 +120,10 @@ namespace CommonValidators
    extern FRangeValidator CornerAngle;
 
    extern IRangeValidator S32Range;
+   extern IRangeValidator NegDefaultInt;
    extern IRangeValidator PositiveInt;
    extern IRangeValidator NaturalNumber;
+   extern IRangeValidator MSTickRange;
    // Other Math Types
    extern Point3NormalizeValidator NormalizedPoint3;
 

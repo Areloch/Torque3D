@@ -29,6 +29,7 @@
 #include "gui/containers/guiScrollCtrl.h"
 #include "core/strings/stringUnit.h"
 #include "gui/core/guiDefaultControlRender.h"
+#include "console/typeValidators.h"
 
 //-----------------------------------------------------------------------------
 // GuiGameSettingsCtrl
@@ -847,10 +848,10 @@ void GuiGameSettingsCtrl::initPersistFields()
    addField("arrowSize", TypeS32, Offset(mArrowSize, GuiGameSettingsCtrl),
       "Size of the arrow buttons' extents");
 
-   addField("columnSplit", TypeS32, Offset(mColumnSplit, GuiGameSettingsCtrl),
+   addFieldV("columnSplit", TypeRangedS32, Offset(mColumnSplit, GuiGameSettingsCtrl), &CommonValidators::NaturalNumber,
       "Position of the split between the leftside label and the rightside setting parts");
 
-   addField("rightPad", TypeS32, Offset(mRightPad, GuiGameSettingsCtrl),
+   addFieldV("rightPad", TypeRangedS32, Offset(mRightPad, GuiGameSettingsCtrl), &CommonValidators::NaturalNumber,
       "Padding between the rightmost edge of the control and right arrow.");
 
    addField("callbackOnA", TypeString, Offset(mCallbackOnA, GuiGameSettingsCtrl),

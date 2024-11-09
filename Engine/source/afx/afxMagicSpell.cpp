@@ -222,7 +222,7 @@ void afxMagicSpellData::initPersistFields()
   addGroup("Casting Stage");
   addField("castingDur",            TypeF32,        myOffset(mCasting_dur),
     "...");
-  addField("numCastingLoops",       TypeS32,        myOffset(mNum_casting_loops),
+  addFieldV("numCastingLoops",       TypeRangedS32,        myOffset(mNum_casting_loops), &CommonValidators::NaturalNumber,
     "...");
   addField("extraCastingTime",      TypeF32,        myOffset(mExtra_casting_time),
     "...");
@@ -233,7 +233,7 @@ void afxMagicSpellData::initPersistFields()
   addGroup("Delivery Stage");
   addField("deliveryDur",           TypeF32,        myOffset(mDelivery_dur),
     "...");
-  addField("numDeliveryLoops",      TypeS32,        myOffset(mNum_delivery_loops),
+  addFieldV("numDeliveryLoops", TypeRangedS32,        myOffset(mNum_delivery_loops), &CommonValidators::NaturalNumber,
     "...");
   addField("extraDeliveryTime",     TypeF32,        myOffset(mExtra_delivery_time),
     "...");
@@ -246,7 +246,7 @@ void afxMagicSpellData::initPersistFields()
   addGroup("Linger Stage");
   addField("lingerDur",             TypeF32,        myOffset(mLinger_dur),
     "...");
-  addField("numLingerLoops",        TypeS32,        myOffset(mNum_linger_loops),
+  addFieldV("numLingerLoops", TypeRangedS32,        myOffset(mNum_linger_loops), &CommonValidators::NaturalNumber,
     "...");
   addField("extraLingerTime",       TypeF32,        myOffset(mExtra_linger_time),
     "...");

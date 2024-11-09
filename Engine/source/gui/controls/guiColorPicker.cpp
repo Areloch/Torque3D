@@ -29,6 +29,7 @@
 #include "gui/controls/guiColorPicker.h"
 #include "gfx/primBuilder.h"
 #include "gfx/gfxDrawUtil.h"
+#include "console/typeValidators.h"
 
 /// @name Common colors we use
 /// @{
@@ -105,7 +106,7 @@ void GuiColorPickerCtrl::initPersistFields()
    addGroup("ColorPicker");
       addField("baseColor", TypeColorF, Offset(mBaseColor, GuiColorPickerCtrl));
       addField("pickColor", TypeColorF, Offset(mPickColor, GuiColorPickerCtrl));
-      addField("selectorGap", TypeS32,  Offset(mSelectorGap, GuiColorPickerCtrl)); 
+      addFieldV("selectorGap", TypeRangedS32,  Offset(mSelectorGap, GuiColorPickerCtrl),&CommonValidators::NaturalNumber);
       addField("displayMode", TYPEID< PickMode >(), Offset(mDisplayMode, GuiColorPickerCtrl) );
       addField("actionOnMove", TypeBool,Offset(mActionOnMove, GuiColorPickerCtrl));
       addField("showReticle", TypeBool, Offset(mShowReticle, GuiColorPickerCtrl));

@@ -37,6 +37,7 @@
 #include "scene/sceneManager.h"
 #include "scene/sceneRenderState.h"
 #include "renderInstance/renderBinManager.h"
+#include "console/typeValidators.h"
 
 #include "T3D/Scene.h"
 
@@ -246,7 +247,7 @@ void EditTSCtrl::initPersistFields()
    addGroup("BorderMovement");	
    
       addField("allowBorderMove", TypeBool, Offset(mAllowBorderMove, EditTSCtrl));
-      addField("borderMovePixelSize", TypeS32, Offset(mMouseMoveBorder, EditTSCtrl));
+      addFieldV("borderMovePixelSize", TypeRangedS32, Offset(mMouseMoveBorder, EditTSCtrl), &CommonValidators::PositiveInt);
       addField("borderMoveSpeed", TypeF32, Offset(mMouseMoveSpeed, EditTSCtrl));
       
    endGroup("BorderMovement");	
@@ -255,9 +256,9 @@ void EditTSCtrl::initPersistFields()
    
       addField("consoleFrameColor", TypeColorI, Offset(mConsoleFrameColor, EditTSCtrl));
       addField("consoleFillColor", TypeColorI, Offset(mConsoleFillColor, EditTSCtrl));
-      addField("consoleSphereLevel", TypeS32, Offset(mConsoleSphereLevel, EditTSCtrl));
-      addField("consoleCircleSegments", TypeS32, Offset(mConsoleCircleSegments, EditTSCtrl));
-      addField("consoleLineWidth", TypeS32, Offset(mConsoleLineWidth, EditTSCtrl));
+      addFieldV("consoleSphereLevel", TypeRangedS32, Offset(mConsoleSphereLevel, EditTSCtrl), &CommonValidators::NaturalNumber);
+      addFieldV("consoleCircleSegments", TypeRangedS32, Offset(mConsoleCircleSegments, EditTSCtrl), &CommonValidators::NaturalNumber);
+      addFieldV("consoleLineWidth", TypeRangedS32, Offset(mConsoleLineWidth, EditTSCtrl), &CommonValidators::NaturalNumber);
       addField("gizmoProfile", TYPEID< GizmoProfile >(), Offset(mGizmoProfile, EditTSCtrl));
       
    endGroup("Misc");

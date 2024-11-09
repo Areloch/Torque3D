@@ -28,6 +28,7 @@
 #include "gui/editor/inspector/dynamicGroup.h"
 #include "gui/containers/guiScrollCtrl.h"
 #include "gui/editor/inspector/customField.h"
+#include "console/typeValidators.h"
 
 IMPLEMENT_CONOBJECT(GuiInspector);
 
@@ -79,7 +80,7 @@ void GuiInspector::initPersistFields()
       addField( "showCustomFields", TypeBool, Offset( mShowCustomFields, GuiInspector ),
          "If false the custom fields Name, Id, and Source Class will not be shown." );
 
-      addField("forcedArrayIndex", TypeS32, Offset(mForcedArrayIndex, GuiInspector));
+      addFieldV("forcedArrayIndex", TypeRangedS32, Offset(mForcedArrayIndex, GuiInspector), &CommonValidators::NegDefaultInt);
 
       addField("searchText", TypeString, Offset(mSearchText, GuiInspector), "A string that, if not blank, is used to filter shown fields");
    endGroup( "Inspector" );

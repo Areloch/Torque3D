@@ -32,6 +32,7 @@
 #include "sfx/sfxTrack.h"
 #include "sfx/sfxTypes.h"
 #include "console/engineAPI.h"
+#include "console/typeValidators.h"
 
 IMPLEMENT_CONOBJECT( GuiMLTextCtrl );
 
@@ -301,9 +302,9 @@ void GuiMLTextCtrl::initPersistFields()
    docsURL;
    addGroup( "Text" );
    
-      addField("lineSpacing",       TypeS32,    Offset(mLineSpacingPixels, GuiMLTextCtrl), "The number of blank pixels to place between each line.\n");
+      addFieldV("lineSpacing",       TypeRangedS32,    Offset(mLineSpacingPixels, GuiMLTextCtrl), &CommonValidators::PositiveInt, "The number of blank pixels to place between each line.\n");
       addField("allowColorChars",   TypeBool,   Offset(mAllowColorChars,   GuiMLTextCtrl), "If true, the control will allow characters to have unique colors.");
-      addField("maxChars",          TypeS32,    Offset(mMaxBufferSize,     GuiMLTextCtrl), "Maximum number of characters that the control will display.");
+      addFieldV("maxChars", TypeRangedS32,    Offset(mMaxBufferSize,     GuiMLTextCtrl), &CommonValidators::NegDefaultInt, "Maximum number of characters that the control will display.");
       INITPERSISTFIELD_SOUNDASSET(DeniedSound, GuiMLTextCtrl, "If the text will not fit in the control, the deniedSound is played.");
       addField("text",              TypeCaseString,  Offset( mInitialText, GuiMLTextCtrl ), "Text to display in this control.");
       addField("useURLMouseCursor", TypeBool,   Offset(mUseURLMouseCursor,   GuiMLTextCtrl), "If true, the mouse cursor will turn into a hand cursor while over a link in the text.\n"

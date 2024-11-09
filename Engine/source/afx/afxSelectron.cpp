@@ -180,11 +180,11 @@ void afxSelectronData::initPersistFields()
     "...");
 
   // deprecated
-  addField("numMainLoops",      TypeS32,      myOffset(n_main_loops),
+  addFieldV("numMainLoops", TypeRangedS32,      myOffset(n_main_loops), &CommonValidators::NaturalNumber,
     "...");
-  addField("numSelectLoops",    TypeS32,      myOffset(n_select_loops),
+  addFieldV("numSelectLoops", TypeRangedS32,      myOffset(n_select_loops), &CommonValidators::NaturalNumber,
     "...");
-  addField("numDeselectLoops",  TypeS32,      myOffset(n_deselect_loops),
+  addFieldV("numDeselectLoops", TypeRangedS32,      myOffset(n_deselect_loops), &CommonValidators::NaturalNumber,
     "...");
 
   Parent::initPersistFields();

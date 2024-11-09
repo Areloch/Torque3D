@@ -93,7 +93,7 @@ void afxRPGMagicSpellData::initPersistFields()
 
   addField("range",             TypeF32,        myOffset(spell_range),
     "...");
-  addField("manaCost",          TypeS32,        myOffset(mana_cost),
+  addFieldV("manaCost",          TypeRangedS32,        myOffset(mana_cost), &CommonValidators::PositiveInt,
     "...");
   addField("reagentCost",       TypeS8,         myOffset(reagent_cost), MAX_REAGENTS_PER_SPELL,
     "...");

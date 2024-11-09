@@ -109,8 +109,11 @@ namespace CommonValidators
    FRangeValidator CornerAngle(0.0f, 90.0f);
 
    IRangeValidator S32Range(S32_MIN, S32_MAX);
+   IRangeValidator NegDefaultInt(-1, S32_MAX);
    IRangeValidator PositiveInt(0, S32_MAX);
    IRangeValidator NaturalNumber(1, S32_MAX);
+   //see "T3D/gameBase/processList.h" for TickMs = 32
+   IRangeValidator MSTickRange(32, S32_MAX);
 
    Point3NormalizeValidator NormalizedPoint3(1.0f);
 
