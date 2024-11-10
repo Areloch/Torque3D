@@ -117,7 +117,7 @@ void WheeledVehicleTire::initPersistFields()
 
    addField( "mass", TypeF32, Offset(mass, WheeledVehicleTire),
       "The mass of the wheel.\nCurrently unused." );
-   addField( "radius", TypeF32, Offset(radius, WheeledVehicleTire),
+   addFieldV( "radius", TypeF32, Offset(radius, WheeledVehicleTire), &CommonValidators::PositiveFloat,
       "@brief The radius of the wheel.\n\n"
       "The radius is determined from the bounding box of the shape provided "
       "in the shapefile field, and does not need to be specified in script. "

@@ -101,6 +101,7 @@ void Point3NormalizeValidator::validateType(SimObject *object, void *typePtr)
 namespace CommonValidators
 {
    FRangeValidator F32Range(F32_MIN, F32_MAX);
+   FRangeValidator NegDefaultF32(-1.0f, F32_MAX);
    FRangeValidator PositiveFloat(0.0f, F32_MAX);
    FRangeValidator PositiveNonZeroFloat((F32)POINT_EPSILON, F32_MAX);
    FRangeValidator NormalizedFloat(0.0f, 1.0f);
@@ -123,8 +124,12 @@ namespace CommonValidators
 
    FRangeValidator DegreeRange(-360.0f, 360.0f);
    FRangeValidator PosDegreeRange(0.0f, 360.0f);
+   FRangeValidator DegreeRangeHalf(-180.0f, 180.0f);
+   FRangeValidator PosDegreeRangeHalf(0.0f, 180.0f);
 
    IRangeValidator S32_DegreeRange(-360, 360);
    IRangeValidator S32_PosDegreeRange(0, 360);
+   IRangeValidator S32_DegreeRangeHalf(-180, 180);
+   IRangeValidator S32_PosDegreeRangeHalf(0, 180);
 };
 

@@ -545,7 +545,7 @@ void GroundCover::initPersistFields()
 
       INITPERSISTFIELD_MATERIALASSET(Material, GroundCover, "Material used by all GroundCover segments.");
 
-      addField( "radius",        TypeF32,          Offset( mRadius, GroundCover ),              "Outer generation radius from the current camera position." );
+      addFieldV( "radius", TypeRangedF32,          Offset( mRadius, GroundCover ), &CommonValidators::PositiveFloat,              "Outer generation radius from the current camera position." );
       addField( "dissolveRadius",TypeF32,          Offset( mFadeRadius, GroundCover ),          "This is less than or equal to radius and defines when fading of cover elements begins." );
       addField( "reflectScale",  TypeF32,          Offset( mReflectRadiusScale, GroundCover ),  "Scales the various culling radii when rendering a reflection. Typically for water." );
 

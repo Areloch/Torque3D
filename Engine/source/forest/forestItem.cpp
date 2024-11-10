@@ -70,7 +70,7 @@ void ForestItemData::initPersistFields()
    addGroup("Physics");
       addField( "collidable",   TypeBool, Offset( mCollidable, ForestItemData ),
          "Can other objects or spacial queries hit items of this type." );
-      addField( "radius", TypeF32, Offset( mRadius, ForestItemData ),
+      addFieldV( "radius", TypeRangedF32, Offset( mRadius, ForestItemData ), &CommonValidators::PositiveFloat,
          "Radius used during placement to ensure items are not crowded." );
    endGroup("Physics");
 

@@ -112,6 +112,7 @@ namespace CommonValidators
 {
    // Floats
    extern FRangeValidator F32Range;
+   extern FRangeValidator NegDefaultF32;   
    extern FRangeValidator PositiveFloat;
    extern FRangeValidator PositiveNonZeroFloat;
    extern FRangeValidator NormalizedFloat;
@@ -133,9 +134,13 @@ namespace CommonValidators
    // orbital mechanics
    extern FRangeValidator DegreeRange;
    extern FRangeValidator PosDegreeRange;
+   extern FRangeValidator DegreeRangeHalf;
+   extern FRangeValidator PosDegreeRangeHalf;
 
    extern IRangeValidator S32_DegreeRange;
    extern IRangeValidator S32_PosDegreeRange;
+   extern IRangeValidator S32_DegreeRangeHalf;
+   extern IRangeValidator S32_PosDegreeRangeHalf;
 };
 
 #endif

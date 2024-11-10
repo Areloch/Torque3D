@@ -83,7 +83,7 @@ void afxAreaDamageData::initPersistFields()
     "An amount of area damage to inflict on a target. Objects within half the radius "
     "receive full damage which then diminishes out to the full distance of the specified "
     "radius.");
-  addFieldV("radius", TypeRangedF32,        myOffset(radius), &CommonValidators::F32Range,
+  addFieldV("radius", TypeRangedF32,        myOffset(radius), &CommonValidators::PositiveFloat,
     "Radius centered at the effect position in which damage will be applied.");
   addFieldV("impulse", TypeRangedF32,        myOffset(impulse), &CommonValidators::F32Range,
     "Specifies an amount of force to apply to damaged objects. Objects within half the "

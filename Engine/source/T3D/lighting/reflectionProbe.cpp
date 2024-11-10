@@ -159,7 +159,7 @@ void ReflectionProbe::initPersistFields()
    endGroup("Rendering");
 
    addGroup("Reflection");
-      addProtectedField("radius", TypeF32, Offset(mRadius, ReflectionProbe), &_setRadius, &defaultProtectedGetFn, 
+      addProtectedFieldV("radius", TypeRangedF32, Offset(mRadius, ReflectionProbe), &_setRadius, &defaultProtectedGetFn, &CommonValidators::PositiveFloat,
          "The name of the material used to render the mesh.");
 
       addProtectedField("EditPosOffset", TypeBool, Offset(mEditPosOffset, ReflectionProbe),

@@ -246,7 +246,7 @@ void ForestWindEmitter::initPersistFields()
       addField( "windEnabled",         TypeBool,      Offset( mEnabled, ForestWindEmitter ), "Determines if the emitter will be counted in wind calculations." );
       addField( "radialEmitter",       TypeBool,      Offset( mRadialEmitter, ForestWindEmitter ), "Determines if the emitter is a global direction or local radial emitter." );
       addField( "strength",            TypeF32,       Offset( mWindStrength, ForestWindEmitter ), "The strength of the wind force." );
-      addField( "radius",              TypeF32,       Offset( mWindRadius, ForestWindEmitter ), "The radius of the emitter for local radial emitters." );
+      addFieldV( "radius",              TypeRangedF32,       Offset( mWindRadius, ForestWindEmitter ), &CommonValidators::PositiveFloat, "The radius of the emitter for local radial emitters." );
       addField( "gustStrength",        TypeF32,       Offset( mWindGustStrength, ForestWindEmitter ), "The maximum strength of a gust." );
       addField( "gustFrequency",       TypeF32,       Offset( mWindGustFrequency, ForestWindEmitter ), "The frequency of gusting in seconds." );
       addField( "gustYawAngle",        TypeF32,       Offset( mWindGustYawAngle, ForestWindEmitter ), "The amount of degrees the wind direction can drift (both positive and negative)." );
