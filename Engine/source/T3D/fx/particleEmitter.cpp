@@ -338,7 +338,7 @@ void ParticleEmitterData::initPersistFields()
 #if defined(AFX_CAP_PARTICLE_POOLS)
    addGroup("AFX Pooled Particles");
    addField("poolData", TYPEID<afxParticlePoolData>(), Offset(pool_datablock, ParticleEmitterData));
-   addField("poolIndex",            TypeS32,                      Offset(pool_index,        ParticleEmitterData));
+   addFieldV("poolIndex",            TypeRangedS32,                      Offset(pool_index,        ParticleEmitterData), &CommonValidators::PositiveInt);
    addField("poolDepthFade",        TypeBool,                     Offset(pool_depth_fade,   ParticleEmitterData));
    addField("poolRadialFade",       TypeBool,                     Offset(pool_radial_fade,  ParticleEmitterData));
    endGroup("AFX Pooled Particles");

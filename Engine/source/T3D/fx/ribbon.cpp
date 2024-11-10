@@ -80,11 +80,11 @@ void RibbonData::initPersistFields()
    addField("position", TypeF32, Offset(mTimes, RibbonData), NumFields,
       "The position of the keyframe along the lifetime of the ribbon.");
 
-   addField("ribbonLength", TypeS32, Offset(mRibbonLength, RibbonData),
+   addFieldV("ribbonLength", TypeRangedS32, Offset(mRibbonLength, RibbonData), &CommonValidators::NaturalNumber,
       "The amount of segments the Ribbon can maximally have in length.");
-   addField("segmentsPerUpdate", TypeS32, Offset(segmentsPerUpdate, RibbonData),
+   addFieldV("segmentsPerUpdate", TypeRangedS32, Offset(segmentsPerUpdate, RibbonData), &CommonValidators::NaturalNumber,
       "How many segments to add each update.");
-   addField("skipAmount", TypeS32, Offset(mSegmentSkipAmount, RibbonData),
+   addFieldV("skipAmount", TypeRangedS32, Offset(mSegmentSkipAmount, RibbonData), &CommonValidators::PositiveInt,
       "The amount of segments to skip each update.");
 
    addField("useFadeOut", TypeBool, Offset(mUseFadeOut, RibbonData),

@@ -373,7 +373,7 @@ void GuiControlProfile::initPersistFields()
       addField("fillColorSEL",  TypeColorI,     Offset(mFillColorSEL, GuiControlProfile));
       addFieldV("border",        TypeRangedS32,        Offset(mBorder, GuiControlProfile), &CommonValidators::PositiveInt,
          "Border type (0=no border)." );
-      addFieldV("borderThickness",TypeS32,       Offset(mBorderThickness, GuiControlProfile), &CommonValidators::PositiveInt,
+      addFieldV("borderThickness", TypeRangedS32,       Offset(mBorderThickness, GuiControlProfile), &CommonValidators::PositiveInt,
          "Thickness of border in pixels." );
       addField("borderColor",   TypeColorI,     Offset(mBorderColor, GuiControlProfile),
          "Color to draw border with." );

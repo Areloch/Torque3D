@@ -121,12 +121,12 @@ void SplashData::initPersistFields()
 
    addField("scale",             TypePoint3F,                  Offset(scale,              SplashData), "The scale of this splashing effect, defined as the F32 points X, Y, Z.\n");
    addField("emitter",           TYPEID< ParticleEmitterData >(),   Offset(emitterList,        SplashData), NUM_EMITTERS, "List of particle emitters to create at the point of this Splash effect.\n");
-   addField("delayMS",           TypeS32,                      Offset(delayMS,            SplashData), "Time to delay, in milliseconds, before actually starting this effect.\n");
-   addField("delayVariance",     TypeS32,                      Offset(delayVariance,      SplashData), "Time variance for delayMS.\n");
-   addField("lifetimeMS",        TypeS32,                      Offset(lifetimeMS,         SplashData), "Lifetime for this effect, in milliseconds.\n");
-   addField("lifetimeVariance",  TypeS32,                      Offset(lifetimeVariance,   SplashData), "Time variance for lifetimeMS.\n");
+   addFieldV("delayMS", TypeRangedS32,                      Offset(delayMS,            SplashData), &CommonValidators::PositiveInt, "Time to delay, in milliseconds, before actually starting this effect.\n");
+   addFieldV("delayVariance", TypeRangedS32,                      Offset(delayVariance,      SplashData), &CommonValidators::PositiveInt, "Time variance for delayMS.\n");
+   addFieldV("lifetimeMS", TypeRangedS32,                      Offset(lifetimeMS,         SplashData), &CommonValidators::PositiveInt, "Lifetime for this effect, in milliseconds.\n");
+   addFieldV("lifetimeVariance", TypeRangedS32,                      Offset(lifetimeVariance,   SplashData), &CommonValidators::PositiveInt, "Time variance for lifetimeMS.\n");
    addField("width",             TypeF32,                      Offset(width,              SplashData), "Width for the X and Y coordinates to create this effect within.");
-   addField("numSegments",       TypeS32,                      Offset(numSegments,        SplashData), "Number of ejection points in the splash ring.\n");
+   addFieldV("numSegments", TypeRangedS32,                      Offset(numSegments,        SplashData), &CommonValidators::NaturalNumber, "Number of ejection points in the splash ring.\n");
    addField("velocity",          TypeF32,                      Offset(velocity,           SplashData), "Velocity for the splash effect to travel.\n");
    addField("height",            TypeF32,                      Offset(height,             SplashData), "Height for the splash to reach.\n");
    addField("acceleration",      TypeF32,                      Offset(acceleration,       SplashData), "Constant acceleration value to place upon the splash effect.\n");

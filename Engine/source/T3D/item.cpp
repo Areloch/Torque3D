@@ -164,7 +164,7 @@ void ItemData::initPersistFields()
       addField("lightColor",        TypeColorF,    Offset(lightColor,         ItemData),
          "@brief Color value to make this light. Example: \"1.0,1.0,1.0\"\n\n"
          "@see lightType\n");
-      addField("lightTime",         TypeS32,       Offset(lightTime,          ItemData), 
+      addFieldV("lightTime",         TypeRangedS32,       Offset(lightTime,          ItemData), &CommonValidators::NaturalNumber,
          "@brief Time value for the light of this ItemData, used to control the pulse speed of the PulsingLight LightType.\n\n"
          "@see lightType\n");
       addField("lightRadius",       TypeF32,       Offset(lightRadius,        ItemData), 

@@ -453,17 +453,17 @@ void ExplosionData::initPersistFields()
        addField("playSpeed", TypeF32, Offset(playSpeed, ExplosionData),
           "Time scale at which to play the explosionShape <i>ambient</i> sequence.");
 
-      addField( "delayMS", TypeS32, Offset(delayMS, ExplosionData),
+      addFieldV( "delayMS", TypeRangedS32, Offset(delayMS, ExplosionData), &CommonValidators::PositiveInt,
          "Amount of time, in milliseconds, to delay the start of the explosion effect "
          "from the creation of the Explosion object." );
-      addField( "delayVariance", TypeS32, Offset(delayVariance, ExplosionData),
+      addFieldV( "delayVariance", TypeRangedS32, Offset(delayVariance, ExplosionData), &CommonValidators::PositiveInt,
          "Variance, in milliseconds, of delayMS." );
-      addField( "lifetimeMS", TypeS32, Offset(lifetimeMS, ExplosionData),
+      addFieldV( "lifetimeMS", TypeRangedS32, Offset(lifetimeMS, ExplosionData), &CommonValidators::PositiveInt,
          "@brief Lifetime, in milliseconds, of the Explosion object.\n\n"
          "@note If explosionShape is defined and contains an <i>ambient</i> animation, "
          "this field is ignored, and the playSpeed scaled duration of the animation "
          "is used instead." );
-      addField( "lifetimeVariance", TypeS32, Offset(lifetimeVariance, ExplosionData),
+      addFieldV( "lifetimeVariance", TypeRangedS32, Offset(lifetimeVariance, ExplosionData), &CommonValidators::PositiveInt,
          "Variance, in milliseconds, of the lifetimeMS of the Explosion object.\n" );
       addField( "offset", TypeF32, Offset(offset, ExplosionData),
          "@brief Offset distance (in a random direction) of the center of the explosion "

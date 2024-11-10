@@ -538,7 +538,7 @@ void RigidShapeData::initPersistFields()
       addField("bodyFriction", TypeF32, Offset(body.friction, RigidShapeData), "How much friction this object has. Lower values will cause the object to appear to be more slippery.");
       addField("maxDrag", TypeF32, Offset(maxDrag, RigidShapeData), "Maximum drag available to this object.");
       addField("minDrag", TypeF32, Offset(minDrag, RigidShapeData), "Minimum drag available to this object.");
-      addField("integration", TypeS32, Offset(integration, RigidShapeData), "Number of physics steps to process per tick.");
+      addFieldV("integration", TypeRangedS32, Offset(integration, RigidShapeData), &CommonValidators::NaturalNumber, "Number of physics steps to process per tick.");
       addField("collisionTol", TypeF32, Offset(collisionTol, RigidShapeData), "Collision distance tolerance.");
       addField("contactTol", TypeF32, Offset(contactTol, RigidShapeData), "Contact velocity tolerance.");
       addField("dragForce",            TypeF32, Offset(dragForce,            RigidShapeData), "Used to simulate the constant drag acting on the object");

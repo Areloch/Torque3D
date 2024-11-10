@@ -265,10 +265,10 @@ void Material::initPersistFields()
    endGroup("Basic Texture Maps");
 
    addGroup("Light Influence Maps");
-      addFieldV("roughness", TypeRangedF32, Offset(mRoughness, Material),  &CommonValidators::ColorChanFloat,MAX_STAGES,
+      addFieldV("roughness", TypeRangedF32, Offset(mRoughness, Material),  &CommonValidators::F32_8BitPercent,MAX_STAGES,
          "The degree of roughness when not using a ORMConfigMap.");
 
-      addFieldV("metalness", TypeRangedF32, Offset(mMetalness, Material), &CommonValidators::ColorChanFloat, MAX_STAGES,
+      addFieldV("metalness", TypeRangedF32, Offset(mMetalness, Material), &CommonValidators::F32_8BitPercent, MAX_STAGES,
          "The degree of Metalness when not using a ORMConfigMap.");
 
       addField("invertRoughness", TypeBool, Offset(mInvertRoughness, Material), MAX_STAGES,
@@ -393,7 +393,7 @@ void Material::initPersistFields()
          "@internal");
       addField("cellLayout", TypePoint2I, Offset(mCellLayout, Material), MAX_STAGES,
          "@internal");
-      addField("cellSize", TypeS32, Offset(mCellSize, Material), MAX_STAGES,
+      addFieldV("cellSize", TypeRangedS32, Offset(mCellSize, Material), &CommonValidators::PositiveInt, MAX_STAGES,
          "@internal");
       addField("bumpAtlas", TypeBool, Offset(mNormalMapAtlas, Material), MAX_STAGES,
          "@internal");
@@ -423,7 +423,7 @@ void Material::initPersistFields()
       addField("alphaTest", TypeBool, Offset(mAlphaTest, Material),
          "Enables alpha test when rendering the material.\n@see alphaRef\n");
 
-      addField("alphaRef", TypeS32, Offset(mAlphaRef, Material),
+      addFieldV("alphaRef", TypeRangedS32, Offset(mAlphaRef, Material), &CommonValidators::S32_8BitCap,
          "The alpha reference value for alpha testing.  Must be between 0 to 255.\n@see alphaTest\n");
 
       addField("cubemap", TypeRealString, Offset(mCubemapName, Material),

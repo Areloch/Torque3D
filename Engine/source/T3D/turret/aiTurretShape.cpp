@@ -137,10 +137,10 @@ void AITurretShapeData::initPersistFields()
          "@brief Maximum distance to scan.\n\n"
          "When combined with maxScanHeading and maxScanPitch this forms a 3D scanning wedge used to initially "
          "locate a target.\n");
-      addField("scanTickFrequency",          TypeS32,       Offset(scanTickFrequency,       AITurretShapeData),
+      addFieldV("scanTickFrequency",          TypeRangedS32,       Offset(scanTickFrequency,       AITurretShapeData), &CommonValidators::NaturalNumber,
          "@brief How often should we perform a full scan when looking for a target.\n\n"
          "Expressed as the number of ticks between full scans, but no less than 1.\n");
-      addField("scanTickFrequencyVariance",  TypeS32,       Offset(scanTickFrequencyVariance,       AITurretShapeData),
+      addFieldV("scanTickFrequencyVariance", TypeRangedS32,       Offset(scanTickFrequencyVariance,       AITurretShapeData), &CommonValidators::PositiveInt,
          "@brief Random amount that should be added to the scan tick frequency each scan period.\n\n"
          "Expressed as the number of ticks to randomly add, but no less than zero.\n");
       addField("trackLostTargetTime",  TypeF32,       Offset(trackLostTargetTime,       AITurretShapeData),

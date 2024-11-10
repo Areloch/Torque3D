@@ -134,7 +134,7 @@ void GuiHealthTextHud::initPersistFields()
    addGroup("Alert");  
    addField("warnThreshold", TypeF32, Offset(mWarnLevel, GuiHealthTextHud), "The health level at which to use the warningColor.");    
    addField("pulseThreshold", TypeF32, Offset(mPulseThreshold, GuiHealthTextHud), "Health level at which to begin pulsing.");  
-   addField("pulseRate", TypeS32, Offset(mPulseRate, GuiHealthTextHud), "Speed at which the control will pulse.");  
+   addFieldV("pulseRate", TypeRangedS32, Offset(mPulseRate, GuiHealthTextHud), &CommonValidators::PositiveInt, "Speed at which the control will pulse.");
    endGroup("Alert");  
   
    Parent::initPersistFields();  

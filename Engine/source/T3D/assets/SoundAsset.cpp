@@ -53,6 +53,7 @@
 #include "sfx/sfxTypes.h"
 
 #include "SoundAssetInspectors.h"
+#include "console/typeValidators.h"
 
 //-----------------------------------------------------------------------------
 
@@ -184,7 +185,6 @@ SoundAsset::~SoundAsset()
 }
 
 //-----------------------------------------------------------------------------
-
 void SoundAsset::initPersistFields()
 {
    docsURL;
@@ -255,7 +255,7 @@ void SoundAsset::initPersistFields()
       addField("pitchScaleVariance", TypePoint2F, Offset(mPlaylist.mSlots.mPitchScale.mVariance, SoundAsset), SFXPlayList::SFXPlaylistSettings::NUM_SLOTS,
          "Bounds on randomization of #pitchScale.\n\n"
          "@ref SFXPlayList_randomization\n");
-      addField("repeatCount", TypeS32, Offset(mPlaylist.mSlots.mRepeatCount, SoundAsset), SFXPlayList::SFXPlaylistSettings::NUM_SLOTS,
+      addFieldV("repeatCount", TypeRangedS32, Offset(mPlaylist.mSlots.mRepeatCount, SoundAsset), &CommonValidators::PositiveInt, SFXPlayList::SFXPlaylistSettings::NUM_SLOTS,
          "Number of times to loop this slot.");
       addField("state", TypeSFXStateName, Offset(mPlaylist.mSlots.mState, SoundAsset), SFXPlayList::SFXPlaylistSettings::NUM_SLOTS,
          "State that must be active for this slot to play.\n\n"
@@ -290,8 +290,8 @@ void SoundAsset::initPersistFields()
    addGroup("3D");
       addField("minDistance", TypeF32, Offset(mProfileDesc.mMinDistance, SoundAsset), "Minimum distance for sound.");
       addField("maxDistance", TypeF32, Offset(mProfileDesc.mMaxDistance, SoundAsset), "Max distance for sound.");
-      addField("coneInsideAngle", TypeS32, Offset(mProfileDesc.mConeInsideAngle, SoundAsset), "Cone inside angle.");
-      addField("coneOutsideAngle", TypeS32, Offset(mProfileDesc.mConeOutsideAngle, SoundAsset), "Cone outside angle.");
+      addFieldV("coneInsideAngle", TypeRangedS32, Offset(mProfileDesc.mConeInsideAngle, SoundAsset), &CommonValidators::S32_azimuthV, "Cone inside angle.");
+      addFieldV("coneOutsideAngle", TypeRangedS32, Offset(mProfileDesc.mConeOutsideAngle, SoundAsset), &CommonValidators::S32_azimuthV, "Cone outside angle.");
       addField("coneOutsideVolume", TypeF32, Offset(mProfileDesc.mConeOutsideVolume, SoundAsset), "Cone outside volume.");
       addField("rolloffFactor", TypeF32, Offset(mProfileDesc.mRolloffFactor, SoundAsset), "Rolloff factor.");
       addField("scatterDistance", TypePoint3F, Offset(mProfileDesc.mScatterDistance, SoundAsset), "Randomization to the spacial position of the sound.");
@@ -300,7 +300,7 @@ void SoundAsset::initPersistFields()
    addGroup("Playlist settings");
       addField("random", TYPEID< SFXPlayList::ERandomMode >(), Offset(mPlaylist.mRandomMode, SoundAsset), "Slot playback order randomization pattern.");
       addField("loopMode", TYPEID< SFXPlayList::ELoopMode >(), Offset(mPlaylist.mLoopMode, SoundAsset), "Behavior when description has looping enabled.");
-      addField("numSlotsToPlay", TypeS32, Offset(mPlaylist.mNumSlotsToPlay, SoundAsset), "Number of slots to play.");
+      addFieldV("numSlotsToPlay", TypeRangedS32, Offset(mPlaylist.mNumSlotsToPlay, SoundAsset), &playlistSlotRange, "Number of slots to play.");
       addField("trace", TypeBool, Offset(mPlaylist.mTrace, SoundAsset), "Enable/disable execution tracing for this playlist (local only).");
    endGroup("Playlist settings");
 }

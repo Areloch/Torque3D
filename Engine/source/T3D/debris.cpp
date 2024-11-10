@@ -293,6 +293,7 @@ bool DebrisData::preload(bool server, String &errorStr)
    return true;
 }
 
+IRangeValidator debrisBounceRange(0, 10000);
 void DebrisData::initPersistFields()
 {
    docsURL;
@@ -316,11 +317,11 @@ void DebrisData::initPersistFields()
       "@brief A floating-point value specifying how 'bouncy' this object is.\n\nMust be in the range of -10 to 10.\n");
    addField("friction",             TypeF32,                     Offset(friction,            DebrisData), 
       "@brief A floating-point value specifying how much velocity is lost to impact and sliding friction.\n\nMust be in the range of -10 to 10.\n");
-   addField("numBounces",           TypeS32,                     Offset(numBounces,          DebrisData), 
+   addFieldV("numBounces",           TypeRangedS32,                     Offset(numBounces,          DebrisData), &debrisBounceRange,
       "@brief How many times to allow this debris object to bounce until it either explodes, becomes static or snaps (defined in explodeOnMaxBounce, staticOnMaxBounce, snapOnMaxBounce).\n\n"
       "Must be within the range of 0 to 10000.\n"
       "@see bounceVariance\n");
-   addField("bounceVariance",       TypeS32,                     Offset(bounceVariance,      DebrisData), 
+   addFieldV("bounceVariance", TypeRangedS32,                     Offset(bounceVariance,      DebrisData), &debrisBounceRange,
       "@brief Allowed variance in the value of numBounces.\n\nMust be less than numBounces.\n@see numBounces\n");
    addField("minSpinSpeed",         TypeF32,                     Offset(minSpinSpeed,        DebrisData), 
       "@brief Minimum speed that this debris object will rotate.\n\nMust be in the range of -10000 to 1000, and must be less than maxSpinSpeed.\n@see maxSpinSpeed\n");

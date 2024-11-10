@@ -27,6 +27,7 @@
 #include "core/stream/bitStream.h"
 #include "math/mRandom.h"
 #include "math/mathTypes.h"
+#include "console/typeValidators.h"
 
 
 IMPLEMENT_CO_DATABLOCK_V1( SFXPlayList );
@@ -212,7 +213,7 @@ ImplementEnumType( SFXPlayListStateMode,
       "playing sources attached to the slot." },
 EndImplementEnumType;
 
-
+IRangeValidator playlistSlotRange(0, SFXPlayList::SFXPlaylistSettings::NUM_SLOTS);
 //-----------------------------------------------------------------------------
 
 SFXPlayList::SFXPlayList()
@@ -328,7 +329,7 @@ void SFXPlayList::initPersistFields()
          addField( "pitchScaleVariance",     TypePoint2F,      Offset( mSlots.mPitchScale.mVariance, SFXPlayList ), NUM_SLOTS,
             "Bounds on randomization of #pitchScale.\n\n"
             "@ref SFXPlayList_randomization\n" );
-         addField( "repeatCount",            TypeS32,          Offset( mSlots.mRepeatCount, SFXPlayList ), NUM_SLOTS,
+         addFieldV( "repeatCount",            TypeRangedS32,          Offset( mSlots.mRepeatCount, SFXPlayList ), &CommonValidators::PositiveInt, NUM_SLOTS,
             "Number of times to loop this slot." );
          addField( "state",                  TypeSFXStateName, Offset( mSlots.mState, SFXPlayList ), NUM_SLOTS,
             "State that must be active for this slot to play.\n\n"
