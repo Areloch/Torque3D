@@ -150,13 +150,13 @@ void afxEffectGroupData::initPersistFields()
   addField("assignIndices",  TypeBool,    myOffset(assign_idx),
     "...");
 
-  addField("delay",          TypeF32,     myOffset(timing.delay),
+  addFieldV("delay",          TypeRangedF32,     myOffset(timing.delay), &CommonValidators::PositiveFloat,
     "...");
-  addField("lifetime",       TypeF32,     myOffset(timing.lifetime),
+  addFieldV("lifetime", TypeRangedF32,     myOffset(timing.lifetime), &CommonValidators::PositiveFloat,
     "...");
-  addField("fadeInTime",     TypeF32,     myOffset(timing.fade_in_time),
+  addFieldV("fadeInTime", TypeRangedF32,     myOffset(timing.fade_in_time), &CommonValidators::PositiveFloat,
     "...");
-  addField("fadeOutTime",    TypeF32,     myOffset(timing.fade_out_time),
+  addFieldV("fadeOutTime", TypeRangedF32,     myOffset(timing.fade_out_time), &CommonValidators::PositiveFloat,
     "...");
 
   // effect lists

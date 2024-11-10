@@ -141,7 +141,7 @@ void TimeOfDay::initPersistFields()
 
       addProtectedField( "play", TypeBool, Offset( mPlay, TimeOfDay ), &setPlay, &defaultProtectedGetFn, "True when the TimeOfDay object is operating." );
 
-      addFieldV( "azimuthOverride", TypeRangedF32, Offset( mAzimuthOverride, TimeOfDay ), &CommonValidators::azimuthV, "" );
+      addFieldV( "azimuthOverride", TypeRangedF32, Offset( mAzimuthOverride, TimeOfDay ), &CommonValidators::PosDegreeRange, "" );
 
       addFieldV( "dayScale", TypeRangedF32, Offset( mDayScale, TimeOfDay ), &CommonValidators::PositiveFloat, "Scalar applied to time that elapses while the sun is up." );
 

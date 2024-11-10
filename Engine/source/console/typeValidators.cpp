@@ -121,9 +121,10 @@ namespace CommonValidators
    IRangeValidator S32_16BitCap(0, 1 << 16);
    Point3NormalizeValidator NormalizedPoint3(1.0f);
 
-   FRangeValidator azimuthV(0.0f, 360.0f);
-   FRangeValidator elevationV(-360.0f, 360.0f);
-   IRangeValidator S32_azimuthV(0, 360);
-   IRangeValidator S32_elevationV(-360, 360);
+   FRangeValidator DegreeRange(-360.0f, 360.0f);
+   FRangeValidator PosDegreeRange(0.0f, 360.0f);
+
+   IRangeValidator S32_DegreeRange(-360, 360);
+   IRangeValidator S32_PosDegreeRange(0, 360);
 };
 

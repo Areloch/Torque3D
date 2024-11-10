@@ -131,11 +131,11 @@ namespace CommonValidators
    extern Point3NormalizeValidator NormalizedPoint3;
 
    // orbital mechanics
-   extern FRangeValidator azimuthV;
-   extern FRangeValidator elevationV;
-   // orbital mechanics
-   extern IRangeValidator S32_azimuthV;
-   extern IRangeValidator S32_elevationV;
+   extern FRangeValidator DegreeRange;
+   extern FRangeValidator PosDegreeRange;
+
+   extern IRangeValidator S32_DegreeRange;
+   extern IRangeValidator S32_PosDegreeRange;
 };
 
 #endif

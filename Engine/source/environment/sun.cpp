@@ -145,10 +145,10 @@ void Sun::initPersistFields()
    docsURL;
    addGroup( "Orbit" );
 
-      addField( "azimuth", TypeF32, Offset( mSunAzimuth, Sun ), 
+      addFieldV( "azimuth", TypeRangedF32, Offset( mSunAzimuth, Sun ), &CommonValidators::PosDegreeRange,
          "The horizontal angle of the sun measured clockwise from the positive Y world axis." );
 
-      addField( "elevation", TypeF32, Offset( mSunElevation, Sun ),
+      addFieldV( "elevation", TypeRangedF32, Offset( mSunElevation, Sun ), &CommonValidators::DegreeRange,
          "The elevation angle of the sun above or below the horizon." );
 
    endGroup( "Orbit" );	

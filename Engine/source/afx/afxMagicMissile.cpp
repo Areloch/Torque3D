@@ -326,6 +326,7 @@ FRangeValidator muzzleVelocityValidator(0, 10000);
 FRangeValidator missilePrecisionValidator(0.f, 100.f);
 IRangeValidator missileTrackDelayValidator(0, 100000);
 FRangeValidator missileBallisticCoefficientValidator(0, 1);
+FRangeValidator missileFollowTerrainAdjustRateValidator(0.05f, FLT_MAX);
 
 void afxMagicMissileData::initPersistFields()
 {
@@ -358,7 +359,7 @@ void afxMagicMissileData::initPersistFields()
       addField("isBallistic", TypeBool,   Offset(isBallistic, afxMagicMissileData));
       addNamedFieldV(muzzleVelocity,    TypeRangedF32,      afxMagicMissileData,  &muzzleVelocityValidator);
       addNamedFieldV(ballisticCoefficient,  TypeRangedF32,    afxMagicMissileData,  &missileBallisticCoefficientValidator);
-      addField("gravityMod", TypeF32, Offset(gravityMod, afxMagicMissileData));
+      addFieldV("gravityMod", TypeRangedF32, Offset(gravityMod, afxMagicMissileData), &CommonValidators::F32Range);
       addField("collisionMask",         TypeS32,      myOffset(collision_mask));
       addField("startingVelocityVector",TypePoint3F,  myOffset(starting_vel_vec));
       addNamedField(acceleration,     TypeF32,  afxMagicMissileData);
@@ -375,13 +376,13 @@ void afxMagicMissileData::initPersistFields()
 
    addGroup("Physics-Avoidance");
       addField("followTerrain",             TypeBool, myOffset(followTerrain));
-      addField("followTerrainHeight",       TypeF32,  myOffset(followTerrainHeight));
-      addField("followTerrainAdjustRate",   TypeF32,  myOffset(followTerrainAdjustRate));
+      addFieldV("followTerrainHeight", TypeRangedS32,  myOffset(followTerrainHeight), &CommonValidators::PositiveFloat);
+      addFieldV("followTerrainAdjustRate", TypeRangedS32,  myOffset(followTerrainAdjustRate), &missileFollowTerrainAdjustRateValidator);
       addFieldV("followTerrainAdjustDelay", TypeRangedS32,  myOffset(followTerrainAdjustDelay), &ticksFromMS);
 
-      addField("hoverAltitude",       TypeF32,    myOffset(hover_altitude));
-      addField("hoverAttackDistance", TypeF32,    myOffset(hover_attack_distance));
-      addField("hoverAttackGradient", TypeF32,    myOffset(hover_attack_gradient));
+      addFieldV("hoverAltitude", TypeRangedF32,    myOffset(hover_altitude), &CommonValidators::PositiveFloat);
+      addFieldV("hoverAttackDistance", TypeRangedF32,    myOffset(hover_attack_distance), &CommonValidators::PositiveFloat);
+      addFieldV("hoverAttackGradient", TypeRangedF32,    myOffset(hover_attack_gradient), &CommonValidators::PositiveNonZeroFloat);
       addFieldV("hoverTime", TypeRangedS32,    myOffset(hover_time), &ticksFromMS);
    endGroup("Physics-Avoidance");
 
@@ -391,8 +392,8 @@ void afxMagicMissileData::initPersistFields()
       addField("launchOffsetServer",TypePoint3F,  myOffset(launch_offset_server));
       addField("launchOffsetClient",TypePoint3F,  myOffset(launch_offset_client));
       addField("launchNodeOffset",  TypePoint3F,  myOffset(launch_node_offset));
-      addField("launchAimPitch",    TypeF32,      myOffset(launch_pitch));
-      addField("launchAimPan",      TypeF32,      myOffset(launch_pan));
+      addFieldV("launchAimPitch",    TypeRangedF32,      myOffset(launch_pitch), &CommonValidators::DegreeRange);
+      addFieldV("launchAimPan", TypeRangedF32,      myOffset(launch_pan), &CommonValidators::DegreeRange);
       addField("launchConstraintServer",  TypeString,   myOffset(launch_cons_s_spec));
       addField("launchConstraintClient",  TypeString,   myOffset(launch_cons_c_spec));
       addField("echoLaunchOffset",  TypeBool,     myOffset(echo_launch_offset));
