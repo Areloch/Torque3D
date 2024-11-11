@@ -558,9 +558,9 @@ void ShapeBaseData::initPersistFields()
 
    addGroup( "Physics" );   
       addProtectedField("mass", TypeF32, Offset(mass, ShapeBaseData), &_setMass, &defaultProtectedGetFn, "Shape mass.\nUsed in simulation of moving objects.\n"  );
-      addField( "drag", TypeF32, Offset(drag, ShapeBaseData),
+      addFieldV( "drag", TypeRangedF32, Offset(drag, ShapeBaseData), &CommonValidators::PositiveNonZeroFloat,
          "Drag factor.\nReduces velocity of moving objects." );
-      addField( "density", TypeF32, Offset(density, ShapeBaseData),
+      addFieldV( "density", TypeRangedF32, Offset(density, ShapeBaseData), &CommonValidators::PositiveNonZeroFloat,
          "Shape density.\nUsed when computing buoyancy when in water.\n" );
    endGroup( "Physics" );
 

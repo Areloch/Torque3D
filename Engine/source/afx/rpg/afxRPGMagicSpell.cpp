@@ -91,7 +91,7 @@ void afxRPGMagicSpellData::initPersistFields()
   addField("target", TYPEID< afxRPGMagicSpellData::TargetType >(), myOffset(spell_target),
     "...");
 
-  addField("range",             TypeF32,        myOffset(spell_range),
+  addFieldV("range",             TypeRangedF32,        myOffset(spell_range), &CommonValidators::PositiveFloat,
     "...");
   addFieldV("manaCost",          TypeRangedS32,        myOffset(mana_cost), &CommonValidators::PositiveInt,
     "...");
@@ -101,7 +101,7 @@ void afxRPGMagicSpellData::initPersistFields()
     "...");
 
   // spell phase timing
-  addField("castingDur",        TypeF32,        myOffset(casting_dur));
+  addFieldV("castingDur", TypeRangedF32,        myOffset(casting_dur), &CommonValidators::PositiveFloat);
 
   // interface elements
   addField("iconBitmap",        TypeFilename,   myOffset(icon_name));

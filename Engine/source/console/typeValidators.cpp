@@ -126,10 +126,14 @@ namespace CommonValidators
    FRangeValidator PosDegreeRange(0.0f, 360.0f);
    FRangeValidator DegreeRangeHalf(-180.0f, 180.0f);
    FRangeValidator PosDegreeRangeHalf(0.0f, 180.0f);
+   FRangeValidator DegreeRangeQuarter(-90.0f, 90.0f);
+   FRangeValidator PosDegreeRangeQuarter(0.0f, 90.0f);
 
    IRangeValidator S32_DegreeRange(-360, 360);
    IRangeValidator S32_PosDegreeRange(0, 360);
    IRangeValidator S32_DegreeRangeHalf(-180, 180);
    IRangeValidator S32_PosDegreeRangeHalf(0, 180);
+   IRangeValidator S32_DegreeRangeQuarter(-90, 90);
+   IRangeValidator S32_PosDegreeRangeQuarter(0, 90);
 };
 

@@ -136,11 +136,15 @@ namespace CommonValidators
    extern FRangeValidator PosDegreeRange;
    extern FRangeValidator DegreeRangeHalf;
    extern FRangeValidator PosDegreeRangeHalf;
+   extern FRangeValidator DegreeRangeQuarter;
+   extern FRangeValidator PosDegreeRangeQuarter;
 
    extern IRangeValidator S32_DegreeRange;
    extern IRangeValidator S32_PosDegreeRange;
    extern IRangeValidator S32_DegreeRangeHalf;
    extern IRangeValidator S32_PosDegreeRangeHalf;
+   extern IRangeValidator S32_DegreeRangeQuarter;
+   extern IRangeValidator S32_PosDegreeRangeQuarter;
 };
 
 #endif

@@ -333,7 +333,7 @@ void DebrisData::initPersistFields()
       "@brief Speed at which this debris object will move.\n\n@see velocityVariance\n");
    addField("velocityVariance",     TypeF32,                     Offset(velocityVariance,    DebrisData), 
       "@brief Allowed variance in the value of velocity\n\nMust be less than velocity.\n@see velocity\n");
-   addField("lifetime",             TypeF32,                     Offset(lifetime,            DebrisData), 
+   addFieldV("lifetime",             TypeRangedF32,                     Offset(lifetime,            DebrisData), &CommonValidators::PositiveFloat,
       "@brief Amount of time until this debris object is destroyed.\n\nMust be in the range of 0 to 1000.\n@see lifetimeVariance");
    addField("lifetimeVariance",     TypeF32,                     Offset(lifetimeVariance,    DebrisData), 
       "@brief Allowed variance in the value of lifetime.\n\nMust be less than lifetime.\n@see lifetime\n");
@@ -572,7 +572,7 @@ void Debris::initPersistFields()
    docsURL;
    addGroup( "Debris" );	
    
-      addField( "lifetime", TypeF32, Offset(mLifetime, Debris), 
+      addFieldV( "lifetime", TypeRangedF32, Offset(mLifetime, Debris), &CommonValidators::PositiveFloat,
          "@brief Length of time for this debris object to exist. When expired, the object will be deleted.\n\n"
          "The initial lifetime value comes from the DebrisData datablock.\n"
          "@see DebrisData::lifetime\n"

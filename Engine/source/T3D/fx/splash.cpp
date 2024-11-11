@@ -139,7 +139,7 @@ void SplashData::initPersistFields()
    addField("texFactor",         TypeF32,                      Offset(texFactor,          SplashData), "Factor in which to apply the texture to the splash ring, 0.0f - 1.0f.\n");
    addField("ejectionFreq",      TypeF32,                      Offset(ejectionFreq,       SplashData), "Frequency in which to emit splash rings.\n");
    addField("ejectionAngle",     TypeF32,                      Offset(ejectionAngle,      SplashData), "Rotational angle to create a splash ring.\n");
-   addField("ringLifetime",      TypeF32,                      Offset(ringLifetime,       SplashData), "Lifetime, in milliseconds, for a splash ring.\n");
+   addFieldV("ringLifetime",      TypeRangedF32,                      Offset(ringLifetime,       SplashData), &CommonValidators::PositiveFloat, "Lifetime, in milliseconds, for a splash ring.\n");
    addField("startRadius",       TypeF32,                      Offset(startRadius,        SplashData), "Starting radius size of a splash ring.\n");
    addField("explosion",         TYPEID< ExplosionData >(),    Offset(explosion,          SplashData), "ExplosionData object to create at the creation position of this splash effect.\n");
 

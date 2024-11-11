@@ -128,12 +128,12 @@ void PhysicsDebrisData::initPersistFields()
 
    addGroup( "Physics" );
 
-      addField("lifetime", TypeF32, Offset( lifetime, PhysicsDebrisData ),
+      addFieldV("lifetime", TypeRangedF32, Offset( lifetime, PhysicsDebrisData ), &CommonValidators::PositiveFloat,
          "@brief Base time, in seconds, that debris persists after time of creation.\n\n"
          "@note A %PhysicsDebris' lifetime multiplied by it's $pref::PhysicsDebris::lifetimeScale "
          "must be equal to or greater than 1.0.\n\n");
 
-      addField("lifetimeVariance", TypeF32, Offset( lifetimeVariance, PhysicsDebrisData ),
+      addFieldV("lifetimeVariance", TypeRangedF32, Offset( lifetimeVariance, PhysicsDebrisData ), &CommonValidators::PositiveFloat,
          "@brief Range of variation randomly applied to lifetime when debris is created.\n\n"
          "Represents the maximum amount of seconds that will be added or subtracted to a shape's base lifetime. "
          "A value of 0 will apply the same lifetime to each shape created.\n\n");
