@@ -221,7 +221,7 @@ void CloudLayer::initPersistFields()
       addField( "windSpeed", TypeF32, Offset( mWindSpeed, CloudLayer ),
          "Overall scalar to texture scroll speed." );
 
-      addField( "height", TypeF32, Offset( mHeight, CloudLayer ),
+      addFieldV( "height", TypeRangedF32, Offset( mHeight, CloudLayer ), &CommonValidators::F32Range,
          "Abstract number which controls the curvature and height of the dome mesh." );
 
    endGroup( "CloudLayer" );

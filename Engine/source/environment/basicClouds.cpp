@@ -191,7 +191,7 @@ void BasicClouds::initPersistFields()
          addField( "texOffset", TypePoint2F, Offset( mTexOffset, BasicClouds ), TEX_COUNT,
             "UV offset for this layer." );
 
-         addField( "height", TypeF32, Offset( mHeight, BasicClouds ), TEX_COUNT,
+         addFieldV( "height", TypeRangedF32, Offset( mHeight, BasicClouds ), &CommonValidators::F32Range, TEX_COUNT,
             "Abstract number which controls the curvature and height of the dome mesh" );
 
       endArray( "Layers" );      

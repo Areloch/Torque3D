@@ -128,7 +128,7 @@ void SplashData::initPersistFields()
    addField("width",             TypeF32,                      Offset(width,              SplashData), "Width for the X and Y coordinates to create this effect within.");
    addFieldV("numSegments", TypeRangedS32,                      Offset(numSegments,        SplashData), &CommonValidators::NaturalNumber, "Number of ejection points in the splash ring.\n");
    addField("velocity",          TypeF32,                      Offset(velocity,           SplashData), "Velocity for the splash effect to travel.\n");
-   addField("height",            TypeF32,                      Offset(height,             SplashData), "Height for the splash to reach.\n");
+   addFieldV("height", TypeRangedF32,                      Offset(height,             SplashData), &CommonValidators::PositiveFloat, "Height for the splash to reach.\n");
    addField("acceleration",      TypeF32,                      Offset(acceleration,       SplashData), "Constant acceleration value to place upon the splash effect.\n");
    addField("times",             TypeF32,                      Offset(times,              SplashData), NUM_TIME_KEYS, "Times to transition through the splash effect. Up to 4 allowed. Values are 0.0 - 1.0, and corrispond to the life of the particle where 0 is first created and 1 is end of lifespace.\n" );
    addField("colors",            TypeColorF,                   Offset(colors,             SplashData), NUM_TIME_KEYS, "Color values to set the splash effect, rgba. Up to 4 allowed. Will transition through colors based on values set in the times value. Example: colors[0] = \"0.6 1.0 1.0 0.5\".\n" );

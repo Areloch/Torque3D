@@ -151,9 +151,9 @@ void afxXM_WaveBaseData::initPersistFields()
   addField("op",            TYPEID< afxXM_WaveBaseData::WaveOpType >(),    Offset(op, afxXM_WaveBaseData),
     "...");
 
-  addField("speed",         TypeF32,      Offset(speed, afxXM_WaveBaseData), 
+  addFieldV("speed",         TypeRangedF32,      Offset(speed, afxXM_WaveBaseData), &CommonValidators::PositiveFloat,
     "waves per second");
-  addField("speedVariance", TypeF32,      Offset(speed_vari, afxXM_WaveBaseData),
+  addFieldV("speedVariance", TypeRangedF32,      Offset(speed_vari, afxXM_WaveBaseData), &CommonValidators::PositiveFloat,
     "...");
   addField("acceleration",  TypeF32,      Offset(accel, afxXM_WaveBaseData),
     "...");
