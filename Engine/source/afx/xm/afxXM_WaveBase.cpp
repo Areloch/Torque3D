@@ -155,24 +155,24 @@ void afxXM_WaveBaseData::initPersistFields()
     "waves per second");
   addFieldV("speedVariance", TypeRangedF32,      Offset(speed_vari, afxXM_WaveBaseData), &CommonValidators::PositiveFloat,
     "...");
-  addField("acceleration",  TypeF32,      Offset(accel, afxXM_WaveBaseData),
+  addFieldV("acceleration", TypeRangedF32,      Offset(accel, afxXM_WaveBaseData), &CommonValidators::PositiveFloat,
     "...");
-  addField("phaseShift",    TypeF32,      Offset(phase_shift, afxXM_WaveBaseData),
+  addFieldV("phaseShift", TypeRangedF32,      Offset(phase_shift, afxXM_WaveBaseData), &CommonValidators::PositiveFloat,
     "...");
-  addField("dutyCycle",     TypeF32,      Offset(duty_cycle, afxXM_WaveBaseData),
+  addFieldV("dutyCycle", TypeRangedF32,      Offset(duty_cycle, afxXM_WaveBaseData), &CommonValidators::PositiveFloat,
     "...");
-  addField("dutyShift",     TypeF32,      Offset(duty_shift, afxXM_WaveBaseData),
+  addFieldV("dutyShift", TypeRangedF32,      Offset(duty_shift, afxXM_WaveBaseData), &CommonValidators::PositiveFloat,
     "...");
-  addField("offDutyT",      TypeF32,      Offset(off_duty_t, afxXM_WaveBaseData),
+  addFieldV("offDutyT", TypeRangedF32,      Offset(off_duty_t, afxXM_WaveBaseData), &CommonValidators::PositiveFloat,
     "...");
 
   addField("wavesPerPulse", TypeByteRange2,      Offset(waves_per_pulse, afxXM_WaveBaseData),
     "...");
   addField("wavesPerRest",  TypeByteRange2,      Offset(waves_per_rest, afxXM_WaveBaseData),
     "...");
-  addField("restDuration",          TypeF32,      Offset(rest_dur, afxXM_WaveBaseData),
+  addFieldV("restDuration", TypeRangedF32,      Offset(rest_dur, afxXM_WaveBaseData), &CommonValidators::PositiveFloat,
     "...");
-  addField("restDurationVariance",  TypeF32,      Offset(rest_dur_vari, afxXM_WaveBaseData),
+  addFieldV("restDurationVariance", TypeRangedF32,      Offset(rest_dur_vari, afxXM_WaveBaseData), &CommonValidators::PositiveFloat,
     "...");
 
   addField("axis",          TypePoint3F,  Offset(axis, afxXM_WaveBaseData),

@@ -239,7 +239,7 @@ void EditTSCtrl::initPersistFields()
       addField("renderMissionArea", TypeBool, Offset(mRenderMissionArea, EditTSCtrl));
       addField("missionAreaFillColor", TypeColorI, Offset(mMissionAreaFillColor, EditTSCtrl));
       addField("missionAreaFrameColor", TypeColorI, Offset(mMissionAreaFrameColor, EditTSCtrl));
-      addField("missionAreaHeightAdjust", TypeF32, Offset(mMissionAreaHeightAdjust, EditTSCtrl),
+      addFieldV("missionAreaHeightAdjust", TypeRangedF32, Offset(mMissionAreaHeightAdjust, EditTSCtrl), &CommonValidators::PositiveFloat,
          "How high above and below the terrain to render the mission area bounds." );
       
    endGroup("Mission Area");	
@@ -248,7 +248,7 @@ void EditTSCtrl::initPersistFields()
    
       addField("allowBorderMove", TypeBool, Offset(mAllowBorderMove, EditTSCtrl));
       addFieldV("borderMovePixelSize", TypeRangedS32, Offset(mMouseMoveBorder, EditTSCtrl), &CommonValidators::PositiveInt);
-      addField("borderMoveSpeed", TypeF32, Offset(mMouseMoveSpeed, EditTSCtrl));
+      addFieldV("borderMoveSpeed", TypeRangedF32, Offset(mMouseMoveSpeed, EditTSCtrl), &CommonValidators::PositiveFloat);
       
    endGroup("BorderMovement");	
 

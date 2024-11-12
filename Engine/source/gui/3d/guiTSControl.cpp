@@ -175,9 +175,9 @@ void GuiTSCtrl::initPersistFields()
    docsURL;
    addGroup( "Camera" );
    
-      addField("cameraZRot", TypeF32, Offset(mCameraZRot, GuiTSCtrl),
+      addFieldV("cameraZRot", TypeRangedF32, Offset(mCameraZRot, GuiTSCtrl), &CommonValidators::DegreeRange,
          "Z rotation angle of camera." );
-      addField("forceFOV",   TypeF32, Offset(mForceFOV,   GuiTSCtrl),
+      addFieldV("forceFOV", TypeRangedF32, Offset(mForceFOV,   GuiTSCtrl), &CommonValidators::PosDegreeRange,
          "The vertical field of view in degrees or zero to use the normal camera FOV." );
          
    endGroup( "Camera" );

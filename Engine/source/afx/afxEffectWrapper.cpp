@@ -297,7 +297,7 @@ void afxEffectWrapperData::initPersistFields()
     "...");
   addField("direction",         TypePoint3F,      myOffset(direction),
     "...");
-  addFieldV("speed", TypeRangedF32,          myOffset(speed)TypeRangedF32,
+  addFieldV("speed", TypeRangedF32,          myOffset(speed), &CommonValidators::PositiveFloat,
     "...");
   addFieldV("mass", TypeRangedF32,          myOffset(mass), &CommonValidators::PositiveFloat,
     "...");

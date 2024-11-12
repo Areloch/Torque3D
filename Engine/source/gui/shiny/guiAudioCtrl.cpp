@@ -128,19 +128,19 @@ void GuiAudioCtrl::initPersistFields()
          "The SFXSource to which to assign the sound of this emitter as a child.\n"
          "@note This field is ignored if #useTrackDescriptionOnly is true.\n\n"
          "@see SFXDescription::sourceGroup");
-      addField("volume", TypeF32, Offset(mVolume, GuiAudioCtrl),
+      addFieldV("volume", TypeRangedF32, Offset(mVolume, GuiAudioCtrl), &CommonValidators::PositiveFloat,
          "Volume level to apply to the sound.\n"
          "@note This field is ignored if #useTrackDescriptionOnly is true.\n\n"
          "@see SFXDescription::volume");
-      addField("pitch", TypeF32, Offset(mPitch, GuiAudioCtrl),
+      addFieldV("pitch", TypeRangedF32, Offset(mPitch, GuiAudioCtrl), &CommonValidators::PositiveFloat,
          "Pitch shift to apply to the sound.  Default is 1 = play at normal speed.\n"
          "@note This field is ignored if #useTrackDescriptionOnly is true.\n\n"
          "@see SFXDescription::pitch");
-      addField("fadeInTime", TypeF32, Offset(mFadeInTime, GuiAudioCtrl),
+      addFieldV("fadeInTime", TypeRangedF32, Offset(mFadeInTime, GuiAudioCtrl), &CommonValidators::PositiveFloat,
          "Number of seconds to gradually fade in volume from zero when playback starts.\n"
          "@note This field is ignored if #useTrackDescriptionOnly is true.\n\n"
          "@see SFXDescription::fadeInTime");
-      addField("fadeOutTime", TypeF32, Offset(mFadeOutTime, GuiAudioCtrl),
+      addFieldV("fadeOutTime", TypeRangedF32, Offset(mFadeOutTime, GuiAudioCtrl), &CommonValidators::PositiveFloat,
          "Number of seconds to gradually fade out volume down to zero when playback is stopped or paused.\n"
          "@note This field is ignored if #useTrackDescriptionOnly is true.\n\n"
          "@see SFXDescription::fadeOutTime");

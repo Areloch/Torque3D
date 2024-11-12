@@ -199,8 +199,6 @@ IRangeValidator ejectPeriodIValidator(1, 2047);
 IRangeValidator periodVarianceIValidator(0, 2047);
 FRangeValidator ejectionFValidator(0.f, 655.35f);
 FRangeValidator velVarianceFValidator(0.f, 163.83f);
-FRangeValidator thetaFValidator(0.f, 180.f);
-FRangeValidator phiFValidator(0.f, 360.f);
 
 //-----------------------------------------------------------------------------
 // initPersistFields
@@ -228,19 +226,19 @@ void ParticleEmitterData::initPersistFields()
       addFieldV( "ejectionOffsetVariance", TypeRangedF32, Offset(ejectionOffsetVariance, ParticleEmitterData), &ejectionFValidator,
          "Distance Padding along ejection Z axis from which to eject particles." );
 
-      addFieldV( "thetaMin", TypeRangedF32, Offset(thetaMin, ParticleEmitterData), &thetaFValidator,
+      addFieldV( "thetaMin", TypeRangedF32, Offset(thetaMin, ParticleEmitterData), &CommonValidators::PosDegreeRangeHalf,
          "Minimum angle, from the horizontal plane, to eject from." );
 
-      addFieldV( "thetaMax", TypeRangedF32, Offset(thetaMax, ParticleEmitterData), &thetaFValidator,
+      addFieldV( "thetaMax", TypeRangedF32, Offset(thetaMax, ParticleEmitterData), &CommonValidators::PosDegreeRangeHalf,
          "Maximum angle, from the horizontal plane, to eject particles from." );
 
-	  addFieldV( "thetaVariance", TypeRangedF32, Offset(thetaVariance, ParticleEmitterData), &thetaFValidator,
+	  addFieldV( "thetaVariance", TypeRangedF32, Offset(thetaVariance, ParticleEmitterData), &CommonValidators::PosDegreeRangeHalf,
          "Angle variance from the previous particle, from 0 - 180." );
 
-      addFieldV( "phiReferenceVel", TypeRangedF32, Offset(phiReferenceVel, ParticleEmitterData), &phiFValidator,
+      addFieldV( "phiReferenceVel", TypeRangedF32, Offset(phiReferenceVel, ParticleEmitterData), &CommonValidators::PosDegreeRange,
          "Reference angle, from the vertical plane, to eject particles from." );
 
-      addFieldV( "phiVariance", TypeRangedF32, Offset(phiVariance, ParticleEmitterData), &phiFValidator,
+      addFieldV( "phiVariance", TypeRangedF32, Offset(phiVariance, ParticleEmitterData), &CommonValidators::PosDegreeRange,
          "Variance from the reference angle, from 0 - 360." );
 
       addField( "softnessDistance", TYPEID< F32 >(), Offset(softnessDistance, ParticleEmitterData),

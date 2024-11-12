@@ -244,7 +244,11 @@ Material::Material()
    mReverbSoundOcclusion = 1.0;
 }
 
-
+IRangeValidator bmpChanRange(0, 3);
+FRangeValidator glowMulRange(0.0f, 20.0f);
+FRangeValidator parallaxScaleRange(0.0f, 4.0f);
+FRangeValidator scrollSpeedRange(0.0f, 10.0f);
+FRangeValidator waveFreqRange(0.0f, 10.0f);
 void Material::initPersistFields()
 {
    docsURL;
@@ -274,11 +278,11 @@ void Material::initPersistFields()
       addField("invertRoughness", TypeBool, Offset(mInvertRoughness, Material), MAX_STAGES,
          "Treat Roughness as Roughness");
 
-      addField("AOChan", TypeF32, Offset(mAOChan, Material), MAX_STAGES,
+      addFieldV("AOChan", TypeRangedS32, Offset(mAOChan, Material), &bmpChanRange, MAX_STAGES,
          "The input channel AO maps use.");
-      addField("roughnessChan", TypeF32, Offset(mRoughnessChan, Material), MAX_STAGES,
+      addFieldV("roughnessChan", TypeRangedS32, Offset(mRoughnessChan, Material), &bmpChanRange, MAX_STAGES,
          "The input channel roughness maps use.");
-      addField("metalChan", TypeF32, Offset(mMetalChan, Material), MAX_STAGES,
+      addFieldV("metalChan", TypeRangedS32, Offset(mMetalChan, Material), &bmpChanRange, MAX_STAGES,
          "The input channel metalness maps use.");
 
       INITPERSISTFIELD_IMAGEASSET_ARRAY(ORMConfigMap, MAX_STAGES, Material, "AO|Roughness|metalness map");
@@ -290,7 +294,7 @@ void Material::initPersistFields()
       INITPERSISTFIELD_IMAGEASSET_ARRAY(MetalMap, MAX_STAGES, Material, "MetalMap (also needs RoughMap)");
       INITPERSISTFIELD_IMAGEASSET_ARRAY(GlowMap, MAX_STAGES, Material, "GlowMap (needs Albedo)");
 
-      addField("glowMul", TypeF32, Offset(mGlowMul, Material), MAX_STAGES,
+      addFieldV("glowMul", TypeRangedF32, Offset(mGlowMul, Material),&glowMulRange, MAX_STAGES,
          "glow mask multiplier");
    endGroup("Light Influence Maps");
 
@@ -312,19 +316,19 @@ void Material::initPersistFields()
       addProtectedField("accuEnabled", TYPEID< bool >(), Offset(mAccuEnabled, Material),
          &_setAccuEnabled, &defaultProtectedGetFn, MAX_STAGES, "Accumulation texture.");
 
-      addField("accuScale", TypeF32, Offset(mAccuScale, Material), MAX_STAGES,
+      addFieldV("accuScale", TypeRangedS32, Offset(mAccuScale, Material), &CommonValidators::PositiveFloat, MAX_STAGES,
          "The scale that is applied to the accu map texture. You can use this to fit the texture to smaller or larger objects.");
 
-      addField("accuDirection", TypeF32, Offset(mAccuDirection, Material), MAX_STAGES,
+      addFieldV("accuDirection", TypeRangedS32, Offset(mAccuDirection, Material), &CommonValidators::DirFloat, MAX_STAGES,
          "The direction of the accumulation. Chose whether you want the accu map to go from top to bottom (ie. snow) or upwards (ie. mold).");
 
-      addField("accuStrength", TypeF32, Offset(mAccuStrength, Material), MAX_STAGES,
+      addFieldV("accuStrength", TypeRangedS32, Offset(mAccuStrength, Material), &CommonValidators::NormalizedFloat, MAX_STAGES,
          "The strength of the accu map. This changes the transparency of the accu map texture. Make it subtle or add more contrast.");
 
-      addField("accuCoverage", TypeF32, Offset(mAccuCoverage, Material), MAX_STAGES,
+      addFieldV("accuCoverage", TypeRangedS32, Offset(mAccuCoverage, Material), &CommonValidators::NormalizedFloat, MAX_STAGES,
          "The coverage ratio of the accu map texture. Use this to make the entire shape pick up some of the accu map texture or none at all.");
 
-      addField("accuSpecular", TypeF32, Offset(mAccuSpecular, Material), MAX_STAGES,
+      addFieldV("accuSpecular", TypeRangedS32, Offset(mAccuSpecular, Material), &CommonValidators::NormalizedFloat, MAX_STAGES,
          "Changes specularity to this value where the accumulated material is present.");
    endGroup("Accumulation Properties");
    
@@ -335,7 +339,7 @@ void Material::initPersistFields()
          "Enables emissive lighting for the material.");
       addField("glow", TypeBool, Offset(mGlow, Material), MAX_STAGES,
          "Enables rendering as glowing.");
-      addField("parallaxScale", TypeF32, Offset(mParallaxScale, Material), MAX_STAGES,
+      addFieldV("parallaxScale", TypeRangedF32, Offset(mParallaxScale, Material),&parallaxScaleRange, MAX_STAGES,
          "Enables parallax mapping and defines the scale factor for the parallax effect.  Typically "
          "this value is less than 0.4 else the effect breaks down.");
 
@@ -346,7 +350,7 @@ void Material::initPersistFields()
          "If true the vertex color is used for lighting.");
       addField("vertColor", TypeBool, Offset(mVertColor, Material), MAX_STAGES,
          "If enabled, vertex colors are premultiplied with diffuse colors.");
-
+   /* presently unsupported directly. advice would be to use a glowmap+glowmul to fine tune backscatter effects
       addField("subSurface", TypeBool, Offset(mSubSurface, Material), MAX_STAGES,
          "Enables the subsurface scattering approximation.");
       addField("minnaertConstant", TypeF32, Offset(mMinnaertConstant, Material), MAX_STAGES,
@@ -355,6 +359,7 @@ void Material::initPersistFields()
          "The color used for the subsurface scattering approximation.");
       addField("subSurfaceRolloff", TypeF32, Offset(mSubSurfaceRolloff, Material), MAX_STAGES,
          "The 0 to 1 rolloff factor used in the subsurface scattering approximation.");
+   */
    endGroup("Lighting Properties");
 
    addGroup("Animation Properties");
@@ -364,10 +369,10 @@ void Material::initPersistFields()
       addField("scrollDir", TypePoint2F, Offset(mScrollDir, Material), MAX_STAGES,
          "The scroll direction in UV space when scroll animation is enabled.");
 
-      addField("scrollSpeed", TypeF32, Offset(mScrollSpeed, Material), MAX_STAGES,
+      addFieldV("scrollSpeed", TypeRangedF32, Offset(mScrollSpeed, Material), &scrollSpeedRange, MAX_STAGES,
          "The speed to scroll the texture in UVs per second when scroll animation is enabled.");
 
-      addField("rotSpeed", TypeF32, Offset(mRotSpeed, Material), MAX_STAGES,
+      addFieldV("rotSpeed", TypeRangedF32, Offset(mRotSpeed, Material), &CommonValidators::DegreeRange, MAX_STAGES,
          "The speed to rotate the texture in degrees per second when rotation animation is enabled.");
 
       addField("rotPivotOffset", TypePoint2F, Offset(mRotPivotOffset, Material), MAX_STAGES,
@@ -376,10 +381,10 @@ void Material::initPersistFields()
       addField("waveType", TYPEID< WaveType >(), Offset(mWaveType, Material), MAX_STAGES,
          "The type of wave animation to perform when wave animation is enabled.");
 
-      addField("waveFreq", TypeF32, Offset(mWaveFreq, Material), MAX_STAGES,
+      addFieldV("waveFreq", TypeRangedF32, Offset(mWaveFreq, Material),&waveFreqRange, MAX_STAGES,
          "The wave frequency when wave animation is enabled.");
 
-      addField("waveAmp", TypeF32, Offset(mWaveAmp, Material), MAX_STAGES,
+      addFieldV("waveAmp", TypeRangedF32, Offset(mWaveAmp, Material), &CommonValidators::NormalizedFloat, MAX_STAGES,
          "The wave amplitude when wave animation is enabled.");
 
       addField("sequenceFramePerSec", TypeF32, Offset(mSeqFramePerSec, Material), MAX_STAGES,
