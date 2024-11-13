@@ -94,7 +94,7 @@ void BoxEnvironmentProbe::initPersistFields()
    // SceneObject already handles exposing the transform
    Parent::initPersistFields();
 
-   addField("attenuation", TypeF32, Offset(mAtten, BoxEnvironmentProbe), "falloff percent");
+   addFieldV("attenuation", TypeRangedF32, Offset(mAtten, BoxEnvironmentProbe), &CommonValidators::NormalizedFloat, "falloff percent");
 
    removeField("radius");
 }

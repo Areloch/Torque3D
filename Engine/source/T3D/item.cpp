@@ -135,20 +135,23 @@ ImplementEnumType( ItemLightType,
    { Item::PulsingLight,      "PulsingLight",   "The item has a pulsing light attached.\n" }
 EndImplementEnumType;
 
+FRangeValidator itemFrictionRange(0.0f, FLT_MAX, 1<<10);
+FRangeValidator itemElasticityRange(0.0f, FLT_MAX, 1<<10);
+FRangeValidator itemGravityModRange(FLT_MIN, FLT_MAX, 1<<10);
 void ItemData::initPersistFields()
 {
    docsURL;
    Parent::initPersistFields();
    addGroup("Physics");
-      addField("friction",          TypeF32,       Offset(friction,           ItemData), "A floating-point value specifying how much velocity is lost to impact and sliding friction.");
-      addField("elasticity",        TypeF32,       Offset(elasticity,         ItemData), "A floating-point value specifying how 'bouncy' this ItemData is.");
+      addFieldV("friction",          TypeRangedF32,       Offset(friction,           ItemData), &itemFrictionRange, "A floating-point value specifying how much velocity is lost to impact and sliding friction.");
+      addFieldV("elasticity", TypeRangedF32,       Offset(elasticity,         ItemData) ,&itemElasticityRange, "A floating-point value specifying how 'bouncy' this ItemData is.");
       addField("sticky",            TypeBool,      Offset(sticky,             ItemData),
          "@brief If true, ItemData will 'stick' to any surface it collides with.\n\n"
          "When an item does stick to a surface, the Item::onStickyCollision() callback is called.  The Item has methods to retrieve "
          "the world position and normal the Item is stuck to.\n"
          "@note Valid objects to stick to must be of StaticShapeObjectType.\n");
-      addField("gravityMod",        TypeF32,       Offset(gravityMod,         ItemData), "Floating point value to multiply the existing gravity with, just for this ItemData.");
-      addField("maxVelocity",       TypeF32,       Offset(maxVelocity,        ItemData), "Maximum velocity that this ItemData is able to move.");
+      addFieldV("gravityMod", TypeRangedF32,       Offset(gravityMod,         ItemData),&itemGravityModRange, "Floating point value to multiply the existing gravity with, just for this ItemData.");
+      addField("maxVelocity", TypeRangedF32,       Offset(maxVelocity,        ItemData), "Maximum velocity that this ItemData is able to move.");
       addField("simpleServerCollision",   TypeBool,  Offset(simpleServerCollision,    ItemData),
          "@brief Determines if only simple server-side collision will be used (for pick ups).\n\n"
          "If set to true then only simple, server-side collision detection will be used.  This is often the case "

@@ -303,7 +303,7 @@ void Material::initPersistFields()
          "The scale factor for the detail map.");
 
       INITPERSISTFIELD_IMAGEASSET_ARRAY(DetailNormalMap, MAX_STAGES, Material, "DetailNormalMap");
-      addField("detailNormalMapStrength", TypeF32, Offset(mDetailNormalMapStrength, Material), MAX_STAGES,
+      addFieldV("detailNormalMapStrength", TypeRangedS32, Offset(mDetailNormalMapStrength, Material), &CommonValidators::PositiveFloat, MAX_STAGES,
          "Used to scale the strength of the detail normal map when blended with the base normal map.");
 
       INITPERSISTFIELD_IMAGEASSET_ARRAY(OverlayMap, MAX_STAGES, Material, "Overlay");

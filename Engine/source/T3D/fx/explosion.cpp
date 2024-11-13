@@ -384,7 +384,8 @@ ExplosionData* ExplosionData::cloneAndPerformSubstitutions(const SimObject* owne
 
    return sub_explosion_db;
 }
-
+IRangeValidator expDebrisNumRange(0, 1000);
+FRangeValidator expPlaySpeedRange(0.05f, FLT_MAX);
 void ExplosionData::initPersistFields()
 {
    docsURL;
@@ -412,7 +413,7 @@ void ExplosionData::initPersistFields()
       addField( "particleDensity", TypeS32, Offset(particleDensity, ExplosionData),
          "@brief Density of the particle cloud created at the start of the explosion.\n\n"
          "@see particleEmitter" );
-      addField( "particleRadius", TypeF32, Offset(particleRadius, ExplosionData),
+      addFieldV( "particleRadius", TypeRangedF32, Offset(particleRadius, ExplosionData),&CommonValidators::PositiveFloat,
          "@brief Radial distance from the explosion center at which cloud particles "
          "are emitted.\n\n"
          "@see particleEmitter" );
@@ -425,21 +426,21 @@ void ExplosionData::initPersistFields()
    addGroup("Debris");
       addField( "debris", TYPEID< DebrisData >(), Offset(debrisList, ExplosionData), EC_NUM_DEBRIS_TYPES,
          "List of DebrisData objects to spawn with this explosion." );
-      addField( "debrisThetaMin", TypeF32, Offset(debrisThetaMin, ExplosionData),
+      addFieldV( "debrisThetaMin", TypeRangedF32, Offset(debrisThetaMin, ExplosionData), &CommonValidators::PosDegreeRangeHalf,
          "Minimum angle, from the horizontal plane, to eject debris from." );
-      addField( "debrisThetaMax", TypeF32, Offset(debrisThetaMax, ExplosionData),
+      addFieldV( "debrisThetaMax", TypeRangedF32, Offset(debrisThetaMax, ExplosionData), &CommonValidators::PosDegreeRangeHalf,
          "Maximum angle, from the horizontal plane, to eject debris from." );
-      addField( "debrisPhiMin", TypeF32, Offset(debrisPhiMin, ExplosionData),
+      addFieldV( "debrisPhiMin", TypeRangedF32, Offset(debrisPhiMin, ExplosionData), &CommonValidators::PosDegreeRange,
          "Minimum reference angle, from the vertical plane, to eject debris from." );
-      addField( "debrisPhiMax", TypeF32, Offset(debrisPhiMax, ExplosionData),
+      addFieldV( "debrisPhiMax", TypeRangedF32, Offset(debrisPhiMax, ExplosionData), &CommonValidators::PosDegreeRange,
          "Maximum reference angle, from the vertical plane, to eject debris from." );
-      addField( "debrisNum", TypeS32, Offset(debrisNum, ExplosionData),
+      addFieldV( "debrisNum", TypeRangedS32, Offset(debrisNum, ExplosionData), &expDebrisNumRange,
          "Number of debris objects to create." );
-      addField( "debrisNumVariance", TypeS32, Offset(debrisNumVariance, ExplosionData),
+      addFieldV( "debrisNumVariance", TypeRangedS32, Offset(debrisNumVariance, ExplosionData), &expDebrisNumRange,
          "Variance in the number of debris objects to create (must be from 0 - debrisNum)." );
-      addField( "debrisVelocity", TypeF32, Offset(debrisVelocity, ExplosionData),
+      addFieldV( "debrisVelocity", TypeRangedF32, Offset(debrisVelocity, ExplosionData), &CommonValidators::PositiveFloat,
          "Velocity to toss debris at." );
-      addField( "debrisVelocityVariance", TypeF32, Offset(debrisVelocityVariance, ExplosionData),
+      addFieldV( "debrisVelocityVariance", TypeRangedF32, Offset(debrisVelocityVariance, ExplosionData), &CommonValidators::PositiveFloat,
          "Variance in the debris initial velocity (must be >= 0)." );
       addField( "subExplosion", TYPEID< ExplosionData >(), Offset(explosionList, ExplosionData), EC_MAX_SUB_EXPLOSIONS,
          "List of additional ExplosionData objects to create at the start of the explosion." );
@@ -450,7 +451,7 @@ void ExplosionData::initPersistFields()
       addField("explosionScale", TypePoint3F, Offset(explosionScale, ExplosionData),
       "\"X Y Z\" scale factor applied to the explosionShape model at the start "
       "of the explosion.");
-       addField("playSpeed", TypeF32, Offset(playSpeed, ExplosionData),
+       addFieldV("playSpeed", TypeF32, Offset(playSpeed, ExplosionData),&expPlaySpeedRange,
           "Time scale at which to play the explosionShape <i>ambient</i> sequence.");
 
       addFieldV( "delayMS", TypeRangedS32, Offset(delayMS, ExplosionData), &CommonValidators::PositiveInt,
@@ -465,12 +466,12 @@ void ExplosionData::initPersistFields()
          "is used instead." );
       addFieldV( "lifetimeVariance", TypeRangedS32, Offset(lifetimeVariance, ExplosionData), &CommonValidators::PositiveInt,
          "Variance, in milliseconds, of the lifetimeMS of the Explosion object.\n" );
-      addField( "offset", TypeF32, Offset(offset, ExplosionData),
+      addFieldV( "offset", TypeRangedF32, Offset(offset, ExplosionData), &CommonValidators::PositiveFloat,
          "@brief Offset distance (in a random direction) of the center of the explosion "
          "from the Explosion object position.\n\n"
          "Most often used to create some variance in position for subExplosion effects." );
 
-      addField( "times", TypeF32, Offset(times, ExplosionData), EC_NUM_TIME_KEYS,
+      addFieldV( "times", TypeRangedF32, Offset(times, ExplosionData), &CommonValidators::NormalizedFloat, EC_NUM_TIME_KEYS,
          "@brief Time keyframes used to scale the explosionShape model.\n\n"
          "Values should be in increasing order from 0.0 - 1.0, and correspond to "
          "the life of the Explosion where 0 is the beginning and 1 is the end of "
@@ -491,22 +492,22 @@ void ExplosionData::initPersistFields()
       addField( "camShakeAmp", TypePoint3F, Offset(camShakeAmp, ExplosionData),
          "@brief Amplitude of camera shaking, defined in the \"X Y Z\" axes.\n\n"
          "Set any value to 0 to disable shaking in that axis." );
-      addField( "camShakeDuration", TypeF32, Offset(camShakeDuration, ExplosionData),
+      addFieldV( "camShakeDuration", TypeRangedF32, Offset(camShakeDuration, ExplosionData), &CommonValidators::PositiveFloat,
          "Duration (in seconds) to shake the camera." );
-      addField( "camShakeRadius", TypeF32, Offset(camShakeRadius, ExplosionData),
+      addFieldV( "camShakeRadius", TypeRangedF32, Offset(camShakeRadius, ExplosionData), &CommonValidators::PositiveFloat,
          "Radial distance that a camera's position must be within relative to the "
          "center of the explosion to be shaken." );
-      addField( "camShakeFalloff", TypeF32, Offset(camShakeFalloff, ExplosionData),
+      addFieldV( "camShakeFalloff", TypeRangedF32, Offset(camShakeFalloff, ExplosionData), &CommonValidators::PositiveFloat,
          "Falloff value for the camera shake." );
    endGroup("Camera Shake");
 
    addGroup("Light Emitter");
-      addField( "lightStartRadius", TypeF32, Offset(lightStartRadius, ExplosionData),
+      addFieldV( "lightStartRadius", TypeRangedF32, Offset(lightStartRadius, ExplosionData), &CommonValidators::PositiveFloat,
          "@brief Initial radius of the PointLight created by this explosion.\n\n"
          "Radius is linearly interpolated from lightStartRadius to lightEndRadius "
          "over the lifetime of the explosion.\n"
          "@see lifetimeMS" );
-      addField( "lightEndRadius", TypeF32, Offset(lightEndRadius, ExplosionData),
+      addFieldV( "lightEndRadius", TypeRangedF32, Offset(lightEndRadius, ExplosionData), &CommonValidators::PositiveFloat,
          "@brief Final radius of the PointLight created by this explosion.\n\n"
          "@see lightStartRadius" );
       addField( "lightStartColor", TypeColorF, Offset(lightStartColor, ExplosionData),
@@ -517,15 +518,15 @@ void ExplosionData::initPersistFields()
       addField( "lightEndColor", TypeColorF, Offset(lightEndColor, ExplosionData),
          "@brief Final color of the PointLight created by this explosion.\n\n"
          "@see lightStartColor" );
-      addField( "lightStartBrightness", TypeF32, Offset(lightStartBrightness, ExplosionData),
+      addFieldV( "lightStartBrightness", TypeRangedF32, Offset(lightStartBrightness, ExplosionData), &CommonValidators::PositiveFloat,
          "@brief Initial brightness of the PointLight created by this explosion.\n\n"
          "Brightness is linearly interpolated from lightStartBrightness to "
          "lightEndBrightness over the lifetime of the explosion.\n"
          "@see lifetimeMS" );
-      addField("lightEndBrightness", TypeF32, Offset(lightEndBrightness, ExplosionData),
+      addFieldV("lightEndBrightness", TypeRangedF32, Offset(lightEndBrightness, ExplosionData), &CommonValidators::PositiveFloat,
          "@brief Final brightness of the PointLight created by this explosion.\n\n"
          "@see lightStartBrightness" );
-      addField( "lightNormalOffset", TypeF32, Offset(lightNormalOffset, ExplosionData),
+      addFieldV( "lightNormalOffset", TypeRangedF32, Offset(lightNormalOffset, ExplosionData), &CommonValidators::PositiveFloat,
          "Distance (in the explosion normal direction) of the PointLight position "
          "from the explosion center." );
    endGroup("Light Emitter");
