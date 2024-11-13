@@ -171,18 +171,18 @@ void ParticleData::initPersistFields()
    addGroup("Motion");
       addFieldV("dragCoefficient", TypeRangedF32, Offset(dragCoefficient, ParticleData), &dragCoefFValidator,
          "Particle physics drag amount.");
-      addField("windCoefficient", TYPEID< F32 >(), Offset(windCoefficient, ParticleData),
+      addFieldV("windCoefficient", TypeRangedF32, Offset(windCoefficient, ParticleData),&CommonValidators::F32Range,
          "Strength of wind on the particles.");
       addFieldV("gravityCoefficient", TypeRangedF32, Offset(gravityCoefficient, ParticleData), &gravCoefFValidator,
          "Strength of gravity on the particles.");
       addFieldV("inheritedVelFactor", TypeRangedF32, Offset(inheritedVelFactor, ParticleData), &CommonValidators::NormalizedFloat,
          "Amount of emitter velocity to add to particle initial velocity.");
-      addField("constantAcceleration", TYPEID< F32 >(), Offset(constantAcceleration, ParticleData),
+      addFieldV("constantAcceleration", TypeRangedF32, Offset(constantAcceleration, ParticleData), &CommonValidators::F32Range,
          "Constant acceleration to apply to this particle.");
    endGroup("Motion");
    
    addGroup("Spin");
-      addField("spinSpeed", TYPEID< F32 >(), Offset(spinSpeed, ParticleData),
+      addFieldV("spinSpeed", TypeRangedF32, Offset(spinSpeed, ParticleData), &spinRandFValidator,
          "Speed at which to spin the particle.");
       addFieldV("spinRandomMin", TypeRangedF32, Offset(spinRandomMin, ParticleData), &spinRandFValidator,
          "Minimum allowed spin speed of this particle, between -1000 and spinRandomMax.");
@@ -244,10 +244,10 @@ void ParticleData::initPersistFields()
       addProtectedField("textureExtName", TypeFilename, Offset(mTextureExtName,     ParticleData), _setTextureExtData, &defaultProtectedGetFn, "", AbstractClassRep::FIELD_HideInInspectors);
       INITPERSISTFIELD_IMAGEASSET(TextureExt, ParticleData, "");
       addField("constrainPos",         TypeBool,     Offset(constrain_pos,      ParticleData));
-      addField("angle",                TypeF32,      Offset(start_angle,        ParticleData));
-      addField("angleVariance",        TypeF32,      Offset(angle_variance,     ParticleData));
-      addField("sizeBias",             TypeF32,      Offset(sizeBias,           ParticleData));
-      addField("spinBias",             TypeF32,      Offset(spinBias,           ParticleData));
+      addFieldV("angle", TypeRangedF32,      Offset(start_angle,        ParticleData), &CommonValidators::DegreeRange);
+      addFieldV("angleVariance", TypeRangedF32,      Offset(angle_variance,     ParticleData), &CommonValidators::DegreeRange);
+      addFieldV("sizeBias", TypeRangedF32,      Offset(sizeBias,           ParticleData), &CommonValidators::F32Range);
+      addFieldV("spinBias", TypeRangedF32,      Offset(spinBias,           ParticleData), &CommonValidators::F32Range);
       addField("randomizeSpinDir",     TypeBool,     Offset(randomizeSpinDir,   ParticleData));
    endGroup("AFX"); 
    Parent::initPersistFields();
