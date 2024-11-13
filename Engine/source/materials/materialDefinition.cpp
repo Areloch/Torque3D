@@ -269,29 +269,28 @@ void Material::initPersistFields()
    endGroup("Basic Texture Maps");
 
    addGroup("Light Influence Maps");
-      addFieldV("roughness", TypeRangedF32, Offset(mRoughness, Material),  &CommonValidators::F32_8BitPercent,MAX_STAGES,
-         "The degree of roughness when not using a ORMConfigMap.");
-
-      addFieldV("metalness", TypeRangedF32, Offset(mMetalness, Material), &CommonValidators::F32_8BitPercent, MAX_STAGES,
-         "The degree of Metalness when not using a ORMConfigMap.");
-
-      addField("invertRoughness", TypeBool, Offset(mInvertRoughness, Material), MAX_STAGES,
-         "Treat Roughness as Roughness");
-
-      addFieldV("AOChan", TypeRangedS32, Offset(mAOChan, Material), &bmpChanRange, MAX_STAGES,
-         "The input channel AO maps use.");
-      addFieldV("roughnessChan", TypeRangedS32, Offset(mRoughnessChan, Material), &bmpChanRange, MAX_STAGES,
-         "The input channel roughness maps use.");
-      addFieldV("metalChan", TypeRangedS32, Offset(mMetalChan, Material), &bmpChanRange, MAX_STAGES,
-         "The input channel metalness maps use.");
 
       INITPERSISTFIELD_IMAGEASSET_ARRAY(ORMConfigMap, MAX_STAGES, Material, "AO|Roughness|metalness map");
       addField("isSRGb", TypeBool, Offset(mIsSRGb, Material), MAX_STAGES,
          "Substance Designer Workaround.");
+      addField("invertRoughness", TypeBool, Offset(mInvertRoughness, Material), MAX_STAGES,
+         "Treat Roughness as Roughness");
 
       INITPERSISTFIELD_IMAGEASSET_ARRAY(AOMap, MAX_STAGES, Material, "AOMap");
+      addFieldV("AOChan", TypeRangedS32, Offset(mAOChan, Material), &bmpChanRange, MAX_STAGES,
+         "The input channel AO maps use.");
+
       INITPERSISTFIELD_IMAGEASSET_ARRAY(RoughMap, MAX_STAGES, Material, "RoughMap (also needs MetalMap)");
+      addFieldV("roughness", TypeRangedF32, Offset(mRoughness, Material),  &CommonValidators::F32_8BitPercent,MAX_STAGES,
+         "The degree of roughness when not using a ORMConfigMap.");
+      addFieldV("roughnessChan", TypeRangedS32, Offset(mRoughnessChan, Material), &bmpChanRange, MAX_STAGES,
+         "The input channel roughness maps use.");
+
       INITPERSISTFIELD_IMAGEASSET_ARRAY(MetalMap, MAX_STAGES, Material, "MetalMap (also needs RoughMap)");
+      addFieldV("metalness", TypeRangedF32, Offset(mMetalness, Material), &CommonValidators::F32_8BitPercent, MAX_STAGES,
+         "The degree of Metalness when not using a ORMConfigMap.");
+      addFieldV("metalChan", TypeRangedS32, Offset(mMetalChan, Material), &bmpChanRange, MAX_STAGES,
+         "The input channel metalness maps use.");
       INITPERSISTFIELD_IMAGEASSET_ARRAY(GlowMap, MAX_STAGES, Material, "GlowMap (needs Albedo)");
 
       addFieldV("glowMul", TypeRangedF32, Offset(mGlowMul, Material),&glowMulRange, MAX_STAGES,

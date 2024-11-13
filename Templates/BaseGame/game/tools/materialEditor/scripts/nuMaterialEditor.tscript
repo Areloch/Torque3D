@@ -105,12 +105,18 @@ function NuMaterialEditorWindow::syncGUI(%this)
       if (%hideORMSliders)
       {
          %group.hideField("roughness");
-         %group.hideField("metalness");  
+         %group.hideField("roughnessChan",false);
+         
+         %group.hideField("metalness");
+         %group.hideField("metalChan",false);
       }
       else
       {
          %group.hideField("roughness",false);
-         %group.hideField("metalness",false);      
+         %group.hideField("roughnessChan");
+         
+         %group.hideField("metalness",false);  
+         %group.hideField("metalChan");    
       }
       %group.hideField("AOMapAsset",false);
       %group.hideField("RoughMapAsset",false);
