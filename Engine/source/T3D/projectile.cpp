@@ -278,7 +278,7 @@ void ProjectileData::initPersistFields()
          "Used with fadeDelay to determine the transparency of the projectile at a given time. "
          "A projectile may exist up to a maximum of 131040ms (or 4095 ticks) as defined by Projectile::MaxLivingTicks in the source code."
          "@see fadeDelay");
-      addProtectedFieldV("armingDelay", TypeRangedS32, Offset(armingDelay, ProjectileData), &setArmingDelay, &getScaledValue, &CommonValidators::NaturalNumber,
+      addProtectedFieldV("armingDelay", TypeRangedS32, Offset(armingDelay, ProjectileData), &setArmingDelay, &getScaledValue, &CommonValidators::PositiveInt,
          "@brief Amount of time, in milliseconds, before the projectile will cause damage or explode on impact.\n\n"
          "This value must be equal to or less than the projectile's lifetime.\n\n"
          "@see lifetime");

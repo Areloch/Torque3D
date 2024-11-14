@@ -97,7 +97,7 @@ void LightBase::initPersistFields()
       
       addField( "isEnabled", TypeBool, Offset( mIsEnabled, LightBase ), "Enables/Disables the object rendering and functionality in the scene." );
       addField( "color", TypeColorF, Offset( mColor, LightBase ), "Changes the base color hue of the light." );
-      addField( "brightness", TypeF32, Offset( mBrightness, LightBase ), "Adjusts the lights power, 0 being off completely." );      
+      addFieldV( "brightness", TypeF32, Offset( mBrightness, LightBase ), &CommonValidators::PositiveFloat, "Adjusts the lights power, 0 being off completely." );
       addField( "castShadows", TypeBool, Offset( mCastShadows, LightBase ), "Enables/disabled shadow casts by this light." );
       //addField( "staticRefreshFreq", TypeS32, Offset( mStaticRefreshFreq, LightBase ), "static shadow refresh rate (milliseconds)" );
       //addField( "dynamicRefreshFreq", TypeS32, Offset( mDynamicRefreshFreq, LightBase ), "dynamic shadow refresh rate (milliseconds)");
@@ -111,14 +111,14 @@ void LightBase::initPersistFields()
       addField( "animate", TypeBool, Offset( mAnimState.active, LightBase ), "Toggles animation for the light on and off" );
       addField( "animationType", TYPEID< LightAnimData >(), Offset( mAnimationData, LightBase ), "Datablock containing light animation information (LightAnimData)" );
       addFieldV( "animationPeriod", TypeRangedF32, Offset( mAnimState.animationPeriod, LightBase ), &CommonValidators::PositiveNonZeroFloat, "The length of time in seconds for a single playback of the light animation (must be > 0)" );
-      addField( "animationPhase", TypeF32, Offset( mAnimState.animationPhase, LightBase ), "The phase used to offset the animation start time to vary the animation of nearby lights." );      
+      addFieldV( "animationPhase", TypeRangedF32, Offset( mAnimState.animationPhase, LightBase ), &CommonValidators::PositiveFloat, "The phase used to offset the animation start time to vary the animation of nearby lights." );
 
    endGroup( "Light Animation" );
 
    addGroup( "Misc" );
 
       addField( "flareType", TYPEID< LightFlareData >(), Offset( mFlareData, LightBase ), "Datablock containing light flare information (LightFlareData)" );
-      addField( "flareScale", TypeF32, Offset( mFlareScale, LightBase ), "Globally scales all features of the light flare" );
+      addFieldV( "flareScale", TypeRangedF32, Offset( mFlareScale, LightBase ), &CommonValidators::PositiveFloat, "Globally scales all features of the light flare" );
 
    endGroup( "Misc" );
 

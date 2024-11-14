@@ -151,7 +151,7 @@ void ItemData::initPersistFields()
          "the world position and normal the Item is stuck to.\n"
          "@note Valid objects to stick to must be of StaticShapeObjectType.\n");
       addFieldV("gravityMod", TypeRangedF32,       Offset(gravityMod,         ItemData),&itemGravityModRange, "Floating point value to multiply the existing gravity with, just for this ItemData.");
-      addField("maxVelocity", TypeRangedF32,       Offset(maxVelocity,        ItemData), "Maximum velocity that this ItemData is able to move.");
+      addFieldV("maxVelocity", TypeRangedF32,       Offset(maxVelocity,        ItemData), &CommonValidators::PositiveFloat, "Maximum velocity that this ItemData is able to move.");
       addField("simpleServerCollision",   TypeBool,  Offset(simpleServerCollision,    ItemData),
          "@brief Determines if only simple server-side collision will be used (for pick ups).\n\n"
          "If set to true then only simple, server-side collision detection will be used.  This is often the case "
@@ -170,7 +170,7 @@ void ItemData::initPersistFields()
       addFieldV("lightTime",         TypeRangedS32,       Offset(lightTime,          ItemData), &CommonValidators::NaturalNumber,
          "@brief Time value for the light of this ItemData, used to control the pulse speed of the PulsingLight LightType.\n\n"
          "@see lightType\n");
-      addField("lightRadius",       TypeF32,       Offset(lightRadius,        ItemData), 
+      addFieldV("lightRadius",       TypeRangedF32,       Offset(lightRadius,        ItemData), &CommonValidators::PositiveFloat,
          "@brief Distance from the center point of this ItemData for the light to affect\n\n"
          "@see lightType\n");
       addField("lightOnlyStatic",   TypeBool,      Offset(lightOnlyStatic,    ItemData), 

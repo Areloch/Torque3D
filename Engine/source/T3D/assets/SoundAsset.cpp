@@ -292,7 +292,7 @@ void SoundAsset::initPersistFields()
       addFieldV("maxDistance", TypeRangedF32, Offset(mProfileDesc.mMaxDistance, SoundAsset), &CommonValidators::PositiveFloat, "Max distance for sound.");
       addFieldV("coneInsideAngle", TypeRangedS32, Offset(mProfileDesc.mConeInsideAngle, SoundAsset), &CommonValidators::S32_PosDegreeRange, "Cone inside angle.");
       addFieldV("coneOutsideAngle", TypeRangedS32, Offset(mProfileDesc.mConeOutsideAngle, SoundAsset), &CommonValidators::S32_PosDegreeRange, "Cone outside angle.");
-      addFieldV("coneOutsideVolume", TypeRangedF32, Offset(mProfileDesc.mConeOutsideVolume, SoundAsset), &CommonValidators::PositiveFloat, "Cone outside volume.");
+      addFieldV("coneOutsideVolume", TypeRangedF32, Offset(mProfileDesc.mConeOutsideVolume, SoundAsset), &CommonValidators::NormalizedFloat, "Cone outside volume.");
       addFieldV("rolloffFactor", TypeRangedF32, Offset(mProfileDesc.mRolloffFactor, SoundAsset), &CommonValidators::PositiveFloat, "Rolloff factor.");
       addField("scatterDistance", TypePoint3F, Offset(mProfileDesc.mScatterDistance, SoundAsset), "Randomization to the spacial position of the sound.");
    endGroup("3D");

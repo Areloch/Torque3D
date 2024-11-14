@@ -241,12 +241,12 @@ void ParticleEmitterData::initPersistFields()
       addFieldV( "phiVariance", TypeRangedF32, Offset(phiVariance, ParticleEmitterData), &CommonValidators::PosDegreeRange,
          "Variance from the reference angle, from 0 - 360." );
 
-      addField( "softnessDistance", TYPEID< F32 >(), Offset(softnessDistance, ParticleEmitterData),
+      addFieldV( "softnessDistance", TypeRangedF32, Offset(softnessDistance, ParticleEmitterData), &CommonValidators::PositiveFloat,
          "For soft particles, the distance (in meters) where particles will be "
          "faded based on the difference in depth between the particle and the "
          "scene geometry." );
 
-      addField( "ambientFactor", TYPEID< F32 >(), Offset(ambientFactor, ParticleEmitterData),
+      addFieldV( "ambientFactor", TypeRangedF32, Offset(ambientFactor, ParticleEmitterData), &CommonValidators::NormalizedFloat,
          "Used to generate the final particle color by controlling interpolation "
          "between the particle color and the particle color multiplied by the "
          "ambient light color." );
@@ -270,10 +270,10 @@ void ParticleEmitterData::initPersistFields()
          "A random one of these datablocks is selected each time a particle is "
          "emitted." );
 
-      addFieldV( "lifetimeMS", TypeRangedS32, Offset(lifetimeMS, ParticleEmitterData), &CommonValidators::NaturalNumber,
+      addFieldV( "lifetimeMS", TypeRangedS32, Offset(lifetimeMS, ParticleEmitterData), &CommonValidators::PositiveInt,
          "Lifetime of emitted particles (in milliseconds)." );
 
-      addFieldV("lifetimeVarianceMS", TypeRangedS32, Offset(lifetimeVarianceMS, ParticleEmitterData), &CommonValidators::NaturalNumber,
+      addFieldV("lifetimeVarianceMS", TypeRangedS32, Offset(lifetimeVarianceMS, ParticleEmitterData), &CommonValidators::PositiveInt,
          "Variance in particle lifetime from 0 - lifetimeMS." );
 
       addField( "useEmitterSizes", TYPEID< bool >(), Offset(useEmitterSizes, ParticleEmitterData),
