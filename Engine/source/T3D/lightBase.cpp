@@ -97,11 +97,11 @@ void LightBase::initPersistFields()
       
       addField( "isEnabled", TypeBool, Offset( mIsEnabled, LightBase ), "Enables/Disables the object rendering and functionality in the scene." );
       addField( "color", TypeColorF, Offset( mColor, LightBase ), "Changes the base color hue of the light." );
-      addFieldV( "brightness", TypeF32, Offset( mBrightness, LightBase ), &CommonValidators::PositiveFloat, "Adjusts the lights power, 0 being off completely." );
+      addFieldV( "brightness", TypeRangedF32, Offset( mBrightness, LightBase ), &CommonValidators::PositiveFloat, "Adjusts the lights power, 0 being off completely." );
       addField( "castShadows", TypeBool, Offset( mCastShadows, LightBase ), "Enables/disabled shadow casts by this light." );
       //addField( "staticRefreshFreq", TypeS32, Offset( mStaticRefreshFreq, LightBase ), "static shadow refresh rate (milliseconds)" );
       //addField( "dynamicRefreshFreq", TypeS32, Offset( mDynamicRefreshFreq, LightBase ), "dynamic shadow refresh rate (milliseconds)");
-      addField( "priority", TypeF32, Offset( mPriority, LightBase ), "Used for sorting of lights by the light manager. "
+      addFieldV( "priority", TypeRangedF32, Offset( mPriority, LightBase ), &CommonValidators::PositiveFloat, "Used for sorting of lights by the light manager. "
 		  "Priority determines if a light has a stronger effect than, those with a lower value" );
 
    endGroup( "Light" );

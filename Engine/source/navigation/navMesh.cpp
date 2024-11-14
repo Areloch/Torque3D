@@ -305,9 +305,9 @@ void NavMesh::initPersistFields()
    addField("innerCover", TypeBool, Offset(mInnerCover, NavMesh),
       "Add cover points everywhere, not just on corners?");
 
-   addField("coverDist", TypeF32, Offset(mCoverDist, NavMesh),
+   addFieldV("coverDist", TypeRangedF32, Offset(mCoverDist, NavMesh), &CommonValidators::PositiveFloat,
       "Distance from the edge of the NavMesh to search for cover.");
-   addField("peekDist", TypeF32, Offset(mPeekDist, NavMesh),
+   addFieldV("peekDist", TypeRangedF32, Offset(mPeekDist, NavMesh), &CommonValidators::PositiveFloat,
       "Distance to the side of each cover point that peeking happens.");
 
    endGroup("NavMesh Annotations");

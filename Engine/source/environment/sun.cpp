@@ -165,7 +165,7 @@ void Sun::initPersistFields()
       addField( "ambient", TypeColorF, Offset( mLightAmbient, Sun ), "Color shading applied to surfaces not "
          "in direct contact with light source, such as in the shadows or interiors.");       
 
-      addField( "brightness", TypeF32, Offset( mBrightness, Sun ), 
+      addFieldV( "brightness", TypeRangedF32, Offset( mBrightness, Sun ), &CommonValidators::PositiveFloat,
          "Adjust the Sun's global contrast/intensity");      
 
       addField( "castShadows", TypeBool, Offset( mCastShadows, Sun ), 
@@ -183,7 +183,7 @@ void Sun::initPersistFields()
 
       INITPERSISTFIELD_MATERIALASSET(CoronaMaterial, Sun, "Material for the corona sprite.");
 
-      addField( "coronaScale", TypeF32, Offset( mCoronaScale, Sun ),
+      addFieldV( "coronaScale", TypeRangedF32, Offset( mCoronaScale, Sun ), &CommonValidators::PositiveFloat,
          "Controls size the corona sprite renders, specified as a fractional amount of the screen height." );
 
       addField( "coronaTint", TypeColorF, Offset( mCoronaTint, Sun ),
@@ -200,7 +200,7 @@ void Sun::initPersistFields()
       addField( "flareType", TYPEID< LightFlareData >(), Offset( mFlareData, Sun ), 
          "Datablock for the flare produced by the Sun" );
 
-      addField( "flareScale", TypeF32, Offset( mFlareScale, Sun ), 
+      addFieldV( "flareScale", TypeRangedF32, Offset( mFlareScale, Sun ), &CommonValidators::PositiveFloat,
          "Changes the size and intensity of the flare." );
 
    endGroup( "Misc" );

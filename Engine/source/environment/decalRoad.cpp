@@ -301,7 +301,7 @@ IMPLEMENT_CO_NETOBJECT_V1(DecalRoad);
 
 
 // ConsoleObject
-FRangeValidator textureLengthV(0.1f,FLT_MAX);
+FRangeValidator drTextureLengthV(0.1f,FLT_MAX);
 void DecalRoad::initPersistFields()
 {
    docsURL;
@@ -309,10 +309,10 @@ void DecalRoad::initPersistFields()
 
       INITPERSISTFIELD_MATERIALASSET(Material, DecalRoad, "Material used for rendering.");
 
-      addProtectedFieldV("textureLength", TypeRangedF32, Offset(mTextureLength, DecalRoad), &DecalRoad::ptSetTextureLength, &defaultProtectedGetFn, &textureLengthV,
+      addProtectedFieldV("textureLength", TypeRangedF32, Offset(mTextureLength, DecalRoad), &DecalRoad::ptSetTextureLength, &defaultProtectedGetFn, &drTextureLengthV,
          "The length in meters of textures mapped to the DecalRoad" );      
 
-      addProtectedField( "breakAngle", TypeF32, Offset( mBreakAngle, DecalRoad ), &DecalRoad::ptSetBreakAngle, &defaultProtectedGetFn, 
+      addProtectedFieldV( "breakAngle", TypeF32, Offset( mBreakAngle, DecalRoad ), &DecalRoad::ptSetBreakAngle, &defaultProtectedGetFn, &CommonValidators::PosDegreeRange,
          "Angle in degrees - DecalRoad will subdivided the spline if its curve is greater than this threshold." );      
 
       addField( "renderPriority", TypeS32, Offset( mRenderPriority, DecalRoad ), 

@@ -184,7 +184,7 @@ void GuiTSCtrl::initPersistFields()
    
    addGroup( "Rendering" );
    
-      addField( "reflectPriority", TypeF32, Offset( mReflectPriority, GuiTSCtrl ),
+      addFieldV( "reflectPriority", TypeRangedF32, Offset( mReflectPriority, GuiTSCtrl ), &CommonValidators::PositiveFloat,
          "The share of the per-frame reflection update work this control's rendering should run.\n"
          "The reflect update priorities of all visible GuiTSCtrls are added together and each control is assigned "
          "a share of the per-frame reflection update time according to its percentage of the total priority value." );

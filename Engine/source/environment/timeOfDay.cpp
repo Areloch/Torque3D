@@ -128,7 +128,7 @@ void TimeOfDay::initPersistFields()
    docsURL;
 	  addGroup( "TimeOfDay" );
 
-      addField( "axisTilt", TypeF32, Offset( mAxisTilt, TimeOfDay ),
+      addFieldV( "axisTilt", TypeRangedF32, Offset( mAxisTilt, TimeOfDay ), &CommonValidators::DegreeRange,
             "The angle in degrees between global equator and tropic." );
 
       addProtectedFieldV( "dayLength", TypeRangedF32, Offset( mDayLen, TimeOfDay ), &setDayLength, &defaultProtectedGetFn, &CommonValidators::PositiveFloat,

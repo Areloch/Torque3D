@@ -546,7 +546,7 @@ void RigidShapeData::initPersistFields()
    endGroup("Physics");
 
    addGroup("Collision");
-      addField("minImpactSpeed", TypeRangedF32, Offset(minImpactSpeed, RigidShapeData),
+      addFieldV("minImpactSpeed", TypeRangedF32, Offset(minImpactSpeed, RigidShapeData), &CommonValidators::PositiveFloat,
       "Minimum collision speed to classify collision as impact (triggers onImpact on server object)." );
       addFieldV("softImpactSpeed", TypeRangedF32, Offset(softImpactSpeed, RigidShapeData), &CommonValidators::PositiveFloat, "Minimum speed at which this object must be travelling for the soft impact sound to be played.");
       addFieldV("hardImpactSpeed", TypeRangedF32, Offset(hardImpactSpeed, RigidShapeData), &CommonValidators::PositiveFloat, "Minimum speed at which the object must be travelling for the hard impact sound to be played.");

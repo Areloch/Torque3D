@@ -433,7 +433,7 @@ void Lightning::initPersistFields()
    addGroup( "Bolts" );
    addFieldV( "chanceToHitTarget", TypeRangedF32, Offset(chanceToHitTarget, Lightning), &CommonValidators::NormalizedFloat,
       "Percentage chance (0-1) that a given lightning bolt will hit something." );
-   addField( "boltStartRadius", TypeF32, Offset(boltStartRadius, Lightning),
+   addFieldV( "boltStartRadius", TypeRangedF32, Offset(boltStartRadius, Lightning), &CommonValidators::PositiveFloat,
       "@brief Radial distance from the center of the Lightning object for the "
       "start point of the bolt.\n\n"
       "The actual start point will be a random point within this radius." );

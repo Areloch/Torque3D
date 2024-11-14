@@ -174,7 +174,7 @@ void Path::initPersistFields()
 {
    docsURL;
    addField("isLooping",   TypeBool, Offset(mIsLooping, Path), "If this is true, the loop is closed, otherwise it is open.\n");
-   addField("Speed",   TypeF32, Offset(mPathSpeed, Path), "Speed.\n");
+   addFieldV("Speed",   TypeRangedF32, Offset(mPathSpeed, Path), &CommonValidators::PositiveFloat, "Speed.\n");
    addProtectedField("mPathShape", TYPEID< PathShapeData >(), Offset(mDataBlock, Path),
 	   &setDataBlockProperty, &defaultProtectedGetFn,
 	   "@brief Spawned PathShape.\n\n");

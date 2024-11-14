@@ -311,7 +311,7 @@ void GuiMLTextCtrl::initPersistFields()
                                                                       "This is dependant on the markup language used by the GuiMLTextCtrl\n");
 
       addField("useTypeOverTime", TypeBool, Offset(mUseTypeOverTime, GuiMLTextCtrl), "");
-      addField("typeOverTimeSpeedMS", TypeF32, Offset(mTypeOverTimeSpeedMS, GuiMLTextCtrl), "");
+      addFieldV("typeOverTimeSpeedMS", TypeRangedF32, Offset(mTypeOverTimeSpeedMS, GuiMLTextCtrl), &CommonValidators::PositiveFloat, "");
       addField("typeoutSound", TypeSFXTrackName, Offset(mTypeoutSound, GuiMLTextCtrl), "Played when the text is being typed out");
       addField("typeoutSoundRate", TypeS32, Offset(mTypeoutSoundRate, GuiMLTextCtrl), "Dictates how many characters must be typed out before the sound is played again. -1 for the sound to only play once at the start.");
    
