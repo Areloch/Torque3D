@@ -419,7 +419,7 @@ void fxFoliageReplicator::initPersistFields()
    endGroup( "Restrictions" );	// MM: Added Group Footer.
 
    addGroup( "AFX" );
-      addFieldV( "AmbientModulationBias", TypeF32,     Offset( mFieldData.mAmbientModulationBias,fxFoliageReplicator ), &CommonValidators::NormalizedFloat, "Multiplier controling amount foliage is modulated by sun's ambient." );
+      addFieldV( "AmbientModulationBias", TypeRangedF32,     Offset( mFieldData.mAmbientModulationBias,fxFoliageReplicator ), &CommonValidators::NormalizedFloat, "Multiplier controling amount foliage is modulated by sun's ambient." );
    endGroup( "AFX" );
    // Initialise parents' persistent fields.
    Parent::initPersistFields();

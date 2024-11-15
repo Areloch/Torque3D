@@ -322,7 +322,7 @@ void WaterObject::initPersistFields()
          addFieldV( "foamSpeed", TypeRangedF32, Offset( mFoamSpeed, WaterObject ), &CommonValidators::PositiveFloat, MAX_FOAM, "");
          addField( "foamTexScale",  TypePoint2F, Offset( mFoamTexScale, WaterObject ), MAX_FOAM, ""
 			 "applied to the surface.");
-         addFieldV( "foamOpacity", TypeF32, Offset( mFoamOpacity, WaterObject ), &CommonValidators::PositiveFloat, MAX_FOAM, "" );
+         addFieldV( "foamOpacity", TypeRangedF32, Offset( mFoamOpacity, WaterObject ), &CommonValidators::PositiveFloat, MAX_FOAM, "" );
 
       endArray( "Foam" );
       

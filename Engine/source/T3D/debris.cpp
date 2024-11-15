@@ -333,9 +333,9 @@ void DebrisData::initPersistFields()
       "@brief Maximum speed that this debris object will rotate.\n\nMust be in the range of -10000 to 10000.\n@see minSpinSpeed\n");
    addFieldV("gravModifier", TypeRangedF32,                     Offset(gravModifier,        DebrisData), &CommonValidators::F32Range, "How much gravity affects debris.");
    addFieldV("terminalVelocity", TypeRangedF32,                     Offset(terminalVelocity,    DebrisData), &CommonValidators::PositiveFloat, "Max velocity magnitude.");
-   addFieldV("velocity",             TypeF32,                     Offset(velocity,            DebrisData), &CommonValidators::PositiveFloat,
+   addFieldV("velocity", TypeRangedF32,                     Offset(velocity,            DebrisData), &CommonValidators::PositiveFloat,
       "@brief Speed at which this debris object will move.\n\n@see velocityVariance\n");
-   addFieldV("velocityVariance",     TypeF32,                     Offset(velocityVariance,    DebrisData), &CommonValidators::PositiveFloat,
+   addFieldV("velocityVariance", TypeRangedF32,                     Offset(velocityVariance,    DebrisData), &CommonValidators::PositiveFloat,
       "@brief Allowed variance in the value of velocity\n\nMust be less than velocity.\n@see velocity\n");
    addFieldV("lifetime",             TypeRangedF32,                     Offset(lifetime,            DebrisData), &debLifetimeRange,
       "@brief Amount of time until this debris object is destroyed.\n\nMust be in the range of 0 to 1000.\n@see lifetimeVariance");

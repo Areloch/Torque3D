@@ -489,7 +489,7 @@ void SpawnSphere::initPersistFields()
    endGroup( "Spawn" );
 
    addGroup( "Dimensions" );
-   addFieldV( "radius", TypeF32, Offset(mRadius, SpawnSphere), &CommonValidators::PositiveFloat, "Deprecated" );
+   addFieldV( "radius", TypeRangedF32, Offset(mRadius, SpawnSphere), &CommonValidators::PositiveFloat, "Deprecated" );
    endGroup( "Dimensions" );
 
    addGroup( "Weight" );

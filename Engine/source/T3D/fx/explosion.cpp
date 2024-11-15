@@ -451,7 +451,7 @@ void ExplosionData::initPersistFields()
       addField("explosionScale", TypePoint3F, Offset(explosionScale, ExplosionData),
       "\"X Y Z\" scale factor applied to the explosionShape model at the start "
       "of the explosion.");
-       addFieldV("playSpeed", TypeF32, Offset(playSpeed, ExplosionData),&expPlaySpeedRange,
+       addFieldV("playSpeed", TypeRangedF32, Offset(playSpeed, ExplosionData),&expPlaySpeedRange,
           "Time scale at which to play the explosionShape <i>ambient</i> sequence.");
 
       addFieldV( "delayMS", TypeRangedS32, Offset(delayMS, ExplosionData), &CommonValidators::PositiveInt,
