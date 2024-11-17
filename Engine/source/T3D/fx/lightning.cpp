@@ -410,7 +410,7 @@ void Lightning::initPersistFields()
 {
    docsURL;
    addGroup( "Strikes" );
-   addField( "strikesPerMinute", TypeS32, Offset(strikesPerMinute, Lightning),
+   addFieldV( "strikesPerMinute", TypeRangedS32, Offset(strikesPerMinute, Lightning), &CommonValidators::PositiveInt,
       "@brief Number of lightning strikes to perform per minute.\n\n"
       "Automatically invokes strikeRandomPoint() at regular intervals." );
    addFieldV( "strikeWidth", TypeRangedF32, Offset(strikeWidth, Lightning), &CommonValidators::PositiveFloat,

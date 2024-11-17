@@ -240,7 +240,7 @@ SFXPlayList::~SFXPlayList()
 }
 
 //-----------------------------------------------------------------------------
-
+IRangeValidator playlistSlotCount(1, SFXPlayList::NUM_SLOTS);
 void SFXPlayList::initPersistFields()
 {
    docsURL;
@@ -257,9 +257,9 @@ void SFXPlayList::initPersistFields()
          "The loop mode determines whether the list will loop over a single slot or loop over "
          "all the entire list of slots being played.\n\n"
          "@see SFXDescription::isLooping" );
-      addField( "numSlotsToPlay",   TypeS32,          Offset( mNumSlotsToPlay, SFXPlayList ),
+      addFieldV( "numSlotsToPlay",   TypeRangedS32,          Offset( mNumSlotsToPlay, SFXPlayList ), &playlistSlotCount,
          "Number of slots to play.\n"
-         "Up to a maximum of 16, this field determines the number of slots that are taken from the "
+         "Up to a maximum of 12, this field determines the number of slots that are taken from the "
          "list for playback.  Only slots that have a valid #track assigned will be considered for "
          "this." );
    

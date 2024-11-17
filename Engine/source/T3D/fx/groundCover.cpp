@@ -549,7 +549,7 @@ void GroundCover::initPersistFields()
       addFieldV( "dissolveRadius", TypeRangedF32,          Offset( mFadeRadius, GroundCover ), &CommonValidators::PositiveFloat,          "This is less than or equal to radius and defines when fading of cover elements begins." );
       addFieldV( "reflectScale", TypeRangedF32,          Offset( mReflectRadiusScale, GroundCover ), &CommonValidators::PositiveFloat,  "Scales the various culling radii when rendering a reflection. Typically for water." );
 
-      addField( "gridSize",      TypeS32,          Offset( mGridSize, GroundCover ),            "The number of cells per axis in the grid." );
+      addFieldV( "gridSize",      TypeRangedS32,          Offset( mGridSize, GroundCover ), &CommonValidators::PositiveInt,            "The number of cells per axis in the grid." );
       addFieldV( "zOffset", TypeRangedF32,          Offset( mZOffset, GroundCover ), &CommonValidators::F32Range,             "Offset along the Z axis to render the ground cover." );
 
       addField( "seed",          TypeS32,          Offset( mRandomSeed, GroundCover ),          "This RNG seed is saved and sent to clients for generating the same cover." );

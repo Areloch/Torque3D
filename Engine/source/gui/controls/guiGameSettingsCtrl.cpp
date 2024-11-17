@@ -845,7 +845,7 @@ void GuiGameSettingsCtrl::initPersistFields()
    INITPERSISTFIELD_IMAGEASSET(PreviousBitmap, GuiGameSettingsCtrl, "Bitmap used for the previous button when in list mode.");
    INITPERSISTFIELD_IMAGEASSET(NextBitmap, GuiGameSettingsCtrl, "Bitmap used for the next button when in list mode.");
 
-   addField("arrowSize", TypeS32, Offset(mArrowSize, GuiGameSettingsCtrl),
+   addFieldV("arrowSize", TypeRangedS32, Offset(mArrowSize, GuiGameSettingsCtrl), &CommonValidators::PositiveInt,
       "Size of the arrow buttons' extents");
 
    addFieldV("columnSplit", TypeRangedS32, Offset(mColumnSplit, GuiGameSettingsCtrl), &CommonValidators::NaturalNumber,

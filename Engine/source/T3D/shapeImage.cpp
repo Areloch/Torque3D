@@ -623,7 +623,7 @@ S32 ShapeBaseImageData::lookupState(const char* name)
    Con::errorf(ConsoleLogEntry::General,"ShapeBaseImageData:: Could not resolve state \"%s\" for image \"%s\"",name,getName());
    return 0;
 }
-IRangeValidator mountRange(0, SceneObject::NumMountPoints);
+IRangeValidator mountRange(-1, SceneObject::NumMountPoints);
 void ShapeBaseImageData::initPersistFields()
 {
    docsURL;

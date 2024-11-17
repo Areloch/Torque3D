@@ -369,7 +369,7 @@ void SFXDescription::initPersistFields()
       addField( "isStreaming",         TypeBool,   Offset( mIsStreaming, SFXDescription ),
          "If true, incrementally stream sounds; otherwise sounds are loaded in full.\n\n"
          "@ref SFX_streaming" );
-      addField( "streamPacketSize",    TypeS32,    Offset( mStreamPacketSize, SFXDescription ),
+      addFieldV( "streamPacketSize",    TypeRangedS32,    Offset( mStreamPacketSize, SFXDescription ), &CommonValidators::PositiveInt,
          "Number of seconds of sample data per single streaming packet.\n"
          "This field allows to fine-tune streaming for individual sounds.  The streaming system "
          "processes streamed sounds in batches called packets.  Each packet will contain a set amount "
@@ -377,7 +377,7 @@ void SFXDescription::initPersistFields()
          "packet contains, the more work is done per packet.\n\n"
          "@note This field only takes effect when Torque's own sound system performs the streaming. "
          "@ref SFX_streaming" );
-      addField( "streamReadAhead",     TypeS32,    Offset( mStreamReadAhead, SFXDescription ),
+      addFieldV( "streamReadAhead",     TypeRangedS32,    Offset( mStreamReadAhead, SFXDescription ), &CommonValidators::PositiveInt,
          "Number of sample packets to read and buffer in advance.\n"
          "This field determines the number of packets that the streaming system will try to keep buffered "
          "in advance.  As such it determines the number of packets that can be consumed by the sound "

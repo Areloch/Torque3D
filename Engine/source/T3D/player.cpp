@@ -833,7 +833,7 @@ void PlayerData::initPersistFields()
          "@brief Maximum vertical speed before the player can no longer jump.\n\n" );
       addFieldV( "jumpSurfaceAngle", TypeRangedF32, Offset(jumpSurfaceAngle, PlayerData), &CommonValidators::PosDegreeRangeQuarter,
          "@brief Angle from vertical (in degrees) where the player can jump.\n\n" );
-      addField( "jumpDelay", TypeS32, Offset(jumpDelay, PlayerData),
+      addFieldV( "jumpDelay", TypeRangedS32, Offset(jumpDelay, PlayerData), &CommonValidators::PositiveInt,
          "@brief Delay time in number of ticks ticks between jumps.\n\n" );
       addFieldV( "airControl", TypeRangedF32, Offset(airControl, PlayerData), &CommonValidators::PositiveFloat,
          "@brief Amount of movement control the player has when in the air.\n\n"
@@ -950,7 +950,7 @@ void PlayerData::initPersistFields()
       addFieldV( "fallingSpeedThreshold", TypeRangedF32, Offset(fallingSpeedThreshold, PlayerData), &CommonValidators::PositiveFloat,
          "@brief Downward speed at which we consider the player falling.\n\n" );
 
-      addField( "recoverDelay", TypeS32, Offset(recoverDelay, PlayerData),
+      addFieldV( "recoverDelay", TypeRangedS32, Offset(recoverDelay, PlayerData), &CommonValidators::PositiveInt,
          "@brief Number of ticks for the player to recover from falling.\n\n" );
 
       addFieldV( "recoverRunForceScale", TypeRangedF32, Offset(recoverRunForceScale, PlayerData), &CommonValidators::PositiveFloat,
@@ -1022,7 +1022,7 @@ void PlayerData::initPersistFields()
          "walks along the ground).\n\n"
          "@note The generation of foot puffs requires the appropriate triggeres to be defined in the "
          "player's animation sequences.  Without these, no foot puffs will be generated.\n");
-      addField( "footPuffNumParts", TypeS32, Offset(footPuffNumParts, PlayerData),
+      addFieldV( "footPuffNumParts", TypeRangedS32, Offset(footPuffNumParts, PlayerData), &CommonValidators::PositiveInt,
          "@brief Number of footpuff particles to generate each step.\n\n"
          "Each foot puff is randomly placed within the defined foot puff radius.  This "
          "includes having footPuffNumParts set to one.\n"

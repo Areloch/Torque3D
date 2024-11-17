@@ -72,7 +72,7 @@ void GuiInspector::initPersistFields()
    docsURL;
    addGroup( "Inspector" );
    
-      addField( "dividerMargin", TypeS32, Offset( mDividerMargin, GuiInspector ) );
+      addFieldV( "dividerMargin", TypeRangedS32, Offset( mDividerMargin, GuiInspector ), &CommonValidators::PositiveInt);
 
       addField( "groupFilters", TypeRealString, Offset( mGroupFilters, GuiInspector ), 
          "Specify groups that should be shown or not. Specifying 'shown' implicitly does 'not show' all other groups. Example string: +name -otherName" );

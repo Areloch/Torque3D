@@ -383,10 +383,10 @@ void ScatterSky::initPersistFields()
 
       addField( "castShadows", TypeBool, Offset( mCastShadows, ScatterSky ),
          "Enables/disables shadows cast by objects due to ScatterSky light." );
-
+      /*
       addField("staticRefreshFreq", TypeS32, Offset(mStaticRefreshFreq, ScatterSky), "static shadow refresh rate (milliseconds)");
       addField("dynamicRefreshFreq", TypeS32, Offset(mDynamicRefreshFreq, ScatterSky), "dynamic shadow refresh rate (milliseconds)");
-
+      */
       addFieldV( "brightness", TypeRangedF32, Offset( mBrightness, ScatterSky ), &CommonValidators::PositiveFloat,
          "The brightness of the ScatterSky's light object." );
 

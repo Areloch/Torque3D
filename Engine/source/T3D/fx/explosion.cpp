@@ -410,7 +410,7 @@ void ExplosionData::initPersistFields()
          "The second effect spawns the list of ParticleEmitters given by the emitter[] "
          "field. These emitters generate particles in the normal way throughout the "
          "lifetime of the explosion." );
-      addField( "particleDensity", TypeS32, Offset(particleDensity, ExplosionData),
+      addFieldV( "particleDensity", TypeRangedS32, Offset(particleDensity, ExplosionData), &CommonValidators::PositiveInt,
          "@brief Density of the particle cloud created at the start of the explosion.\n\n"
          "@see particleEmitter" );
       addFieldV( "particleRadius", TypeRangedF32, Offset(particleRadius, ExplosionData),&CommonValidators::PositiveFloat,

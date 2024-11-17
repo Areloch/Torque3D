@@ -198,7 +198,7 @@ void GuiMessageVectorCtrl::initPersistFields()
    addFieldV("lineContinuedIndex", TypeRangedS32,    Offset(mLineContinuationIndent, GuiMessageVectorCtrl), &CommonValidators::PositiveInt);
    addField("allowedMatches",     TypeString, Offset(mAllowedMatches,         GuiMessageVectorCtrl), 16);
    addField("matchColor",         TypeColorI, Offset(mSpecialColor,           GuiMessageVectorCtrl));
-   addField("maxColorIndex",      TypeS32,    Offset(mMaxColorIndex,          GuiMessageVectorCtrl));
+   addFieldV("maxColorIndex", TypeRangedS32,    Offset(mMaxColorIndex,          GuiMessageVectorCtrl), &CommonValidators::S32_8BitCap);
    Parent::initPersistFields();
 }
 

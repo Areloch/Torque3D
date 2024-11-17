@@ -173,11 +173,11 @@ void PrecipitationData::initPersistFields()
 
    addField( "splashShader", TypeString, Offset(mSplashShaderName, PrecipitationData),
       "The name of the shader used for splashes." );
-   addField( "dropsPerSide", TypeS32, Offset(mDropsPerSide, PrecipitationData),
+   addFieldV( "dropsPerSide", TypeRangedS32, Offset(mDropsPerSide, PrecipitationData), &CommonValidators::PositiveInt,
       "@brief How many rows and columns are in the raindrop texture.\n\n"
       "For example, if the texture has 16 raindrops arranged in a grid, this "
       "field should be set to 4." );
-   addField( "splashesPerSide", TypeS32, Offset(mSplashesPerSide, PrecipitationData),
+   addFieldV( "splashesPerSide", TypeRangedS32, Offset(mSplashesPerSide, PrecipitationData), &CommonValidators::PositiveInt,
       "@brief How many rows and columns are in the splash texture.\n\n"
       "For example, if the texture has 9 splashes arranged in a grid, this "
       "field should be set to 3." );

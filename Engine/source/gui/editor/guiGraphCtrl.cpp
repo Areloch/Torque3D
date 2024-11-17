@@ -119,7 +119,7 @@ void GuiGraphCtrl::initPersistFields()
          "Name of the variable to automatically plot on the curves.  If empty, auto-plotting "
          "is disabled for the respective curve." );
             
-      addField( "plotInterval", TypeS32, Offset( mAutoPlotDelay, GuiGraphCtrl ), MaxPlots,
+      addFieldV( "plotInterval", TypeRangedS32, Offset( mAutoPlotDelay, GuiGraphCtrl ), &CommonValidators::PositiveInt, MaxPlots,
          "Interval between auto-plots of #plotVariable for the respective curve (in milliseconds)." );
    
    endGroup( "Graph" );

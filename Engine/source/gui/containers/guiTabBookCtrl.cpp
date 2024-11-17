@@ -108,15 +108,15 @@ void GuiTabBookCtrl::initPersistFields()
    
       addField( "tabPosition",     TYPEID< TabPosition >(), Offset( mTabPosition,    GuiTabBookCtrl ),
          "Where to place the tab page headers." );
-      addField( "tabMargin",       TypeS32,  Offset( mTabMargin,      GuiTabBookCtrl ),
+      addFieldV( "tabMargin", TypeRangedS32,  Offset( mTabMargin,      GuiTabBookCtrl ), &CommonValidators::PositiveInt,
          "Spacing to put between individual tab page headers." );
-      addField( "minTabWidth",     TypeS32,  Offset( mMinTabWidth,    GuiTabBookCtrl ),
+      addFieldV( "minTabWidth", TypeRangedS32,  Offset( mMinTabWidth,    GuiTabBookCtrl ), &CommonValidators::PositiveInt,
          "Minimum width allocated to a tab page header." );
-      addField( "tabHeight",       TypeS32,  Offset( mTabHeight,      GuiTabBookCtrl ),
+      addFieldV( "tabHeight", TypeRangedS32,  Offset( mTabHeight,      GuiTabBookCtrl ), &CommonValidators::PositiveInt,
          "Height of tab page headers." );
       addField( "allowReorder",    TypeBool, Offset( mAllowReorder,   GuiTabBookCtrl ),
          "Whether reordering tabs with the mouse is allowed." );
-      addField( "defaultPage",     TypeS32,  Offset( mDefaultPageNum, GuiTabBookCtrl ),
+      addFieldV( "defaultPage", TypeRangedS32,  Offset( mDefaultPageNum, GuiTabBookCtrl ), &CommonValidators::NegDefaultInt,
          "Index of page to select on first onWake() call (-1 to disable)." );
 
       addProtectedFieldV( "selectedPage", TypeRangedS32, Offset( mSelectedPageNum, GuiTabBookCtrl ),

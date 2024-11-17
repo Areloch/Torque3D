@@ -98,9 +98,10 @@ void LightDescription::initPersistFields()
       addFieldV( "brightness", TypeRangedF32, Offset( brightness, LightDescription ), &CommonValidators::PositiveFloat, "Adjusts the lights power, 0 being off completely." );
       addFieldV( "range", TypeRangedF32, Offset( range, LightDescription ), &CommonValidators::PositiveFloat, "Controls the size (radius) of the light" );
       addField( "castShadows", TypeBool, Offset( castShadows, LightDescription ), "Enables/disabled shadow casts by this light." );
+      /*
       addField( "staticRefreshFreq", TypeS32, Offset( mStaticRefreshFreq, LightDescription ), "static shadow refresh rate (milliseconds)" );
       addField( "dynamicRefreshFreq", TypeS32, Offset( mDynamicRefreshFreq, LightDescription ), "dynamic shadow refresh rate (milliseconds)");
-
+      */
    endGroup( "Light" );
 
    addGroup( "Light Animation" );
