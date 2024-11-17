@@ -352,7 +352,7 @@ void fxFoliageReplicator::initPersistFields()
       addFieldV( "DebugBoxHeight",      TypeRangedF32,       Offset( mFieldData.mDebugBoxHeight,       fxFoliageReplicator ), &CommonValidators::PositiveFloat, "Height multiplier for drawn culling bins.");
       addField( "HideFoliage",         TypeBool,      Offset( mFieldData.mHideFoliage,          fxFoliageReplicator ), "Foliage is hidden when set to true." );
       addField( "ShowPlacementArea",   TypeBool,      Offset( mFieldData.mShowPlacementArea,    fxFoliageReplicator ), "Draw placement rings when set to true." );
-      addFieldV( "PlacementAreaHeight", TypeS32,       Offset( mFieldData.mPlacementBandHeight,  fxFoliageReplicator ), &CommonValidators::PositiveFloat, "Height of the placement ring in world units." );
+      addFieldV( "PlacementAreaHeight", TypeRangedS32,       Offset( mFieldData.mPlacementBandHeight,  fxFoliageReplicator ), &CommonValidators::PositiveFloat, "Height of the placement ring in world units." );
       addField( "PlacementColour",     TypeColorF,    Offset( mFieldData.mPlaceAreaColour,      fxFoliageReplicator ), "Color of the placement ring." );
    endGroup( "Debugging" );	// MM: Added Group Footer.
 
