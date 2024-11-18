@@ -1047,10 +1047,10 @@ void ShapeBaseImageData::packData(BitStream* stream)
    {
       stream->write(lightRadius);
       stream->write(lightDuration);
-      stream->writeFloat(lightColor.red, 7);
-      stream->writeFloat(lightColor.green, 7);
-      stream->writeFloat(lightColor.blue, 7);
-      stream->writeFloat(lightColor.alpha, 7);
+      stream->writeFloat(lightColor.red, 8);
+      stream->writeFloat(lightColor.green, 8);
+      stream->writeFloat(lightColor.blue, 8);
+      stream->writeFloat(lightColor.alpha, 8);
       stream->write(lightBrightness);
    }
 

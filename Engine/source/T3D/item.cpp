@@ -194,10 +194,10 @@ void ItemData::packData(BitStream* stream)
    {
       AssertFatal(Item::NumLightTypes < (1 << 2), "ItemData: light type needs more bits");
       stream->writeInt(lightType, 2);
-      stream->writeFloat(lightColor.red, 7);
-      stream->writeFloat(lightColor.green, 7);
-      stream->writeFloat(lightColor.blue, 7);
-      stream->writeFloat(lightColor.alpha, 7);
+      stream->writeFloat(lightColor.red, 8);
+      stream->writeFloat(lightColor.green, 8);
+      stream->writeFloat(lightColor.blue, 8);
+      stream->writeFloat(lightColor.alpha, 8);
       stream->write(lightTime);
       stream->write(lightRadius);
       stream->writeFlag(lightOnlyStatic);

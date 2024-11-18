@@ -298,10 +298,10 @@ void ParticleData::packData(BitStream* stream)
 
    for( i=0; i<count; i++ )
    {
-      stream->writeFloat( colors[i].red, 7);
-      stream->writeFloat( colors[i].green, 7);
-      stream->writeFloat( colors[i].blue, 7);
-      stream->writeFloat( colors[i].alpha, 7);
+      stream->writeFloat( colors[i].red, 8);
+      stream->writeFloat( colors[i].green, 8);
+      stream->writeFloat( colors[i].blue, 8);
+      stream->writeFloat( colors[i].alpha, 8);
       // AFX bits raised from 14 to 16 to allow larger sizes
       stream->writeFloat( sizes[i]/MaxParticleSize, 16);
       stream->writeFloat( times[i], 8);

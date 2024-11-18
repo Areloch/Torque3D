@@ -386,6 +386,8 @@ ExplosionData* ExplosionData::cloneAndPerformSubstitutions(const SimObject* owne
 }
 IRangeValidator expDebrisNumRange(0, 1000);
 FRangeValidator expPlaySpeedRange(0.05f, FLT_MAX);
+FRangeValidator expLightRadiusRange(0.0f, MaxLightRadius,1<<8);
+FRangeValidator expTimeRange(0.0f, 1.0f, 1 << 8);
 void ExplosionData::initPersistFields()
 {
    docsURL;
@@ -471,7 +473,7 @@ void ExplosionData::initPersistFields()
          "from the Explosion object position.\n\n"
          "Most often used to create some variance in position for subExplosion effects." );
 
-      addFieldV( "times", TypeRangedF32, Offset(times, ExplosionData), &CommonValidators::NormalizedFloat, EC_NUM_TIME_KEYS,
+      addFieldV( "times", TypeRangedF32, Offset(times, ExplosionData), &expTimeRange, EC_NUM_TIME_KEYS,
          "@brief Time keyframes used to scale the explosionShape model.\n\n"
          "Values should be in increasing order from 0.0 - 1.0, and correspond to "
          "the life of the Explosion where 0 is the beginning and 1 is the end of "
@@ -502,12 +504,12 @@ void ExplosionData::initPersistFields()
    endGroup("Camera Shake");
 
    addGroup("Light Emitter");
-      addFieldV( "lightStartRadius", TypeRangedF32, Offset(lightStartRadius, ExplosionData), &CommonValidators::PositiveFloat,
+      addFieldV( "lightStartRadius", TypeRangedF32, Offset(lightStartRadius, ExplosionData), &expLightRadiusRange,
          "@brief Initial radius of the PointLight created by this explosion.\n\n"
          "Radius is linearly interpolated from lightStartRadius to lightEndRadius "
          "over the lifetime of the explosion.\n"
          "@see lifetimeMS" );
-      addFieldV( "lightEndRadius", TypeRangedF32, Offset(lightEndRadius, ExplosionData), &CommonValidators::PositiveFloat,
+      addFieldV( "lightEndRadius", TypeRangedF32, Offset(lightEndRadius, ExplosionData), &expLightRadiusRange,
          "@brief Final radius of the PointLight created by this explosion.\n\n"
          "@see lightStartRadius" );
       addField( "lightStartColor", TypeColorF, Offset(lightStartColor, ExplosionData),
@@ -518,12 +520,12 @@ void ExplosionData::initPersistFields()
       addField( "lightEndColor", TypeColorF, Offset(lightEndColor, ExplosionData),
          "@brief Final color of the PointLight created by this explosion.\n\n"
          "@see lightStartColor" );
-      addFieldV( "lightStartBrightness", TypeRangedF32, Offset(lightStartBrightness, ExplosionData), &CommonValidators::PositiveFloat,
+      addFieldV( "lightStartBrightness", TypeRangedF32, Offset(lightStartBrightness, ExplosionData), &expLightRadiusRange,
          "@brief Initial brightness of the PointLight created by this explosion.\n\n"
          "Brightness is linearly interpolated from lightStartBrightness to "
          "lightEndBrightness over the lifetime of the explosion.\n"
          "@see lifetimeMS" );
-      addFieldV("lightEndBrightness", TypeRangedF32, Offset(lightEndBrightness, ExplosionData), &CommonValidators::PositiveFloat,
+      addFieldV("lightEndBrightness", TypeRangedF32, Offset(lightEndBrightness, ExplosionData), &expLightRadiusRange,
          "@brief Final brightness of the PointLight created by this explosion.\n\n"
          "@see lightStartBrightness" );
       addFieldV( "lightNormalOffset", TypeRangedF32, Offset(lightNormalOffset, ExplosionData), &CommonValidators::PositiveFloat,
@@ -755,12 +757,12 @@ void ExplosionData::packData(BitStream* stream)
    // Dynamic light info
    stream->writeFloat(lightStartRadius/MaxLightRadius, 8);
    stream->writeFloat(lightEndRadius/MaxLightRadius, 8);
-   stream->writeFloat(lightStartColor.red,7);
-   stream->writeFloat(lightStartColor.green,7);
-   stream->writeFloat(lightStartColor.blue,7);
-   stream->writeFloat(lightEndColor.red,7);
-   stream->writeFloat(lightEndColor.green,7);
-   stream->writeFloat(lightEndColor.blue,7);
+   stream->writeFloat(lightStartColor.red,8);
+   stream->writeFloat(lightStartColor.green,8);
+   stream->writeFloat(lightStartColor.blue,8);
+   stream->writeFloat(lightEndColor.red,8);
+   stream->writeFloat(lightEndColor.green,8);
+   stream->writeFloat(lightEndColor.blue,8);
    stream->writeFloat(lightStartBrightness/MaxLightRadius, 8);
    stream->writeFloat(lightEndBrightness/MaxLightRadius, 8);
    stream->write(lightNormalOffset);
