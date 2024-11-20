@@ -64,6 +64,17 @@ function NuMaterialEdPropInspector::onPostInspectorFieldModified(%this, %obj)
 
 function NuMaterialEdPropInspector::renew(%this)
 {
+    %scrollParent = %this.getParent();
+    if (!%scrollParent.isMemberOfClass("GuiScrollCtrl"))
+    {
+        while(%scrollParent.getParent() && !%scrollParent.isMemberOfClass("GuiScrollCtrl"))
+        {
+            %scrollParent = %scrollParent.getParent();
+        }
+    }
+    if (%scrollParent)
+        %scrollPos = %scrollParent.getScrollPosition();
+   
    %count = NuMaterialEdPropInspector.getNumInspectObjects();
    %inspecting = NuMaterialEdPropInspector.getInspectObject(0);
    for(%i=1; %i< %count;%i++)
@@ -73,6 +84,9 @@ function NuMaterialEdPropInspector::renew(%this)
    //readd
    for(%i=0; %i<%count;%i++)
       NuMaterialEdPropInspector.addInspect(getword(%inspecting,%i));
+      
+    if (%scrollParent)
+        %scrollParent.setScrollPosition(%scrollPos.x,%scrollPos.y);
 }
 
 function NuMaterialEditorWindow::syncGUI(%this)
