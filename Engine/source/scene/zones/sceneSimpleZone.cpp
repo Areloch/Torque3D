@@ -123,10 +123,10 @@ void SceneSimpleZone::unpackUpdate( NetConnection* connection, BitStream* stream
    if( stream->readFlag() ) // AmbientMask
    {
       mUseAmbientLightColor = stream->readFlag();
-      mAmbientLightColor.red = stream->readFloat( 7 );
-      mAmbientLightColor.green = stream->readFloat( 7 );
-      mAmbientLightColor.blue = stream->readFloat( 7 );
-      mAmbientLightColor.alpha = stream->readFloat( 7 );
+      mAmbientLightColor.red = stream->readFloat( 8 );
+      mAmbientLightColor.green = stream->readFloat( 8 );
+      mAmbientLightColor.blue = stream->readFloat( 8 );
+      mAmbientLightColor.alpha = stream->readFloat( 8 );
    }
 }
 

@@ -383,10 +383,10 @@ void ParticleData::unpackData(BitStream* stream)
    S32 count = stream->readInt(3) + 1;
    for(i = 0;i < count; i++)
    {
-      colors[i].red = stream->readFloat(7);
-      colors[i].green = stream->readFloat(7);
-      colors[i].blue = stream->readFloat(7);
-      colors[i].alpha = stream->readFloat(7);
+      colors[i].red = stream->readFloat(8);
+      colors[i].green = stream->readFloat(8);
+      colors[i].blue = stream->readFloat(8);
+      colors[i].alpha = stream->readFloat(8);
       // AFX bits raised from 14 to 16 to allow larger sizes
       sizes[i] = stream->readFloat(16) * MaxParticleSize;
       times[i] = stream->readFloat(8);

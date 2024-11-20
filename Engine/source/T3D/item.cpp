@@ -225,10 +225,10 @@ void ItemData::unpackData(BitStream* stream)
    if(stream->readFlag())
    {
       lightType = stream->readInt(2);
-      lightColor.red = stream->readFloat(7);
-      lightColor.green = stream->readFloat(7);
-      lightColor.blue = stream->readFloat(7);
-      lightColor.alpha = stream->readFloat(7);
+      lightColor.red = stream->readFloat(8);
+      lightColor.green = stream->readFloat(8);
+      lightColor.blue = stream->readFloat(8);
+      lightColor.alpha = stream->readFloat(8);
       stream->read(&lightTime);
       stream->read(&lightRadius);
       lightOnlyStatic = stream->readFlag();

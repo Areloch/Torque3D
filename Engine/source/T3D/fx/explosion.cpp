@@ -861,12 +861,12 @@ void ExplosionData::unpackData(BitStream* stream)
    //
    lightStartRadius = stream->readFloat(8) * MaxLightRadius;
    lightEndRadius = stream->readFloat(8) * MaxLightRadius;
-   lightStartColor.red = stream->readFloat(7);
-   lightStartColor.green = stream->readFloat(7);
-   lightStartColor.blue = stream->readFloat(7);
-   lightEndColor.red = stream->readFloat(7);
-   lightEndColor.green = stream->readFloat(7);
-   lightEndColor.blue = stream->readFloat(7);
+   lightStartColor.red = stream->readFloat(8);
+   lightStartColor.green = stream->readFloat(8);
+   lightStartColor.blue = stream->readFloat(8);
+   lightEndColor.red = stream->readFloat(8);
+   lightEndColor.green = stream->readFloat(8);
+   lightEndColor.blue = stream->readFloat(8);
    lightStartBrightness = stream->readFloat(8) * MaxLightRadius;
    lightEndBrightness = stream->readFloat(8) * MaxLightRadius;
    stream->read( &lightNormalOffset );

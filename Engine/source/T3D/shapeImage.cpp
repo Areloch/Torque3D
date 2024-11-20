@@ -1232,10 +1232,10 @@ void ShapeBaseImageData::unpackData(BitStream* stream)
    {
       stream->read(&lightRadius);
       stream->read(&lightDuration);
-      lightColor.red = stream->readFloat(7);
-      lightColor.green = stream->readFloat(7);
-      lightColor.blue = stream->readFloat(7);
-      lightColor.alpha = stream->readFloat(7);
+      lightColor.red = stream->readFloat(8);
+      lightColor.green = stream->readFloat(8);
+      lightColor.blue = stream->readFloat(8);
+      lightColor.alpha = stream->readFloat(8);
       stream->read( &lightBrightness );
    }
 
