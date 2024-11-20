@@ -384,6 +384,7 @@ ExplosionData* ExplosionData::cloneAndPerformSubstitutions(const SimObject* owne
 
    return sub_explosion_db;
 }
+IRangeValidator expPartDensityRange(0, 1<<14);
 IRangeValidator expDebrisNumRange(0, 1000);
 FRangeValidator expPlaySpeedRange(0.05f, FLT_MAX);
 FRangeValidator expLightRadiusRange(0.0f, MaxLightRadius,1<<8);
@@ -412,7 +413,7 @@ void ExplosionData::initPersistFields()
          "The second effect spawns the list of ParticleEmitters given by the emitter[] "
          "field. These emitters generate particles in the normal way throughout the "
          "lifetime of the explosion." );
-      addFieldV( "particleDensity", TypeRangedS32, Offset(particleDensity, ExplosionData), &CommonValidators::PositiveInt,
+      addFieldV( "particleDensity", TypeRangedS32, Offset(particleDensity, ExplosionData), &expPartDensityRange,
          "@brief Density of the particle cloud created at the start of the explosion.\n\n"
          "@see particleEmitter" );
       addFieldV( "particleRadius", TypeRangedF32, Offset(particleRadius, ExplosionData),&CommonValidators::PositiveFloat,

@@ -699,6 +699,7 @@ bool PlayerData::isJumpAction(U32 action)
 {
    return (action == JumpAnim || action == StandJumpAnim);
 }
+IRangeValidator jumpDelayRange(0, 1 << PlayerData::JumpDelayBits);
 
 void PlayerData::initPersistFields()
 {
@@ -833,7 +834,7 @@ void PlayerData::initPersistFields()
          "@brief Maximum vertical speed before the player can no longer jump.\n\n" );
       addFieldV( "jumpSurfaceAngle", TypeRangedF32, Offset(jumpSurfaceAngle, PlayerData), &CommonValidators::PosDegreeRangeQuarter,
          "@brief Angle from vertical (in degrees) where the player can jump.\n\n" );
-      addFieldV( "jumpDelay", TypeRangedS32, Offset(jumpDelay, PlayerData), &CommonValidators::PositiveInt,
+      addFieldV( "jumpDelay", TypeRangedS32, Offset(jumpDelay, PlayerData), &jumpDelayRange,
          "@brief Delay time in number of ticks ticks between jumps.\n\n" );
       addFieldV( "airControl", TypeRangedF32, Offset(airControl, PlayerData), &CommonValidators::PositiveFloat,
          "@brief Amount of movement control the player has when in the air.\n\n"

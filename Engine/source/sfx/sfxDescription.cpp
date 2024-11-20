@@ -369,7 +369,7 @@ void SFXDescription::initPersistFields()
       addField( "isStreaming",         TypeBool,   Offset( mIsStreaming, SFXDescription ),
          "If true, incrementally stream sounds; otherwise sounds are loaded in full.\n\n"
          "@ref SFX_streaming" );
-      addFieldV( "streamPacketSize",    TypeRangedS32,    Offset( mStreamPacketSize, SFXDescription ), &CommonValidators::PositiveInt,
+      addFieldV( "streamPacketSize",    TypeRangedS32,    Offset( mStreamPacketSize, SFXDescription ), &CommonValidators::S32_8BitCap,
          "Number of seconds of sample data per single streaming packet.\n"
          "This field allows to fine-tune streaming for individual sounds.  The streaming system "
          "processes streamed sounds in batches called packets.  Each packet will contain a set amount "
