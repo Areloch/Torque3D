@@ -377,7 +377,7 @@ void SFXDescription::initPersistFields()
          "packet contains, the more work is done per packet.\n\n"
          "@note This field only takes effect when Torque's own sound system performs the streaming. "
          "@ref SFX_streaming" );
-      addFieldV( "streamReadAhead",     TypeRangedS32,    Offset( mStreamReadAhead, SFXDescription ), &CommonValidators::PositiveInt,
+      addFieldV( "streamReadAhead",     TypeRangedS32,    Offset( mStreamReadAhead, SFXDescription ), &CommonValidators::S32_8BitCap,
          "Number of sample packets to read and buffer in advance.\n"
          "This field determines the number of packets that the streaming system will try to keep buffered "
          "in advance.  As such it determines the number of packets that can be consumed by the sound "
