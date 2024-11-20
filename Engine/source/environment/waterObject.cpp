@@ -473,13 +473,13 @@ U32 WaterObject::packUpdate( NetConnection * conn, U32 mask, BitStream *stream )
       if ( stream->writeFlag( mFullReflect ) )
       {
          stream->write( mReflectorDesc.priority );
-         stream->writeInt( mReflectorDesc.maxRateMs, 32 );
+         stream->write( mReflectorDesc.maxRateMs );
          //stream->write( mReflectMaxDist );
          //stream->write( mReflectMinDist );
          stream->write( mReflectorDesc.detailAdjust );         
          stream->writeFlag( mReflectNormalUp );
          stream->writeFlag( mReflectorDesc.useOcclusionQuery );
-         stream->writeInt( mReflectorDesc.texSize, 32 );
+         stream->write( mReflectorDesc.texSize );
       }
 
       stream->write( mReflectivity );
@@ -575,13 +575,13 @@ void WaterObject::unpackUpdate( NetConnection * conn, BitStream *stream )
       {
          mFullReflect = true;
          stream->read( &mReflectorDesc.priority );
-         mReflectorDesc.maxRateMs = stream->readInt( 32 );
+         stream->read(&mReflectorDesc.maxRateMs);
          //stream->read( &mReflectMaxDist );    
          //stream->read( &mReflectMinDist );
          stream->read( &mReflectorDesc.detailAdjust );         
          mReflectNormalUp = stream->readFlag();
          mReflectorDesc.useOcclusionQuery = stream->readFlag();
-         mReflectorDesc.texSize = stream->readInt( 32 );
+         stream->read(&mReflectorDesc.texSize);
 
          if ( isProperlyAdded() && !mPlaneReflector.isEnabled() && smEnableTrueReflections )
             mPlaneReflector.registerReflector( this, &mReflectorDesc );
