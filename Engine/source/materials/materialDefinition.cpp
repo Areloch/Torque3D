@@ -303,7 +303,7 @@ void Material::initPersistFields()
          "The scale factor for the detail map.");
 
       INITPERSISTFIELD_IMAGEASSET_ARRAY(DetailNormalMap, MAX_STAGES, Material, "DetailNormalMap");
-      addFieldV("detailNormalMapStrength", TypeRangedS32, Offset(mDetailNormalMapStrength, Material), &CommonValidators::PositiveFloat, MAX_STAGES,
+      addFieldV("detailNormalMapStrength", TypeRangedF32, Offset(mDetailNormalMapStrength, Material), &CommonValidators::PositiveFloat, MAX_STAGES,
          "Used to scale the strength of the detail normal map when blended with the base normal map.");
 
       INITPERSISTFIELD_IMAGEASSET_ARRAY(OverlayMap, MAX_STAGES, Material, "Overlay");
@@ -315,19 +315,19 @@ void Material::initPersistFields()
       addProtectedField("accuEnabled", TYPEID< bool >(), Offset(mAccuEnabled, Material),
          &_setAccuEnabled, &defaultProtectedGetFn, MAX_STAGES, "Accumulation texture.");
 
-      addFieldV("accuScale", TypeRangedS32, Offset(mAccuScale, Material), &CommonValidators::PositiveFloat, MAX_STAGES,
+      addFieldV("accuScale", TypeRangedF32, Offset(mAccuScale, Material), &CommonValidators::PositiveFloat, MAX_STAGES,
          "The scale that is applied to the accu map texture. You can use this to fit the texture to smaller or larger objects.");
 
-      addFieldV("accuDirection", TypeRangedS32, Offset(mAccuDirection, Material), &CommonValidators::DirFloat, MAX_STAGES,
+      addFieldV("accuDirection", TypeRangedF32, Offset(mAccuDirection, Material), &CommonValidators::DirFloat, MAX_STAGES,
          "The direction of the accumulation. Chose whether you want the accu map to go from top to bottom (ie. snow) or upwards (ie. mold).");
 
-      addFieldV("accuStrength", TypeRangedS32, Offset(mAccuStrength, Material), &CommonValidators::NormalizedFloat, MAX_STAGES,
+      addFieldV("accuStrength", TypeRangedF32, Offset(mAccuStrength, Material), &CommonValidators::NormalizedFloat, MAX_STAGES,
          "The strength of the accu map. This changes the transparency of the accu map texture. Make it subtle or add more contrast.");
 
-      addFieldV("accuCoverage", TypeRangedS32, Offset(mAccuCoverage, Material), &CommonValidators::NormalizedFloat, MAX_STAGES,
+      addFieldV("accuCoverage", TypeRangedF32, Offset(mAccuCoverage, Material), &CommonValidators::NormalizedFloat, MAX_STAGES,
          "The coverage ratio of the accu map texture. Use this to make the entire shape pick up some of the accu map texture or none at all.");
 
-      addFieldV("accuSpecular", TypeRangedS32, Offset(mAccuSpecular, Material), &CommonValidators::NormalizedFloat, MAX_STAGES,
+      addFieldV("accuSpecular", TypeRangedF32, Offset(mAccuSpecular, Material), &CommonValidators::NormalizedFloat, MAX_STAGES,
          "Changes specularity to this value where the accumulated material is present.");
    endGroup("Accumulation Properties");
    
