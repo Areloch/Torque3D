@@ -100,17 +100,17 @@ void Point3NormalizeValidator::validateType(SimObject *object, void *typePtr)
 
 namespace CommonValidators
 {
-   FRangeValidator F32Range(F32_MIN, F32_MAX);
+   FRangeValidator F32Range(F32_MIN, F32_MAX, F32_MAX);
    FRangeValidator DirFloat(-1.0f, 1.0f);
-   FRangeValidator NegDefaultF32(-1.0f, F32_MAX);
-   FRangeValidator PositiveFloat(0.0f, F32_MAX);
+   FRangeValidator NegDefaultF32(-1.0f, F32_MAX, F32_MAX);
+   FRangeValidator PositiveFloat(0.0f, F32_MAX, F32_MAX);
    FRangeValidator PositiveNonZeroFloat((F32)POINT_EPSILON, F32_MAX);
    FRangeValidator NormalizedFloat(0.0f, 1.0f);
 
    FRangeValidator F32_8BitPercent(0.0f, 1.0f, 1 << 8);
    FRangeValidator F32_16BitPercent(0.0f, 1.0f, 1 << 16);
-   FRangeValidator ValidSlopeAngle(0.0f, 89.9f);
-   FRangeValidator CornerAngle(0.0f, 90.0f);
+   FRangeValidator ValidSlopeAngle(0.0f, 89.9f, 89.9f);
+   FRangeValidator CornerAngle(0.0f, 90.0f, 90.0f);
 
    IRangeValidator S32Range(S32_MIN, S32_MAX);
    IRangeValidator DirInt(-1,1);
@@ -124,12 +124,12 @@ namespace CommonValidators
    IRangeValidator S32_16BitCap(0, 1 << 16);
    Point3NormalizeValidator NormalizedPoint3(1.0f);
 
-   FRangeValidator DegreeRange(-360.0f, 360.0f);
-   FRangeValidator PosDegreeRange(0.0f, 360.0f);
-   FRangeValidator DegreeRangeHalf(-180.0f, 180.0f);
-   FRangeValidator PosDegreeRangeHalf(0.0f, 180.0f);
-   FRangeValidator DegreeRangeQuarter(-90.0f, 90.0f);
-   FRangeValidator PosDegreeRangeQuarter(0.0f, 90.0f);
+   FRangeValidator DegreeRange(-360.0f, 360.0f, 720.0f);
+   FRangeValidator PosDegreeRange(0.0f, 360.0f, 360.0f);
+   FRangeValidator DegreeRangeHalf(-180.0f, 180.0f, 360.0f);
+   FRangeValidator PosDegreeRangeHalf(0.0f, 180.0f, 180.0f);
+   FRangeValidator DegreeRangeQuarter(-90.0f, 90.0f, 180.0f);
+   FRangeValidator PosDegreeRangeQuarter(0.0f, 90.0f, 90.0f);
 
    IRangeValidator S32_DegreeRange(-360, 360);
    IRangeValidator S32_PosDegreeRange(0, 360);
