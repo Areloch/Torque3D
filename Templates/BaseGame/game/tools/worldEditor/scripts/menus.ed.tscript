@@ -355,11 +355,12 @@ function EditorGui::buildMenus(%this)
       barTitle = "Tools";
          
       item[0] = "Network Graph" TAB "ctrl n" TAB "toggleNetGraph();";
-      item[1] = "Profiler" TAB "ctrl F2" TAB "showMetrics(true);";
-	  item[2] = "Torque SimView" TAB "" TAB "tree();";
-      item[3] = "Make Selected a Mesh" TAB "" TAB "AssetBrowser.setupCreateNewAsset(\"ShapeAsset\", AssetBrowser.selectedModule, \"makeSelectedAMesh\");";
-      item[4] = "-";
-      item[5] = "Project Importer" TAB "" TAB "ProjectImporter::beginProjectImport();";
+      item[1] = "Metrics Profiler" TAB "ctrl F2" TAB "showMetrics(true);";
+      item[2] = "Engine Profiler" TAB "ctrl F2" TAB "showEngineProfiler();";
+	   item[3] = "Torque SimView" TAB "" TAB "tree();";
+      item[4] = "Make Selected a Mesh" TAB "" TAB "AssetBrowser.setupCreateNewAsset(\"ShapeAsset\", AssetBrowser.selectedModule, \"makeSelectedAMesh\");";
+      item[5] = "-";
+      item[6] = "Project Importer" TAB "" TAB "ProjectImporter::beginProjectImport();";
    };
    %this.menuBar.insert(%toolsMenu);
       

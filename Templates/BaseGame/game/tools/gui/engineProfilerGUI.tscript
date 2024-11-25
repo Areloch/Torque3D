@@ -1,0 +1,72 @@
+function showEngineProfiler()
+{
+   Canvas.pushDialog(EngineProfilerGUI);   
+}
+
+function startEngineProfiler()
+{
+   if($EngineProfiler::IntervalMS $= "")
+      $EngineProfiler::IntervalMS = 1000;
+   
+   $runEngineProfiler = true;
+   profilerEnable(true);
+   schedule($EngineProfiler::IntervalMS, 0, "updateEngineProfiler");
+}
+
+function updateEngineProfiler()
+{
+   if($runEngineProfiler == true)
+   {
+      schedule($EngineProfiler::IntervalMS, 0, "updateEngineProfiler");
+      profilerDumpToScript();
+   }
+}
+
+function endEngineProfiler()
+{
+   $runEngineProfiler = false;
+   profilerEnable(false);
+}
+
+function toggleEngineProfiler()
+{
+   if($runEngineProfiler)
+      endEngineProfiler();
+   else
+      startEngineProfiler();
+      
+   //sync the GUI ctrl
+   if($runEngineProfiler)
+      engineProfilerStartBtn.bitmapAsset = "ToolsModule:iconCancel_image";
+   else
+      engineProfilerStartBtn.bitmapAsset = "ToolsModule:rightArrowWhite_image";
+}
+
+function closeEngineProfiler()
+{
+   endEngineProfiler();
+   Canvas.popDialog(EngineProfilerGUI); 
+}
+
+function EngineProfilerIntervalEdit::onReturn(%this)
+{
+   %text = %this.getText();
+   if( %text !$= "" && isInt(%text))
+   {
+      $EngineProfiler::IntervalMS = %text;
+   }
+   else
+   {
+      %this.text = "";
+      $EngineProfiler::IntervalMS = 1000;
+   }
+}
+
+function EngineProfilerTreeFilter::onReturn( %this )
+{
+   %text = %this.getText();
+   if( %text $= "" )
+      EngineProfilerTreeView.clearFilterText();
+   else
+      EngineProfilerTreeView.setFilterText( %text );
+}

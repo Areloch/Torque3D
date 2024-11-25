@@ -35,6 +35,8 @@ exec("./guiObjectInspector.ed." @ $TorqueScriptFileExtension);
 exec("./uvEditor.ed.gui");
 exec("./objectSelection.ed." @ $TorqueScriptFileExtension);
 exec("./assimpImport.ed.gui");
+exec("./engineProfilerGUI." @ $TorqueScriptFileExtension);
+exec("./engineProfilerGUI.gui");
 
 exec("./fieldTypes/assetDependencies." @ $TorqueScriptFileExtension);
 exec("./fieldTypes/fieldTypes." @ $TorqueScriptFileExtension);

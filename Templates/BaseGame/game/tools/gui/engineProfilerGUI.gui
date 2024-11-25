@@ -1,0 +1,91 @@
+//--- OBJECT WRITE BEGIN ---
+$guiContent = new GuiControl(EngineProfilerGUI) {
+   extent = "1280 720";
+   minExtent = "8 8";
+   profile = "GuiModelessDialogProfile";
+   tooltipProfile = "GuiToolTipProfile";
+   isContainer = "1";
+   canSaveDynamicFields = "1";
+      helpTag = "0";
+      noCursor = "1";
+
+   new GuiWindowCollapseCtrl(EngineProfilerWindow) {
+      text = "Engine Profiler";
+      canMinimize = "0";
+      canMaximize = "0";
+      closeCommand = "closeEngineProfiler();";
+      margin = "8 8 8 8";
+      extent = "415 889";
+      minExtent = "210 140";
+      horizSizing = "windowRelative";
+      vertSizing = "windowRelative";
+      profile = "ToolsGuiWindowProfile";
+      tooltipProfile = "GuiToolTipProfile";
+      internalName = "EngineProfilerWindow";
+
+      new GuiBitmapButtonCtrl(engineProfilerStartBtn) {
+         BitmapAsset = "ToolsModule:rightArrowWhite_image";
+         position = "2 19";
+         extent = "30 30";
+         command="toggleEngineProfiler();";
+         profile = "GuiDefaultProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+      new GuiTextCtrl() {
+         text = "Interval (ms):";
+         position = "43 24";
+         extent = "76 18";
+         profile = "ToolsGuiTextProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+      new GuiTextEditCtrl(EngineProfilerIntervalEdit) {
+         placeholderText = "1000";
+         position = "119 25";
+         extent = "287 20";
+         profile = "ToolsGuiTextEditProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+      new GuiTextEditCtrl(EngineProfilerTreeFilter) {
+         placeholderText = "\c2Filter...";
+         position = "2 49";
+         extent = "380 20";
+         horizSizing = "width";
+         profile = "ToolsGuiTextProfile";
+         tooltipProfile = "GuiToolTipProfile";
+      };
+      new GuiBitmapButtonCtrl(EngineProfilerTreeFilterClearBtn) {
+         BitmapAsset = "ToolsModule:clear_icon_d_image";
+         position = "385 50";
+         extent = "17 17";
+         horizSizing = "left";
+         profile = "ToolsGuiDefaultProfile";
+         tooltipProfile = "ToolsGuiToolTipProfile";
+      };
+      new GuiScrollCtrl() {
+         hScrollBar = "dynamic";
+         vScrollBar = "dynamic";
+         position = "0 73";
+         extent = "402 807";
+         minExtent = "8 8";
+         horizSizing = "width";
+         vertSizing = "height";
+         profile = "ToolsGuiScrollProfile";
+         tooltipProfile = "GuiToolTipProfile";
+
+         new GuiTreeViewCtrl(EngineProfilerTreeView) {
+            itemHeight = "21";
+            useInspectorTooltips = "1";
+            tooltipOnWidthOnly = "1";
+            showObjectIds = "0";
+            showClassNames = "0";
+            showClassNameForUnnamedObjects = "1";
+            position = "1 1";
+            extent = "193 21";
+            minExtent = "8 8";
+            profile = "ToolsGuiTreeViewProfile";
+            tooltipProfile = "GuiToolTipProfile";
+         };
+      };
+   };
+};
+//--- OBJECT WRITE END ---
