@@ -1398,6 +1398,8 @@ function TerrainPainterPlugin::syncBrushInfo( %this )
    PaintBrushSizeTextEditContainer-->textEdit.text = getWord(ETerrainEditor.getBrushSize(), 0);
    PaintBrushSlopeControl-->SlopeMinAngle.text = ETerrainEditor.getSlopeLimitMinAngle();
    PaintBrushSlopeControl-->SlopeMaxAngle.text = ETerrainEditor.getSlopeLimitMaxAngle();
+   PaintBrushSlopeControlTE-->SlopeMinAngle.text = ETerrainEditor.getSlopeLimitMinAngle();
+   PaintBrushSlopeControlTE-->SlopeMaxAngle.text = ETerrainEditor.getSlopeLimitMaxAngle();
    PaintBrushPressureTextEditContainer-->textEdit.text = ETerrainEditor.getBrushPressure()*100;
    %brushType = ETerrainEditor.getBrushType();
    eval( "EWTerrainPainterToolbar-->" @ %brushType @ ".setStateOn(1);" );
@@ -1419,12 +1421,28 @@ function TerrainPainterPlugin::validateSlopeMaxAngle( %this )
 {
    %maxval = ETerrainEditor.getSlopeLimitMaxAngle();
    PaintBrushSlopeControl-->SlopeMaxAngle.setText(%maxval); 
+   PaintBrushSlopeControlTE-->SlopeMaxAngle.setText(%maxval); 
 }
 
 function TerrainPainterPlugin::validateSlopeMinAngle( %this )
 {
    %minval = ETerrainEditor.getSlopeLimitMinAngle();
-   PaintBrushSlopeControl-->SlopeMinAngle.setText(%minval);  
+   PaintBrushSlopeControl-->SlopeMinAngle.setText(%minval); 
+   PaintBrushSlopeControlTE-->SlopeMinAngle.setText(%minval);  
+}
+
+function TerrainPainterPlugin::validateTileMinHeight( %this )
+{
+   %maxval = ETerrainEditor.getTileLimitMinHeight();
+   PaintBrushSlopeControl-->tileMinHeight.setText(%maxval); 
+   PaintBrushSlopeControlTE-->tileMinHeight.setText(%maxval); 
+}
+
+function TerrainPainterPlugin::validateTileMaxHeight( %this )
+{
+   %minval = ETerrainEditor.getTileLimitMaxHeight();
+   PaintBrushSlopeControl-->tileMaxHeight.setText(%minval); 
+   PaintBrushSlopeControlTE-->tileMaxHeight.setText(%minval);  
 }
 
 function TerrainPainterPlugin::keyboardModifyBrushSize( %this, %amt)
@@ -3105,6 +3123,8 @@ function EWorldEditorStatusBarCamera::onSelect( %this, %id, %text )
 function softSnapSizeSliderCtrlContainer::onWake(%this)
 {
    %this-->slider.setValue(EWorldEditorToolbar-->softSnapSizeTextEdit.getValue());
+   %pos = EWorldEditorToolbar-->softSnapSizeTextEdit.getGlobalPosition();
+   %this-->slider.setPositionGlobal(%pos.x, %pos.y + 25);
 }
 function softSnapSizeSliderCtrlContainer::onSliderChanged(%this)
 {
@@ -3117,16 +3137,22 @@ function PaintBrushSizeSliderCtrlContainer::onWake(%this)
 {
    %this-->slider.range = "1" SPC getWord(ETerrainEditor.maxBrushSize, 0);
    %this-->slider.setValue(PaintBrushSizeTextEditContainer-->textEdit.getValue());
+   %pos = PaintBrushSizeTextEditContainer.getGlobalPosition();
+   %this-->slider.setPositionGlobal(%pos.x, %pos.y + 25);
 }
 
 function PaintBrushPressureSliderCtrlContainer::onWake(%this)
 {
    %this-->slider.setValue(PaintBrushPressureTextEditContainer-->textEdit.getValue() / 100);
+   %pos = PaintBrushPressureTextEditContainer.getGlobalPosition();
+   %this-->slider.setPositionGlobal(%pos.x, %pos.y + 25);
 }
 
 function PaintBrushSoftnessSliderCtrlContainer::onWake(%this)
 {
    %this-->slider.setValue(PaintBrushSoftnessTextEditContainer-->textEdit.getValue() / 100);
+   %pos = PaintBrushSoftnessTextEditContainer.getGlobalPosition();
+   %this-->slider.setPositionGlobal(%pos.x, %pos.y + 25);
 }
 
 //------------------------------------------------------------------------------------
@@ -3135,26 +3161,37 @@ function TerrainBrushSizeSliderCtrlContainer::onWake(%this)
 {
    %this-->slider.range = "1" SPC getWord(ETerrainEditor.maxBrushSize, 0);
    %this-->slider.setValue(TerrainBrushSizeTextEditContainer-->textEdit.getValue());
+   %pos = TerrainBrushSizeTextEditContainer.getGlobalPosition();
+   %this-->slider.setPositionGlobal(%pos.x, %pos.y + 25);
 }
 
 function TerrainBrushPressureSliderCtrlContainer::onWake(%this)
 {
    %this-->slider.setValue(TerrainBrushPressureTextEditContainer-->textEdit.getValue() / 100.0);
+   %pos = TerrainBrushPressureTextEditContainer.getGlobalPosition();
+   %this-->slider.setPositionGlobal(%pos.x, %pos.y + 25);
 }
 
 function TerrainBrushSoftnessSliderCtrlContainer::onWake(%this)
 {
    %this-->slider.setValue(TerrainBrushSoftnessTextEditContainer-->textEdit.getValue() / 100.0);
+   %pos = TerrainBrushSoftnessTextEditContainer.getGlobalPosition();
+   %this-->slider.setPositionGlobal(%pos.x, %pos.y + 25);
 }
 
 function TerrainSetHeightSliderCtrlContainer::onWake(%this)
 {
    %this-->slider.setValue(TerrainSetHeightTextEditContainer-->textEdit.getValue());
+   %pos = TerrainSetHeightTextEditContainer.getGlobalPosition();
+   %this-->slider.setPositionGlobal(%pos.x, %pos.y + 25);
 }
+
 //------------------------------------------------------------------------------------
 function CameraSpeedDropdownCtrlContainer::onWake(%this)
 {
    %this-->slider.setValue(CameraSpeedDropdownContainer-->textEdit.getText());
+   %pos = CameraSpeedDropdownContainer.getGlobalPosition();
+   %this-->slider.setPositionGlobal(%pos.x, %pos.y + 25);
 }
 
 //------------------------------------------------------------------------------------

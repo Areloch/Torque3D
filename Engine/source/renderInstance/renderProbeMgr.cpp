@@ -622,6 +622,7 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe)
 
       IBLUtilities::GenerateIrradianceMap(renderTarget, cubeRefl.getCubemap(), clientProbe->mIrridianceMap->mCubemap);
       //IBLUtilities::GeneratePrefilterMap(renderTarget, cubeRefl.getCubemap(), prefilterMipLevels, clientProbe->mPrefilterMap->mCubemap);
+      clientProbe->mIrridianceMap->mCubemap->generateMipMaps();
 
       U32 endMSTime = Platform::getRealMilliseconds();
       F32 diffTime = F32(endMSTime - startMSTime);
