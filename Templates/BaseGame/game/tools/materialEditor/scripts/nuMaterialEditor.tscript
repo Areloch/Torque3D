@@ -22,7 +22,7 @@ function MaterialEditorPlugin::BuildEditorUI(%this)
    
    %inspector.groupFilters = "-Internal -Ungrouped -Editing -Object -Persistence -Dynamic Fields";
    
-   $MaterialEditor::currentMaterial = DetailBlue;
+   $MaterialEditor::currentMaterial = materialEd_previewMaterial;//DetailBlue;
    
    NuMaterialEdPropInspector.refreshMaterial();
 
@@ -43,15 +43,24 @@ function onMaterialLayerSelected(%this)
 
 function NuMaterialEdPropInspector::refreshMaterial(%this)
 {
-   %this.inspect($MaterialEditor::currentMaterial);
+   %this.inspect(MaterialEditorGui.currentMaterial);
    %this.setForcedArrayIndex($MaterialEditor::currentLayer);
    
    %this.findExistentGroup("Light Influence Maps").instantCollapse();
    %this.findExistentGroup("Advanced Texture Maps").instantCollapse();
    %this.findExistentGroup("Accumulation Properties").instantCollapse();
    %this.findExistentGroup("Lighting Properties").instantCollapse();
-   %this.findExistentGroup("Animation Properties").instantCollapse();
+   %this.findExistentGroup("Animation Properties").instantCollapse();   
    
+/*
+   %groupCount = NuMaterialEdPropInspector.getInspectedGroupCount();
+   for(%grp=3; %grp<%groupCount; %grp++)
+   {
+       NuMaterialEdPropInspector.getInspectedGroup(%grp).instantCollapse(); 
+   }
+*/   
+   cancel(NuMaterialEdPropInspector.refreshing);
+   NuMaterialEdPropInspector.refreshing = NuMaterialEdPropInspector.schedule(64,"renew");
    NuMaterialEditorWindow.syncGUI();
 }
 
