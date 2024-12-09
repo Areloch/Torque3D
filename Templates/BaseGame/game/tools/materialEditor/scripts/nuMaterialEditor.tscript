@@ -55,11 +55,11 @@ function NuMaterialEdPropInspector::refreshMaterial(%this)
    NuMaterialEditorWindow.syncGUI();
 }
 
-function NuMaterialEdPropInspector::onPostInspectorFieldModified(%this, %obj)
+function NuMaterialEdPropInspector::onPostInspectorFieldModified(%this, %obj, %inspecting)
 {
-   NuMaterialEditorWindow.syncGUI();
    cancel(NuMaterialEdPropInspector.refreshing);
-   NuMaterialEdPropInspector.refreshing = NuMaterialEdPropInspector.schedule(32,"renew");
+   NuMaterialEdPropInspector.refreshing = NuMaterialEdPropInspector.schedule(64,"renew");
+   NuMaterialEditorWindow.syncGUI();
 }
 
 function NuMaterialEdPropInspector::renew(%this)
