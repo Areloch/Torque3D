@@ -997,17 +997,16 @@ DefineEngineMethod(GuiInspector, findExistentGroup, S32, (const char* groupName)
 }
 
 DefineEngineMethod(GuiInspector, getInspectedGroupCount, S32, (), ,
-   "Finds an existing GuiInspectorGroup if it exists and returns it's Id.\n"
-   "@param groupName Name of the new GuiInspectorGroup to find in this Inspector."
-   "@return id of the named GuiInspectorGroup")
+   "How many inspected groups there are.\n"
+   "@return how many inspected groups there are")
 {
    return object->getGroups().size();
 }
 
 DefineEngineMethod(GuiInspector, getInspectedGroup, GuiInspectorGroup*, (S32 key), ,
    "Finds an existing GuiInspectorGroup if it exists and returns it's Id.\n"
-   "@param groupName Name of the new GuiInspectorGroup to find in this Inspector."
-   "@return id of the named GuiInspectorGroup")
+   "@param key nth group out of the list of groups."
+   "@return id of the GuiInspectorGroup")
 {
    return object->getGroups()[key];
 }
