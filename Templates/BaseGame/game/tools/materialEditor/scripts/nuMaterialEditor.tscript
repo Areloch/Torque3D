@@ -1,3 +1,88 @@
+//Generic methods
+function GuiInspector::getWindow(%this)
+{
+    %windowParent = %this;
+    if (!%windowParent.isMemberOfClass("GuiWindowCtrl"))
+    {
+        while(%windowParent.getParent() && !%windowParent.isMemberOfClass("GuiWindowCtrl"))
+        {
+            %windowParent = %windowParent.getParent();
+        }
+    }
+    return %windowParent;
+}
+
+function GuiInspector::getScrollbar(%this)
+{
+    %scrollParent = %this;
+    if (!%scrollParent.isMemberOfClass("GuiScrollCtrl"))
+    {
+        while(%scrollParent.getParent() && !%scrollParent.isMemberOfClass("GuiScrollCtrl"))
+        {
+            %scrollParent = %scrollParent.getParent();
+        }
+    }
+    return %scrollParent;
+}
+
+function GuiInspector::onPreInspectObject(%this, %obj)
+{
+   %this.scrollPos = %this.getScrollbar().getScrollPosition();
+   echo("onPreInspectObject" SPC %this.getName() SPC %this.scrollPos);
+   //%this.saveCollapsState();
+}
+
+function GuiInspector::onPostInspectObject(%this, %obj)
+{
+   %this.getScrollbar().setScrollPosition(%this.scrollPos.x, %this.scrollPos.y);
+   echo("onPostInspectObject" SPC %this.getName() SPC %this.scrollPos);
+   //%this.loadCollapsState();
+}
+
+function GuiInspector::saveCollapsState(%this)
+{
+   %this.collapsState ="";
+   %groupCount = %this.getInspectedGroupCount();
+   for(%grp=0; %grp<%groupCount; %grp++)
+   {
+      %this.collapsState = %this.collapsState SPC %this.getInspectedGroup(%grp).isExpanded(); 
+   }
+   %this.collapsState = trim(%this.collapsState);
+   //echo("GuiInspector::saveCollapsState" SPC %this.collapsState);
+}
+
+function GuiInspector::loadCollapsState(%this)
+{
+   //echo("GuiInspector::loadCollapsState" SPC %this.collapsState);
+   %groupCount = %this.getInspectedGroupCount();
+   for(%grp=0; %grp<%groupCount; %grp++)
+   {
+     if (getword(%this.collapsState,%grp))
+        %this.getInspectedGroup(%grp).instantExpand();     
+     else
+        %this.getInspectedGroup(%grp).instantCollapse();   
+   }
+}
+
+function GuiInspector::renew(%this)
+{ 
+   %this.onPreInspectObject(%this.getInspectObject());
+   
+   %count = %this.getNumInspectObjects();
+   %inspecting = %this.getInspectObject(0);
+   for(%i=1; %i< %count;%i++)
+      %inspecting = %inspecting SPC %this.getInspectObject(%i);
+
+   %this.inspect(""); //clear
+   //readd
+   for(%i=0; %i<%count;%i++)
+      %this.addInspect(getword(%inspecting,%i));
+      
+   %this.onPostInspectObject(%this.getInspectObject());
+}
+
+/// Material Editor specific
+
 function MaterialEditorPlugin::BuildEditorUI(%this)
 {
    if(isObject(NuMaterialEditorWindow))
@@ -41,27 +126,18 @@ function onMaterialLayerSelected(%this)
    NuMaterialEdPropInspector.refreshMaterial();
 }
 
+
 function NuMaterialEdPropInspector::refreshMaterial(%this)
 {
+   %this.onPreInspectObject(%this.getInspectObject());
    %this.inspect(MaterialEditorGui.currentMaterial);
-   %this.setForcedArrayIndex($MaterialEditor::currentLayer);
-   
-   %this.findExistentGroup("Light Influence Maps").instantCollapse();
-   %this.findExistentGroup("Advanced Texture Maps").instantCollapse();
-   %this.findExistentGroup("Accumulation Properties").instantCollapse();
-   %this.findExistentGroup("Lighting Properties").instantCollapse();
-   %this.findExistentGroup("Animation Properties").instantCollapse();   
-   
-/*
-   %groupCount = NuMaterialEdPropInspector.getInspectedGroupCount();
-   for(%grp=3; %grp<%groupCount; %grp++)
-   {
-       NuMaterialEdPropInspector.getInspectedGroup(%grp).instantCollapse(); 
-   }
-*/   
+   %this.setForcedArrayIndex($MaterialEditor::currentLayer);   
+   //
+   //%this.getScrollbar().setExtent(%ext.x, %ext.y);
    cancel(NuMaterialEdPropInspector.refreshing);
    NuMaterialEdPropInspector.refreshing = NuMaterialEdPropInspector.schedule(64,"renew");
    NuMaterialEditorWindow.syncGUI();
+   %this.onPostInspectObject(%this.getInspectObject());
 }
 
 function NuMaterialEdPropInspector::onPostInspectorFieldModified(%this, %obj, %inspecting)
@@ -69,33 +145,6 @@ function NuMaterialEdPropInspector::onPostInspectorFieldModified(%this, %obj, %i
    cancel(NuMaterialEdPropInspector.refreshing);
    NuMaterialEdPropInspector.refreshing = NuMaterialEdPropInspector.schedule(64,"renew");
    NuMaterialEditorWindow.syncGUI();
-}
-
-function NuMaterialEdPropInspector::renew(%this)
-{
-    %scrollParent = %this.getParent();
-    if (!%scrollParent.isMemberOfClass("GuiScrollCtrl"))
-    {
-        while(%scrollParent.getParent() && !%scrollParent.isMemberOfClass("GuiScrollCtrl"))
-        {
-            %scrollParent = %scrollParent.getParent();
-        }
-    }
-    if (%scrollParent)
-        %scrollPos = %scrollParent.getScrollPosition();
-   
-   %count = NuMaterialEdPropInspector.getNumInspectObjects();
-   %inspecting = NuMaterialEdPropInspector.getInspectObject(0);
-   for(%i=1; %i< %count;%i++)
-      %inspecting = %inspecting SPC NuMaterialEdPropInspector.getInspectObject(%i);
-
-   NuMaterialEdPropInspector.inspect(""); //clear
-   //readd
-   for(%i=0; %i<%count;%i++)
-      NuMaterialEdPropInspector.addInspect(getword(%inspecting,%i));
-      
-    if (%scrollParent)
-        %scrollParent.setScrollPosition(%scrollPos.x,%scrollPos.y);
 }
 
 function NuMaterialEditorWindow::syncGUI(%this)

@@ -39,6 +39,12 @@ ConsoleDocClass( GuiInspector,
 );
 
 
+IMPLEMENT_CALLBACK(GuiInspector, onPreInspectObject, void, (SimObject* object), (object),
+   "Called prior to inspecting a new object.\n");
+
+IMPLEMENT_CALLBACK(GuiInspector, onPostInspectObject, void, (SimObject* object), (object),
+   "Called after inspecting a new object.\n");
+
 //#define DEBUG_SPEW
 
 
@@ -326,11 +332,14 @@ bool GuiInspector::isInspectingObject( SimObject* object )
 //-----------------------------------------------------------------------------
 
 void GuiInspector::inspectObject( SimObject *object )
-{  
+{
+   onPreInspectObject_callback((mTargets.size() > 1)? mTargets[0] : NULL);
+
    if( mTargets.size() > 1 || !isInspectingObject( object ) )
       clearInspectObjects();
          
    addInspectObject( object );
+   onPostInspectObject_callback(object);
 }
 
 //-----------------------------------------------------------------------------
