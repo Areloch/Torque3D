@@ -27,37 +27,50 @@ function GuiInspector::getScrollbar(%this)
 
 function GuiInspector::onPreInspectObject(%this, %obj)
 {
-   %this.scrollPos = %this.getScrollbar().getScrollPosition();
-   echo("onPreInspectObject" SPC %this.getName() SPC %this.scrollPos);
-   //%this.saveCollapsState();
+   %this.saveCollapseState();
+   %this.saveScrollState();
 }
 
 function GuiInspector::onPostInspectObject(%this, %obj)
 {
-   %this.getScrollbar().setScrollPosition(%this.scrollPos.x, %this.scrollPos.y);
-   echo("onPostInspectObject" SPC %this.getName() SPC %this.scrollPos);
-   //%this.loadCollapsState();
+   %this.loadCollapseState();
+   %this.loadScrollState();
 }
 
-function GuiInspector::saveCollapsState(%this)
+function GuiInspector::saveScrollState(%this)
 {
-   %this.collapsState ="";
+   %this.scrollPos = %this.getScrollbar().getScrollPosition();
+   //echo(%this.getName() @ "::saveScrollState" SPC %this.scrollPos);
+}
+
+function GuiInspector::loadScrollState(%this)
+{
+   if (%this.scrollPos $= "") return;
+   %this.getScrollbar().setScrollPosition(%this.scrollPos.x, %this.scrollPos.y);
+   //echo(%this.getName() @ "::loadScrollState" SPC %this.scrollPos);
+}
+
+
+function GuiInspector::saveCollapseState(%this)
+{   
+   %this.collapseState ="";
    %groupCount = %this.getInspectedGroupCount();
    for(%grp=0; %grp<%groupCount; %grp++)
    {
       %this.collapsState = %this.collapsState SPC %this.getInspectedGroup(%grp).isExpanded(); 
    }
-   %this.collapsState = trim(%this.collapsState);
-   //echo("GuiInspector::saveCollapsState" SPC %this.collapsState);
+   %this.collapseState = trim(%this.collapseState);
+   //echo(%this.getName() @ "::saveCollapsState" SPC %groupCount SPC %this.collapseState);
 }
 
-function GuiInspector::loadCollapsState(%this)
+function GuiInspector::loadCollapseState(%this)
 {
-   //echo("GuiInspector::loadCollapsState" SPC %this.collapsState);
+   if (%this.collapseState $= "") return;
    %groupCount = %this.getInspectedGroupCount();
+   //echo(%this.getName() @ "::loadCollapsState" SPC %groupCount SPC %this.collapseState);
    for(%grp=0; %grp<%groupCount; %grp++)
    {
-     if (getword(%this.collapsState,%grp))
+     if (getword(%this.collapseState,%grp))
         %this.getInspectedGroup(%grp).instantExpand();     
      else
         %this.getInspectedGroup(%grp).instantCollapse();   
