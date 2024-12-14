@@ -53,11 +53,12 @@ function GuiInspector::loadScrollState(%this)
 
 function GuiInspector::saveCollapseState(%this)
 {   
-   %this.collapseState ="";
    %groupCount = %this.getInspectedGroupCount();
+   if (%groupCount == 0) return;
+   %this.collapseState = "";
    for(%grp=0; %grp<%groupCount; %grp++)
    {
-      %this.collapsState = %this.collapsState SPC %this.getInspectedGroup(%grp).isExpanded(); 
+      %this.collapseState = %this.collapseState SPC %this.getInspectedGroup(%grp).isExpanded(); 
    }
    %this.collapseState = trim(%this.collapseState);
    //echo(%this.getName() @ "::saveCollapsState" SPC %groupCount SPC %this.collapseState);
