@@ -359,7 +359,8 @@ void GuiInspector::clearInspectObjects()
 void GuiInspector::addInspectObject( SimObject* object, bool autoSync )
 {   
    // If we are already inspecting the object, just update the groups.
-   
+
+   onPreInspectObject_callback((mTargets.size() > 1) ? mTargets[0] : NULL);
    if( isInspectingObject( object ) )
    {
       #ifdef DEBUG_SPEW
@@ -389,6 +390,7 @@ void GuiInspector::addInspectObject( SimObject* object, bool autoSync )
    
 	if( autoSync )
 		refresh();
+   onPostInspectObject_callback(object);
 }
 
 //-----------------------------------------------------------------------------
