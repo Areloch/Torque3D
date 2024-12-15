@@ -79,9 +79,7 @@ function GuiInspector::loadCollapseState(%this)
 }
 
 function GuiInspector::renew(%this)
-{ 
-   %this.onPreInspectObject(%this.getInspectObject());
-   
+{    
    %count = %this.getNumInspectObjects();
    %inspecting = %this.getInspectObject(0);
    for(%i=1; %i< %count;%i++)
@@ -91,8 +89,6 @@ function GuiInspector::renew(%this)
    //readd
    for(%i=0; %i<%count;%i++)
       %this.addInspect(getword(%inspecting,%i));
-      
-   %this.onPostInspectObject(%this.getInspectObject());
 }
 
 /// Material Editor specific
