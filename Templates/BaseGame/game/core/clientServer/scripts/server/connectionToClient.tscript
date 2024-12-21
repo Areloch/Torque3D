@@ -92,11 +92,11 @@ function GameConnection::spawnControlObject( %this )
     %this.spawnClass = "Camera";
     %this.spawnDBType = "CameraData";
     %this.spawnDataBlock = "Observer";
-    callOnModules("onControlObjectTypePick", "Game", %this);
-	callGamemodeFunction("onControlObjectTypePick", %this);
+    callOnModules("setSpawnObjectType", "Game", %this);
+	 callGamemodeFunction("setSpawnObjectType", %this);
 }
 
-function GameConnection::completeControlObjectTypePick( %this )
+function GameConnection::onSetSpawnObjectTypeComplete( %this )
 {
     if (isObject(%this.player))
     {
@@ -120,7 +120,7 @@ function GameConnection::completeControlObjectTypePick( %this )
     // future reference
     %this.player.client = %this;
    
-    %this.onSpawnPointPick();
+    %this.setSpawnPoint();
     
    // Give the client control of the camera if in the editor
    if( $startWorldEditor )
@@ -138,17 +138,17 @@ function GameConnection::completeControlObjectTypePick( %this )
       %this.setControlObject(%control);
 }
 
-function GameConnection::onSpawnPointPick( %this )
+function GameConnection::setSpawnPoint( %this )
 {
     //baseline spawn point config rules with extention points
     %this.playerSpawnGroups = "PlayerSpawnPoints PlayerDropPoints";
     %this.spawnPoint = "";
     %this.spawnLocation = "0 0 0";
-    callOnModules("onSpawnPointPick", "Game", %this);
-	callGamemodeFunction("onSpawnPointPick", %this);    
+    callOnModules("setSpawnPoint", "Game", %this);
+	 callGamemodeFunction("setSpawnPoint", %this);    
 }
 
-function GameConnection::completeSpawnPointPick( %this )
+function GameConnection::onSetSpawnPointComplete( %this )
 {
     if (isObject(%this.player))
         %this.player.setTransform(%this.spawnLocation);
@@ -172,14 +172,14 @@ function GameConnection::completeSpawnPointPick( %this )
                 "");
         }
     }
-    %this.onSpawnAppendPick();
+    %this.onPostSpawn();
 }
 
-function GameConnection::onSpawnAppendPick( %this )
+function GameConnection::onPostSpawn( %this )
 {
     //post controlObject create extention points
-    callOnModules("onSpawnAppendPick", "Game", %this);
-	callGamemodeFunction("onSpawnAppendPick", %this);    
+    callOnModules("onPostSpawn", "Game", %this);
+	callGamemodeFunction("onPostSpawn", %this);    
 }
 
 //-----------------------------------------------------------------------------
