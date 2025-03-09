@@ -4763,15 +4763,20 @@ bool Player::step(Point3F *pos,F32 *maxStep,F32 time)
 // PATHSHAPE
 // This Function does a ray cast down to see if a pathshape object is below
 // If so, it will attempt to attach to it.
-void Player::updateAttachment(){
+void Player::updateAttachment()
+{
    Point3F rot, pos;
     RayInfo rInfo;
     MatrixF mat = getTransform();
     mat.getColumn(3, &pos);
+    disableCollision();
     if (gServerContainer.castRay(Point3F(pos.x, pos.y, pos.z + 0.1f),
         Point3F(pos.x, pos.y, pos.z - 1.0f ),
-        PathShapeObjectType, &rInfo))
+       sCollisionMoveMask, &rInfo))
     {
+       if ((mJumpSurfaceLastContact < JumpSkipContactsMax) && !mSwimming)
+          setPosition(rInfo.point, getRotation());
+
        if( rInfo.object->getTypeMask() & PathShapeObjectType) //Ramen
        {
           if (getParent() == NULL)
@@ -4791,12 +4796,13 @@ void Player::updateAttachment(){
     }
     else
     {	 
-       if (getParent() !=NULL)
+       if (getParent() != NULL)
        {
           clearProcessAfter();
           attachToParent(NULL);
        }
     }
+    enableCollision();
 }
 // PATHSHAPE END
 

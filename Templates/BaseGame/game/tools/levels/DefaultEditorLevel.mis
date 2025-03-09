@@ -15,7 +15,6 @@ new Scene(EditorTemplateLevel) {
       zOffset = "-3000";
       azimuth = "25";
       brightness = "5";
-      flareType = "LightFlareExample1";
       MoonMatAsset = "Core_Rendering:moon_wglow";
       useNightCubemap = "1";
       nightCubemap = "nightCubemap";

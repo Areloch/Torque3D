@@ -226,7 +226,7 @@ float getDistanceAtt( vec3 unormalizedLightVector , float invSqrAttRadius )
 vec3 evaluateStandardBRDF(Surface surface, SurfaceToLight surfaceToLight)
 {
    //diffuse term
-   vec3 Fd = surface.albedo.rgb * M_1OVER_PI_F;
+   vec3 Fd = surface.baseColor.rgb * M_1OVER_PI_F * surface.ao;
     
    //GGX specular
    vec3 F = F_Schlick(surface.f0, surface.f90, surfaceToLight.HdotV);
@@ -281,7 +281,7 @@ float computeSpecOcclusion( float NdotV , float AO , float roughness )
 
 float roughnessToMipLevel(float roughness, float numMips)
 {	
-   return roughness * numMips;
+   return pow(abs(roughness),0.25) * numMips;
 }
 
 vec4 compute4Lights( Surface surface,
@@ -349,10 +349,11 @@ vec4 compute4Lights( Surface surface,
 }
 
 //Probe IBL stuff
-float defineSphereSpaceInfluence(vec3 wsPosition, vec3 wsProbePosition, float radius)
+float defineSphereSpaceInfluence(vec3 wsPosition, vec3 wsProbePosition, float radius, float atten)
 {
-   vec3 L = wsProbePosition.xyz - wsPosition;
-   float contribution = 1.0 - length(L) / radius;
+   float3 L = (wsProbePosition.xyz - wsPosition);
+   float innerRadius = radius-(radius*atten);
+   float contribution = 1.0-pow(saturate(length(L)/mix(radius, innerRadius, atten)), M_2PI_F*(1.0-atten));
    return saturate(contribution);
 }
 
@@ -392,20 +393,18 @@ void dampen(inout Surface surface, sampler2D WetnessTexture, float accumTime, fl
 {   
    if (degree<=0.0) return;
    vec3 n = abs(surface.N);
-
-   float grav = 2.0-pow(dot(float3(0,0,-1),surface.N),3);
-   if (grav<0) grav*=-1.0;
+   float ang = clamp(n.z, 0.04, 0.96);
    
-   float speed = accumTime*(1.0-surface.roughness)*grav;
-   vec2 wetoffset = vec2(speed,speed/2)*0.1; 
+   float speed = accumTime*(1.0-surface.roughness)*ang;
+   vec2 wetoffset = vec2(speed,speed/2); 
       
-   float wetness = texture(WetnessTexture, vec2(surface.P.xy*0.2+wetoffset)).b;
-   wetness = lerp(wetness,texture(WetnessTexture,vec2(surface.P.zx*0.2+wetoffset)).b,n.y);
-   wetness = lerp(wetness,texture(WetnessTexture,vec2(surface.P.zy*0.2+wetoffset)).b,n.x);
-   wetness = pow(wetness,3)*degree;
+   float wetness = texture(WetnessTexture, vec2(surface.P.xy*0.1+wetoffset)).b;
+   wetness = lerp(wetness,texture(WetnessTexture,vec2(surface.P.zx*0.1+wetoffset)).b,n.y);
+   wetness = lerp(wetness,texture(WetnessTexture,vec2(surface.P.zy*0.1+wetoffset)).b,n.x);
+   wetness = pow(wetness*ang*degree,3);
    
-   surface.roughness = lerp(surface.roughness,(1.0-pow(wetness,2))*surface.roughness*0.92f+0.04f,degree);
-   surface.baseColor.rgb = lerp(surface.baseColor.rgb,surface.baseColor.rgb*(2.0-wetness)/2,degree); 
+   surface.roughness = lerp(surface.roughness, 0.04f, wetness);
+   surface.baseColor.rgb = lerp(surface.baseColor.rgb, surface.baseColor.rgb*0.96+vec3(0.04,0.04,0.04), pow(wetness,5));
    updateSurface(surface);
 }
 
@@ -415,6 +414,11 @@ vec4 computeForwardProbes(Surface surface,
     vec3 wsEyePos, float skylightCubemapIdx, int SkylightDamp, sampler2D BRDFTexture, sampler2D WetnessTexture, float accumTime, float dampness,
 	samplerCubeArray irradianceCubemapAR, samplerCubeArray specularCubemapAR)
 {
+   if (getFlag(surface.matFlag, 2))
+   {
+      return vec4(0,0,0,0);
+   }
+   
    int i = 0;
    float alpha = 1;
    float wetAmmout = 0;
@@ -436,7 +440,7 @@ vec4 computeForwardProbes(Surface surface,
       }
       else if (inProbeConfigData[i].r == 1) //sphere
       {
-         contribution[i] = defineSphereSpaceInfluence(surface.P, inProbePosArray[i].xyz, inProbeConfigData[i].g)*atten;
+         contribution[i] = defineSphereSpaceInfluence(surface.P, inProbePosArray[i].xyz, inProbeConfigData[i].g, inProbeConfigData[i].b*atten);
       }
 
       if (contribution[i]>0.0)
@@ -528,7 +532,7 @@ vec4 computeForwardProbes(Surface surface,
       if (contrib > 0.0f)
       {
          int cubemapIdx = int(inProbeConfigData[i].a);
-         vec3 dir = boxProject(surface.P, surface.R, inWorldToObjArray[i], inRefScaleArray[i].xyz, inRefPosArray[i].xyz);
+         vec3 dir = boxProject(surface.P-inRefPosArray[i].xyz, surface.R, inWorldToObjArray[i], inRefScaleArray[i].xyz, inProbePosArray[i].xyz);
 
          irradiance += textureLod(irradianceCubemapAR, vec4(dir, cubemapIdx), 0).xyz * contrib;
          specular += textureLod(specularCubemapAR, vec4(dir, cubemapIdx), lod).xyz * contrib;
@@ -593,7 +597,7 @@ vec4 debugVizForwardProbes(Surface surface,
       }
       else if (inProbeConfigData[i].r == 1) //sphere
       {
-         contribution[i] = defineSphereSpaceInfluence(surface.P, inProbePosArray[i].xyz, inProbeConfigData[i].g);
+         contribution[i] = defineSphereSpaceInfluence(surface.P, inProbePosArray[i].xyz, inProbeConfigData[i].g, inProbeConfigData[i].b);
          if (contribution[i] > 0.0)
             probehits++;
       }
@@ -679,7 +683,7 @@ vec4 debugVizForwardProbes(Surface surface,
       if (contrib > 0.0f)
       {
          float cubemapIdx = inProbeConfigData[i].a;
-         vec3 dir = boxProject(surface.P, surface.R, inWorldToObjArray[i], inRefScaleArray[i].xyz, inRefPosArray[i].xyz);
+         vec3 dir = boxProject(surface.P-inRefPosArray[i].xyz, surface.R, inWorldToObjArray[i], inRefScaleArray[i].xyz, inProbePosArray[i].xyz);
 
          irradiance += textureLod(irradianceCubemapAR, vec4(dir, cubemapIdx), 0).xyz * contrib;
          specular += textureLod(specularCubemapAR, vec4(dir, cubemapIdx), lod).xyz * contrib;

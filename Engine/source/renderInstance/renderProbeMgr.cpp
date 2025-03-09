@@ -349,7 +349,7 @@ void RenderProbeMgr::getBestProbes(const Point3F& objPosition, ProbeDataSet* pro
       probeDataSet->refScaleArray[i].w = curEntry.mProbeInfo->mCanDamp? 1.0 : 0.0;
 
       Point3F probePos = curEntry.mProbeInfo->mObject->getPosition();
-      Point3F refPos = probePos + curEntry.mProbeInfo->mProbeRefOffset * probeDataSet->refScaleArray[i].asPoint3F();
+      Point3F refPos = curEntry.mProbeInfo->mProbeRefOffset;
 
       probeDataSet->probePositionArray[i] = Point4F(probePos.x, probePos.y, probePos.z, 0);
       probeDataSet->probeRefPositionArray[i] = Point4F(refPos.x, refPos.y, refPos.z, 0);
@@ -566,13 +566,15 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe)
 
    ReflectParams reflParams;
 
+   MatrixF camTrans = clientProbe->getTransform();
+   camTrans.setPosition(clientProbe->getTransform().getPosition() + clientProbe->mProbeRefOffset);
    //need to get the query somehow. Likely do some sort of get function to fetch from the guiTSControl that's active
    CameraQuery query; //need to get the last cameraQuery
    query.fov = 90; //90 degree slices for each of the 6 sides
-   query.nearPlane = 0.1f;
+   query.nearPlane = 0.0001f;
    query.farPlane = farPlane;
    query.headMatrix = MatrixF();
-   query.cameraMatrix = clientProbe->getTransform();
+   query.cameraMatrix = camTrans;
 
    Frustum culler;
    culler.set(false,
@@ -622,7 +624,6 @@ void RenderProbeMgr::bakeProbe(ReflectionProbe* probe)
 
       IBLUtilities::GenerateIrradianceMap(renderTarget, cubeRefl.getCubemap(), clientProbe->mIrridianceMap->mCubemap);
       //IBLUtilities::GeneratePrefilterMap(renderTarget, cubeRefl.getCubemap(), prefilterMipLevels, clientProbe->mPrefilterMap->mCubemap);
-      clientProbe->mIrridianceMap->mCubemap->generateMipMaps();
 
       U32 endMSTime = Platform::getRealMilliseconds();
       F32 diffTime = F32(endMSTime - startMSTime);

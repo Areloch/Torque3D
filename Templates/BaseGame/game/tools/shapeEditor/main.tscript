@@ -221,6 +221,23 @@ function ShapeEditorPlugin::open(%this, %shapeAsset)
    }
 }
 
+function EditorGui::SetShapePalletBar()
+{   
+   //Clears the button pallete stack
+   EWToolsPaletteWindow.setStackCtrl(ToolsPaletteArray); //legacy ctrl adhereance
+   EWToolsPaletteWindow.clearButtons();
+   
+   EWToolsPaletteWindow.setActionMap(WorldEditorInspectorPlugin.map);
+   
+   //Adds a button to the pallete stack
+                          //Name     Icon                         Click Command                         Tooltip text    Keybind
+   EWToolsPaletteWindow.addButton("Select", "ToolsModule:arrow_n_image", "GlobalGizmoProfile.mode = \"None\";", "", "Select Arrow", "1"); 
+   EWToolsPaletteWindow.addButton("MoveSelection", "ToolsModule:move_point_n_image", "GlobalGizmoProfile.mode = \"Move\";", "", "Move", "2"); 
+   EWToolsPaletteWindow.addButton("RotateSelection", "ToolsModule:rotate_point_n_image", "GlobalGizmoProfile.mode = \"Rotate\";", "", "Rotate", "3"); 
+   EWToolsPaletteWindow.addButton("RotateSun", "ToolsModule:sun_btn_n_image", "ShapeEdShapeView.editSun = !ShapeEdShapeView.editSun;", "", "Rotate sun", "4"); 
+   EWToolsPaletteWindow.refresh();
+}
+
 function ShapeEditorPlugin::onActivated(%this)
 {
    %this.open("");
@@ -255,6 +272,7 @@ function ShapeEditorPlugin::onActivated(%this)
    
    EditorGuiToolbarStack.remove( EWorldEditorToolbar );
    EditorGuiToolbarStack.add( ShapeEditorToolbar );
+   EditorGui.SetShapePalletBar();
 }
 
 function ShapeEditorPlugin::initStatusBar(%this)

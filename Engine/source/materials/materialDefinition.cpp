@@ -72,21 +72,17 @@ ConsoleDocClass(Material,
 ImplementBitfieldType(MaterialAnimType,
    "The type of animation effect to apply to this material.\n"
    "@ingroup GFX\n\n")
-{
-   Material::Scroll, "Scroll", "Scroll the material along the X/Y axis.\n"
-},
-{ Material::Rotate, "Rotate" , "Rotate the material around a point.\n" },
-{ Material::Wave, "Wave" , "Warps the material with an animation using Sin, Triangle or Square mathematics.\n" },
-{ Material::Scale, "Scale", "Scales the material larger and smaller with a pulsing effect.\n" },
-{ Material::Sequence, "Sequence", "Enables the material to have multiple frames of animation in its imagemap.\n" }
+{ Material::Scroll, "$Scroll", "Scroll the material along the X/Y axis.\n"},
+{ Material::Rotate, "$Rotate" , "Rotate the material around a point.\n" },
+{ Material::Wave, "$Wave" , "Warps the material with an animation using Sin, Triangle or Square mathematics.\n" },
+{ Material::Scale, "$Scale", "Scales the material larger and smaller with a pulsing effect.\n" },
+{ Material::Sequence, "$Sequence", "Enables the material to have multiple frames of animation in its imagemap.\n" }
 EndImplementBitfieldType;
 
 ImplementEnumType(MaterialBlendOp,
    "The type of graphical blending operation to apply to this material\n"
    "@ingroup GFX\n\n")
-{
-   Material::None, "None", "Disable blending for this material."
-},
+{ Material::None, "None", "Disable blending for this material."},
 { Material::Mul,          "Mul", "Multiplicative blending." },
 { Material::PreMul,       "PreMul", "Premultiplied alpha." },
 { Material::Add,          "Add", "Adds the color of the material to the frame buffer with full alpha for each pixel." },
@@ -249,6 +245,12 @@ FRangeValidator glowMulRange(0.0f, 20.0f);
 FRangeValidator parallaxScaleRange(0.0f, 4.0f);
 FRangeValidator scrollSpeedRange(0.0f, 10.0f);
 FRangeValidator waveFreqRange(0.0f, 10.0f);
+void Material::onImageAssetChanged()
+{
+   flush();
+   reload();
+}
+
 void Material::initPersistFields()
 {
    docsURL;
@@ -862,3 +864,4 @@ DEF_IMAGEASSET_ARRAY_BINDS(Material, AOMap);
 DEF_IMAGEASSET_ARRAY_BINDS(Material, MetalMap);
 DEF_IMAGEASSET_ARRAY_BINDS(Material, GlowMap);
 DEF_IMAGEASSET_ARRAY_BINDS(Material, DetailNormalMap);
+

@@ -372,6 +372,13 @@ class GuiControl : public SimGroup
       
       inline const S32        getHorizSizing() const { return mHorizSizing; }
       inline const S32        getVertSizing() const { return mVertSizing; }
+
+      void        setHorizSizing(horizSizingOptions horizSizing) {
+         mHorizSizing = horizSizing;
+      }
+      void        setVertSizing(vertSizingOptions vertSizing) {
+         mVertSizing = vertSizing;
+      }
       
       /// @}
       
@@ -734,7 +741,7 @@ class GuiControl : public SimGroup
       GuiControl *getFirstResponder() { return mFirstResponder; }
       
       /// Occurs when the control gains first-responder status.
-      virtual void onGainFirstResponder();
+      void onGainFirstResponder();
       
       /// Occurs when the control loses first-responder status.
       virtual void onLoseFirstResponder();

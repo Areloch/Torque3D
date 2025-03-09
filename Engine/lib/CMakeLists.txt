@@ -116,8 +116,7 @@ add_subdirectory(convexMath ${TORQUE_LIB_TARG_DIRECTORY}/convexMath EXCLUDE_FROM
 
 # Assimp
 advanced_option(ASSIMP_HUNTER_ENABLED "Enable Hunter package manager support" OFF)
-set(ASSIMP_BUILD_NO_OWN_ZLIB ON CACHE BOOL "" FORCE)
-mark_as_advanced(ASSIMP_BUILD_NO_OWN_ZLIB)
+advanced_option(ASSIMP_BUILD_NO_OWN_ZLIB "" ON)
 advanced_option(BUILD_SHARED_LIBS "Build package with shared libraries." OFF )
 advanced_option(ASSIMP_BUILD_FRAMEWORK "Build package as Mac OS X Framework bundle." OFF )
 advanced_option(ASSIMP_DOUBLE_PRECISION "Set to ON to enable double precision processing" OFF )
@@ -187,7 +186,7 @@ mark_as_advanced(PNG_DEBUG)
 mark_as_advanced(PNG_FRAMEWORK)
 mark_as_advanced(PNG_PREFIX)
 
-add_subdirectory(tinyxml ${TORQUE_LIB_TARG_DIRECTORY}/tinyxml EXCLUDE_FROM_ALL)
+add_subdirectory(tinyxml2 ${TORQUE_LIB_TARG_DIRECTORY}/tinyxml2 EXCLUDE_FROM_ALL)
 add_subdirectory(opcode ${TORQUE_LIB_TARG_DIRECTORY}/opcode EXCLUDE_FROM_ALL)
 add_subdirectory(pcre ${TORQUE_LIB_TARG_DIRECTORY}/pcre EXCLUDE_FROM_ALL)
 

@@ -1232,7 +1232,7 @@ function ObjectBuilderGui::buildSun( %this, %dontWarnAboutScatterSky )
 
    %this.addField("direction", "TypeVector", "Direction", "1 1 -1");
    %this.addField("color", "TypeColor", "Sun color", "0.8 0.8 0.8");
-   %this.addField("ambient", "TypeColor", "Ambient color", "0.2 0.2 0.2");   
+   %this.addField("ambient", "TypeColor", "Ambient color", "0.5 0.5 0.5");   
 
    %this.process();
    
@@ -1456,6 +1456,61 @@ function ObjectBuilderGui::buildPlayerDropPoint(%this)
       %this.objectGroup = "PlayerDropPoints";
    }
 
+   %this.process();
+}
+
+function ObjectBuilderGui::buildPlayer(%this)
+{
+   %this.objectClassName = "Player";
+   %this.addField("dataBlock",    "TypeDataBlock", "dataBlock",   "PlayerData");
+   %this.addField("control", "TypeBool", "control?", "false");
+   %this.process();
+}
+
+function ObjectBuilderGui::buildAIPlayer(%this)
+{
+   %this.objectClassName = "AIPlayer";
+   %this.addField("dataBlock",    "TypeDataBlock", "dataBlock",   "PlayerData");
+   %this.process();
+}
+
+function ObjectBuilderGui::buildWheeledVehicle(%this)
+{
+   %this.objectClassName = "WheeledVehicle";
+   %this.addField("dataBlock",    "TypeDataBlock", "dataBlock",   "WheeledVehicleData");
+   %this.addField("control", "TypeBool", "control?", "false");
+   %this.process();
+}
+
+function ObjectBuilderGui::buildHoverVehicle(%this)
+{
+   %this.objectClassName = "HoverVehicle";
+   %this.addField("dataBlock",    "TypeDataBlock", "dataBlock",   "HoverVehicleData");
+   %this.addField("control", "TypeBool", "control?", "false");
+   %this.process();
+}
+
+function ObjectBuilderGui::buildFlyingVehicle(%this)
+{
+   %this.objectClassName = "FlyingVehicle";
+   %this.addField("dataBlock",    "TypeDataBlock", "dataBlock",   "FlyingVehicleData");
+   %this.addField("control", "TypeBool", "control?", "false");
+   %this.process();
+}
+
+function ObjectBuilderGui::buildSpawnSphere(%this)
+{
+   %this.objectClassName = "SpawnSphere";
+   %this.addField("dataBlock",    "TypeDataBlock", "dataBlock",   "MissionMarkerData SpawnSphereMarker");
+   %this.addField("radius",       "TypeFloat",     "Radius",        1);
+   %this.addField("sphereWeight", "TypeFloat",     "Sphere Weight", 1);
+
+   %this.addField("spawnClass",     "TypeString",    "Spawn Class", "");
+   %this.addField("spawnDatablock", "TypeString", "Spawn Data", "");
+   %this.addField("spawnTransform", "TypeBool", "Spawn Here", "true");
+   %this.addField("autoSpawn", "TypeBool", "Auto Spawn Objects", "false");
+   %this.addField("spawnScript", "TypeString", "spawnScript", "%this.spawned = $SpawnObject;");
+   %this.addField("canSaveDynamicFields", "TypeBool", "Save metadata", "false");
    %this.process();
 }
 

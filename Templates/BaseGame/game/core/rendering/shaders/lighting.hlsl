@@ -227,7 +227,7 @@ float getDistanceAtt( float3 unormalizedLightVector , float invSqrAttRadius )
 float3 evaluateStandardBRDF(Surface surface, SurfaceToLight surfaceToLight)
 {
    //diffuse term
-   float3 Fd = surface.albedo.rgb * M_1OVER_PI_F;
+   float3 Fd = surface.baseColor.rgb * M_1OVER_PI_F * surface.ao;
     
    //GGX specular
    float3 F = F_Schlick(surface.f0, surface.f90, surfaceToLight.HdotV);
@@ -282,7 +282,7 @@ float computeSpecOcclusion( float NdotV , float AO , float roughness )
 
 float roughnessToMipLevel(float roughness, float numMips)
 {	
-   return roughness * numMips;
+   return pow(abs(roughness),0.25) * numMips;
 }
 
 float4 compute4Lights( Surface surface,
@@ -352,10 +352,11 @@ float4 compute4Lights( Surface surface,
 }
 
 //Probe IBL stuff
-float defineSphereSpaceInfluence(float3 wsPosition, float3 wsProbePosition, float radius)
+float defineSphereSpaceInfluence(float3 wsPosition, float3 wsProbePosition, float radius, float atten)
 {
-   float3 L = wsProbePosition.xyz - wsPosition;
-   float contribution = 1.0 - length(L) / radius;
+   float3 L = (wsProbePosition.xyz - wsPosition);
+   float innerRadius = radius-(radius*atten);
+   float contribution = 1.0-pow(saturate(length(L)/lerp(radius, innerRadius, atten)), M_2PI_F*(1.0-atten));
    return saturate(contribution);
 }
 
@@ -395,20 +396,18 @@ void dampen(inout Surface surface, TORQUE_SAMPLER2D(WetnessTexture), float accum
 {   
    if (degree<=0.0) return;
    float3 n = abs(surface.N);
-
-   float grav = 2.0-pow(dot(float3(0,0,-1),surface.N),3);
-   if (grav<0) grav*=-1.0;
+   float ang = clamp(n.z, 0.04, 0.96);
    
-   float speed = accumTime*(1.0-surface.roughness)*grav;
-   float2 wetoffset = float2(speed,speed/2)*0.1; 
+   float speed = accumTime*(1.0-surface.roughness)*ang;
+   float2 wetoffset = float2(speed,speed/2); 
       
-   float wetness = TORQUE_TEX2D(WetnessTexture, float2(surface.P.xy*0.2+wetoffset)).b; 
-   wetness = lerp(wetness,TORQUE_TEX2D(WetnessTexture,float2(surface.P.zx*0.2+wetoffset)).b,n.y);
-   wetness = lerp(wetness,TORQUE_TEX2D(WetnessTexture,float2(surface.P.zy*0.2+wetoffset)).b,n.x);
-   wetness = pow(wetness,3)*degree;
+   float wetness = TORQUE_TEX2D(WetnessTexture, float2(surface.P.xy*0.1+wetoffset)).b; 
+   wetness = lerp(wetness,TORQUE_TEX2D(WetnessTexture,float2(surface.P.zx*0.1+wetoffset)).b,n.y);
+   wetness = lerp(wetness,TORQUE_TEX2D(WetnessTexture,float2(surface.P.zy*0.1+wetoffset)).b,n.x);
+   wetness = pow(wetness*ang*degree,3);
    
-   surface.roughness = lerp(surface.roughness,(1.0-pow(wetness,2))*surface.roughness*0.92f+0.04f,degree);
-   surface.baseColor.rgb = lerp(surface.baseColor.rgb,surface.baseColor.rgb*(2.0-wetness)/2,degree);
+   surface.roughness = lerp(surface.roughness, 0.04f, wetness);
+   surface.baseColor.rgb = lerp(surface.baseColor.rgb, surface.baseColor.rgb*0.96+float3(0.04,0.04,0.04), pow(wetness,5));
    surface.Update(); 
 }
 
@@ -418,6 +417,11 @@ float4 computeForwardProbes(Surface surface,
     float3 wsEyePos, float skylightCubemapIdx, int SkylightDamp, TORQUE_SAMPLER2D(BRDFTexture), TORQUE_SAMPLER2D(WetnessTexture), float accumTime, float dampness,
 	 TORQUE_SAMPLERCUBEARRAY(irradianceCubemapAR), TORQUE_SAMPLERCUBEARRAY(specularCubemapAR))
 {
+   if (getFlag(surface.matFlag, 2))
+   {
+      return float4(0,0,0,0);
+   }
+
    int i = 0;
    float alpha = 1;
    float wetAmmout = 0;
@@ -441,7 +445,7 @@ float4 computeForwardProbes(Surface surface,
       }
       else if (inProbeConfigData[i].r == 1) //sphere
       {
-         contribution[i] = defineSphereSpaceInfluence(surface.P, inProbePosArray[i].xyz, inProbeConfigData[i].g)*atten;
+         contribution[i] = defineSphereSpaceInfluence(surface.P, inProbePosArray[i].xyz, inProbeConfigData[i].g, inProbeConfigData[i].b*atten);
       }
 
       if (contribution[i]>0.0)
@@ -533,7 +537,7 @@ float4 computeForwardProbes(Surface surface,
       if (contrib > 0.0f)
       {
          int cubemapIdx = inProbeConfigData[i].a;
-         float3 dir = boxProject(surface.P, surface.R, inWorldToObjArray[i], inRefScaleArray[i].xyz, inRefPosArray[i].xyz);
+         float3 dir = boxProject(surface.P-inRefPosArray[i].xyz, surface.R, inWorldToObjArray[i], inRefScaleArray[i].xyz, inProbePosArray[i].xyz);
 
          irradiance += TORQUE_TEXCUBEARRAYLOD(irradianceCubemapAR, dir, cubemapIdx, 0).xyz * contrib;
          specular += TORQUE_TEXCUBEARRAYLOD(specularCubemapAR, dir, cubemapIdx, lod).xyz * contrib;
@@ -599,7 +603,7 @@ float4 debugVizForwardProbes(Surface surface,
       }
       else if (inProbeConfigData[i].r == 1) //sphere
       {
-         contribution[i] = defineSphereSpaceInfluence(surface.P, inProbePosArray[i].xyz, inProbeConfigData[i].g);
+         contribution[i] = defineSphereSpaceInfluence(surface.P, inProbePosArray[i].xyz, inProbeConfigData[i].g, inProbeConfigData[i].b);
          if (contribution[i] > 0.0)
             probehits++;
       }
@@ -685,7 +689,7 @@ float4 debugVizForwardProbes(Surface surface,
       if (contrib > 0.0f)
       {
          int cubemapIdx = inProbeConfigData[i].a;
-         float3 dir = boxProject(surface.P, surface.R, inWorldToObjArray[i], inRefScaleArray[i].xyz, inRefPosArray[i].xyz);
+         float3 dir = boxProject(surface.P-inRefPosArray[i].xyz, surface.R, inWorldToObjArray[i], inRefScaleArray[i].xyz, inProbePosArray[i].xyz);
 
          irradiance += TORQUE_TEXCUBEARRAYLOD(irradianceCubemapAR, dir, cubemapIdx, 0).xyz * contrib;
          specular += TORQUE_TEXCUBEARRAYLOD(specularCubemapAR, dir, cubemapIdx, lod).xyz * contrib;
