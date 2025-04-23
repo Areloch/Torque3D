@@ -681,8 +681,8 @@ public:
    Vector<TextureTagRemapping> txr_tag_remappings;
    bool silent_bbox_check;
 
-   void onShapeChanged() {}
-   void onDebrisChanged() {}
+   void onShapeChanged();
+   void onDebrisChanged();
 public:
    ShapeBaseData(const ShapeBaseData&, bool = false);
 };
@@ -1202,6 +1202,7 @@ public:
    void onSceneRemove() override;
    static void consoleInit();
    bool onNewDataBlock( GameBaseData *dptr, bool reload ) override;
+   void onDatablockModified(ShapeBaseData* datablock);
 
    /// @}
 

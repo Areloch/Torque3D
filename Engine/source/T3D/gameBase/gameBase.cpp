@@ -143,7 +143,7 @@ void GameBaseData::inspectPostApply()
 
    // Tell interested parties ( like objects referencing this datablock )
    // that we have been modified and they might want to rebuild...
-   mReloadSignal.trigger();
+   mReloadSignal.trigger(this);
 }
 
 bool GameBaseData::onAdd()
@@ -337,7 +337,7 @@ bool GameBase::onNewDataBlock( GameBaseData *dptr, bool reload )
    return true;
 }
 
-void GameBase::_onDatablockModified()
+void GameBase::_onDatablockModified(GameBaseData* datablock)
 {   
    AssertFatal( mDataBlock, "GameBase::onDatablockModified - mDataBlock is NULL." );
    onNewDataBlock( mDataBlock, true );

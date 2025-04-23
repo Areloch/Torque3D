@@ -2571,7 +2571,7 @@ bool ParticleEmitterData::reload()
    if( !particleString || !particleString[ 0 ] || !numUnits )
    {
       Con::errorf( "ParticleEmitterData(%s) has an empty particles string.", getName() );
-      mReloadSignal.trigger();
+      mReloadSignal.trigger(this);
       return false;
    }
 
@@ -2595,13 +2595,13 @@ bool ParticleEmitterData::reload()
    if( particleDataBlocks.empty() )
    {
       Con::errorf( ConsoleLogEntry::General, "ParticleEmitterData(%s) unable to find any particle datablocks", getName() );
-      mReloadSignal.trigger();
+      mReloadSignal.trigger(this);
       return false;
    }
 
    // Trigger reload.
       
-   mReloadSignal.trigger();
+   mReloadSignal.trigger(this);
    
    return true;
 }

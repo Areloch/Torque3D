@@ -266,7 +266,7 @@ void PhysicsShapeData::_onResourceChanged( const Torque::Path &path )
    if (  bool(reloadcolShape))
       colShape = reloadcolShape;
 
-   mReloadSignal.trigger();
+   mReloadSignal.trigger(this);
 }
 
 bool PhysicsShapeData::preload( bool server, String &errorBuffer )

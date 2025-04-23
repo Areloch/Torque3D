@@ -96,7 +96,7 @@ public:
 
    // Signal triggered when this datablock is modified.
    // GameBase objects referencing this datablock notify with this signal.
-   Signal<void(void)> mReloadSignal;
+   Signal<void(GameBaseData*)> mReloadSignal;
 
    // Triggers the reload signal.
    void inspectPostApply() override;
@@ -450,12 +450,12 @@ public:
    DECLARE_CALLBACK( void, setControl, ( bool controlled ) );
    /// @}
 
-private:
+ protected:
 
    /// This is called by the reload signal in our datablock when it is 
    /// modified in the editor.
    ///
-   /// This method is private and is not virtual. To handle a datablock-modified
+   /// This method is protected and is not virtual. To handle a datablock-modified
    /// even in a child-class specific way you should override onNewDatablock
    /// and handle the reload( true ) case.   
    ///
@@ -464,8 +464,8 @@ private:
    /// Warning: Do not attempt to call .remove or .notify on mDataBlock->mReloadSignal
    /// within this callback.
    ///   
-   void _onDatablockModified();
-protected:
+   void _onDatablockModified(GameBaseData* datablock);
+
    void    onScopeIdChange() override { setMaskBits(ScopeIdMask); }
 };
 
