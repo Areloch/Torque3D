@@ -429,6 +429,8 @@ void GuiConvexEditorCtrl::on3DMouseUp(const Gui3DMouseEvent & event)
       }
    }
 
+   CSGManager::get()->updateBrushes();
+
    updateGizmoPos();   
 }
 
@@ -534,6 +536,9 @@ void GuiConvexEditorCtrl::on3DMouseDragged(const Gui3DMouseEvent & event)
          setupShape( newShape );
 
          newShape->_setMaterial(mConvexSEL->getMaterial());
+
+         newShape->mBrushType = mConvexSEL->mBrushType;
+         newShape->mCSGLayer = mConvexSEL->mCSGLayer;
 
          submitUndo( CreateShape, newShape );
 
@@ -1059,6 +1064,21 @@ void GuiConvexEditorCtrl::renderScene(const RectI & updateRect)
    ColorI colorNA( 255, 255, 255, 100 );
 
    GFXDrawUtil *drawer = GFX->getDrawUtil();
+
+   //draw lines for subtract shapes
+   Vector<ConvexShape*> shapesList = Scene::getRootScene()->getObjectsByClass<ConvexShape>();
+
+   for (U32 i = 0; i < shapesList.size(); i++)
+   {
+      if (shapesList[i]->mBrushType == ConvexShape::BrushType::Subtract)
+      {
+         shapesList[i]->renderFaceEdges(-1, ColorI(212, 175, 55));
+      }
+      else if (shapesList[i]->mBrushType == ConvexShape::BrushType::CollisionOnly)
+      {
+         shapesList[i]->renderFaceEdges(-1, ColorI(135, 206, 235));
+      }
+   }
 
    if ( mConvexSEL && !mDragging )
    {
@@ -2347,6 +2367,8 @@ ConvexEditorTool::EventResult ConvexEditorCreateTool::on3DMouseUp( const Gui3DMo
 
       mEditor->mouseUnlock();
 
+      CSGManager::get()->updateBrushes();
+
       return Done;
    }
 
@@ -2861,6 +2883,42 @@ ConvexShape* GuiConvexEditorCtrl::createConvexShapeFrom(SceneObject* polyObject)
    return shape;
 }
 
+void GuiConvexEditorCtrl::setBrushType(const char* brushType)
+{
+   if (mConvexSEL == NULL)
+      return;
+
+   StringTableEntry type = StringTable->insert(brushType);
+   if (type == StringTable->insert("Add"))
+      mConvexSEL->mBrushType = ConvexShape::BrushType::Add;
+   else if (type == StringTable->insert("Subtract"))
+      mConvexSEL->mBrushType = ConvexShape::BrushType::Subtract;
+   else if (type == StringTable->insert("Collision Only"))
+      mConvexSEL->mBrushType = ConvexShape::BrushType::CollisionOnly;
+   else if (type == StringTable->insert("Detail"))
+      mConvexSEL->mBrushType = ConvexShape::BrushType::Detail;
+
+   updateShape(mConvexSEL, mFaceSEL);
+
+   CSGManager::get()->updateBrushes();
+
+   mConvexSEL->setMaskBits(ConvexShape::UpdateMask);
+}
+
+void GuiConvexEditorCtrl::setCSGLayer(U32 layer)
+{
+   if (mConvexSEL == NULL)
+      return;
+
+   mConvexSEL->mCSGLayer = layer;
+
+   updateShape(mConvexSEL, mFaceSEL);
+
+   CSGManager::get()->updateBrushes();
+
+   mConvexSEL->setMaskBits(ConvexShape::UpdateMask);
+}
+
 DefineEngineMethod( GuiConvexEditorCtrl, hollowSelection, void, (), , "" )
 {
    object->hollowSelection();
@@ -3092,4 +3150,27 @@ DefineEngineMethod(GuiConvexEditorCtrl, updateShape, void, (),,
 {
    //return Point2F(0, 0);
    return object->updateShape();
+}
+
+DefineEngineMethod(GuiConvexEditorCtrl, setBrushType, void, (const char* brushType), ("Add"),
+   "@brief Mount objB to this object at the desired slot with optional transform.\n\n"
+
+   "@param objB  Object to mount onto us\n"
+   "@param slot  Mount slot ID\n"
+   "@param txfm (optional) mount offset transform\n"
+   "@return true if successful, false if failed (objB is not valid)")
+{
+   //return Point2F(0, 0);
+   return object->setBrushType(brushType);
+}
+
+DefineEngineMethod(GuiConvexEditorCtrl, setCSGLayer, void, (U32 layer), (0),
+   "@brief Mount objB to this object at the desired slot with optional transform.\n\n"
+
+   "@param objB  Object to mount onto us\n"
+   "@param slot  Mount slot ID\n"
+   "@param txfm (optional) mount offset transform\n"
+   "@return true if successful, false if failed (objB is not valid)")
+{
+   return object->setCSGLayer(layer);
 }

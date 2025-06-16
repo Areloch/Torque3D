@@ -134,6 +134,9 @@ public:
    void setGridSnap(bool snap) { mGridSnap = snap; };
    void setGridSnapSize(float gridSize);
 
+   void setBrushType(const char* brushType);
+   void setCSGLayer(U32 layer);
+
    void updateShape();
 
    float getGridSnapSize() { return mGridPlaneSize; }
