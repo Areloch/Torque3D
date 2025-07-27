@@ -10,12 +10,19 @@ function AssetBrowser_editAsset::saveAsset(%this)
 
 function AssetBrowser::editAsset(%this, %assetDef)
 {
+   echo("AssetBrowser::editAsset() - %assetDef: " @ %assetDef);
+   
    if(%this.selectMode)
    {
       %this.selectAsset(%this.selectedAsset);
    }
    else
    {
+      if(AssetDatabase.isDeclaredAsset(%assetDef))
+      {
+         %assetDef = AssetDatabase.acquireAsset(%assetDef);  
+      }
+      
       if(isObject(%assetDef))
       {
          %assetType = AssetDatabase.getAssetType(%assetDef.getAssetId());

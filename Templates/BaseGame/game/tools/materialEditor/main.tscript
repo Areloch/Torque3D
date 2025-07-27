@@ -27,29 +27,37 @@ function initializeMaterialEditor()
    echo(" % - Initializing Material Editor");
    
    // Load Preview Window
-   exec("~/materialEditor/gui/guiMaterialPreviewWindow.ed.gui");
+   //exec("~/materialEditor/gui/guiMaterialPreviewWindow.ed.gui");
    
    // Load Properties Window
-   exec("~/materialEditor/gui/guiMaterialPropertiesWindow.ed.gui");
+   //exec("~/materialEditor/gui/guiMaterialPropertiesWindow.ed.gui");
    
    //Material Instance viewer
    exec("~/materialEditor/gui/materialInstancesView.ed.gui");
+   
+   exec("./gui/NuMaterialEditor");
+   exec("./gui/NuMaterialEditor.gui");
+   //exec("./scripts/nuMaterialEditor.tscript");
    
    // Load Client Scripts.
    exec("./scripts/materialEditor.ed." @ $TorqueScriptFileExtension);
    exec("./scripts/materialEditorUndo.ed." @ $TorqueScriptFileExtension);
    exec("./scripts/materialInstanceView.ed." @ $TorqueScriptFileExtension);
+   
+   exec("./scripts/materialAnimationFieldTypes." @ $TorqueScriptFileExtension);
+   exec("./scripts/bakeCompositeButtonFieldType." @ $TorqueScriptFileExtension);
+   exec("./scripts/ORMSliderFieldType." @ $TorqueScriptFileExtension);
    //exec("./gui/profiles.ed." @ $TorqueScriptFileExtension);
    
-   MaterialEditorPreviewWindow.setVisible( false );
+   //MaterialEditorPreviewWindow.setVisible( false );
    //matEd_cubemapEditor.setVisible( false );
-   matEd_addCubemapWindow.setVisible( false );
-   MaterialEditorPropertiesWindow.setVisible( false );
+   //matEd_addCubemapWindow.setVisible( false );
+   //MaterialEditorPropertiesWindow.setVisible( false );
    
-   MainSceneTabPanel.add( MaterialEditorPreviewWindow );
-   MainSceneTabPanel.add( matEd_cubemapEditor );
-   MainSceneTabPanel.add( matEd_addCubemapWindow );
-   MainSceneTabPanel.add( MaterialEditorPropertiesWindow );
+   //MainSceneTabPanel.add( MaterialEditorPreviewWindow );
+   //MainSceneTabPanel.add( cubemapEditor );
+   //MainSceneTabPanel.add( addCubemapWindow );
+   //MainSceneTabPanel.add( MaterialEditorPropertiesWindow );
 }
 
 function destroyMaterialEditor()
@@ -131,8 +139,8 @@ function MaterialEditorPlugin::onActivated( %this )
    materialAdvancedPropertiesRollout.Expanded = false;
    WorldEditorPlugin.onActivated();
 
-   EditorGui-->MatEdPropertiesWindow.setVisible( true );
-   EditorGui-->MatEdPreviewWindow.setVisible( true );
+   //EditorGui-->MatEdPropertiesWindow.setVisible( true );
+   //EditorGui-->MatEdPreviewWindow.setVisible( true );
    EditorGui-->WorldEditorToolbar.setVisible( true );
    
    MaterialEditorGui.currentObject = $Tools::materialEditorList;
@@ -142,6 +150,8 @@ function MaterialEditorPlugin::onActivated( %this )
    
    // Do resize the windows at start
    MaterialEditorGui.onWake();
+   
+   Canvas.pushDialog(MaterialEditorGui);
    
    Parent::onActivated(%this);
 }
@@ -158,10 +168,11 @@ function MaterialEditorPlugin::onDeactivated( %this )
       
    WorldEditorPlugin.onDeactivated();
 
+   Canvas.popDialog(MaterialEditorGui);
    MaterialEditorGui.quit();
    
-   EditorGui-->MatEdPropertiesWindow.setVisible( false );
-   EditorGui-->MatEdPreviewWindow.setVisible( false );
+   //EditorGui-->MatEdPropertiesWindow.setVisible( false );
+   //EditorGui-->MatEdPreviewWindow.setVisible( false );
    EditorGui-->WorldEditorToolbar.setVisible( false );
    %this.map.pop();
    

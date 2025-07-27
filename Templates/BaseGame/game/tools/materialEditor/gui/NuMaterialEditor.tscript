@@ -1,0 +1,7 @@
+function NuMaterialEditor::onWake(%this)
+{
+}
+
+function NuMaterialEditor::onSleep(%this)
+{
+}

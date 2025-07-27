@@ -834,3 +834,18 @@ DefineEngineMethod(GuiInspectorGroup, setForcedArrayIndex, void, (S32 arrayIndex
 {
    object->setForcedArrayIndex(arrayIndex);
 }
+
+DefineEngineMethod(GuiInspectorGroup, findField, S32, (const char* fieldName),,
+   "Finds an Inspector field in this group of a given name.\n"
+   "@param fieldName The name of the field to be found.\n"
+   "@return Field SimObjectId")
+{
+   if (dStrEqual(fieldName, ""))
+      return 0;
+
+   GuiInspectorField* field = object->findField(StringTable->insert(fieldName));
+   if (field == nullptr)
+      return 0;
+
+   return field->getId();
+}

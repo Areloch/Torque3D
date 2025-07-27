@@ -4578,7 +4578,7 @@ $guiContent = new GuiControl(MaterialEditorGui,EditorGuiGroup) {
                            VertSizing = "bottom";
                            position = "143 6 28";
                            Extent = "33 18";
-                           Command = "MaterialEditorGui.showCubemapEditor();";
+                           Command = "CubemapEditor.showCubemapEditor();";
                            text = "Edit";
                         };
                      };

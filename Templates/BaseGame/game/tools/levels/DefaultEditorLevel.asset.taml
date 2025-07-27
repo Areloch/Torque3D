@@ -12,4 +12,5 @@
     previewImageAsset5="@asset=ToolsModule:DefaultEditorLevel_preview_image"
     previewImageAsset6="@asset=ToolsModule:DefaultEditorLevel_preview_image"
     staticObjectAssetDependency0="@asset=Prototyping:FloorGray"
+    staticObjectAssetDependency1="@asset=Prototyping:Playerbot_shape"
     VersionId="1"/>

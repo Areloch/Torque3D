@@ -671,7 +671,7 @@ function EditorGui::updateSideBar(%this)
          case "ForestEditorPlugin ":
             ForestEditorPalleteWindow.onMouseDragged();
          case "MaterialEditorPlugin":
-            MaterialEditorPreviewWindow.onMouseDragged();
+            MaterialEditorGuiWindow.onMouseDragged();
          case "MeshRoadEditorPlugin":
             MeshRoadEditorTreeWindow.onMouseDragged();
          case "MissionAreaEditorPlugin":
@@ -3335,9 +3335,9 @@ function TerrainSetHeightSliderCtrlContainer::onWake(%this)
 //------------------------------------------------------------------------------------
 function CameraSpeedDropdownContainer::onWake(%this)
 {
-   %this-->slider.setValue(CameraSpeedDropdownCtrlContainer-->textEdit.getText());
+   CameraSpeedDropdownCtrlContainer-->slider.setValue(CameraSpeedDropdownContainer-->textEdit.getText());
    %pos = CameraSpeedDropdownCtrlContainer.getGlobalPosition();
-   %this-->slider.setPositionGlobal(%pos.x, %pos.y + 25);
+   CameraSpeedDropdownCtrlContainer-->slider.setPositionGlobal(%pos.x, %pos.y + 25);
 }
 
 //------------------------------------------------------------------------------------

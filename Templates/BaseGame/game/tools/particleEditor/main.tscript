@@ -34,6 +34,7 @@ function initializeParticleEditor()
    exec( "./particleEditorUndo.ed." @ $TorqueScriptFileExtension );   
    exec( "./particleEmitterEditor.ed." @ $TorqueScriptFileExtension );
    exec( "./particleParticleEditor.ed." @ $TorqueScriptFileExtension );
+   exec( "./nuParticleEditor.ed." @ $TorqueScriptFileExtension);
    
    PE_Window.setVisible( false );
    MainSceneTabPanel.add( PE_Window );
