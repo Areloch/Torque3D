@@ -479,6 +479,7 @@ $guiContent = new GuiControl(MaterialEditorGui) {
                      profile = "GuiInspectorProfile";
                      tooltipProfile = "ToolsGuiToolTipProfile";
                      superClass = "EditorInspectorBase";
+                     collapseState = "1 1 0 0 0 0 0 0";
                   };
                };
             };

@@ -26,18 +26,10 @@ function initializeMaterialEditor()
 {
    echo(" % - Initializing Material Editor");
    
-   // Load Preview Window
-   //exec("~/materialEditor/gui/guiMaterialPreviewWindow.ed.gui");
-   
-   // Load Properties Window
-   //exec("~/materialEditor/gui/guiMaterialPropertiesWindow.ed.gui");
-   
    //Material Instance viewer
    exec("~/materialEditor/gui/materialInstancesView.ed.gui");
    
-   exec("./gui/NuMaterialEditor");
-   exec("./gui/NuMaterialEditor.gui");
-   //exec("./scripts/nuMaterialEditor.tscript");
+   exec("./gui/MaterialEditorGui.gui");
    
    // Load Client Scripts.
    exec("./scripts/materialEditor.ed." @ $TorqueScriptFileExtension);
@@ -47,17 +39,6 @@ function initializeMaterialEditor()
    exec("./scripts/materialAnimationFieldTypes." @ $TorqueScriptFileExtension);
    exec("./scripts/bakeCompositeButtonFieldType." @ $TorqueScriptFileExtension);
    exec("./scripts/ORMSliderFieldType." @ $TorqueScriptFileExtension);
-   //exec("./gui/profiles.ed." @ $TorqueScriptFileExtension);
-   
-   //MaterialEditorPreviewWindow.setVisible( false );
-   //matEd_cubemapEditor.setVisible( false );
-   //matEd_addCubemapWindow.setVisible( false );
-   //MaterialEditorPropertiesWindow.setVisible( false );
-   
-   //MainSceneTabPanel.add( MaterialEditorPreviewWindow );
-   //MainSceneTabPanel.add( cubemapEditor );
-   //MainSceneTabPanel.add( addCubemapWindow );
-   //MainSceneTabPanel.add( MaterialEditorPropertiesWindow );
 }
 
 function destroyMaterialEditor()

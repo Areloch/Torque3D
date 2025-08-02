@@ -104,7 +104,7 @@
     <Group
         name="GuiEditor">
         <Setting
-            name="lastPath">tools/RPGDialogEditor/gui</Setting>
+            name="lastPath">data</Setting>
         <Setting
             name="previewResolution">1920 1080</Setting>
         <Group

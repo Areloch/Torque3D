@@ -211,7 +211,7 @@ GuiInspectorField *GuiInspectorGroup::findField( const char *fieldName )
 
    for( ; i != mChildren.end(); i++ )
    {
-      if( (*i)->getFieldName() != NULL && dStricmp( (*i)->getFieldName(), fieldName ) == 0 )
+      if( ((*i)->getFieldName() != NULL && dStricmp( (*i)->getFieldName(), fieldName ) == 0) || ((*i)->getCaption() != StringTable->EmptyString() && dStricmp((*i)->getCaption(), fieldName) == 0) )
          return (*i);
    }
 
@@ -848,4 +848,12 @@ DefineEngineMethod(GuiInspectorGroup, findField, S32, (const char* fieldName),,
       return 0;
 
    return field->getId();
+}
+
+DefineEngineMethod(GuiInspectorGroup, refresh, void, (), ,
+   "Finds an Inspector field in this group of a given name.\n"
+   "@param fieldName The name of the field to be found.\n"
+   "@return Field SimObjectId")
+{
+   object->inspectGroup();
 }

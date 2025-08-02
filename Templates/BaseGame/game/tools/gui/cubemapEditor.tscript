@@ -1,3 +1,7 @@
+function CubemapEditor::onWake(%this)
+{
+   cubemapEd_availableCubemapList.clear();  
+}
 
 function CubemapEditor::cancelCubemap(%this)
 {

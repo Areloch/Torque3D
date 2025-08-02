@@ -77,52 +77,6 @@ function MaterialEditorGui::open(%this)
 	// These guis are also pushed onto Canvas, which means they shouldn't be parented
 	// by editorgui
 	materialSelector.setVisible(0);
-	//matEdSaveDialog.setVisible(0);
-	
-	/*MaterialEditorPropertiesWindow-->matEd_cubemapEditBtn.setVisible(0);
-	
-	//Setup our dropdown menu contents.
-   //Blending Modes
-   MaterialEditorPropertiesWindow-->blendingTypePopUp.clear();
-   MaterialEditorPropertiesWindow-->blendingTypePopUp.add(None,0);
-   MaterialEditorPropertiesWindow-->blendingTypePopUp.add(preMul,1);
-   MaterialEditorPropertiesWindow-->blendingTypePopUp.add(LerpAlpha,2);
-   MaterialEditorPropertiesWindow-->blendingTypePopUp.add(Mul,3);
-   MaterialEditorPropertiesWindow-->blendingTypePopUp.add(Add,4);
-   MaterialEditorPropertiesWindow-->blendingTypePopUp.add(AddAlpha,5);
-   MaterialEditorPropertiesWindow-->blendingTypePopUp.add(Sub,6);
-   MaterialEditorPropertiesWindow-->blendingTypePopUp.setSelected( 0, false );
-
-   //Reflection Types
-   MaterialEditorPropertiesWindow-->reflectionTypePopUp.clear();
-   MaterialEditorPropertiesWindow-->reflectionTypePopUp.add("None",0);	
-   MaterialEditorPropertiesWindow-->reflectionTypePopUp.add("cubemap",1);	
-   MaterialEditorPropertiesWindow-->reflectionTypePopUp.setSelected( 0, false );
-
-   //Sounds
-   MaterialEditorPropertiesWindow-->footstepSoundPopup.clear();
-   MaterialEditorPropertiesWindow-->impactSoundPopup.clear();
-
-   %sounds = "<None>" TAB "<Soft>" TAB "<Hard>" TAB "<Metal>" TAB "<Snow>";    // Default sounds
-
-   %assetQuery = new AssetQuery();
-   AssetDatabase.findAssetType(%assetQuery, "SoundAsset");
-   
-   %count = %assetQuery.getCount();   
-   // Get custom sound assets
-   for(%i=0; %i < %count; %i++)
-   {
-	   %assetId = %assetQuery.getAsset(%i);
-       %sounds = %sounds TAB %assetId;
-   }
-
-   %count = getFieldCount(%sounds);
-   for (%i = 0; %i < %count; %i++)
-   {
-      %name = getField(%sounds, %i);
-      MaterialEditorPropertiesWindow-->footstepSoundPopup.add(%name);
-      MaterialEditorPropertiesWindow-->impactSoundPopup.add(%name);
-   }*/
 
    //Preview Models
    matEd_quickPreview_Popup.clear();
@@ -143,7 +97,6 @@ function MaterialEditorGui::open(%this)
    MaterialEditorLayerSelector.setSelected( 0, false );
    
    //Sift through the RootGroup and find all loaded material items.
-   MaterialEditorGui.updateAllFields();
    MaterialEditorGui.updatePreviewObject();
 
    // If no selected object; go to material mode. And edit the last selected material
@@ -156,7 +109,7 @@ function MaterialEditorGui::open(%this)
    else
       MaterialEditorGui.prepareActiveMaterial( "", true );
       
-   MaterialEditorGui.schedule(32, "guiSync", materialEd_previewMaterial);
+   MaterialEditorGui.refreshSchedule = MaterialEditorGui.schedule(32, "guiSync", materialEd_previewMaterial);
       
    MaterialEditorGui.preventUndo = false;   
       
@@ -607,11 +560,6 @@ function MaterialEditorGui::prepareActiveObject( %this, %override )
 //==============================================================================
 // Helper functions to help create categories and manage category lists
 
-function MaterialEditorGui::updateAllFields(%this)
-{
-	matEd_cubemapEd_availableCubemapList.clear();
-}
-
 function MaterialEditorGui::updatePreviewObject(%this)
 {   
    %newModel = matEd_quickPreview_Popup.getValue();
@@ -725,7 +673,7 @@ function MaterialEditorGui::setActiveMaterial( %this, %material )
    MaterialEditorPropInspector.groupFilters = "-General -Internal -Ungrouped -Editing -Object -Persistence -Dynamic Fields";
    
    MaterialEditorPropInspector.inspect(materialEd_previewMaterial);
-   MaterialEditorGui.schedule(32, "guiSync", materialEd_previewMaterial );
+   MaterialEditorGui.refreshSchedule = MaterialEditorGui.schedule(32, "guiSync", materialEd_previewMaterial );
 }
 
 function MaterialEditorGui::isMatEditorMaterial(%this, %material)
@@ -982,14 +930,10 @@ function MaterialEditorGui::guiSync( %this )
    //do some presentation adjustments
    %ormMapPresent = MaterialEditorGui.currentMaterial.ORMConfigMapAsset[MaterialEditorGui.currentLayer] !$= "";
    
-   %hideORMSliders = %ormMapPresent;
-   if (!%hideORMSliders)
-      %hideORMSliders = MaterialEditorGui.currentMaterial.AOMapAsset[MaterialEditorGui.currentLayer] !$= "";
-   if (!%hideORMSliders)
-      %hideORMSliders = MaterialEditorGui.currentMaterial.RoughMapAsset[MaterialEditorGui.currentLayer] !$= "";
-   if (!%hideORMSliders)
-      %hideORMSliders = MaterialEditorGui.currentMaterial.MetalMapAsset[MaterialEditorGui.currentLayer] !$= "";
-        
+   %hasAOMap = MaterialEditorGui.currentMaterial.AOMapAsset[MaterialEditorGui.currentLayer] !$= "";
+   %hasRoughMap = MaterialEditorGui.currentMaterial.RoughMapAsset[MaterialEditorGui.currentLayer] !$= "";
+   %hasMetalMap = MaterialEditorGui.currentMaterial.MetalMapAsset[MaterialEditorGui.currentLayer] !$= "";
+   
    %group = MaterialEditorPropInspector.findExistentGroup("Light Influence Maps");
    if(isObject(%group))
    {
@@ -1009,41 +953,36 @@ function MaterialEditorGui::guiSync( %this )
       else
       {
          %group.hideField("isSRGb");
-         if (%hideORMSliders)
-         {
-            %group.hideField("aoChan",false);
-            
-            %group.hideField("roughness");
-            %group.hideField("roughnessChan",false);
-            
-            %group.hideField("metalness");
-            %group.hideField("metalChan",false);
-            %group.hideField("save",false);     
-         }
-         else
-         {
-            %group.hideField("aoChan");
-            
-            %group.hideField("roughness",false);
-            %group.hideField("roughnessChan");
-            
-            %group.hideField("metalness",false);  
-            %group.hideField("metalChan");
-            %group.hideField("save");
-         }
+         
+         %hideSliders = (%hasAOMap || %hasRoughMap || %hasMetalMap);
+
+         %group.hideField("aoChan", !%hideSliders);
+         
+         %group.hideField("roughness", %hideSliders);
+         %group.hideField("roughnessChan", !%hideSliders);
+         
+         %group.hideField("metalness", %hideSliders);
+         %group.hideField("metalChan", !%hideSliders);
+
          %group.hideField("AOMapAsset",false);
          %group.hideField("RoughMapAsset",false);
          %group.hideField("MetalMapAsset",false);
-         
-         %group.addField("BakeComposite", "BakeCompositeButton", "Performs a bake operation of the ORM maps into a single composite texture asset.");
       }
+      
+      %group.refresh();
+      
+      %group.addField("BakeComposite", "BakeCompositeButton", "Performs a bake operation of the ORM maps into a single composite texture asset.");
+         
+      %ormMapField = %group.findField("AOMapAsset[0]");
+      %bakeBtnField = %group.findField("BakeComposite");
+      
+      %group-->stack.reorderChild(%bakeBtnField, %ormMapField);
    }
    
    %animflags = MaterialEditorGui.currentMaterial.animFlags[MaterialEditorGui.currentLayer];
    %group = MaterialEditorPropInspector.findExistentGroup("Animation Properties");
    if(isObject(%group))
    {
-   
       %hideScroll = true;
       //if (strstr(%animflags, "Scroll")>=0)
       //     %hideScroll = false;        
@@ -1083,6 +1022,8 @@ function MaterialEditorGui::guiSync( %this )
    }
    
    MaterialEditorPropInspector.loadCollapseState();
+   
+   cancel(MaterialEditorGui.refreshSchedule);
    
    %this.preventUndo = false;
 }
@@ -1978,41 +1919,64 @@ function MaterialEditorGui::setMetalChan(%this, %value)
 
 function MaterialEditorGui::saveCompositeMap(%this)
 {
-    %saveAs = "";
-    %dlg = new SaveFileDialog()
-    {
-        Filters        = "PNG File (*.png)|*.png";
-        DefaultPath    = EditorSettings.value("data/");
-        ChangePath     = false;
-        OverwritePrompt   = true;
-    };
-
-    %ret = %dlg.Execute();
-    if(%ret)
-    {
-        // Immediately override/set the levelsDirectory
-        EditorSettings.setValue( "art/shapes/textures", collapseFilename(filePath( %dlg.FileName )) );
-        %saveAs = %dlg.FileName;
-    }
-    
-   if( fileExt( %saveAs ) !$= ".png" )
-      %saveAs = %saveAs @ ".png";
-    
-    %material = %this.currentMaterial;
-    %layer = %this.currentLayer;
+   %source0 = 1;
+   %sourceChan0 = "";
    
-    %aoMap = %material.getAOMap(%layer);
-    %roughMap = %material.getRoughMap(%layer);
-    %metalMap = %material.getMetalMap(%layer);
-    
-    %ao = %material.AOChan[%layer];
-    %roughness = %material.RoughnessChan[%layer];
-    %metal = %material.metalChan[%layer];
-    
-    %channelKey = %ao SPC %roughness SPC %metal SPC 3;
-    error("Storing: \"" @ %aoMap @"\" \""@ %roughMap @"\" \""@ %metalMap @"\" \""@ %channelKey @"\" \""@ %saveAs @"\"");
-    saveCompositeTexture(%aoMap,%roughMap,%metalMap,"",%channelKey, %saveAs);
-    %dlg.delete();
+   %source1 = 1;
+   %sourceChan1 = "";
+   
+   %source2 = 0;
+   %sourceChan2 = "";
+   
+   %source3 = 1;
+   %sourceChan3 = "";
+   
+   if(MaterialEditorGui.currentMaterial.AOMapAsset[MaterialEditorGui.currentLayer] !$= "")
+   {
+      %source0 = MaterialEditorGui.currentMaterial.AOMapAsset[MaterialEditorGui.currentLayer];
+      %sourceChan0 = MaterialEditorGui.currentMaterial.AOChan[MaterialEditorGui.currentLayer];
+   }
+   /*else
+   {
+      %source0 = 1;
+      %sourceChan0 = "";
+   }*/
+   
+   if(MaterialEditorGui.currentMaterial.RoughMapAsset[MaterialEditorGui.currentLayer] !$= "")
+   {
+      %source1 = MaterialEditorGui.currentMaterial.RoughMapAsset[MaterialEditorGui.currentLayer];
+      %sourceChan1 = MaterialEditorGui.currentMaterial.RoughnessChan[MaterialEditorGui.currentLayer];
+   }
+   /*else
+   {
+      %source1 = MaterialEditorGui.currentMaterial.roughness[MaterialEditorGui.currentLayer];
+      %sourceChan1 = "";
+   }*/
+   
+   if(MaterialEditorGui.currentMaterial.MetalMapAsset[MaterialEditorGui.currentLayer] !$= "")
+   {
+      %source2 = MaterialEditorGui.currentMaterial.MetalMapAsset[MaterialEditorGui.currentLayer];
+      %sourceChan2 = MaterialEditorGui.currentMaterial.MetalChan[MaterialEditorGui.currentLayer];
+   }
+   /*else
+   {
+      %source2 = MaterialEditorGui.currentMaterial.metalness[MaterialEditorGui.currentLayer];
+      %sourceChan2 = "";
+   }*/
+      
+   CompositeTextureEditor.buildComposite(%source0, %source1, %source2, %source3, %sourceChan0, %sourceChan1, %sourceChan2, %sourceChan3, "MaterialEditorGui.finishedSavingCompositeMap");
+   
+   return;
+}
+
+function MaterialEditorGui::finishedSavingCompositeMap(%this, %assetId)
+{
+   MaterialEditorGui.updateActiveMaterial(ORMConfigMapAsset @ "[" @ MaterialEditorGui.currentLayer @ "]", %assetId);
+   MaterialEditorGui.updateActiveMaterial(AOMapAsset @ "[" @ MaterialEditorGui.currentLayer @ "]", "");
+   MaterialEditorGui.updateActiveMaterial(RoughMapAsset @ "[" @ MaterialEditorGui.currentLayer @ "]", "");
+   MaterialEditorGui.updateActiveMaterial(MetalMapAsset @ "[" @ MaterialEditorGui.currentLayer @ "]", "");
+   
+   %this.refreshSchedule = %this.schedule(32, "guiSync");
 }
 
 function MaterialEditorGui::swapMaterial(%this)
@@ -2030,6 +1994,8 @@ function MaterialEditorPropInspector::onInspectorFieldModified(%this, %object, %
       MaterialEditorGui.updateActiveMaterial(%fieldName @ "[" @ %arrayIndex @ "]", %newValue);
    else
       MaterialEditorGui.updateActiveMaterial(%fieldName, %newValue);
+      
+   MaterialEditorGui.refreshSchedule = MaterialEditorGui.schedule(32, "guiSync");
 }
 
 function MaterialEditorPropInspector::getScrollbar(%this)

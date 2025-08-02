@@ -1182,7 +1182,11 @@ void GFXTextureManager::saveCompositeTexture(const Torque::Path &pathR, const To
 
    retTexObj = createCompositeTexture(bitmap, inputKey, resourceTag, profile, false);
    if (retTexObj != NULL)
-      retTexObj->dumpToDisk("png", saveAs.getFullPath());
+   {
+      bool asdfasdf = retTexObj->dumpToDisk("png", saveAs.getFullPath());
+
+      bool sdfgdsf = true;
+   }
    return;
 }
 
@@ -1196,6 +1200,9 @@ DefineEngineFunction(saveCompositeTexture, void, (const char* pathR, const char*
    {
       dSscanf(inputKeyString, "%i %i %i %i", &inputKey[0], &inputKey[1], &inputKey[2], &inputKey[3]);
    }
+
+   Torque::Path saveAsPath = saveAs;
+
    GFX->getTextureManager()->saveCompositeTexture(pathR, pathG, pathB, pathA, inputKey, saveAs, &GFXTexturePersistentProfile);
 }
 
