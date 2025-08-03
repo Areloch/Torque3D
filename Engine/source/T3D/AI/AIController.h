@@ -147,8 +147,11 @@ public:
    AIControllerData();
    AIControllerData(const AIControllerData&, bool = false);
    ~AIControllerData() {};
-   void packData(BitStream* stream) override;
-   void unpackData(BitStream* stream) override;
+
+   //no data to pack or unpack. make sure of it
+   void packData(BitStream* stream) override {};
+   void unpackData(BitStream* stream) override {};
+
    static void initPersistFields();
    DECLARE_CONOBJECT(AIControllerData);
 
