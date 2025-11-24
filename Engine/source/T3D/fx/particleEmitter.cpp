@@ -679,7 +679,10 @@ bool ParticleEmitterData::preload(bool server, String &errorStr)
    {
       ParticleData* pData = NULL;
       if (Sim::findObject(dataBlockIds[i], pData) == false)
-         Con::warnf(ConsoleLogEntry::General, "ParticleEmitterData(%s) unable to find particle datablock: %d", getName(), dataBlockIds[i]);
+      {
+         errorStr = String::ToString("ParticleEmitterData(%s) unable to find particle datablock: %d", getName(), dataBlockIds[i]);
+         return false;
+      }
       else
          particleDataBlocks.push_back(pData);
    }
@@ -724,6 +727,7 @@ bool ParticleEmitterData::preload(bool server, String &errorStr)
               if (particleDataBlocks[i]->getTextureAsset()->getImageFile() != txr_name)
               {
                  Con::warnf(ConsoleLogEntry::General, "ParticleEmitterData(%s) particles reference different textures.", getName());
+                 return false;
                  break;
               }
            }
