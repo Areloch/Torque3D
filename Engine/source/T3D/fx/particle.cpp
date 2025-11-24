@@ -32,6 +32,7 @@
 #include "math/mRandom.h"
 #include "math/mathIO.h"
 #include "console/engineAPI.h"
+#include "particleInspectors.h"
 
 IMPLEMENT_CO_DATABLOCK_V1( ParticleData );
 
@@ -814,3 +815,175 @@ void ParticleData::onPerformSubstitutions()
 }
 
 DEF_ASSET_BINDS_REFACTOR(ParticleData, Texture);
+
+ConsoleType(stringList, TypeParticleList, Vector<const char*>, "")
+
+ConsoleGetType(TypeParticleList)
+{
+   Vector<const char*>* vec = (Vector<const char*> *)dptr;
+   S32 buffSize = (vec->size() * 15) + 16;
+   char* returnBuffer = Con::getReturnBuffer(buffSize);
+   S32 maxReturn = buffSize;
+   returnBuffer[0] = '\0';
+   S32 returnLeng = 0;
+   for (Vector<const char*>::iterator itr = vec->begin(); itr != vec->end(); itr++)
+   {
+      // concatenate the next value onto the return string
+      dSprintf(returnBuffer + returnLeng, maxReturn - returnLeng, "%s ", *itr);
+      // update the length of the return string (so far)
+      returnLeng = dStrlen(returnBuffer);
+   }
+   // trim off that last extra space
+   if (returnLeng > 0 && returnBuffer[returnLeng - 1] == ' ')
+      returnBuffer[returnLeng - 1] = '\0';
+   return returnBuffer;
+}
+
+ConsoleSetType(TypeParticleList)
+{
+   Vector<const char*>* vec = (Vector<const char*> *)dptr;
+   // we assume the vector should be cleared first (not just appending)
+   vec->clear();
+   if (argc == 1)
+   {
+      const char* values = argv[0];
+      S32 numUnits = StringUnit::getUnitCount(values, " ");
+
+      if (numUnits > 1)
+         bool dafgdf = true;
+
+      for (U32 i = 0; i < numUnits; ++i)
+      {
+         const char* value = StringUnit::getUnit(values, i, " ");
+         vec->push_back(value);
+      }
+   }
+   else if (argc > 1)
+   {
+      for (S32 i = 0; i < argc; i++)
+         vec->push_back(argv[i]);
+   }
+   else
+      Con::printf("TypeParticleList must be set as { a, b, c, ... } or \"a b c ...\"");
+}
+
+#ifdef TORQUE_TOOLS
+//-----------------------------------------------------------------------------
+// GuiInspectorTypeExpandableIdList 
+//-----------------------------------------------------------------------------
+/**/IMPLEMENT_CONOBJECT(GuiInspectorTypeParticleDataList);
+
+ConsoleDocClass(GuiInspectorTypeParticleDataList,
+   "@brief Inspector field type for ParticleData lists\n\n"
+   "Editor use only.\n\n"
+   "@internal"
+);
+
+GuiControl* GuiInspectorTypeParticleDataList::constructEditControl()
+{
+   mStack = new GuiStackControl();
+
+   if (mStack == NULL)
+      return mStack;
+
+   mStack->registerObject();
+   mStack->setDataField(StringTable->insert("profile"), NULL, "ToolsGuiDefaultProfile");
+
+   mNewParticleBtn = new GuiIconButtonCtrl();
+   mNewParticleBtn->registerObject();
+   mNewParticleBtn->_setBitmap(StringTable->insert("ToolsModule:iconAdd_image"));
+   mNewParticleBtn->setDataField(StringTable->insert("profile"), NULL, "ToolsGuiDefaultProfile");
+   mNewParticleBtn->setHorizSizing(horizResizeRight);
+   mNewParticleBtn->mMakeIconSquare = true;
+   mNewParticleBtn->mFitBitmapToButton = true;
+   mNewParticleBtn->setExtent(20, 20);
+
+   GuiContainer* newBtnCtnr = new GuiContainer();
+   newBtnCtnr->registerObject();
+   newBtnCtnr->addObject(mNewParticleBtn);
+   newBtnCtnr->setHorizSizing(horizResizeWidth);
+
+   mStack->addObject(newBtnCtnr);
+
+   //Particle 0
+
+   _registerEditControl(mStack);
+
+   //constructEditControlChildren(retCtrl, getWidth());
+
+   //retCtrl->addObject(mScriptValue);
+
+   /*char szBuffer[512];
+   dSprintf(szBuffer, 512, "setClipboard(%d.getText());", mScriptValue->getId());
+   mCopyButton->setField("Command", szBuffer);
+   addObject(mCopyButton);*/
+
+   mUseHeightOverride = true;
+   mHeightOverride = mStack->getHeight() + 6;
+
+   return mStack;
+}
+
+void GuiInspectorTypeParticleDataList::_populateMenu(GuiPopUpMenuCtrlEx* menu)
+{
+   // Check whether we should show profiles from the editor category.
+
+   const bool showEditorProfiles = Con::getBoolVariable("$pref::GuiEditor::showEditorProfiles", false);
+
+   // Add the control profiles to the menu.
+
+   SimGroup* grp = Sim::getGuiDataGroup();
+   SimSetIterator iter(grp);
+   for (; *iter; ++iter)
+   {
+      GuiControlProfile* profile = dynamic_cast<GuiControlProfile*>(*iter);
+      if (!profile)
+         continue;
+
+      if (!showEditorProfiles && profile->mCategory.compare("Editor", 0, String::NoCase) == 0)
+         continue;
+
+      menu->addEntry(profile->getName(), profile->getId());
+   }
+
+   menu->sort();
+}
+
+bool GuiInspectorTypeParticleDataList::updateRects()
+{
+   S32 rowSize = 18;
+   S32 dividerPos, dividerMargin;
+   mInspector->getDivider(dividerPos, dividerMargin);
+   Point2I fieldExtent = getExtent();
+   Point2I fieldPos = getPosition();
+
+   mCaptionRect.set(0, 0, fieldExtent.x - dividerPos - dividerMargin, fieldExtent.y);
+
+   mEditCtrlRect.set(fieldExtent.x - dividerPos + dividerMargin, 1, dividerPos - dividerMargin - 29, fieldExtent.y);
+   S32 cellWidth = mCeil((dividerPos - dividerMargin - 29));
+
+   /*mCtrlX->setExtent(Point2I(cellWidth - 3, 18));
+   mCtrlY->setExtent(Point2I(cellWidth - 3, 18));
+   mCtrlZ->setExtent(Point2I(cellWidth - 3, 18));
+
+   mCaptionLabel->resize(Point2I(mProfile->mTextOffset.x, 0), Point2I(fieldExtent.x, rowSize));
+   mDimensionLabelX->resize(Point2I(fieldExtent.x - dividerPos - 30, 0), Point2I(30, rowSize));
+   mDimensionLabelY->resize(Point2I(fieldExtent.x - dividerPos - 30, rowSize + 3), Point2I(50, rowSize));
+   mDimensionLabelZ->resize(Point2I(fieldExtent.x - dividerPos - 30, rowSize + rowSize + 6), Point2I(40, rowSize));*/
+
+   mEdit->resize(mEditCtrlRect.point, mEditCtrlRect.extent);
+
+   //mCopyButton->resize(Point2I(mProfile->mTextOffset.x, rowSize + 3), Point2I(45, 15));
+   //mPasteButton->resize(Point2I(mProfile->mTextOffset.x, rowSize + rowSize + 6), Point2I(45, 15));
+
+   return true;
+}
+
+
+void GuiInspectorTypeParticleDataList::consoleInit()
+{
+   Parent::consoleInit();
+
+   ConsoleBaseType::getType(TypeParticleList)->setInspectorFieldType("GuiInspectorTypeParticleDataList");
+}
+#endif

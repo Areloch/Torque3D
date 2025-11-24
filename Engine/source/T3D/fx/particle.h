@@ -24,6 +24,7 @@
 // Arcane-FX for MIT Licensed Open Source version of Torque 3D from GarageGames
 // Copyright (C) 2015 Faust Logic, Inc.
 //~~~~~~~~~~~~~~~~~~~~//~~~~~~~~~~~~~~~~~~~~//~~~~~~~~~~~~~~~~~~~~//~~~~~~~~~~~~~~~~~~~~~//
+#pragma once
 
 #ifndef _PARTICLE_H_
 #define _PARTICLE_H_
@@ -154,6 +155,5 @@ struct Particle
    Point3F  radial_v;   // radial vector for concentric effects
    // note -- for non-oriented particles, we use orientDir.x to store the billboard start angle.
 };
-
 
 #endif // _PARTICLE_H_

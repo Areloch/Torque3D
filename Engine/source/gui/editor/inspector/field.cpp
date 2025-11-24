@@ -162,7 +162,10 @@ void GuiInspectorField::onRender( Point2I offset, const RectI &updateRect )
    
    // Render fillcolor...
    if ( mProfile->mOpaque )
-      GFX->getDrawUtil()->drawRectFill(ctrlRect, mProfile->mFillColor);   
+      GFX->getDrawUtil()->drawRectFill(ctrlRect, mProfile->mFillColor);
+
+   if (mCaption == StringTable->insert("particles"))
+      bool asdf = true;
 
    // Render caption...
    if ( mCaption && mCaption[0] )
