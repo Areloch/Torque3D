@@ -816,11 +816,11 @@ void ParticleData::onPerformSubstitutions()
 
 DEF_ASSET_BINDS_REFACTOR(ParticleData, Texture);
 
-ConsoleType(stringList, TypeParticleList, Vector<const char*>, "")
+ConsoleType(stringList, TypeParticleList, Vector<StringTableEntry>, "")
 
 ConsoleGetType(TypeParticleList)
 {
-   Vector<const char*>* vec = (Vector<const char*> *)dptr;
+   Vector<StringTableEntry>* vec = (Vector<StringTableEntry> *)dptr;
    S32 buffSize = (vec->size() * 15) + 16;
    char* returnBuffer = Con::getReturnBuffer(buffSize);
    S32 maxReturn = buffSize;
@@ -841,30 +841,43 @@ ConsoleGetType(TypeParticleList)
 
 ConsoleSetType(TypeParticleList)
 {
-   Vector<const char*>* vec = (Vector<const char*> *)dptr;
+   Vector<StringTableEntry>* vec = (Vector<StringTableEntry> *)dptr;
    // we assume the vector should be cleared first (not just appending)
    vec->clear();
+   S32 numUnits = 0;
    if (argc == 1)
    {
       const char* values = argv[0];
-      S32 numUnits = StringUnit::getUnitCount(values, " ");
+      numUnits = StringUnit::getUnitCount(values, " ");
 
       if (numUnits > 1)
          bool dafgdf = true;
 
-      for (U32 i = 0; i < numUnits; ++i)
+      for (U32 i = 0; i < numUnits; i++)
       {
          const char* value = StringUnit::getUnit(values, i, " ");
-         vec->push_back(value);
+
+         vec->push_back(StringTable->insert(value));
       }
    }
    else if (argc > 1)
    {
       for (S32 i = 0; i < argc; i++)
-         vec->push_back(argv[i]);
+         vec->push_back(StringTable->insert(argv[i]));
    }
    else
       Con::printf("TypeParticleList must be set as { a, b, c, ... } or \"a b c ...\"");
+
+   if (numUnits > 1)
+   {
+      for (U32 x = 0; x < numUnits; x++)
+      {
+         Vector<const char*> testVec = *vec;
+         String test = testVec[x];
+         Con::printf("TypeParticleList vec results: %s", testVec[x]);
+      }
+   }
+   bool test = false;
 }
 
 #ifdef TORQUE_TOOLS

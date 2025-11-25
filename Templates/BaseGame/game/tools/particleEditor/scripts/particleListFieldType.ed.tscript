@@ -1,0 +1,187 @@
+function GuiInspectorGroup::buildParticleListField(%this, %fieldName, %fieldLabel, %fieldDesc, %fieldDefaultVal, %fieldDataVals, %callbackName, %ownerObj)
+{
+   %fieldCtrl = %this.createInspectorField();
+
+   %height = 40;
+   %inset = 10;
+   
+   %fieldCtrl.setHeightOverride(true, %height);
+   
+   %minRange = getWord(%fieldDataVals,0);
+   %maxRange = getWord(%fieldDataVals,1);
+   %tickCount = getWord(%fieldDataVals,2);
+   %doSnap = getWord(%fieldDataVals,3);
+   
+   if(%tickCount $= "")
+      %tickCount = 0;
+      
+   if(%doSnap $= "")
+      %doSnap = 0;
+      
+   if(%ownerObj $= "" && !startsWith(%fieldName, "$"))
+   {
+      %ownerObj = %this.getParent().getInspectObject(0);
+   }
+   
+   %existingField = %this.findField(%fieldName);
+   if(%existingField && %fieldDefaultVal $= "")
+      %fieldDefaultVal = %existingField.getData();
+   
+   %editControl = new GuiControl()
+   {
+      class = "guiInspectorRangeField";
+      Position = %fieldCtrl.edit.position;
+      Extent = %fieldCtrl.edit.extent;
+      HorizSizing = "width";
+      VertSizing = "bottom"; 
+   };
+   
+   %editStack = new GuiStackControl() {
+      class = "particleFieldListStack";
+      StackingType = "Vertical";
+      HorizStacking = "Left to Right";
+      VertStacking = "Top to Bottom";
+      Padding = "0";
+      canSaveDynamicFields = "0";
+      Enabled = "1";
+      isContainer = "1";
+      Profile = "ToolsGuiDefaultProfile";
+      HorizSizing = "width";
+      VertSizing = "bottom";
+      Position = "1 2";
+      Extent = %editControl.extent.x SPC 38;
+      MinExtent = "16 16";
+      canSave = "1";
+      isDecoy = "0";
+      Visible = "1";
+      tooltipprofile = "ToolsGuiToolTipProfile";
+      hovertime = "1000";
+      
+      new GuiControl(){ // emmiter particle 1
+         isContainer = "1";
+         HorizSizing = "width";
+         VertSizing = "bottom";
+         position = "0 0";
+         Extent = %editControl.extent.x SPC 20;
+         
+         new GuiIconButtonCtrl() {
+            canSaveDynamicFields = "0";
+            internalName = "negX";
+            Enabled = "1";
+            isContainer = "0";
+            Profile = "ToolsGuiIconButtonSmallProfile";
+            HorizSizing = "left";
+            VertSizing = "bottom";
+            Position = %editControl.extent.x - 22 SPC 0;
+            Extent = "20 20";
+            MinExtent = "8 2";
+            canSave = "1";
+            isDecoy = "0";
+            Visible = "1";
+            Command = "ESnapOptions.setSoftSnapAlignment(\"-X\");";
+            tooltipprofile = "ToolsGuiToolTipProfile";
+            hovertime = "1000";
+            bitmapAsset = "ToolsModule:iconAdd_image";
+         };
+      };
+      
+      new GuiControl(){ // emmiter particle 1
+         isContainer = "1";
+         HorizSizing = "width";
+         VertSizing = "bottom";
+         position = "0 20";
+         Extent = %editControl.extent.x SPC 20;
+         
+         new GuiTextCtrl() {
+            Profile = "ToolsGuiTextProfile";
+            HorizSizing = "width";
+            VertSizing = "bottom";
+            position = "0 0";
+            Extent = %editControl.extent.x / 2 SPC 20;
+            text = "Particle 1";
+         };
+         new GuiPopUpMenuCtrl() {
+            internalName = "PopUpMenu";
+            Profile = "ToolsGuiPopUpMenuProfile";
+            HorizSizing = "left";
+            VertSizing = "bottom";
+            position = %editControl.extent.x / 2 SPC 0;
+            Extent = %editControl.extent.x / 2 SPC 20;
+            text = "";
+            command = "PE_EmitterEditor.updateParticlesFields($ThisControl);";
+         };  
+      };
+   };
+   
+   //%editText.stackControl = %editStack;
+   
+  // %editControl.add(%editText);
+   %editControl.add(%editStack);
+   
+   //set the field value
+   if(getSubStr(%this.fieldName, 0, 1) $= "$")
+   {
+      if(%fieldName $= "")
+         %editControl.setValue(%fieldName);
+   }
+   else if(isObject(%ownerObj))
+   {
+      //regular variable
+      %setCommand = %editControl @ ".setValue(" @ %ownerObj @ "." @ %fieldName @ ");";
+      eval(%setCommand);
+   }
+   
+   if(%fieldLabel $= "")
+      %fieldLabel = %fieldName;
+      
+   if(%fieldDesc !$= "")
+      %fieldCtrl.setFieldDocs(%fieldDesc);
+   
+   %fieldCtrl.setCaption(%fieldLabel);
+   %fieldCtrl.setEditControl(%editStack);
+
+   if(!%existingField)
+      %this.addInspectorField(%fieldCtrl);
+   else
+      %this.replaceField(%fieldName, %fieldCtrl);
+}
+
+function particleFieldListStack::onResize(%this, %newPos, %newExt)
+{
+   echo("RESIZING AAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+}
+
+function guiInspectorRangeFieldText::onReturn(%this)
+{
+   %value = %this.getText();
+   %this.sliderControl.setValue(%value);
+   %this.sliderControl.onDragComplete();
+}
+
+function guiInspectorRangeFieldSlider::onDragComplete( %this )
+{   
+   %value = %this.getValue();
+   %this.textControl.setText(%value);
+   
+   if(getSubStr(%this.fieldName, 0, 1) $= "$")
+   {
+      //ah, a global var, just do it straight, then
+      %setCommand = %this.fieldName @ " = \"" @ %value @ "\";";
+   }
+   else if(isObject(%this.ownerObject))
+   {
+      //regular variable
+      %setCommand = %this.ownerObject @ "." @ %this.fieldName @ " = \"" @ %value @ "\";";
+   }
+   else if(%this.callbackName !$= "")
+   {
+      %setCommand = %this.callbackName @ "(\"" @ %this.fieldName @ "\",\"" @ %value @"\");";
+   }
+   
+   eval(%setCommand);
+}
+
+function guiInspectorRangeFieldSlider::onMouseDragged(%this)
+{
+   %this.onDragComplete();
+}

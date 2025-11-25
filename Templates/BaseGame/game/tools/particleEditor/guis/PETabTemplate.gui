@@ -1,0 +1,82 @@
+$guiContent = new GuiTabPageCtrl() {
+   position = "2 50";
+   extent = "361 615";
+   horizSizing = "width";
+   vertSizing = "height";
+   profile = "GuiDefaultProfile";
+   tooltipProfile = "GuiToolTipProfile";
+   fitBook = "1";
+
+   new GuiControl() {
+      extent = "342 26";
+      horizSizing = "width";
+      profile = "GuiDefaultProfile";
+      tooltipProfile = "GuiToolTipProfile";
+      isContainer = "1";
+      class = "QuickEditDropDownTextEditCtrl";
+
+      new GuiButtonCtrl() {
+         Text = "";
+         maxLength = "255";
+         position = "4 4";
+         extent = "268 18";
+         horizSizing = "width";
+         profile = "ToolsGuiButtonProfile";
+         command = "$ThisControl.getParent().getParent().openList();";
+         tooltipProfile = "GuiToolTipProfile";
+         isContainer = "0";
+         internalName = "PopupMenu";
+      };
+      new GuiBitmapButtonCtrl() {
+         BitmapAsset = "ToolsModule:new_n_image";
+         position = "276 5";
+         extent = "17 17";
+         horizSizing = "left";
+         profile = "ToolsGuiDefaultProfile";
+         command = "PE_EmitterEditor.showNewDialog();";
+         tooltipProfile = "GuiToolTipProfile";
+         ToolTip = "Create New Emitter";
+      };
+      new GuiBitmapButtonCtrl() {
+         BitmapAsset = "ToolsModule:save_icon_n_image";
+         position = "292 5";
+         extent = "17 17";
+         horizSizing = "left";
+         profile = "ToolsGuiDefaultProfile";
+         command = "PE_EmitterEditor.saveEmitter(  ); PE_ParticleEditor.saveParticle( PE_ParticleEditor.currParticle );";
+         tooltipProfile = "GuiToolTipProfile";
+         ToolTip = "Save Current Emitter";
+      };
+      new GuiBitmapButtonCtrl() {
+         BitmapAsset = "ToolsModule:delete_n_image";
+         position = "309 5";
+         extent = "17 17";
+         horizSizing = "left";
+         profile = "ToolsGuiDefaultProfile";
+         command = "PE_EmitterEditor.showDeleteDialog();";
+         tooltipProfile = "GuiToolTipProfile";
+         ToolTip = "Delete Current Emitter";
+      };
+   };
+   new GuiScrollCtrl() {
+      hScrollBar = "alwaysOff";
+      vScrollBar = "dynamic";
+      position = "0 30";
+      extent = "356 586";
+      minExtent = "8 8";
+      horizSizing = "width";
+      vertSizing = "height";
+      profile = "ToolsGuiScrollProfile";
+      tooltipProfile = "GuiToolTipProfile";
+
+      new GuiInspector() {
+         groupFilters = "-Internal -Editing -Object -Persistence -Dynamic Fields -Scripting";
+         position = "1 1";
+         extent = "339 48";
+         horizSizing = "width";
+         profile = "GuiInspectorProfile";
+         tooltipProfile = "GuiToolTipProfile";
+         internalName = "inspector";
+      };
+   };
+};

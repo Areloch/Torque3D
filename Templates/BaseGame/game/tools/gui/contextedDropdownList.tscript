@@ -1,0 +1,54 @@
+function ContextedDropdownListGui::onWake(%this)
+{
+   %this.clearFilterText();
+}
+
+function ContextedDropdownListGui::show(%this, %listObject, %selectCallback, %titleText)
+{
+     %this-->tree.open(%listObject, false);
+     %this-->tree.expandItem(0, true);
+     %this.callback = %selectCallback;
+     %this-->titleText.setText(%titleText);
+     
+     Canvas.pushDialog(ContextedDropdownListGui);
+}
+
+function ContextedDropdownListGui::toggle(%this)
+{
+   if ( ContextedDropdownListGui.isAwake()  )
+   {
+      Canvas.popDialog(ContextedDropdownListGui);
+   }
+   else
+   {
+      Canvas.pushDialog(ContextedDropdownListGui);
+   }
+}
+
+function ContextedDropdownListDecoy::onMouseLeave()
+{
+   ContextedDropdownListGui.toggle();
+}
+
+function ContextedDropdownListGui::updateFilterText(%this)
+{
+   %filterText = %this-->textFilter.getText(); 
+   %this-->tree.setFilterText(%filterText); 
+}
+
+function ContextedDropdownListGui::clearFilterText(%this)
+{
+   %this-->textFilter.setText("");
+   %this-->tree.setFilterText("");
+}
+
+function ContextedDropdownListGui::select(%this)
+{
+   %obj = %this-->tree.getSelectedObject(0);
+   
+   %command = %this.callback @ "(" @ %obj @ ");";
+   echo("SELECT COMMAND: " @ %command);
+   eval(%command);
+   
+   ContextedDropdownListGui.toggle();
+}

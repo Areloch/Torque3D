@@ -641,8 +641,12 @@ bool ParticleEmitterData::onAdd()
       particleDataBlocks.clear();
       dataBlockIds.clear();
 
+      if (particleString.size() > 1)
+         bool asdfasdf = true;
+
       for (U32 i = 0; i < particleString.size(); i++) 
       {
+         Con::printf("PARTICLE FOR SLOT[%d]: %s", i, particleString[i]);
          ParticleData* pData = NULL;
          if (Sim::findObject(particleString[i], pData) == false)
          {
