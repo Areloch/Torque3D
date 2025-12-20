@@ -24,6 +24,8 @@ private:
 
    GuiStackControl* mStack;
    GuiIconButtonCtrl* mNewParticleBtn;
+   GuiControl* mParticleSlot0Ctrl;
+   Vector<GuiControl*> mParticleSlotList;
 
 public:
    DECLARE_CONOBJECT(GuiInspectorTypeParticleDataList);
@@ -33,5 +35,6 @@ public:
    bool updateRects() override;
 
    void _populateMenu(GuiPopUpMenuCtrlEx* menu);
+   GuiControl* _buildParticleEntryField(const S32& index);
 };
 #endif

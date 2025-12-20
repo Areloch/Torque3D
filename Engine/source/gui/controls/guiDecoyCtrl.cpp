@@ -167,6 +167,10 @@ void GuiDecoyCtrl::onMouseMove(const GuiEvent &event)
 
 void GuiDecoyCtrl::onMouseDragged(const GuiEvent &event)
 {
+   //pass the event to the parent
+   GuiControl* parent = getParent();
+   if (parent)
+      parent->onMouseDragged(event);
 }
 
 void GuiDecoyCtrl::onMouseEnter(const GuiEvent &event)

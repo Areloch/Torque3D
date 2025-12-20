@@ -29,14 +29,15 @@ function initializeParticleEditor()
 {
    echo( " % - Initializing Particle Editor" );
      
-   exec( "./ParticleEditor.ed.gui" );
-   exec( "./particleEditor.ed." @ $TorqueScriptFileExtension );
-   exec( "./particleEditorUndo.ed." @ $TorqueScriptFileExtension );   
-   exec( "./particleEmitterEditor.ed." @ $TorqueScriptFileExtension );
-   exec( "./particleParticleEditor.ed." @ $TorqueScriptFileExtension );
+   exec( "./guis/ParticleEditor.ed.gui" );
+   exec( "./guis/particleEditor.ed." @ $TorqueScriptFileExtension );
+   exec( "./scripts/particleEditorUndo.ed." @ $TorqueScriptFileExtension );   
+   exec( "./scripts/particleEmitterEditor.ed." @ $TorqueScriptFileExtension );
+   exec( "./scripts/particleParticleEditor.ed." @ $TorqueScriptFileExtension );
+   exec( "./scripts/afxZodiacEditor.ed." @ $TorqueScriptFileExtension );
    
-   PE_Window.setVisible( false );
-   MainSceneTabPanel.add( PE_Window );
+   //PE_Window.setVisible( false );
+   //MainSceneTabPanel.add( PE_Window );
    
    new ScriptObject( ParticleEditorPlugin )
    {
@@ -59,6 +60,11 @@ function initializeParticleEditor()
 
    new SimSet( PE_UnlistedParticles );
    new SimSet( PE_UnlistedEmitters );
+   
+   ParticleEditor.registerParticleEdType("Emitter", "ParticleEmitterData", "PE_EmitterEditor");
+   ParticleEditor.registerParticleEdType("Particle", "ParticleData RibbonData", "PE_ParticleEditor");
+   ParticleEditor.registerParticleEdType("Zodiac", "afxZodiacData", "PE_AFXZodiacEditor");
+   ParticleEditor.registerParticleEdType("Choreography", "afxChoreographerData", "PE_AFXChoreoEditor");
 }
 
 //---------------------------------------------------------------------------------------------
@@ -94,8 +100,10 @@ function ParticleEditorPlugin::onActivated( %this )
    }
    
    EditorGui-->WorldEditorToolbar.setVisible( true );
-   EditorGui.bringToFront( PE_Window);
-   PE_Window.setVisible( true );
+   
+   ParticleEditorGui.onWake();
+   Canvas.pushDialog(ParticleEditorGui);
+
    PE_Window.makeFirstResponder( true );
    
    %this.map.push();
@@ -114,7 +122,10 @@ function ParticleEditorPlugin::onActivated( %this )
 function ParticleEditorPlugin::onDeactivated( %this )
 {   
    EditorGui-->WorldEditorToolbar.setVisible( false );
-   PE_Window.setVisible( false );
+   //PE_Window.setVisible( false );
+   
+   Canvas.popDialog(ParticleEditorGui);
+   ParticleEditorGui.quit();
    
    if( isObject( $ParticleEditor::emitterNode) )
       $ParticleEditor::emitterNode.delete();
@@ -176,3 +187,21 @@ function ParticleEditorPlugin::writeSettings( %this )
 
    EditorSettings.endGroup();
 }
+
+//------------------------------------------------------------------------------
+function ParticleEditor::registerParticleEdType(%this, %groupName, %typesList, %editorName)
+{
+   if(!isObject(PE_ParticleDataTypes))
+   {
+      new ArrayObject(PE_ParticleDataTypes){};  
+   }
+   
+   if(PE_ParticleDataTypes.getIndexFromKey(%groupName) != -1)
+   {
+      error("ParticleEditor::registerParticleEdType() - Attempted to register an existing group name of a particle type!");
+      return;
+   }
+   
+   PE_ParticleDataTypes.add(%groupName, %typesList TAB %editorName);
+}
+

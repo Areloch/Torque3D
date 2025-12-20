@@ -36,152 +36,30 @@ function PE_ParticleEditor::openEditorTab(%this)
    ParticleEditor.activeEditor = %this;
    
    if( !%this.dirty )
-      %this.setParticleNotDirty();
+      %this.setNotDirty();
 }
 
 function PE_ParticleEditor::guiSync( %this )
 {
-   // Populate the selector with the particles assigned
-   // to the current emitter.
-   
-   %containsCurrParticle = false;
-   %popup = PEP_ParticleSelector;
-   %popup.clear();
-   
-   foreach$( %particle in PE_EmitterEditor.currEmitter.particles )
-   {
-      if( %particle.getId() == PE_ParticleEditor.currParticle )
-         %containsCurrParticle = true;
-      
-      %popup.add( %particle, %particle.getId() );
-   }
-   
-   // Just in case the particle doesn't exist, fallback gracefully
-
-   if( !%containsCurrParticle )
-      PE_ParticleEditor.currParticle = getWord( PE_EmitterEditor.currEmitter.particles, 0 ).getId();
-
-   %data = PE_ParticleEditor.currParticle;
-   
-   %popup.sort();
-   %popup.setSelected( %data );
-         
-   %bitmap = %data.getTexture();
-   %bitmapText = %bitmap !$= "" && %bitmap !$= $MaterialEditor::emptyMaterialImage ? %data.getTextureAsset() : "None";
-   PE_ParticleEditor-->PEP_previewImageName.setText( %bitmapText );    
-   PE_ParticleEditor-->PEP_previewImageName.tooltip = %bitmapText;  
-   PE_ParticleEditor-->PEP_previewImage.setBitmap( getAssetPreviewImage(%bitmap) );
-   
-   PE_ParticleEditor-->PEP_inverseAlpha.setValue( %data.useInvAlpha );
-   
-   PE_ParticleEditor-->PEP_lifetimeMS_slider.setValue( %data.lifetimeMS );
-   PE_ParticleEditor-->PEP_lifetimeMS_textEdit.setText( %data.lifetimeMS );
-   
-   PE_ParticleEditor-->PEP_lifetimeVarianceMS_slider.setValue( %data.lifetimeVarianceMS );
-   PE_ParticleEditor-->PEP_lifetimeVarianceMS_textEdit.setText( %data.lifetimeVarianceMS );
-   
-   PE_ParticleEditor-->PEP_inheritedVelFactor_slider.setValue( %data.inheritedVelFactor );
-   PE_ParticleEditor-->PEP_inheritedVelFactor_textEdit.setText( %data.inheritedVelFactor );
-   
-   PE_ParticleEditor-->PEP_constantAcceleration_slider.setValue( %data.constantAcceleration );
-   PE_ParticleEditor-->PEP_constantAcceleration_textEdit.setText( %data.constantAcceleration );
-   
-   PE_ParticleEditor-->PEP_gravityCoefficient_slider.setValue( %data.gravityCoefficient );
-   PE_ParticleEditor-->PEP_gravityCoefficient_textEdit.setText( %data.gravityCoefficient );
-   
-   PE_ParticleEditor-->PEP_dragCoefficient_slider.setValue( %data.dragCoefficient );
-   PE_ParticleEditor-->PEP_dragCoefficient_textEdit.setText( %data.dragCoefficient );
-   
-   PE_ParticleEditor-->PEP_windCoefficient_slider.setValue( %data.windCoefficient );
-   PE_ParticleEditor-->PEP_windCoefficient_textEdit.setText( %data.windCoefficient );
-   
-   PE_ParticleEditor-->PEP_spinRandomMin_slider.setValue( %data.spinRandomMin );
-   PE_ParticleEditor-->PEP_spinRandomMin_textEdit.setText( %data.spinRandomMin );
-   
-   PE_ParticleEditor-->PEP_spinRandomMax_slider.setValue( %data.spinRandomMax );
-   PE_ParticleEditor-->PEP_spinRandomMax_textEdit.setText( %data.spinRandomMax  );
-   
-   PE_ParticleEditor-->PEP_spinRandomMax_slider.setValue( %data.spinRandomMax );
-   PE_ParticleEditor-->PEP_spinRandomMax_textEdit.setText( %data.spinRandomMax  );
-   
-   PE_ParticleEditor-->PEP_spinSpeed_slider.setValue( %data.spinSpeed );
-   PE_ParticleEditor-->PEP_spinSpeed_textEdit.setText( %data.spinSpeed );
-   
-   PE_ColorTintSwatch0.color = %data.colors[ 0 ];
-   PE_ColorTintSwatch1.color = %data.colors[ 1 ];
-   PE_ColorTintSwatch2.color = %data.colors[ 2 ];
-   PE_ColorTintSwatch3.color = %data.colors[ 3 ];
-   PE_ColorTintSwatch4.color = %data.colors[ 4 ];
-   PE_ColorTintSwatch5.color = %data.colors[ 5 ];
-   PE_ColorTintSwatch6.color = %data.colors[ 6 ];
-   PE_ColorTintSwatch7.color = %data.colors[ 7 ];
-   
-   PE_ParticleEditor-->PEP_pointSize_slider0.setValue( %data.sizes[ 0 ] );
-   PE_ParticleEditor-->PEP_pointSize_textEdit0.setText( %data.sizes[ 0 ] );
-   
-   PE_ParticleEditor-->PEP_pointSize_slider1.setValue( %data.sizes[ 1 ] );
-   PE_ParticleEditor-->PEP_pointSize_textEdit1.setText( %data.sizes[ 1 ] );
-   
-   PE_ParticleEditor-->PEP_pointSize_slider2.setValue( %data.sizes[ 2 ] );
-   PE_ParticleEditor-->PEP_pointSize_textEdit2.setText( %data.sizes[ 2 ] );
-   
-   PE_ParticleEditor-->PEP_pointSize_slider3.setValue( %data.sizes[ 3 ] );
-   PE_ParticleEditor-->PEP_pointSize_textEdit3.setText( %data.sizes[ 3 ] );
-   
-   PE_ParticleEditor-->PEP_pointSize_slider4.setValue( %data.sizes[ 4 ] );
-   PE_ParticleEditor-->PEP_pointSize_textEdit4.setText( %data.sizes[ 4 ] );
-   
-   PE_ParticleEditor-->PEP_pointSize_slider5.setValue( %data.sizes[ 5 ] );
-   PE_ParticleEditor-->PEP_pointSize_textEdit5.setText( %data.sizes[ 5 ] );
-   
-   PE_ParticleEditor-->PEP_pointSize_slider6.setValue( %data.sizes[ 6 ] );
-   PE_ParticleEditor-->PEP_pointSize_textEdit6.setText( %data.sizes[ 6 ] );
-   
-   PE_ParticleEditor-->PEP_pointSize_slider7.setValue( %data.sizes[ 7 ] );
-   PE_ParticleEditor-->PEP_pointSize_textEdit7.setText( %data.sizes[ 7 ] );
-   
-   PE_ParticleEditor-->PEP_pointTime_slider0.setValue( %data.times[ 0 ] );
-   PE_ParticleEditor-->PEP_pointTime_textEdit0.setText( %data.times[ 0 ] );
-   
-   PE_ParticleEditor-->PEP_pointTime_slider1.setValue( %data.times[ 1 ] );
-   PE_ParticleEditor-->PEP_pointTime_textEdit1.setText( %data.times[ 1 ] );
-   
-   PE_ParticleEditor-->PEP_pointTime_slider2.setValue( %data.times[ 2 ] );
-   PE_ParticleEditor-->PEP_pointTime_textEdit2.setText( %data.times[ 2 ] );
-   
-   PE_ParticleEditor-->PEP_pointTime_slider3.setValue( %data.times[ 3 ] );
-   PE_ParticleEditor-->PEP_pointTime_textEdit3.setText( %data.times[ 3 ] );
-
-   PE_ParticleEditor-->PEP_pointTime_slider4.setValue( %data.times[ 4 ] );
-   PE_ParticleEditor-->PEP_pointTime_textEdit4.setText( %data.times[ 4 ] );
-   
-   PE_ParticleEditor-->PEP_pointTime_slider5.setValue( %data.times[ 5 ] );
-   PE_ParticleEditor-->PEP_pointTime_textEdit5.setText( %data.times[ 5 ] );
-   
-   PE_ParticleEditor-->PEP_pointTime_slider6.setValue( %data.times[ 6 ] );
-   PE_ParticleEditor-->PEP_pointTime_textEdit6.setText( %data.times[ 6 ] );
-   
-   PE_ParticleEditor-->PEP_pointTime_slider7.setValue( %data.times[ 7 ] );
-   PE_ParticleEditor-->PEP_pointTime_textEdit7.setText( %data.times[ 7 ] );   
-   
-   //particle animation
-   PE_ParticleEditor-->PEP_animateTexture.setValue( %data.animateTexture );
-   
-   PE_ParticleEditor-->PEP_framesPerSec_slider.setValue( %data.framesPerSec );
-   PE_ParticleEditor-->PEP_framesPerSec_textEdit.setText( %data.framesPerSec );
-   
-   PE_ParticleEditor-->PEP_animTexFramesList_textEdit.setText( %data.animTexFrames );
-   
-   PE_ParticleEditor-->PEP_animTileCount_textEdit.setText( %data.animTexTiling );
-   
+   %this-->inspector.refresh();
 }
 
 //---------------------------------------------------------------------------------------------
+function PE_ParticleEditor::selectedObject(%this, %obj)
+{
+   %this-->popupMenu.setText(%obj.getName());
+   %this-->inspector.inspect(%obj);
+   
+   %obj.currParticle = %obj;
+   
+   %this.guiSync();
+}
 
+//---------------------------------------------------------------------------------------------
 // Generic updateParticle method
 function PE_ParticleEditor::updateParticle(%this, %propertyField, %value, %isSlider, %onMouseUp)
 {
-   PE_ParticleEditor.setParticleDirty();
+   PE_ParticleEditor.setDirty();
    %particle = PE_ParticleEditor.currParticle;
       
    %last = Editor.getUndoManager().getUndoAction(Editor.getUndoManager().getUndoCount() - 1);
@@ -244,7 +122,7 @@ function PE_ParticleEditor::onImageAssetSelected(%this, %assetId)
 
 function PE_ParticleEditor::updateLifeFields( %this, %isRandom, %value, %isSlider, %onMouseUp )
 {
-   PE_ParticleEditor.setParticleDirty();
+   PE_ParticleEditor.setDirty();
    %particle = PE_ParticleEditor.currParticle;
       
    //Transfer values over to gui controls.
@@ -303,7 +181,7 @@ function PE_ParticleEditor::updateLifeFields( %this, %isRandom, %value, %isSlide
 
 function PE_ParticleEditor::updateSpinFields( %this, %isMax, %value, %isSlider, %onMouseUp )
 {
-   PE_ParticleEditor.setParticleDirty();
+   PE_ParticleEditor.setDirty();
    %particle = PE_ParticleEditor.currParticle;
       
    // Transfer values over to gui controls.
@@ -410,12 +288,12 @@ function PE_ParticleEditor::loadNewParticle( %this, %particle )
    error("Post duplicate PE_ParticleEditor_NotDirtyParticle TextureName: " @ PE_ParticleEditor_NotDirtyParticle.getTexture());
 
    PE_ParticleEditor.guiSync();
-   PE_ParticleEditor.setParticleNotDirty();
+   PE_ParticleEditor.setNotDirty();
 }
 
 //---------------------------------------------------------------------------------------------
 
-function PE_ParticleEditor::setParticleDirty( %this )
+function PE_ParticleEditor::setDirty( %this )
 {
    PE_ParticleEditor.text = "Particle *";
    PE_ParticleEditor.dirty = true;
@@ -432,7 +310,7 @@ function PE_ParticleEditor::setParticleDirty( %this )
 
 //---------------------------------------------------------------------------------------------
 
-function PE_ParticleEditor::setParticleNotDirty( %this )
+function PE_ParticleEditor::setNotDirty( %this )
 {
    PE_ParticleEditor.text = "Particle";
    PE_ParticleEditor.dirty = false;
@@ -587,7 +465,7 @@ function PE_ParticleEditor::saveParticle( %this, %particle )
    PE_ParticleEditor_NotDirtyParticle.originalName = %particle.getName();
    
    PE_ParticleSaver.saveDirty(); 
-   PE_ParticleEditor.setParticleNotDirty();
+   PE_ParticleEditor.setNotDirty();
    
    ParticleEditor.createParticleList(); 
 }
@@ -599,7 +477,7 @@ function PE_ParticleEditor::saveParticleDialogDontSave( %this, %particle )
    %particle.setName( PE_ParticleEditor_NotDirtyParticle.originalName );
    %particle.assignFieldsFrom( PE_ParticleEditor_NotDirtyParticle );
    
-   PE_ParticleEditor.setParticleNotDirty();
+   PE_ParticleEditor.setNotDirty();
 }
 
 //=============================================================================================
@@ -635,7 +513,7 @@ function PEP_ParticleSelector_Control::onRenameItem( %this )
    
    //FIXME: need to check for validity of name and name clashes
    
-   PE_ParticleEditor.setParticleDirty();
+   PE_ParticleEditor.setDirty();
    
    // Resort menu.
    

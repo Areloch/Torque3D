@@ -41,7 +41,7 @@
             <Setting
                 name="doubleClickAction">Edit Asset</Setting>
             <Setting
-                name="LastPosExt">0 1047 2200 360</Setting>
+                name="LastPosExt">0 807 1560 360</Setting>
             <Setting
                 name="previewTileSize">1</Setting>
             <Setting
@@ -360,7 +360,7 @@
     <Group
         name="WorldEditor">
         <Setting
-            name="currentEditor">WorldEditorInspectorPlugin</Setting>
+            name="currentEditor">ParticleEditorPlugin</Setting>
         <Setting
             name="displayType">6</Setting>
         <Setting

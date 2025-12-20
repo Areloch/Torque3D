@@ -1162,7 +1162,27 @@ void ShapeBaseImageData::packData(BitStream* stream)
             }
          }
 
-         PACKDATA_SOUNDASSET_ARRAY(stateSound, i);
+         //PACKDATA_SOUNDASSET_ARRAY(stateSound, i);
+         if (stream->writeFlag(AssetDatabase.isDeclaredAsset(mstateSoundAssetId[i])))
+         {
+            stream->writeString(mstateSoundAssetId[i]); 
+         }
+         else
+         {
+            if (stream->writeFlag(Sim::findObject(mstateSoundName[i])))
+            {
+               SFXTrack* sndTrack = getstateSoundProfile(isClientOnly()); 
+               if (stream->writeFlag(sndTrack != nullptr))
+               {
+                  stream->writeRangedU32(SimObjectId(sndTrack->getId()), DataBlockObjectIdFirst, DataBlockObjectIdLast); 
+                  sfxWrite(stream, sndTrack); 
+               }
+            }
+            else
+            {
+               stream->writeString(mstateSoundName[i]); 
+            }
+         }
       }
    stream->write(maxConcurrentSounds);
    stream->writeFlag(useRemainderDT);

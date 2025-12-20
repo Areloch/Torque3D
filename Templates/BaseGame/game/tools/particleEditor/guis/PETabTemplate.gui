@@ -22,7 +22,7 @@ $guiContent = new GuiTabPageCtrl() {
          extent = "268 18";
          horizSizing = "width";
          profile = "ToolsGuiButtonProfile";
-         command = "$ThisControl.getParent().getParent().openList();";
+         command = "ParticleEditorGui.openList($ThisControl.getParent().getParent());";
          tooltipProfile = "GuiToolTipProfile";
          isContainer = "0";
          internalName = "PopupMenu";
@@ -33,9 +33,10 @@ $guiContent = new GuiTabPageCtrl() {
          extent = "17 17";
          horizSizing = "left";
          profile = "ToolsGuiDefaultProfile";
-         command = "PE_EmitterEditor.showNewDialog();";
+         command = "";
          tooltipProfile = "GuiToolTipProfile";
-         ToolTip = "Create New Emitter";
+         ToolTip = "Create New";
+         internalName = "CreateNewBtn";
       };
       new GuiBitmapButtonCtrl() {
          BitmapAsset = "ToolsModule:save_icon_n_image";
@@ -43,9 +44,10 @@ $guiContent = new GuiTabPageCtrl() {
          extent = "17 17";
          horizSizing = "left";
          profile = "ToolsGuiDefaultProfile";
-         command = "PE_EmitterEditor.saveEmitter(  ); PE_ParticleEditor.saveParticle( PE_ParticleEditor.currParticle );";
+         command = "";
          tooltipProfile = "GuiToolTipProfile";
-         ToolTip = "Save Current Emitter";
+         ToolTip = "Save Current";
+         internalName = "SaveCurrentBtn";
       };
       new GuiBitmapButtonCtrl() {
          BitmapAsset = "ToolsModule:delete_n_image";
@@ -53,9 +55,10 @@ $guiContent = new GuiTabPageCtrl() {
          extent = "17 17";
          horizSizing = "left";
          profile = "ToolsGuiDefaultProfile";
-         command = "PE_EmitterEditor.showDeleteDialog();";
+         command = "";
          tooltipProfile = "GuiToolTipProfile";
-         ToolTip = "Delete Current Emitter";
+         ToolTip = "Delete Current";
+         internalName = "DeleteCurrentBtn";
       };
    };
    new GuiScrollCtrl() {
@@ -70,7 +73,8 @@ $guiContent = new GuiTabPageCtrl() {
       tooltipProfile = "GuiToolTipProfile";
 
       new GuiInspector() {
-         groupFilters = "-Internal -Editing -Object -Persistence -Dynamic Fields -Scripting";
+         class = "ParticleEditorInspector";
+         groupFilters = "-Internal -Editing -Object -Persistence -Dynamic Fields -Scripting -AFX -AFX Pooled Particles";
          position = "1 1";
          extent = "339 48";
          horizSizing = "width";

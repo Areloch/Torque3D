@@ -52,34 +52,7 @@ function ParticleEditor::initEditor( %this )
    
    PE_UnlistedEmitters.add( PE_EmitterEditor_NotDirtyEmitter );
    PE_UnlistedEmitters.add( PE_ParticleEditor_NotDirtyParticle );
-   
-   PEE_EmitterSelector.clear();
-   PEE_EmitterParticleSelector1.clear();
-   PEE_EmitterParticleSelector2.clear();
-   PEE_EmitterParticleSelector3.clear();
-   PEE_EmitterParticleSelector4.clear();
-   
-   PEP_ParticleSelector.clear();
-   
-   //ParticleEditor.createParticleList();
-         
-   PEE_EmitterParticleSelector2.add( "None", 0 );
-   PEE_EmitterParticleSelector3.add( "None", 0 );
-   PEE_EmitterParticleSelector4.add( "None", 0 );
-   
-   PEE_EmitterParticleSelector1.sort();
-   PEE_EmitterParticleSelector2.sort();
-   PEE_EmitterParticleSelector3.sort();
-   PEE_EmitterParticleSelector4.sort();
-         
-   PE_EmitterEditor-->PEE_blendType.clear();
-   PE_EmitterEditor-->PEE_blendType.add( "NORMAL", 0 );
-   PE_EmitterEditor-->PEE_blendType.add( "ADDITIVE", 1 );
-   PE_EmitterEditor-->PEE_blendType.add( "SUBTRACTIVE", 2 );
-   PE_EmitterEditor-->PEE_blendType.add( "PREMULTALPHA", 3 );
 
-   PEE_EmitterSelector.setFirstSelected();
-   
    PE_TabBook.clear();
    
    for(%i=0; %i < PE_ParticleDataTypes.count(); %i++)
@@ -95,6 +68,15 @@ function ParticleEditor::initEditor( %this )
          $guiContent.text = %groupName;
          $guiContent.typesList = %typesList;
          $guiContent.setName(%editorName);
+         
+         $guiContent-->CreateNewBtn.tooltip = "Create New " @ %groupName;
+         $guiContent-->CreateNewBtn.command = %editorName @ ".showNewDialog();";
+         
+         $guiContent-->SaveCurrentBtn.tooltip = "Save Current " @ %groupName;
+         $guiContent-->SaveCurrentBtn.command = %editorName @ ".save" @ %groupName @ "();";
+         
+         $guiContent-->DeleteCurrentBtn.tooltip = "Delete Current " @ %groupName;
+         $guiContent-->DeleteCurrentBtn.command = %editorName @ ".showDeleteDialog();";
          
          PE_TabBook.add($guiContent);
       }
@@ -192,6 +174,75 @@ function ParticleEditor::createList( %this, %dataTypesList )
    //echo( "Found" SPC %emitterCount SPC "emitters and" SPC %particleCount SPC "particles." );
 }
 
+function ParticleEditorGui::openList( %this, %editorCtrl )
+{
+   // This function creates the list of all particles and particle emitters
+   
+   %listCount = 0;
+   
+   %listSet = new SimSet(){ internalName = %editorCtrl.text; };
+   
+   foreach( %obj in DatablockGroup )
+   {
+      %typesListCount = getWordCount(%editorCtrl.typesList);
+      for(%i=0; %i < %typesListCount; %i++)
+      {
+         %type = getWord(%editorCtrl.typesList, %i);
+         
+         if( %obj.isMemberOfClass( %type ) )
+         {
+            // Filter out emitters on the PE_UnlistedEmitters list.
+            
+            %unlistedFound = false;
+            foreach( %unlisted in PE_UnlistedEmitters ){
+               if( %unlisted.getId() == %obj.getId() )
+               {
+                  %unlistedFound = true;
+                  break;
+               }
+            }
+         
+            if( %unlistedFound )
+               continue;
+               
+            // To prevent our default emitters from getting changed,
+            // prevent them from populating the list. Default emitters
+            // should only be used as a template for creating new ones.
+            if ( %obj.getName() $= "DefaultEmitter")
+               continue;
+               
+            if(%typesListCount > 1)
+            {
+               %typeSet = %listSet.findObjectByInternalName(%type);
+               if(!isObject(%typeSet))
+               {
+                  %typeSet = new SimSet(){ internalName = %type; };
+                  %listSet.add(%typeSet);
+               }
+               
+               %typeSet.add(%obj);
+            }
+            else
+            {
+               %listSet.add(%obj);
+            }
+            //PEE_EmitterSelector.add( %obj.getName(), %obj.getId() );
+            %listCount++;
+         }
+      }
+   }
+   
+   //%emitterListSet.sort();
+   
+   echo(%listCount);
+   
+   ContextedDropdownListGui.show(%listSet, "Select", "" @ %editorCtrl @ ".selectedObject", %this-->PopupMenu);
+   if(%this-->PopupMenu.getText() !$= "")
+   {
+      %obj = %this-->PopupMenu.getText().getId();
+      ContextedDropdownListGui.seekItemObject(%obj);
+   }
+}
 //---------------------------------------------------------------------------------------------
 
 function ParticleEditor::openEmitterPane( %this )
@@ -264,7 +315,6 @@ function ParticleEditor::resetEmitterNode( %this )
         if (%obj.isMemberOfClass("ParticleEmitterNode"))
             $ParticleEditor::emitterNode.sethidden(true);
    }
-        
 }
 
 //---------------------------------------------------------------------------------------------
@@ -273,7 +323,7 @@ function ParticleEditor::updateEmitterNode( %this )
 {
    if( isObject( $ParticleEditor::emitterNode ) )
    {
-      %id = PEE_EmitterSelector_Control-->PopUpMenu.getSelected();
+      %id = PE_EmitterEditor-->PopupMenu.getText();
       
       %clientObject = $ParticleEditor::emitterNode.getClientObject();
       if( isObject( %clientObject ) )
@@ -288,21 +338,34 @@ function ParticleEditor::guiSync(%this)
 {
    PEE_EmitterSelector.clear();
    %this.createList(%this.currDataTypeList);
-   
-   %partIndex = PEE_EmitterSelector.getSelected();
-   %partName = PEE_EmitterSelector.getTextById(%partIndex);
-   
-   echo("ParticleEditor::guiSync() - index: " @ %partIndex @ ", name: " @ %partName);
-   
-   ParticleEditorInspectorCtrl.inspect(BulletDirtDust/*%partName*/);
-   
-   //update fields
-   %group = ParticleEditorInspectorCtrl.findExistentGroup("Basic");
-   %group.hideField("textureFile", true);
-   %group.buildRangeField("lifetimeMS", "Lifetime(ms)", "", "", "1 9000");
-   %group.buildRangeField("lifetimeVarianceMS", "Lifetime Random(ms)", "", "", "0 9000");
 }
 
+//------------------------------------------------------------------------------
+function ParticleEditor::open(%this, %datablock)
+{
+   //TODO:
+   //Check if we're dirty and if so, prompt about saving the change first
+   
+   for(%i=0; %i < PE_ParticleDataTypes.count(); %i++)
+   {
+      %groupName = PE_ParticleDataTypes.getKey(%i);
+      %typesList = getField(PE_ParticleDataTypes.getValue(%i), 0);
+      %editorName = getField(PE_ParticleDataTypes.getValue(%i), 1);
+      
+      %typesListCount = getWordCount(%typesList);
+      for(%t=0; %t < %typesListCount; %t++)
+      {
+         %type = getWord(%typesList, %t);
+         
+         if( %datablock.isMemberOfClass( %type ) )
+         {
+            PE_TabBook.selectPage(%i);
+            %editorName.selectedObject(%datablock);
+            return;
+         }         
+      }
+   }   
+}
 //=============================================================================================
 //    PE_TabBook.
 //=============================================================================================
@@ -314,6 +377,8 @@ function PE_TabBook::onTabSelected( %this, %text, %idx )
    %tab = %this.getObject(%idx);
    
    %tab.openEditorTab();
+   
+   ParticleEditor.selectedEditor = %tab;
 }
 
 //------------------------------------------------------------------------------
@@ -407,7 +472,7 @@ function ParticleEditor::onResize(%this, %newPosition, %newExtent)
 // Editor Tabs
 //------------------------------------------------------------------------------
 
-function ParticleEditor::openEmitterEd(%this)
+/*function ParticleEditor::openEmitterEd(%this)
 {
    PE_Window.text = ":: Particle Editor - Emitters";
    ParticleEditor.guiSync();
@@ -432,4 +497,10 @@ function ParticleEditor::openAFXChoreographerEd(%this)
    
    if( !PE_EmitterEditor.dirty )
       PE_EmitterEditor.setEmitterNotDirty();
+}*/
+
+//------------------------------------------------------------------------------
+function ParticleEditorInspector::onInspectorFieldModified(%this, %object, %fieldName, %arrayIndex, %oldValue, %newValue)
+{
+   ParticleEditor.selectedEditor.setDirty(true);
 }

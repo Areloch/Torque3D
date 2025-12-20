@@ -21,15 +21,12 @@
 //-----------------------------------------------------------------------------
 
 
-$PE_EMITTEREDITOR_DEFAULT_FILENAME = "data/managedParticleEmitterData." @ $TorqueScriptFileExtension;
-
-
 //=============================================================================================
-//    PE_EmitterEditor.
+//    PE_AFXZodiacEditor.
 //=============================================================================================
-function PE_EmitterEditor::openEditorTab(%this)
+function PE_AFXZodiacEditor::openEditorTab(%this)
 {
-   PE_Window.text = ":: Particle Editor - Emitters";
+   PE_Window.text = ":: Particle Editor - AFX Zodiacs";
    %this.guiSync();
    ParticleEditor.activeEditor = %this;
 
@@ -39,14 +36,16 @@ function PE_EmitterEditor::openEditorTab(%this)
 
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::guiSync( %this )
+function PE_AFXZodiacEditor::guiSync( %this )
 {
+   %this.createList();
+   
    %this-->inspector.refresh();
 }
 
 //------------------------------------------------------------------------------
 
-function PE_EmitterEditor::selectedObject(%this, %obj)
+function PE_AFXZodiacEditor::selectedObject(%this, %obj)
 {
    %this-->popupMenu.setText(%obj.getName());
    %this-->inspector.inspect(%obj);
@@ -61,11 +60,11 @@ function PE_EmitterEditor::selectedObject(%this, %obj)
 //---------------------------------------------------------------------------------------------
 
 // Generic updateEmitter method
-function PE_EmitterEditor::updateEmitter( %this, %propertyField, %value, %isSlider, %onMouseUp )
+function PE_AFXZodiacEditor::updateEmitter( %this, %propertyField, %value, %isSlider, %onMouseUp )
 {
-   PE_EmitterEditor.setDirty();
+   PE_AFXZodiacEditor.setDirty();
          
-   %emitter = PE_EmitterEditor.currEmitter;
+   %emitter = PE_AFXZodiacEditor.currEmitter;
       
    %last = Editor.getUndoManager().getUndoAction(Editor.getUndoManager().getUndoCount() - 1);
    if( (%isSlider) && (%last.isSlider) && (!%last.onMouseUp) )
@@ -95,11 +94,11 @@ function PE_EmitterEditor::updateEmitter( %this, %propertyField, %value, %isSlid
 //---------------------------------------------------------------------------------------------
 
 // Special case updateEmitter methods
-function PE_EmitterEditor::updateLifeFields( %this, %isRandom, %value, %isSlider, %onMouseUp )
+function PE_AFXZodiacEditor::updateLifeFields( %this, %isRandom, %value, %isSlider, %onMouseUp )
 {
-   PE_EmitterEditor.setDirty();
+   PE_AFXZodiacEditor.setDirty();
    
-   %emitter = PE_EmitterEditor.currEmitter;
+   %emitter = PE_AFXZodiacEditor.currEmitter;
       
    // Transfer values over to gui controls.
    
@@ -108,10 +107,10 @@ function PE_EmitterEditor::updateLifeFields( %this, %isRandom, %value, %isSlider
       if( %value > 0 )
          %value++;
           
-      if( %value > PE_EmitterEditor-->PEE_lifetimeMS_slider.getValue() )
+      if( %value > PE_AFXZodiacEditor-->PEE_lifetimeMS_slider.getValue() )
       {
-         PE_EmitterEditor-->PEE_lifetimeMS_textEdit.setText( %value );
-         PE_EmitterEditor-->PEE_lifetimeMS_slider.setValue( %value );
+         PE_AFXZodiacEditor-->PEE_lifetimeMS_textEdit.setText( %value );
+         PE_AFXZodiacEditor-->PEE_lifetimeMS_slider.setValue( %value );
       }
    }
    else
@@ -119,10 +118,10 @@ function PE_EmitterEditor::updateLifeFields( %this, %isRandom, %value, %isSlider
       if( %value > 0 )
          %value --;
          
-      if( %value < PE_EmitterEditor-->PEE_lifetimeVarianceMS_slider.getValue() )
+      if( %value < PE_AFXZodiacEditor-->PEE_lifetimeVarianceMS_slider.getValue() )
       {
-         PE_EmitterEditor-->PEE_lifetimeVarianceMS_textEdit.setText( %value );
-         PE_EmitterEditor-->PEE_lifetimeVarianceMS_slider.setValue( %value );
+         PE_AFXZodiacEditor-->PEE_lifetimeVarianceMS_textEdit.setText( %value );
+         PE_AFXZodiacEditor-->PEE_lifetimeVarianceMS_slider.setValue( %value );
       }
    }
    
@@ -133,8 +132,8 @@ function PE_EmitterEditor::updateLifeFields( %this, %isRandom, %value, %isSlider
    {
       %last.isSlider = %isSlider;
       %last.onMouseUp = %onMouseUp;
-      %last.newValueLifetimeMS = PE_EmitterEditor-->PEE_lifetimeMS_textEdit.getText();
-      %last.newValueLifetimeVarianceMS = PE_EmitterEditor-->PEE_lifetimeVarianceMS_textEdit.getText();
+      %last.newValueLifetimeMS = PE_AFXZodiacEditor-->PEE_lifetimeMS_textEdit.getText();
+      %last.newValueLifetimeVarianceMS = PE_AFXZodiacEditor-->PEE_lifetimeVarianceMS_textEdit.getText();
    }
    else
    {
@@ -143,10 +142,10 @@ function PE_EmitterEditor::updateLifeFields( %this, %isRandom, %value, %isSlider
       %action.isSlider = %isSlider;
       %action.onMouseUp = %onMouseUp;
       
-      %action.newValueLifetimeMS = PE_EmitterEditor-->PEE_lifetimeMS_textEdit.getText();
+      %action.newValueLifetimeMS = PE_AFXZodiacEditor-->PEE_lifetimeMS_textEdit.getText();
       %action.oldValueLifetimeMS = %emitter.lifetimeMS;
       
-      %action.newValueLifetimeVarianceMS = PE_EmitterEditor-->PEE_lifetimeVarianceMS_textEdit.getText();
+      %action.newValueLifetimeVarianceMS = PE_AFXZodiacEditor-->PEE_lifetimeVarianceMS_textEdit.getText();
       %action.oldValueLifetimeVarianceMS = %emitter.lifetimeVarianceMS;
       
       ParticleEditor.submitUndo( %action );
@@ -154,23 +153,23 @@ function PE_EmitterEditor::updateLifeFields( %this, %isRandom, %value, %isSlider
    
    // Set the values on the current emitter.
    
-   %emitter.lifetimeMS = PE_EmitterEditor-->PEE_lifetimeMS_textEdit.getText();
-   %emitter.lifetimeVarianceMS = PE_EmitterEditor-->PEE_lifetimeVarianceMS_textEdit.getText();
+   %emitter.lifetimeMS = PE_AFXZodiacEditor-->PEE_lifetimeMS_textEdit.getText();
+   %emitter.lifetimeVarianceMS = PE_AFXZodiacEditor-->PEE_lifetimeVarianceMS_textEdit.getText();
    %emitter.reload();
    
    // Keep the infiniteLoop checkbox up to date.
    
-   PE_EmitterEditor-->PEE_infiniteLoop.setStateOn(
+   PE_AFXZodiacEditor-->PEE_infiniteLoop.setStateOn(
       %emitter.lifetimeMS == 0
    );
 }
 
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::updateLifeFieldsInfiniteLoop( %this )
+function PE_AFXZodiacEditor::updateLifeFieldsInfiniteLoop( %this )
 {
-   %emitter = PE_EmitterEditor.currEmitter;
-   %isEnabled = PE_EmitterEditor-->PEE_infiniteLoop.isStateOn();
+   %emitter = PE_AFXZodiacEditor.currEmitter;
+   %isEnabled = PE_AFXZodiacEditor-->PEE_infiniteLoop.isStateOn();
       
    // Submit undo.
    
@@ -181,13 +180,13 @@ function PE_EmitterEditor::updateLifeFieldsInfiniteLoop( %this )
    {
       %action.newValueLifetimeMS = 0;
       %action.newvalueLifetimeVarianceMS = 0;
-      %action.oldValueLifetimeMS = PE_EmitterEditor-->PEE_lifetimeMS_textEdit.getText();
-      %action.oldValueLifetimeVarianceMS = PE_EmitterEditor-->PEE_lifetimeVarianceMS_textEdit.getText();
+      %action.oldValueLifetimeMS = PE_AFXZodiacEditor-->PEE_lifetimeMS_textEdit.getText();
+      %action.oldValueLifetimeVarianceMS = PE_AFXZodiacEditor-->PEE_lifetimeVarianceMS_textEdit.getText();
    }
    else
    {
-      %action.newValueLifetimeMS = PE_EmitterEditor-->PEE_lifetimeMS_textEdit.getText();
-      %action.newvalueLifetimeVarianceMS = PE_EmitterEditor-->PEE_lifetimeVarianceMS_textEdit.getText();
+      %action.newValueLifetimeMS = PE_AFXZodiacEditor-->PEE_lifetimeMS_textEdit.getText();
+      %action.newvalueLifetimeVarianceMS = PE_AFXZodiacEditor-->PEE_lifetimeVarianceMS_textEdit.getText();
       %action.oldValueLifetimeMS = 0;
       %action.oldValueLifetimeVarianceMS = 0;
    }
@@ -201,29 +200,29 @@ function PE_EmitterEditor::updateLifeFieldsInfiniteLoop( %this )
 
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::updateAmountFields( %this, %isRandom, %value, %isSlider, %onMouseUp )
+function PE_AFXZodiacEditor::updateAmountFields( %this, %isRandom, %value, %isSlider, %onMouseUp )
 {
-   PE_EmitterEditor.setDirty();
-   %emitter = PE_EmitterEditor.currEmitter;
+   PE_AFXZodiacEditor.setDirty();
+   %emitter = PE_AFXZodiacEditor.currEmitter;
       
    // Transfer values over to gui controls.
    
    if( %isRandom )
    {
       %value ++;
-      if( %value > PE_EmitterEditor-->PEE_ejectionPeriodMS_slider.getValue() )
+      if( %value > PE_AFXZodiacEditor-->PEE_ejectionPeriodMS_slider.getValue() )
       {
-         PE_EmitterEditor-->PEE_ejectionPeriodMS_textEdit.setText( %value );
-         PE_EmitterEditor-->PEE_ejectionPeriodMS_slider.setValue( %value );
+         PE_AFXZodiacEditor-->PEE_ejectionPeriodMS_textEdit.setText( %value );
+         PE_AFXZodiacEditor-->PEE_ejectionPeriodMS_slider.setValue( %value );
       }
    }
    else
    {
       %value --;
-      if( %value < PE_EmitterEditor-->PEE_periodVarianceMS_slider.getValue() )
+      if( %value < PE_AFXZodiacEditor-->PEE_periodVarianceMS_slider.getValue() )
       {
-         PE_EmitterEditor-->PEE_periodVarianceMS_textEdit.setText( %value );
-         PE_EmitterEditor-->PEE_periodVarianceMS_slider.setValue( %value );
+         PE_AFXZodiacEditor-->PEE_periodVarianceMS_textEdit.setText( %value );
+         PE_AFXZodiacEditor-->PEE_periodVarianceMS_slider.setValue( %value );
       }
    }
    
@@ -234,8 +233,8 @@ function PE_EmitterEditor::updateAmountFields( %this, %isRandom, %value, %isSlid
    {
       %last.isSlider = %isSlider;
       %last.onMouseUp = %onMouseUp;
-      %last.newValueEjectionPeriodMS = PE_EmitterEditor-->PEE_ejectionPeriodMS_textEdit.getText();
-      %last.newValuePeriodVarianceMS = PE_EmitterEditor-->PEE_periodVarianceMS_textEdit.getText();
+      %last.newValueEjectionPeriodMS = PE_AFXZodiacEditor-->PEE_ejectionPeriodMS_textEdit.getText();
+      %last.newValuePeriodVarianceMS = PE_AFXZodiacEditor-->PEE_periodVarianceMS_textEdit.getText();
    }
    else
    {
@@ -244,10 +243,10 @@ function PE_EmitterEditor::updateAmountFields( %this, %isRandom, %value, %isSlid
       %action.isSlider = %isSlider;
       %action.onMouseUp = %onMouseUp;
       
-      %action.newValueEjectionPeriodMS = PE_EmitterEditor-->PEE_ejectionPeriodMS_textEdit.getText();
+      %action.newValueEjectionPeriodMS = PE_AFXZodiacEditor-->PEE_ejectionPeriodMS_textEdit.getText();
       %action.oldValueEjectionPeriodMS = %emitter.ejectionPeriodMS;
       
-      %action.newValuePeriodVarianceMS = PE_EmitterEditor-->PEE_periodVarianceMS_textEdit.getText();
+      %action.newValuePeriodVarianceMS = PE_AFXZodiacEditor-->PEE_periodVarianceMS_textEdit.getText();
       %action.oldValuePeriodVarianceMS = %emitter.periodVarianceMS;
       
       ParticleEditor.submitUndo( %action );
@@ -255,34 +254,34 @@ function PE_EmitterEditor::updateAmountFields( %this, %isRandom, %value, %isSlid
    
    // Set the values on the current emitter.
    
-   %emitter.ejectionPeriodMS = PE_EmitterEditor-->PEE_ejectionPeriodMS_textEdit.getText();
-   %emitter.periodVarianceMS = PE_EmitterEditor-->PEE_periodVarianceMS_textEdit.getText();
+   %emitter.ejectionPeriodMS = PE_AFXZodiacEditor-->PEE_ejectionPeriodMS_textEdit.getText();
+   %emitter.periodVarianceMS = PE_AFXZodiacEditor-->PEE_periodVarianceMS_textEdit.getText();
    %emitter.reload();
 }
 
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::updateSpeedFields( %this, %isRandom, %value, %isSlider, %onMouseUp )
+function PE_AFXZodiacEditor::updateSpeedFields( %this, %isRandom, %value, %isSlider, %onMouseUp )
 {
-   PE_EmitterEditor.setDirty();
-   %emitter = PE_EmitterEditor.currEmitter;
+   PE_AFXZodiacEditor.setDirty();
+   %emitter = PE_AFXZodiacEditor.currEmitter;
       
    // Transfer values over to gui controls.
    
    if( %isRandom )
    {
-      if( %value > PE_EmitterEditor-->PEE_ejectionVelocity_slider.getValue() )
+      if( %value > PE_AFXZodiacEditor-->PEE_ejectionVelocity_slider.getValue() )
       {
-         PE_EmitterEditor-->PEE_ejectionVelocity_textEdit.setText( %value );
-         PE_EmitterEditor-->PEE_ejectionVelocity_slider.setValue( %value );
+         PE_AFXZodiacEditor-->PEE_ejectionVelocity_textEdit.setText( %value );
+         PE_AFXZodiacEditor-->PEE_ejectionVelocity_slider.setValue( %value );
       }
    }
    else
    {
-      if( %value < PE_EmitterEditor-->PEE_velocityVariance_slider.getValue() )
+      if( %value < PE_AFXZodiacEditor-->PEE_velocityVariance_slider.getValue() )
       {
-         PE_EmitterEditor-->PEE_velocityVariance_textEdit.setText( %value );
-         PE_EmitterEditor-->PEE_velocityVariance_slider.setValue( %value );
+         PE_AFXZodiacEditor-->PEE_velocityVariance_textEdit.setText( %value );
+         PE_AFXZodiacEditor-->PEE_velocityVariance_slider.setValue( %value );
       }
    }
    
@@ -293,8 +292,8 @@ function PE_EmitterEditor::updateSpeedFields( %this, %isRandom, %value, %isSlide
    {
       %last.isSlider = %isSlider;
       %last.onMouseUp = %onMouseUp;
-      %last.newValueEjectionVelocity = PE_EmitterEditor-->PEE_ejectionVelocity_textEdit.getText();
-      %last.newValueVelocityVariance = PE_EmitterEditor-->PEE_velocityVariance_textEdit.getText();
+      %last.newValueEjectionVelocity = PE_AFXZodiacEditor-->PEE_ejectionVelocity_textEdit.getText();
+      %last.newValueVelocityVariance = PE_AFXZodiacEditor-->PEE_velocityVariance_textEdit.getText();
    }
    else
    {
@@ -303,10 +302,10 @@ function PE_EmitterEditor::updateSpeedFields( %this, %isRandom, %value, %isSlide
       %action.isSlider = %isSlider;
       %action.onMouseUp = %onMouseUp;
       
-      %action.newValueEjectionVelocity = PE_EmitterEditor-->PEE_ejectionVelocity_textEdit.getText();
+      %action.newValueEjectionVelocity = PE_AFXZodiacEditor-->PEE_ejectionVelocity_textEdit.getText();
       %action.oldValueEjectionVelocity = %emitter.ejectionVelocity;
       
-      %action.newValueVelocityVariance = PE_EmitterEditor-->PEE_velocityVariance_textEdit.getText();
+      %action.newValueVelocityVariance = PE_AFXZodiacEditor-->PEE_velocityVariance_textEdit.getText();
       %action.oldValueVelocityVariance = %emitter.velocityVariance;
       
       ParticleEditor.submitUndo( %action );
@@ -314,14 +313,14 @@ function PE_EmitterEditor::updateSpeedFields( %this, %isRandom, %value, %isSlide
    
    // Set the values on the current emitter.
    
-   %emitter.ejectionVelocity = PE_EmitterEditor-->PEE_ejectionVelocity_textEdit.getText();
-   %emitter.velocityVariance = PE_EmitterEditor-->PEE_velocityVariance_textEdit.getText();
+   %emitter.ejectionVelocity = PE_AFXZodiacEditor-->PEE_ejectionVelocity_textEdit.getText();
+   %emitter.velocityVariance = PE_AFXZodiacEditor-->PEE_velocityVariance_textEdit.getText();
    %emitter.reload();
 }
 
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::updateParticlesFields( %this )
+function PE_AFXZodiacEditor::updateParticlesFields( %this )
 {
    %particles = "";
    for( %i = 1; %i < 5; %i ++ )
@@ -358,27 +357,27 @@ function PE_EmitterEditor::updateParticlesFields( %this )
    {
       toolsMessageBoxYesNoCancel("Save Particle Changes?", 
          "Do you wish to save the changes made to the <br>current particle before changing the particle?", 
-         "PE_ParticleEditor.saveParticle( " @ PE_ParticleEditor.currParticle.getName() @ " ); PE_EmitterEditor.updateEmitter( \"particles\"," @ %particles @ ");", 
-         "PE_ParticleEditor.saveParticleDialogDontSave( " @ PE_ParticleEditor.currParticle.getName() @ " ); PE_EmitterEditor.updateEmitter( \"particles\"," @ %particles @ ");", 
-         "PE_EmitterEditor.guiSync();" );
+         "PE_ParticleEditor.saveParticle( " @ PE_ParticleEditor.currParticle.getName() @ " ); PE_AFXZodiacEditor.updateEmitter( \"particles\"," @ %particles @ ");", 
+         "PE_ParticleEditor.saveParticleDialogDontSave( " @ PE_ParticleEditor.currParticle.getName() @ " ); PE_AFXZodiacEditor.updateEmitter( \"particles\"," @ %particles @ ");", 
+         "PE_AFXZodiacEditor.guiSync();" );
    }
    else
    {
-      PE_EmitterEditor.updateEmitter( "particles", %particles );
+      PE_AFXZodiacEditor.updateEmitter( "particles", %particles );
    }
 }
 
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::onNewEmitter( %this )
+function PE_AFXZodiacEditor::onNewEmitter( %this )
 {
-   if(    isObject( PE_EmitterEditor.currEmitter )
-       && PE_EmitterEditor.currEmitter $= PEE_EmitterSelector.getSelected() )
+   if(    isObject( PE_AFXZodiacEditor.currEmitter )
+       && PE_AFXZodiacEditor.currEmitter $= PEE_EmitterSelector.getSelected() )
       return;
       
    //FIXME: disregards particle tab dirty state
    
-   if( PE_EmitterEditor.dirty )
+   if( PE_AFXZodiacEditor.dirty )
    {   
       
       if( PE_ParticleEditor.dirty )
@@ -389,67 +388,67 @@ function PE_EmitterEditor::onNewEmitter( %this )
          );
       }
             
-      %savedEmitter = PE_EmitterEditor.currEmitter;
+      %savedEmitter = PE_AFXZodiacEditor.currEmitter;
       toolsMessageBoxYesNoCancel("Save Existing Emitter?", 
          "Do you want to save changes to <br><br>" @ %savedEmitter.getName(), 
-         "PE_EmitterEditor.saveEmitter(" @ %savedEmitter@ "); PE_EmitterEditor.loadNewEmitter();", 
-         "PE_EmitterEditor.saveEmitterDialogDontSave(" @ %savedEmitter @ "); PE_EmitterEditor.loadNewEmitter();"
+         "PE_AFXZodiacEditor.saveEmitter(" @ %savedEmitter@ "); PE_AFXZodiacEditor.loadNewEmitter();", 
+         "PE_AFXZodiacEditor.saveEmitterDialogDontSave(" @ %savedEmitter @ "); PE_AFXZodiacEditor.loadNewEmitter();"
       );
       
 
    }
    else
    {
-      PE_EmitterEditor.loadNewEmitter();
+      PE_AFXZodiacEditor.loadNewEmitter();
    }
 }
 
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::loadNewEmitter( %this, %emitter )
+function PE_AFXZodiacEditor::loadNewEmitter( %this, %emitter )
 {
    if( isObject( %emitter ) )
       %current = %emitter.getId();
    else
       %current = PEE_EmitterSelector.getSelected();
    
-   PE_EmitterEditor.currEmitter = %current;
-   PE_EmitterEditor_NotDirtyEmitter.assignFieldsFrom( %current );
-   PE_EmitterEditor_NotDirtyEmitter.originalName = %current.name;
+   PE_AFXZodiacEditor.currEmitter = %current;
+   PE_AFXZodiacEditor_NotDirtyEmitter.assignFieldsFrom( %current );
+   PE_AFXZodiacEditor_NotDirtyEmitter.originalName = %current.name;
    
-   PE_EmitterEditor.guiSync();
-   PE_EmitterEditor.setNotDirty();
+   PE_AFXZodiacEditor.guiSync();
+   PE_AFXZodiacEditor.setNotDirty();
       
    PE_ParticleEditor.loadNewParticle( getWord( %current.particles, 0 ) );
    
    ParticleEditor.updateEmitterNode();
    
-   PE_EmitterEditor-->PEE_infiniteLoop.setStateOn( %current.lifetimeMS == 0 );
+   PE_AFXZodiacEditor-->PEE_infiniteLoop.setStateOn( %current.lifetimeMS == 0 );
 }
    
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::setDirty( %this )
+function PE_AFXZodiacEditor::setDirty( %this )
 {
-   PE_EmitterEditor.text = "Emitter *";
-   PE_EmitterEditor.dirty = true;
+   PE_AFXZodiacEditor.text = "Zodiac *";
+   PE_AFXZodiacEditor.dirty = true;
    
-   %emitter = PE_EmitterEditor.currEmitter;
+   %emitter = PE_AFXZodiacEditor.currEmitter;
    %filename = %emitter.getFilename();
    %editorFilename = "tools/particleEditor/particleEmitterEditor.ed." @ $TorqueScriptFileExtension;
    
    if( %filename $= "" || %filename $= %editorFilename )
-      PE_EmitterSaver.setDirty( %emitter, $PE_EMITTEREDITOR_DEFAULT_FILENAME );
+      PE_EmitterSaver.setDirty( %emitter, $PE_AFXZodiacEditor_DEFAULT_FILENAME );
    else
       PE_EmitterSaver.setDirty( %emitter );
 }
 
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::setNotDirty( %this )
+function PE_AFXZodiacEditor::setNotDirty( %this )
 {   
-   PE_EmitterEditor.text = "Emitter";
-   PE_EmitterEditor.dirty = false;
+   PE_AFXZodiacEditor.text = "Zodiac";
+   PE_AFXZodiacEditor.dirty = false;
    
    PE_EmitterSaver.clearAll();
 }
@@ -457,7 +456,7 @@ function PE_EmitterEditor::setNotDirty( %this )
 //---------------------------------------------------------------------------------------------
 
 // Create Functionality
-function PE_EmitterEditor::showNewDialog( %this )
+function PE_AFXZodiacEditor::showNewDialog( %this )
 {
    //FIXME: disregards particle tab dirty state
 
@@ -471,37 +470,37 @@ function PE_EmitterEditor::showNewDialog( %this )
       );
    }   
    
-   if( PE_EmitterEditor.dirty )
+   if( PE_AFXZodiacEditor.dirty )
    {
       toolsMessageBoxYesNoCancel("Save Emitter Changes?", 
          "Do you wish to save the changes made to the <br>current emitter before changing the emitter?", 
-         "PE_EmitterEditor.saveEmitter( " @ PE_EmitterEditor.currEmitter.getName() @ " ); PE_EmitterEditor.createEmitter();", 
-         "PE_EmitterEditor.saveEmitterDialogDontSave( " @ PE_EmitterEditor.currEmitter.getName() @ " ); PE_EmitterEditor.createEmitter();"
+         "PE_AFXZodiacEditor.saveEmitter( " @ PE_AFXZodiacEditor.currEmitter.getName() @ " ); PE_AFXZodiacEditor.createEmitter();", 
+         "PE_AFXZodiacEditor.saveEmitterDialogDontSave( " @ PE_AFXZodiacEditor.currEmitter.getName() @ " ); PE_AFXZodiacEditor.createEmitter();"
       );
    }
    else
    {
-      PE_EmitterEditor.createEmitter();
+      PE_AFXZodiacEditor.createEmitter();
    }
 }
 
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::createEmitter( %this )
+function PE_AFXZodiacEditor::createEmitter( %this )
 {
-   AssetBrowser_SelectModule.showDialog("PE_EmitterEditor.pickedNewEmitterTargetModule");
+   AssetBrowser_SelectModule.showDialog("PE_AFXZodiacEditor.pickedNewEmitterTargetModule");
    AssetBrowser_SelectModuleWindow.selectWindow();
 }
 
-function PE_EmitterEditor::pickedNewEmitterTargetModule( %this, %module )
+function PE_AFXZodiacEditor::pickedNewEmitterTargetModule( %this, %module )
 {
    %moduleDef = ModuleDatabase.findModule(%module);
-   PE_EmitterEditor.targetModule = %module;
-   $PE_EMITTEREDITOR_DEFAULT_FILENAME = %moduleDef.ModulePath @ "/scripts/managedData/managedParticleEmitterData." @ $TorqueScriptFileExtension;
+   PE_AFXZodiacEditor.targetModule = %module;
+   $PE_AFXZodiacEditor_DEFAULT_FILENAME = %moduleDef.ModulePath @ "/scripts/managedData/managedParticleEmitterData." @ $TorqueScriptFileExtension;
    
-   if(!isDirectory(filePath($PE_EMITTEREDITOR_DEFAULT_FILENAME)))
+   if(!isDirectory(filePath($PE_AFXZodiacEditor_DEFAULT_FILENAME)))
    {
-      AssetBrowser.dirHandler.createFolder(filePath($PE_EMITTEREDITOR_DEFAULT_FILENAME));
+      AssetBrowser.dirHandler.createFolder(filePath($PE_AFXZodiacEditor_DEFAULT_FILENAME));
    }
    
    // Create a new emitter.
@@ -513,7 +512,7 @@ function PE_EmitterEditor::pickedNewEmitterTargetModule( %this, %module )
    // Submit undo.
    
    %action = ParticleEditor.createUndo( ActionCreateNewEmitter, "Create New Emitter" );
-   %action.prevEmitter = PE_EmitterEditor.currEmitter;
+   %action.prevEmitter = PE_AFXZodiacEditor.currEmitter;
    %action.emitter = %emitter.getId();
    %action.emitterName = %emitter;
 
@@ -531,28 +530,28 @@ function PE_EmitterEditor::pickedNewEmitterTargetModule( %this, %module )
 
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::showDeleteDialog( %this )
+function PE_AFXZodiacEditor::showDeleteDialog( %this )
 {
-   if( PE_EmitterEditor.currEmitter.getName() $= "DefaultEmitter" )
+   if( PE_AFXZodiacEditor.currEmitter.getName() $= "DefaultEmitter" )
    {
       toolsMessageBoxOK( "Error", "Cannot delete DefaultEmitter");
       return;
    }
    
-   if( isObject( PE_EmitterEditor.currEmitter ) )
+   if( isObject( PE_AFXZodiacEditor.currEmitter ) )
    {
       toolsMessageBoxYesNoCancel("Delete Emitter?", 
-         "Are you sure you want to delete<br><br>" @ PE_EmitterEditor.currEmitter.getName() @ "<br><br> Emitter deletion won't take affect until the level is exited.", 
-         "PE_EmitterEditor.saveEmitterDialogDontSave( " @ PE_EmitterEditor.currEmitter.getName() @ " ); PE_EmitterEditor.deleteEmitter();"
+         "Are you sure you want to delete<br><br>" @ PE_AFXZodiacEditor.currEmitter.getName() @ "<br><br> Emitter deletion won't take affect until the level is exited.", 
+         "PE_AFXZodiacEditor.saveEmitterDialogDontSave( " @ PE_AFXZodiacEditor.currEmitter.getName() @ " ); PE_AFXZodiacEditor.deleteEmitter();"
       );
    }
 }
 
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::deleteEmitter( %this )
+function PE_AFXZodiacEditor::deleteEmitter( %this )
 {  
-   %emitter = PE_EmitterEditor.currEmitter;
+   %emitter = PE_AFXZodiacEditor.currEmitter;
    
    // Create undo.
    
@@ -569,32 +568,32 @@ function PE_EmitterEditor::deleteEmitter( %this )
 
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::saveEmitter( %this, %emitter )
+function PE_AFXZodiacEditor::saveEmitter( %this, %emitter )
 {   
    if ( %emitter $= "" )
       %newName = PEE_EmitterSelector_Control->TextEdit.getText();
    else
       %newName = %emitter.getName();
    
-   PE_EmitterEditor.currEmitter.setName( %newName );
-   PE_EmitterEditor_NotDirtyEmitter.assignFieldsFrom( %emitter );
-   PE_EmitterEditor_NotDirtyEmitter.originalName = %newName;
+   PE_AFXZodiacEditor.currEmitter.setName( %newName );
+   PE_AFXZodiacEditor_NotDirtyEmitter.assignFieldsFrom( %emitter );
+   PE_AFXZodiacEditor_NotDirtyEmitter.originalName = %newName;
    
    PE_EmitterSaver.saveDirty(); 
    
-   PE_EmitterEditor.currEmitter = %newName.getId();
-   PE_EmitterEditor.setNotDirty();
+   PE_AFXZodiacEditor.currEmitter = %newName.getId();
+   PE_AFXZodiacEditor.setNotDirty();
    
    ParticleEditor.createParticleList(); 
 }
 
 //---------------------------------------------------------------------------------------------
 
-function PE_EmitterEditor::saveEmitterDialogDontSave( %this, %emitter)
+function PE_AFXZodiacEditor::saveEmitterDialogDontSave( %this, %emitter)
 {  
-   %emitter.setName( PE_EmitterEditor_NotDirtyEmitter.originalName );
-   %emitter.assignFieldsFrom( PE_EmitterEditor_NotDirtyEmitter );
-   PE_EmitterEditor.setNotDirty();
+   %emitter.setName( PE_AFXZodiacEditor_NotDirtyEmitter.originalName );
+   %emitter.assignFieldsFrom( PE_AFXZodiacEditor_NotDirtyEmitter );
+   PE_AFXZodiacEditor.setNotDirty();
 }
 
 //=============================================================================================
@@ -609,121 +608,9 @@ function PEE_EmitterSelector_Control::onRenameItem( %this )
    
    //FIXME: need to check for validity of name and name clashes
 
-   PE_EmitterEditor.setDirty();
+   PE_AFXZodiacEditor.setDirty();
    
    // Resort menu.
    
    %this-->PopupMenu.sort();
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-function ParticleEditor::changeParticleSlot(%this, %field, %emitterObj, %slotIdx)
-{
-   %groupIdx = PE_ParticleDataTypes.getIndexFromKey("Particles");
-   %typesList = getField(PE_ParticleDataTypes.getValue(%groupIdx), 0);
-   %editorName = getField(PE_ParticleDataTypes.getValue(%groupIdx), 1);
-      
-   %listSet = new SimSet(){ internalName = "Particles[" @ %slotIdx @ "]"; };
-   
-   foreach( %obj in DatablockGroup )
-   {
-      %typesListCount = getWordCount(%typesList);
-      for(%i=0; %i < %typesListCount; %i++)
-      {
-         %type = getWord(%typesList, %i);
-         
-         if( %obj.isMemberOfClass( %type ) )
-         {
-            // Filter out emitters on the PE_UnlistedEmitters list.
-            
-            %unlistedFound = false;
-            foreach( %unlisted in PE_UnlistedEmitters ){
-               if( %unlisted.getId() == %obj.getId() )
-               {
-                  %unlistedFound = true;
-                  break;
-               }
-            }
-         
-            if( %unlistedFound )
-               continue;
-               
-            // To prevent our default emitters from getting changed,
-            // prevent them from populating the list. Default emitters
-            // should only be used as a template for creating new ones.
-            if ( %obj.getName() $= "DefaultEmitter")
-               continue;
-               
-            if(%typesListCount > 1)
-            {
-               %typeSet = %listSet.findObjectByInternalName(%type);
-               if(!isObject(%typeSet))
-               {
-                  %typeSet = new SimSet(){ internalName = %type; };
-                  %listSet.add(%typeSet);
-               }
-               
-               %typeSet.add(%obj);
-            }
-            else
-            {
-               %listSet.add(%obj);
-            }
-            //PEE_EmitterSelector.add( %obj.getName(), %obj.getId() );
-            %listCount++;
-         }
-      }
-   }
-   
-   ContextedDropdownListGui.show(%listSet, "Edit Particle Slot[" @ %slotIdx @ "]", "ParticleEditor.editSlot = " @ %slotIdx @ ";ParticleEditor.updateParticleSlot", %field);
-   %particleData = getWord(%emitterObj.particles, %slotIdx);
-   if(%particleData !$= "")
-   {
-      ContextedDropdownListGui.seekItemObject(%particleData.getId());
-   }
-}
-
-function ParticleEditor::updateParticleSlot(%this, %newParticle)
-{
-   if(ParticleEditor.editSlot $= "")
-      return;
-      
-   %updatedParticlesList = setWord(PE_EmitterEditor.currEmitter.particles, ParticleEditor.editSlot, %newParticle);
-   
-   %action = ParticleEditor.createUndo(ActionUpdateActiveEmitter, "Edit Active Emitter Particle Slot");
-   %action.emitter = PE_EmitterEditor.currEmitter;
-   %action.field = "particles";
-   %action.newValue = %updatedParticlesList;
-   %action.oldValue = PE_EmitterEditor.currEmitter.particles;
-   
-   ParticleEditor.submitUndo( %action );
-   
-   ParticleEditor.editSlot = "";
-   
-   //%field.apply(%updatedParticlesList, %slotIdx);
-   //%this-->inspector.refresh();
-}
-
-function ParticleEditor::editParticleSlot(%this, %field, %emitterObj, %slotIdx)
-{
-   %particleName = getWord(%emitterObj.particles, %slotIdx);
-   
-   ParticleEditor.open(%particleName);
-}
-
-function ParticleEditor::clearParticleSlot(%this, %field, %emitterObj, %slotIdx)
-{
-   %updatedParticlesList = removeWord(%emitterObj.particles, %slotIdx);
-   
-   %action = ParticleEditor.createUndo(ActionUpdateActiveEmitter, "Clear Active Emitter Particle Slot");
-   %action.emitter = %emitterObj;
-   %action.field = "particles";
-   %action.newValue = %updatedParticlesList;
-   %action.oldValue = %emitterObj.particles;
-   
-   ParticleEditor.submitUndo( %action );
-   
-   //%field.apply(%updatedParticlesList, %slotIdx);
-   //%this-->inspector.refresh();
 }

@@ -7,19 +7,32 @@ $guiContent = new GuiControl(ContextedDropdownListGui) {
    canSaveDynamicFields = "0";
    horizSizing = "width";
    vertSizing = "height";
-
+   
+   new GuiMouseEventCtrl(ContextedDropdownListDecoy) {
+      extent = "1280 720";
+      minExtent = "8 8";
+      horizSizing = "width";
+      vertSizing = "height";
+      profile = "ToolsGuiDefaultProfile";
+      tooltipProfile = "GuiToolTipProfile";
+   };
+   
    new GuiContainer(ContextedDropdownList) {
       position = "472 151";
       extent = "300 450";
-      profile = "GuiDefaultProfile";
+      profile = "ToolsGuiDefaultNonModalProfile";
       tooltipProfile = "GuiToolTipProfile";
       canSaveDynamicFields = "0";
+      minExtent = "300 350";
 
       new GuiContainer() {
          position = "25 25";
          extent = "250 400";
          profile = "IconDropdownProfile";
          tooltipProfile = "GuiToolTipProfile";
+         internalName = "window";
+         horizSizing = "width";
+         vertSizing = "height";
 
          new GuiTextCtrl() {
             position = "0 3";
@@ -66,6 +79,7 @@ $guiContent = new GuiControl(ContextedDropdownListGui) {
             vertSizing = "height";
             profile = "ToolsGuiScrollProfile";
             tooltipProfile = "GuiToolTipProfile";
+            internalName = "scroll";
 
             new GuiTreeViewCtrl() {
                itemHeight = "21";
@@ -77,6 +91,7 @@ $guiContent = new GuiControl(ContextedDropdownListGui) {
                showObjectIds = "0";
                showClassNames = "0";
                showTypeHints = "0";
+               showRoot = "0";
             };
          };
          new GuiButtonCtrl() {
@@ -98,15 +113,6 @@ $guiContent = new GuiControl(ContextedDropdownListGui) {
             tooltipProfile = "GuiToolTipProfile";
             Command = "ContextedDropdownListGui.toggle();";
          };
-      };
-      
-      new GuiDecoyCtrl(ContextedDropdownListDecoy) {
-         extent = "300 450";
-         minExtent = "8 8";
-         horizSizing = "width";
-         vertSizing = "height";
-         profile = "GuiNonModalDefaultProfile";
-         tooltipProfile = "GuiToolTipProfile";
       };
    };
 };
