@@ -2485,7 +2485,9 @@ bool GuiTreeViewCtrl::setItemExpanded(S32 itemId, bool expand)
          if (!item->isInspectorData() && item->mState.test(Item::VirtualParent))
             onVirtualParentExpand(item);
 
-         scrollVisible(item);
+         if (item != mRoot || mShowRoot)
+            scrollVisible(item);
+
          item = item->mParent;
       }
    }

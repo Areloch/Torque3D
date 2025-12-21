@@ -63,7 +63,7 @@ function BaseParticleEdAction::sync( %this )
       PE_ParticleEditor.guiSync();
       
       if( %this.particle.getId() == PE_ParticleEditor.currParticle.getId() )
-         PE_ParticleEditor.setParticleDirty();
+         PE_ParticleEditor.setDirty();
    }
 
    // Sync emitter state.
@@ -75,7 +75,7 @@ function BaseParticleEdAction::sync( %this )
       PE_EmitterEditor.guiSync();
 
       if( %this.emitter.getId() == PE_EmitterEditor.currEmitter.getId() )
-         PE_EmitterEditor.setEmitterDirty();
+         PE_EmitterEditor.setDirty();
    }
 }
 
@@ -112,23 +112,15 @@ function ActionCreateNewEmitter::redo( %this )
    %emitter = %this.emitter;
    
    // Assign name.
-   
    %emitter.name = %this.emitterName;
    
    // Remove from unlisted.
-   
-   PE_UnlistedEmitters.remove( %emitter );
+   PE_EmitterEditor.unlistedSet.remove( %emitter );
    
    // Drop it in the dropdown and select it.
-   
-   %popup = PEE_EmitterSelector;
-
-   %popup.add( %emitter.getName(), %emitter.getId() );
-   %popup.sort();
-   %popup.setSelected( %emitter.getId() );   
+   PE_EmitterEditor.selectObject(%emitter);
    
    // Sync up.
-   
    Parent::redo( %this );
 }
 
@@ -139,32 +131,30 @@ function ActionCreateNewEmitter::undo( %this )
    %emitter = %this.emitter;
       
    // Prevent a save dialog coming up on the emitter.
-   
    if( %emitter == PE_EmitterEditor.currEmitter )
-      PE_EmitterEditor.setEmitterNotDirty();
+      PE_EmitterEditor.setNotDirty();
    
    // Add to unlisted.
-
-   PE_UnlistedEmitters.add( %emitter );
+   PE_EmitterEditor.unlistedSet.add( %emitter );
    
    // Remove it from in the dropdown and select prev emitter.
-   
-   %popup = PEE_EmitterSelector;
+   %popup = PE_EmitterEditor-->popupMenu;
       
    if( isObject( %this.prevEmitter ) )
-      %popup.setSelected( %this.prevEmitter.getId() );
+   {
+      PE_EmitterEditor.selectedObject(%this.prevEmitter);
+   }
    else
-      %popup.setFirstSelected();
+   {
+      PE_EmitterEditor-->popupMenu.text = "";
+      PE_EmitterEditor-->inspector.inspect();
+   }
 
-   %popup.clearEntry( %emitter.getId() );
-      
    // Unassign name.
-   
    %this.emitterName = %emitter.name;
    %emitter.name = "";
 
    // Sync up.
-   
    Parent::undo( %this );
 }
 
@@ -185,26 +175,21 @@ function ActionDeleteEmitter::redo( %this )
 
    // Add to unlisted.
    
-   PE_UnlistedEmitters.add( %emitter );
+   PE_EmitterEditor.unlistedSet.add( %emitter );
    
    // Remove from file.
    
    if(    %emitter.getFileName() !$= ""
-       && %emitter.getFilename() !$= "tools/particleEditor/particleEmitterEditor.ed." @ $TorqueScriptFileExtension )
-      PE_EmitterSaver.removeObjectFromFile( %emitter );
+       && %emitter.getFilename() !$= "tools/particleEditor/scripts/particleEmitterEditor.ed." @ $TorqueScriptFileExtension )
+      PE_EmitterEditor.saver.removeObjectFromFile( %emitter );
       
    // Select DefaultEmitter or first in list.
    
-   %popup = PEE_EmitterSelector_Control-->PopUpMenu;
+   %popup = PE_EmitterEditor-->PopUpMenu.text = "";
 
-   %popup.setFirstSelected();
-      
-   // Remove from dropdown.
-
-   %popup.clearEntry( %emitter );
+   PE_EmitterEditor-->inspector.inspect();
 
    // Sync up.
-
    Parent::redo( %this );
 }
 
@@ -220,26 +205,21 @@ function ActionDeleteEmitter::undo( %this )
 
    // Remove from unlisted.
    
-   PE_UnlistedEmitters.remove( %emitter );
+   PE_EmitterEditor.unlistedSet.remove( %emitter );
    
    // Resave to file.
    
-   if(    %this.emitterFname !$= ""
-       && %this.emitterFname !$= "tools/particleEditor/particleEmitterEditor.ed.gui" )
+   if(    %emitter.getFilename() !$= ""
+       && %emitter.getFilename() !$= "tools/particleEditor/scripts/particleEmitterEditor.ed." @ $TorqueScriptFileExtension )
    {
-      PE_EmitterSaver.setDirty( %emitter, %this.emitterFname );
-      PE_EmitterSaver.saveDirty();
+      PE_EmitterEditor.saver.setDirty( %emitter, %emitter.getFilename() );
+      PE_EmitterEditor.saver.saveDirty();
    }
 
    // Add it to the dropdown and selet it.
-   
-   %popup = PEE_EmitterSelector_Control-->PopUpMenu;
-   %popup.add( %emitter.getName(), %emitter.getId() );
-   %popup.sort();
-   %popup.setSelected( %emitter.getId() );
+   PE_EmitterEditor.selectedObject(%emitter);
    
    // Sync up.
-   
    Parent::undo( %this );
 }
 
@@ -263,90 +243,6 @@ function ActionUpdateActiveEmitter::undo( %this )
 {
    %emitter = %this.emitter;
    %emitter.setFieldValue( %this.field, %this.oldValue );
-   
-   Parent::undo( %this );
-}
-
-//=============================================================================================
-//    ActionUpdateActiveEmitterLifeFields.
-//=============================================================================================
-
-//---------------------------------------------------------------------------------------------
-
-function ActionUpdateActiveEmitterLifeFields::redo( %this )
-{
-   %emitter = %this.emitter;
-   
-   %emitter.lifetimeMS = %this.newValueLifetimeMS;
-   %emitter.lifetimeVarianceMS = %this.newValueLifetimeVarianceMS;
-   
-   Parent::redo( %this );
-}
-
-//---------------------------------------------------------------------------------------------
-
-function ActionUpdateActiveEmitterLifeFields::undo( %this )
-{
-   %emitter = %this.emitter;
-
-   %emitter.lifetimeMS = %this.oldValueLifetimeMS;
-   %emitter.lifetimeVarianceMS = %this.oldValueLifetimeVarianceMS;
-   
-   Parent::undo( %this );
-}
-
-//=============================================================================================
-//    ActionUpdateActiveEmitterAmountFields.
-//=============================================================================================
-
-//---------------------------------------------------------------------------------------------
-
-function ActionUpdateActiveEmitterAmountFields::redo( %this )
-{
-   %emitter = %this.emitter;
-   
-   %emitter.ejectionPeriodMS = %this.newValueEjectionPeriodMS;
-   %emitter.periodVarianceMS = %this.newValuePeriodVarianceMS;
-   
-   Parent::redo( %this );
-}
-
-//---------------------------------------------------------------------------------------------
-
-function ActionUpdateActiveEmitterAmountFields::undo( %this )
-{
-   %emitter = %this.emitter;
-   
-   %emitter.ejectionPeriodMS = %this.oldValueEjectionPeriodMS;
-   %emitter.periodVarianceMS = %this.oldValuePeriodVarianceMS;
-   
-   Parent::undo( %this );
-}
-
-//=============================================================================================
-//    ActionUpdateActiveEmitterSpeedFields.
-//=============================================================================================
-
-//---------------------------------------------------------------------------------------------
-
-function ActionUpdateActiveEmitterSpeedFields::redo( %this )
-{
-   %emitter = %this.emitter;
-   
-   %emitter.ejectionVelocity = %this.newValueEjectionVelocity;
-   %emitter.velocityVariance = %this.newValueVelocityVariance;
-   
-   Parent::redo( %this );
-}
-
-//---------------------------------------------------------------------------------------------
-
-function ActionUpdateActiveEmitterSpeedFields::undo( %this )
-{
-   %emitter = %this.emitter;
-
-   %emitter.ejectionVelocity = %this.oldValueEjectionVelocity;
-   %emitter.velocityVariance = %this.oldValueVelocityVariance;
    
    Parent::undo( %this );
 }
@@ -495,7 +391,7 @@ function ActionDeleteParticle::undo( %this )
    // Resave to file.
    
    if(    %particle.getFilename() !$= ""
-       && %particle.getFilename() !$= "tools/particleEditor/particleParticleEditor.ed.gui" )
+       && %particle.getFilename() !$= "tools/particleEditor/particleParticleEditor.ed." @ $TorqueScriptFileExtension )
    {
       PE_ParticleSaver.setDirty( %particle );
       PE_ParticleSaver.saveDirty();
@@ -601,6 +497,574 @@ function ActionUpdateActiveParticleSpinFields::undo( %this )
 
    %particle.spinRandomMax = %this.oldValueSpinRandomMax;
    %particle.spinRandomMin = %this.oldValueSpinRandomMin;
+   
+   Parent::undo( %this );
+}
+
+//=============================================================================================
+//    ActionCreateNewExplosion.
+//=============================================================================================
+
+//---------------------------------------------------------------------------------------------
+
+function ActionCreateNewExplosion::redo( %this )
+{
+   %explosion = %this.explosion;
+   
+   // Assign name.
+   %explosion.name = %this.explosionName;
+   
+   // Remove from unlisted.
+   PE_ExplosionEditor.unlistedSet.remove( %explosion );
+   
+   // Drop it in the dropdown and select it.
+   PE_ExplosionEditor.selectObject(%explosion);
+   
+   // Sync up.
+   Parent::redo( %this );
+}
+
+//---------------------------------------------------------------------------------------------
+
+function ActionCreateNewExplosion::undo( %this )
+{
+   %explosion = %this.explosion;
+      
+   // Prevent a save dialog coming up on the emitter.
+   if( %explosion == PE_ExplosionEditor.currExplosion )
+      PE_ExplosionEditor.setNotDirty();
+   
+   // Add to unlisted.
+   PE_ExplosionEditor.unlistedSet.add( %explosion );
+   
+   // Remove it from in the dropdown and select prev emitter.
+   %popup = PE_ExplosionEditor-->popupMenu;
+      
+   if( isObject( %this.prevExplosion ) )
+   {
+      PE_ExplosionEditor.selectedObject(%this.prevExplosion);
+   }
+   else
+   {
+      PE_ExplosionEditor-->popupMenu.text = "";
+      PE_ExplosionEditor-->inspector.inspect();
+   }
+
+   // Unassign name.
+   %this.explosionName = %explosion.name;
+   %explosion.name = "";
+
+   // Sync up.
+   Parent::undo( %this );
+}
+
+//=============================================================================================
+//    ActionDeleteExplosion.
+//=============================================================================================
+
+//---------------------------------------------------------------------------------------------
+
+function ActionDeleteExplosion::redo( %this )
+{
+   %explosion = %this.explosion;
+      
+   // Unassign name.
+   %this.explosionName = %explosion.name;
+   %explosion.name = "";
+
+   // Add to unlisted.
+   PE_ExplosionEditor.unlistedSet.add( %explosion );
+   
+   // Remove from file.
+   if(    %explosion.getFileName() !$= ""
+       && %explosion.getFilename() !$= "tools/particleEditor/scripts/explosionEditor.ed." @ $TorqueScriptFileExtension )
+      PE_ExplosionEditor.saver.removeObjectFromFile( %explosion );
+      
+   // Select DefaultExplosion or first in list.
+   
+   %popup = PE_ExplosionEditor-->PopUpMenu.text = "";
+
+   PE_ExplosionEditor-->inspector.inspect();
+
+   // Sync up.
+   Parent::redo( %this );
+}
+
+//---------------------------------------------------------------------------------------------
+
+function ActionDeleteExplosion::undo( %this )
+{
+   %explosion = %this.explosion;
+      
+   // Re-assign name.
+   %explosion.name = %this.explosionName;
+
+   // Remove from unlisted.
+   
+   PE_ExplosionEditor.unlistedSet.remove( %explosion );
+   
+   // Resave to file.
+   
+   if(    %explosion.getFilename() !$= ""
+       && %explosion.getFilename() !$= "tools/particleEditor/scripts/particleExplosionEditor.ed." @ $TorqueScriptFileExtension )
+   {
+      PE_ExplosionEditor.saver.setDirty( %explosion, %explosion.getFilename() );
+      PE_ExplosionEditor.saver.saveDirty();
+   }
+
+   // Add it to the dropdown and selet it.
+   PE_ExplosionEditor.selectedObject(%explosion);
+   
+   // Sync up.
+   Parent::undo( %this );
+}
+
+//=============================================================================================
+//    ActionUpdateActiveExplosion.
+//=============================================================================================
+
+//---------------------------------------------------------------------------------------------
+
+function ActionUpdateActiveExplosion::redo( %this )
+{
+   %explosion = %this.explosion;
+   %explosion.setFieldValue( %this.field, %this.newValue );
+   
+   Parent::redo( %this );
+}
+
+//---------------------------------------------------------------------------------------------
+
+function ActionUpdateActiveExplosion::undo( %this )
+{
+   %explosion = %this.explosion;
+   %explosion.setFieldValue( %this.field, %this.oldValue );
+   
+   Parent::undo( %this );
+}
+
+//=============================================================================================
+//    ActionCreateNewZodiac.
+//=============================================================================================
+
+//---------------------------------------------------------------------------------------------
+
+function ActionCreateNewZodiac::redo( %this )
+{
+   %zodiac = %this.zodiac;
+   
+   // Assign name.
+   %zodiac.name = %this.zodiacName;
+   
+   // Remove from unlisted.
+   PE_ZodiacEditor.unlistedSet.remove( %zodiac );
+   
+   // Drop it in the dropdown and select it.
+   PE_ZodiacEditor.selectObject(%zodiac);
+   
+   // Sync up.
+   Parent::redo( %this );
+}
+
+//---------------------------------------------------------------------------------------------
+
+function ActionCreateNewZodiac::undo( %this )
+{
+   %zodiac = %this.zodiac;
+      
+   // Prevent a save dialog coming up on the emitter.
+   if( %zodiac == PE_ZodiacEditor.currZodiac )
+      PE_ZodiacEditor.setNotDirty();
+   
+   // Add to unlisted.
+   PE_ZodiacEditor.unlistedSet.add( %zodiac );
+   
+   // Remove it from in the dropdown and select prev emitter.
+   %popup = PE_ZodiacEditor-->popupMenu;
+      
+   if( isObject( %this.prevZodiac ) )
+   {
+      PE_ZodiacEditor.selectedObject(%this.prevZodiac);
+   }
+   else
+   {
+      PE_ZodiacEditor-->popupMenu.text = "";
+      PE_ZodiacEditor-->inspector.inspect();
+   }
+
+   // Unassign name.
+   %this.zodiacName = %zodiac.name;
+   %zodiac.name = "";
+
+   // Sync up.
+   Parent::undo( %this );
+}
+
+//=============================================================================================
+//    ActionDeleteZodiac.
+//=============================================================================================
+
+//---------------------------------------------------------------------------------------------
+
+function ActionDeleteZodiac::redo( %this )
+{
+   %zodiac = %this.zodiac;
+      
+   // Unassign name.
+   %this.zodiacName = %zodiac.name;
+   %zodiac.name = "";
+
+   // Add to unlisted.
+   PE_ZodiacEditor.unlistedSet.add( %zodiac );
+   
+   // Remove from file.
+   if(    %zodiac.getFileName() !$= ""
+       && %zodiac.getFilename() !$= "tools/particleEditor/scripts/afxZodiacEditor.ed." @ $TorqueScriptFileExtension )
+      PE_ZodiacEditor.saver.removeObjectFromFile( %zodiac );
+      
+   // Select DefaultZodiac or first in list.
+   
+   %popup = PE_ZodiacEditor-->PopUpMenu.text = "";
+
+   PE_ZodiacEditor-->inspector.inspect();
+
+   // Sync up.
+   Parent::redo( %this );
+}
+
+//---------------------------------------------------------------------------------------------
+
+function ActionDeleteZodiac::undo( %this )
+{
+   %zodiac = %this.zodiac;
+      
+   // Re-assign name.
+   %zodiac.name = %this.zodiacName;
+
+   // Remove from unlisted.
+   
+   PE_ZodiacEditor.unlistedSet.remove( %zodiac );
+   
+   // Resave to file.
+   
+   if(    %zodiac.getFilename() !$= ""
+       && %zodiac.getFilename() !$= "tools/particleEditor/scripts/afxZodiacEditor.ed." @ $TorqueScriptFileExtension )
+   {
+      PE_ZodiacEditor.saver.setDirty( %zodiac, %zodiac.getFilename() );
+      PE_ZodiacEditor.saver.saveDirty();
+   }
+
+   // Add it to the dropdown and selet it.
+   PE_ZodiacEditor.selectedObject(%zodiac);
+   
+   // Sync up.
+   Parent::undo( %this );
+}
+
+//=============================================================================================
+//    ActionUpdateActiveZodiac.
+//=============================================================================================
+
+//---------------------------------------------------------------------------------------------
+
+function ActionUpdateActiveZodiac::redo( %this )
+{
+   %zodiac = %this.zodiac;
+   %zodiac.setFieldValue( %this.field, %this.newValue );
+   
+   Parent::redo( %this );
+}
+
+//---------------------------------------------------------------------------------------------
+
+function ActionUpdateActiveZodiac::undo( %this )
+{
+   %zodiac = %this.zodiac;
+   %zodiac.setFieldValue( %this.field, %this.oldValue );
+   
+   Parent::undo( %this );
+}
+
+//=============================================================================================
+//    ActionCreateNewRibbon.
+//=============================================================================================
+
+//---------------------------------------------------------------------------------------------
+
+function ActionCreateNewRibbon::redo( %this )
+{
+   %ribbon = %this.ribbon;
+   
+   // Assign name.
+   %ribbon.name = %this.ribbonName;
+   
+   // Remove from unlisted.
+   PE_RibbonParticleEditor.unlistedSet.remove( %ribbon );
+   
+   // Drop it in the dropdown and select it.
+   PE_RibbonParticleEditor.selectObject(%ribbon);
+   
+   // Sync up.
+   Parent::redo( %this );
+}
+
+//---------------------------------------------------------------------------------------------
+
+function ActionCreateNewRibbon::undo( %this )
+{
+   %ribbon = %this.ribbon;
+      
+   // Prevent a save dialog coming up on the emitter.
+   if( %ribbon == PE_RibbonParticleEditor.currRibbon )
+      PE_RibbonParticleEditor.setNotDirty();
+   
+   // Add to unlisted.
+   PE_RibbonParticleEditor.unlistedSet.add( %ribbon );
+   
+   // Remove it from in the dropdown and select prev emitter.
+   %popup = PE_RibbonParticleEditor-->popupMenu;
+      
+   if( isObject( %this.prevRibbon ) )
+   {
+      PE_RibbonParticleEditor.selectedObject(%this.prevRibbon);
+   }
+   else
+   {
+      PE_RibbonParticleEditor-->popupMenu.text = "";
+      PE_RibbonParticleEditor-->inspector.inspect();
+   }
+
+   // Unassign name.
+   %this.ribbonName = %ribbon.name;
+   %ribbon.name = "";
+
+   // Sync up.
+   Parent::undo( %this );
+}
+
+//=============================================================================================
+//    ActionDeleteRibbon.
+//=============================================================================================
+
+//---------------------------------------------------------------------------------------------
+
+function ActionDeleteRibbon::redo( %this )
+{
+   %ribbon = %this.ribbon;
+      
+   // Unassign name.
+   %this.ribbonName = %ribbon.name;
+   %ribbon.name = "";
+
+   // Add to unlisted.
+   PE_RibbonParticleEditor.unlistedSet.add( %ribbon );
+   
+   // Remove from file.
+   if(    %ribbon.getFileName() !$= ""
+       && %ribbon.getFilename() !$= "tools/particleEditor/scripts/particleRibbonEditor.ed." @ $TorqueScriptFileExtension )
+      PE_RibbonParticleEditor.saver.removeObjectFromFile( %ribbon );
+      
+   // Select DefaultRibbon or first in list.
+   
+   %popup = PE_RibbonParticleEditor-->PopUpMenu.text = "";
+
+   PE_RibbonParticleEditor-->inspector.inspect();
+
+   // Sync up.
+   Parent::redo( %this );
+}
+
+//---------------------------------------------------------------------------------------------
+
+function ActionDeleteRibbon::undo( %this )
+{
+   %ribbon = %this.ribbon;
+      
+   // Re-assign name.
+   %ribbon.name = %this.ribbonName;
+
+   // Remove from unlisted.
+   
+   PE_RibbonParticleEditor.unlistedSet.remove( %ribbon );
+   
+   // Resave to file.
+   
+   if(    %ribbon.getFilename() !$= ""
+       && %ribbon.getFilename() !$= "tools/particleEditor/scripts/particleRibbonEditor.ed." @ $TorqueScriptFileExtension )
+   {
+      PE_RibbonParticleEditor.saver.setDirty( %ribbon, %ribbon.getFilename() );
+      PE_RibbonParticleEditor.saver.saveDirty();
+   }
+
+   // Add it to the dropdown and selet it.
+   PE_RibbonParticleEditor.selectedObject(%ribbon);
+   
+   // Sync up.
+   Parent::undo( %this );
+}
+
+//=============================================================================================
+//    ActionUpdateActiveRibbon.
+//=============================================================================================
+
+//---------------------------------------------------------------------------------------------
+
+function ActionUpdateActiveRibbon::redo( %this )
+{
+   %ribbon = %this.ribbon;
+   %ribbon.setFieldValue( %this.field, %this.newValue );
+   
+   Parent::redo( %this );
+}
+
+//---------------------------------------------------------------------------------------------
+
+function ActionUpdateActiveRibbon::undo( %this )
+{
+   %ribbon = %this.ribbon;
+   %ribbon.setFieldValue( %this.field, %this.oldValue );
+   
+   Parent::undo( %this );
+}
+
+//=============================================================================================
+//    ActionCreateNewChoreography.
+//=============================================================================================
+
+//---------------------------------------------------------------------------------------------
+
+function ActionCreateNewChoreography::redo( %this )
+{
+   %choreography = %this.choreography;
+   
+   // Assign name.
+   %choreography.name = %this.choreographyName;
+   
+   // Remove from unlisted.
+   PE_AFXChoreoEditor.unlistedSet.remove( %choreography );
+   
+   // Drop it in the dropdown and select it.
+   PE_AFXChoreoEditor.selectObject(%choreography);
+   
+   // Sync up.
+   Parent::redo( %this );
+}
+
+//---------------------------------------------------------------------------------------------
+
+function ActionCreateNewChoreography::undo( %this )
+{
+   %choreography = %this.choreography;
+      
+   // Prevent a save dialog coming up on the emitter.
+   if( %choreography == PE_AFXChoreoEditor.currChoreography )
+      PE_AFXChoreoEditor.setNotDirty();
+   
+   // Add to unlisted.
+   PE_AFXChoreoEditor.unlistedSet.add( %choreography );
+   
+   // Remove it from in the dropdown and select prev emitter.
+   %popup = PE_AFXChoreoEditor-->popupMenu;
+      
+   if( isObject( %this.prevChoreography ) )
+   {
+      PE_AFXChoreoEditor.selectedObject(%this.prevChoreography);
+   }
+   else
+   {
+      PE_AFXChoreoEditor-->popupMenu.text = "";
+      PE_AFXChoreoEditor-->inspector.inspect();
+   }
+
+   // Unassign name.
+   %this.choreographyName = %choreography.name;
+   %choreography.name = "";
+
+   // Sync up.
+   Parent::undo( %this );
+}
+
+//=============================================================================================
+//    ActionDeleteChoreography.
+//=============================================================================================
+
+//---------------------------------------------------------------------------------------------
+
+function ActionDeleteChoreography::redo( %this )
+{
+   %choreography = %this.choreography;
+      
+   // Unassign name.
+   %this.choreographyName = %choreography.name;
+   %choreography.name = "";
+
+   // Add to unlisted.
+   PE_AFXChoreoEditor.unlistedSet.add( %choreography );
+   
+   // Remove from file.
+   if(    %choreography.getFileName() !$= ""
+       && %choreography.getFilename() !$= "tools/particleEditor/scripts/afxChoreoEditor.ed." @ $TorqueScriptFileExtension )
+      PE_AFXChoreoEditor.saver.removeObjectFromFile( %choreography );
+      
+   // Select DefaultChoreography or first in list.
+   
+   %popup = PE_AFXChoreoEditor-->PopUpMenu.text = "";
+
+   PE_AFXChoreoEditor-->inspector.inspect();
+
+   // Sync up.
+   Parent::redo( %this );
+}
+
+//---------------------------------------------------------------------------------------------
+
+function ActionDeleteChoreography::undo( %this )
+{
+   %choreography = %this.choreography;
+      
+   // Re-assign name.
+   %choreography.name = %this.choreographyName;
+
+   // Remove from unlisted.
+   
+   PE_AFXChoreoEditor.unlistedSet.remove( %choreography );
+   
+   // Resave to file.
+   
+   if(    %choreography.getFilename() !$= ""
+       && %choreography.getFilename() !$= "tools/particleEditor/scripts/afxChoreoEditor.ed." @ $TorqueScriptFileExtension )
+   {
+      PE_AFXChoreoEditor.saver.setDirty( %choreography, %choreography.getFilename() );
+      PE_AFXChoreoEditor.saver.saveDirty();
+   }
+
+   // Add it to the dropdown and selet it.
+   PE_AFXChoreoEditor.selectedObject(%choreography);
+   
+   // Sync up.
+   Parent::undo( %this );
+}
+
+//=============================================================================================
+//    ActionUpdateActiveChoreography.
+//=============================================================================================
+
+//---------------------------------------------------------------------------------------------
+
+function ActionUpdateActiveChoreography::redo( %this )
+{
+   %choreography = %this.choreography;
+   %choreography.setFieldValue( %this.field, %this.newValue );
+   
+   Parent::redo( %this );
+}
+
+//---------------------------------------------------------------------------------------------
+
+function ActionUpdateActiveChoreography::undo( %this )
+{
+   %choreography = %this.choreography;
+   %choreography.setFieldValue( %this.field, %this.oldValue );
    
    Parent::undo( %this );
 }

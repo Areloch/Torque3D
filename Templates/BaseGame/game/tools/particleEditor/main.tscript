@@ -31,10 +31,17 @@ function initializeParticleEditor()
      
    exec( "./guis/ParticleEditor.ed.gui" );
    exec( "./guis/particleEditor.ed." @ $TorqueScriptFileExtension );
-   exec( "./scripts/particleEditorUndo.ed." @ $TorqueScriptFileExtension );   
+   exec( "./guis/createNewPrompt.ed.gui" );
+   exec( "./guis/createNewPrompt.ed." @ $TorqueScriptFileExtension );
+   
+   exec( "./scripts/particleEditorUndo.ed." @ $TorqueScriptFileExtension ); 
+     
    exec( "./scripts/particleEmitterEditor.ed." @ $TorqueScriptFileExtension );
    exec( "./scripts/particleParticleEditor.ed." @ $TorqueScriptFileExtension );
+   exec( "./scripts/explosionEditor.ed." @ $TorqueScriptFileExtension );
+   exec( "./scripts/particleRibbonEditor.ed." @ $TorqueScriptFileExtension );
    exec( "./scripts/afxZodiacEditor.ed." @ $TorqueScriptFileExtension );
+   exec( "./scripts/afxChoreoEditor.ed." @ $TorqueScriptFileExtension );
    
    //PE_Window.setVisible( false );
    //MainSceneTabPanel.add( PE_Window );
@@ -54,15 +61,11 @@ function initializeParticleEditor()
    ParticleEditorPlugin.map = %map;
 
    new ScriptObject( ParticleEditor );
-
-   new PersistenceManager( PE_EmitterSaver );
-   new PersistenceManager( PE_ParticleSaver );
-
-   new SimSet( PE_UnlistedParticles );
-   new SimSet( PE_UnlistedEmitters );
    
    ParticleEditor.registerParticleEdType("Emitter", "ParticleEmitterData", "PE_EmitterEditor");
-   ParticleEditor.registerParticleEdType("Particle", "ParticleData RibbonData", "PE_ParticleEditor");
+   ParticleEditor.registerParticleEdType("Particle", "ParticleData", "PE_ParticleEditor");
+   ParticleEditor.registerParticleEdType("Explosion", "ExplosionData", "PE_ExplosionEditor");
+   ParticleEditor.registerParticleEdType("Ribbon", "RibbonData", "PE_RibbonParticleEditor");
    ParticleEditor.registerParticleEdType("Zodiac", "afxZodiacData", "PE_AFXZodiacEditor");
    ParticleEditor.registerParticleEdType("Choreography", "afxChoreographerData", "PE_AFXChoreoEditor");
 }
@@ -101,7 +104,6 @@ function ParticleEditorPlugin::onActivated( %this )
    
    EditorGui-->WorldEditorToolbar.setVisible( true );
    
-   ParticleEditorGui.onWake();
    Canvas.pushDialog(ParticleEditorGui);
 
    PE_Window.makeFirstResponder( true );
@@ -123,13 +125,12 @@ function ParticleEditorPlugin::onDeactivated( %this )
 {   
    EditorGui-->WorldEditorToolbar.setVisible( false );
    //PE_Window.setVisible( false );
+
+   ParticleEditor.selectedEditor.closeEditorTab();
    
    Canvas.popDialog(ParticleEditorGui);
    ParticleEditorGui.quit();
-   
-   if( isObject( $ParticleEditor::emitterNode) )
-      $ParticleEditor::emitterNode.delete();
-        
+    
    %this.map.pop(); 
    
    Parent::onDeactivated( %this );

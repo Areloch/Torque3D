@@ -912,6 +912,11 @@ GuiControl* GuiInspectorTypeParticleDataList::constructEditControl()
    mNewParticleBtn->mFitBitmapToButton = true;
    mNewParticleBtn->setExtent(20, 20);
 
+   char szBuffer[512];
+   dSprintf(szBuffer, sizeof(szBuffer), "ParticleEditor.addParticleSlot(%s, %s);",
+      mNewParticleBtn->getIdString(), mInspector->getInspectObject()->getIdString());
+   mNewParticleBtn->setField("Command", szBuffer);
+
    GuiContainer* newBtnCtnr = new GuiContainer();
    newBtnCtnr->registerObject();
    newBtnCtnr->addObject(mNewParticleBtn);
