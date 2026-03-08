@@ -19,6 +19,9 @@
 #ifndef SUB_SCENE_H
 #include "SubScene.h"
 #endif
+#ifndef _GAMECONNECTION_H_
+#include "T3D/gameBase/gameConnection.h"
+#endif
 
 /// Scene
 /// This object is effectively a smart container to hold and manage any relevent scene objects and data
@@ -45,8 +48,24 @@ class Scene : public NetObject, public virtual ITickable
    StringTableEntry mGameModesNames;
    Vector<GameMode*> mGameModesList;
 
+   enum GhostingStatus
+   {
+      Done,
+      InProgress
+   };
+
+   Map<NetConnection*, GhostingStatus> mClientGhostingStatus;
+
 protected:
    static Scene * smRootScene;
+
+   typedef Signal<void(NetConnection*, U32)> SceneGhostingStartSignal;
+   SceneGhostingStartSignal mServerGhostingStartSignal;
+   SceneGhostingStartSignal mClientGhostingStartSignal;
+
+   typedef Signal<void(NetConnection*)> SceneGhostingDoneSignal;
+   SceneGhostingDoneSignal mServerGhostingDoneSignal;
+   SceneGhostingDoneSignal mClientGhostingDoneSignal;
 
    DECLARE_CONOBJECT(Scene);
 
@@ -103,9 +122,21 @@ public:
       return Scene::smSceneList[0];
    }
 
+   U32 getUnghostedObjectCount(NetConnection* conn);
+
    static Vector<Scene*> smSceneList;
 
+public:
+   SceneGhostingStartSignal& getServerGhostingStartSignal() { return mServerGhostingStartSignal; }
+   SceneGhostingDoneSignal& getServerGhostingDoneSignal() { return mServerGhostingDoneSignal; }
+   SceneGhostingStartSignal& getClientGhostingStartSignal() { return mClientGhostingStartSignal; }
+   SceneGhostingDoneSignal& getClientGhostingDoneSignal() { return mClientGhostingDoneSignal; }
+
    DECLARE_CALLBACK(void, onSaving, (const char* fileName));
+   DECLARE_CALLBACK(void, onServerGhostingStart, (NetConnection* conn, U32 pendingGhosts));
+   DECLARE_CALLBACK(void, onServerGhostingDone, (NetConnection* conn));
+   DECLARE_CALLBACK(void, onClientGhostingStart, (NetConnection* conn, U32 pendingGhosts));
+   DECLARE_CALLBACK(void, onClientGhostingDone, (NetConnection* conn));
 };
 
 
@@ -133,4 +164,5 @@ Vector<T*> Scene::getObjectsByClass()
 
    return foundObjects;
 }
+
 #endif

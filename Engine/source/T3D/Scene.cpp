@@ -1,15 +1,97 @@
 #include "Scene.h"
 #include "T3D/assets/LevelAsset.h"
-#include "T3D/gameBase/gameConnection.h"
 #include "T3D/gameMode.h"
+
+class ClientSceneGhostingStartingEvent : public NetEvent
+{
+   typedef NetEvent Parent;
+
+public:
+   U32 mNumGhostsPending;
+
+   ClientSceneGhostingStartingEvent() : mNumGhostsPending(0) { mGuaranteeType = Guaranteed; }
+   ~ClientSceneGhostingStartingEvent() {}
+
+   void pack(NetConnection* conn, BitStream* stream) override
+   {
+      stream->write(mNumGhostsPending);
+   }
+   void write(NetConnection* conn, BitStream* stream) override
+   {
+      pack(conn, stream);
+   }
+   void unpack(NetConnection* conn, BitStream* stream) override
+   {
+      stream->read(&mNumGhostsPending);
+   }
+
+   void process(NetConnection* conn) override
+   {
+      Scene::getRootScene()->getClientGhostingStartSignal().trigger(conn, mNumGhostsPending);
+      Scene::getRootScene()->onClientGhostingStart_callback(conn, mNumGhostsPending);
+   }
+
+   DECLARE_CONOBJECT(ClientSceneGhostingStartingEvent);
+};
+
+IMPLEMENT_CO_NETEVENT_V1(ClientSceneGhostingStartingEvent);
+
+ConsoleDocClass(ClientSceneGhostingStartingEvent,
+   "@brief Event posted when player is fully loaded into the game and ready for interaction.\n\n"
+   "@internal");
+
+class ClientSceneGhostingDoneEvent : public NetEvent
+{
+   typedef NetEvent Parent;
+
+public:
+   ClientSceneGhostingDoneEvent() { mGuaranteeType = Guaranteed; }
+   ~ClientSceneGhostingDoneEvent() {}
+
+   void pack(NetConnection*, BitStream* bstream) override {}
+   void write(NetConnection*, BitStream* bstream) override {}
+   void unpack(NetConnection* /*ps*/, BitStream* bstream) override {}
+
+   void process(NetConnection* conn) override
+   {
+      Scene::getRootScene()->getClientGhostingDoneSignal().trigger(conn);
+      Scene::getRootScene()->onClientGhostingDone_callback(conn);
+   }
+
+   DECLARE_CONOBJECT(ClientSceneGhostingDoneEvent);
+};
+IMPLEMENT_CO_NETEVENT_V1(ClientSceneGhostingDoneEvent);
+
+ConsoleDocClass(ClientSceneGhostingDoneEvent,
+   "@brief Event posted when player is fully loaded into the game and ready for interaction.\n\n"
+   "@internal");
 
 Scene * Scene::smRootScene = NULL;
 Vector<Scene*> Scene::smSceneList;
 
 IMPLEMENT_CALLBACK(Scene, onSaving, void, (const char* fileName), (fileName),
    "@brief Called when a scene is saved to allow scenes to special-handle prepwork for saving if required.\n\n"
-
    "@param fileName The level file being saved\n");
+IMPLEMENT_CALLBACK(Scene, onServerGhostingStart, void, (NetConnection* conn, U32 pendingGhosts), (conn, pendingGhosts),
+   "@brief Called when a scene has detected that there are new objects in the scene heirarchy being ghosted down to a client.\n"
+   "This generally happens because of prefabs, subScenes or SceneGroups being created and prepped to ghost down.\n"
+   "This callback specifically for the server to respond to ghosting starting being sent to a client.\n\n"
+   "@param conn The NetConnection ghosts are being sent to.\n"
+   "@param pendingGhosts The number of ghosted objects that will be transmitted down to client.\n");
+IMPLEMENT_CALLBACK(Scene, onServerGhostingDone, void, (NetConnection* conn), (conn),
+   "@brief Called when a scene has finished ghosted down new objects in the scene heirarchy to a client.\n"
+   "This callback specifically for the server to respond to ghosting finshing being sent to a client.\n\n"
+   "@param conn The NetConnection ghosts are being sent to.\n");
+IMPLEMENT_CALLBACK(Scene, onClientGhostingStart, void, (NetConnection* conn, U32 pendingGhosts), (conn, pendingGhosts),
+   "@brief Called when a scene has detected that there are new objects in the scene heirarchy being ghosted down to a client.\n"
+   "This generally happens because of prefabs, subScenes or SceneGroups being created and prepped to ghost down.\n"
+   "This callback specifically for the client to respond to ghosting starting being sent from the server.\n\n"
+   "@param conn The NetConnection ghosts are being sent to.\n"
+   "@param pendingGhosts The number of ghosted objects that will be transmitted down to client.\n");
+IMPLEMENT_CALLBACK(Scene, onClientGhostingDone, void, (NetConnection* conn), (conn),
+   "@brief Called when a scene has finished ghosted down new objects in the scene heirarchy to a client.\n"
+   "This callback specifically for the client to respond to ghosting finishing being sent from the server.\n\n"
+   "@param conn The NetConnection ghosts are being sent to.\n");
 
 IMPLEMENT_CO_NETOBJECT_V1(Scene);
 
@@ -185,12 +267,61 @@ void Scene::processTick()
    if (!isServerObject())
       return;
 
+   SimGroup* pClientGroup = Sim::getClientGroup();
+   if (this == getRootScene())
+   {
+      for (SimGroup::iterator itr = pClientGroup->begin(); itr != pClientGroup->end(); itr++)
+      {
+         NetConnection* conn = dynamic_cast<NetConnection*>(*itr);
+         if (conn)
+         {
+            //Ensure we have tracking for this client
+            if (!mClientGhostingStatus.contains(conn))
+               mClientGhostingStatus.insert(conn, GhostingStatus::Done);
+
+            U32 unghostedObjCount = getUnghostedObjectCount(conn);
+            if (unghostedObjCount != 0)
+            {
+               //Check if the status has changed, if so do our callbacks
+               if (mClientGhostingStatus[conn] == GhostingStatus::Done)
+               {
+                  onServerGhostingStart_callback(conn, unghostedObjCount);
+
+                  getServerGhostingStartSignal().trigger(conn, unghostedObjCount);
+
+                  //Now inform the client
+                  ClientSceneGhostingStartingEvent* event = new ClientSceneGhostingStartingEvent();
+                  event->mNumGhostsPending = unghostedObjCount;
+                  conn->postNetEvent(event);
+
+                  mClientGhostingStatus[conn] = GhostingStatus::InProgress;
+               }
+            }
+            else
+            {
+               if (mClientGhostingStatus[conn] == GhostingStatus::InProgress)
+               {
+                  //We must've hit the end of the current run, so kick our callbacks
+                  onServerGhostingDone_callback(conn);
+
+                  getServerGhostingDoneSignal().trigger(conn);
+
+                  //Now inform the client
+                  ClientSceneGhostingDoneEvent* event = new ClientSceneGhostingDoneEvent();
+                  conn->postNetEvent(event);
+
+                  mClientGhostingStatus[conn] = GhostingStatus::Done;
+               }
+            }
+         }
+      }
+   }
+
    //iterate over our subscenes to update their status of loaded or unloaded based on if any control objects intersect their bounds
    for (U32 i = 0; i < mSubScenes.size(); i++)
    {
       bool hasClients = false;
 
-      SimGroup* pClientGroup = Sim::getClientGroup();
       for (SimGroup::iterator itr = pClientGroup->begin(); itr != pClientGroup->end(); itr++)
       {
          GameConnection* gc = dynamic_cast<GameConnection*>(*itr);
@@ -423,6 +554,28 @@ void Scene::loadAtPosition(const Point3F& position)
          mSubScenes[i]->load();
       }
    }
+}
+
+U32 Scene::getUnghostedObjectCount(NetConnection* conn)
+{
+   if (!conn->isGhosting())
+      return 0;
+
+   U32 unghostedObjects = 0;
+   for (SimGroupIterator itr(this); *itr; ++itr)
+   {
+      NetObject* netObj = dynamic_cast<NetObject*>((*itr));
+
+      if (!netObj)
+         continue;
+
+      if (conn->getGhostIndex(netObj) == -1 && !netObj->isSpecialScope())
+      {
+         unghostedObjects++;
+      }
+   }
+
+   return unghostedObjects;
 }
 
 DefineEngineFunction(getScene, Scene*, (U32 sceneId), (0),

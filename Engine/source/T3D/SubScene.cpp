@@ -38,7 +38,7 @@ SubScene::SubScene() :
    mUseSeparateLoadBounds(false),
    mLoadBounds(Point3F::One)
 {
-   mNetFlags.set(Ghostable | ScopeAlways);
+   mNetFlags.set(Ghostable | ScopeAlways | SpecialScope);
 
    mTypeMask |= StaticObjectType;
 }
