@@ -671,7 +671,7 @@ function EditorGui::updateSideBar(%this)
          case "ForestEditorPlugin ":
             ForestEditorPalleteWindow.onMouseDragged();
          case "MaterialEditorPlugin":
-            MaterialEditorPreviewWindow.onMouseDragged();
+            MaterialEditorGuiWindow.onMouseDragged();
          case "MeshRoadEditorPlugin":
             MeshRoadEditorTreeWindow.onMouseDragged();
          case "MissionAreaEditorPlugin":
@@ -924,7 +924,7 @@ function EditorGui::syncCameraGui( %this )
       EditorFreeCameraTypeOptions.checkRadioItem( 0, 4, %flyModeRadioItem);
       EditorPlayerCameraTypeOptions.checkRadioItem( 0, 4, -1);
    }
-   else if (!$isFirstPersonVar) // if 3rd person
+   else if ($editorCameraMode $= "3rd Person")
    {
       EditorGui-->trdPersonCamera.setStateOn(true);
       EWorldEditorToggleCamera.setBitmap("ToolsModule:3rd_person_camera_n_image");
@@ -934,7 +934,7 @@ function EditorGui::syncCameraGui( %this )
       EditorPlayerCameraTypeOptions.checkRadioItem( 0, 2, %flyModeRadioItem);
       EditorGuiStatusBar.setCamera("3rd Person Camera");
    }
-   else if ($isFirstPersonVar) // if 1st Person
+   else if ($editorCameraMode $= "1st Person")
    {
       EditorGui-->PlayerCamera.setStateOn(true);
       EWorldEditorToggleCamera.setBitmap("ToolsModule:player_n_image");
@@ -944,7 +944,12 @@ function EditorGui::syncCameraGui( %this )
       EditorPlayerCameraTypeOptions.checkRadioItem( 0, 2, %flyModeRadioItem);
       EditorFreeCameraTypeOptions.checkRadioItem( 0, 4, -1);
       EditorGuiStatusBar.setCamera("1st Person Camera");
-   }      
+   } 
+   else if ($editorCameraMode !$= "")
+   {
+      //Unclear what the status is, but presumably it was set elsewhere, so we'll just make sure we adhere  
+      EditorGuiStatusBar.setCamera($editorCameraMode);
+   }
  }
  
  //------------------------------------------------------------------------------
@@ -1051,9 +1056,9 @@ function WorldEditorPlugin::onActivated( %this )
       ETransformSelection.setVisible(true);
    }
    
-   EWorldEditor.UseGridSnap = EditorSettings.value("WorldEditor/Tools/UseGridSnap");
-   ESnapOptions-->GridSnapButton.setStateOn( EWorldEditor.UseGridSnap );
-   SnapToBar-->objectGridSnapBtn.setStateOn( EWorldEditor.UseGridSnap );
+   EWorldEditor.gridSnap = EditorSettings.value("WorldEditor/Tools/gridSnap");
+   ESnapOptions-->GridSnapButton.setStateOn( EWorldEditor.gridSnap );
+   SnapToBar-->objectGridSnapBtn.setStateOn( EWorldEditor.gridSnap );
    
    Parent::onActivated(%this);
 
@@ -1709,7 +1714,7 @@ function EWorldEditor::maxSize(%this, %window)
       
       %fixedWindow = EWTreeWindow;
       %fluidWindow = EWInspectorWindow;
-      %offset = 25; // tweak the vertical offset so that it aligns neatly
+      %offset = 0; // tweak the vertical offset so that it aligns neatly
       %top = EditorGuiToolbar.extent.y + %offset;
       %bottom = %top + 59;
       %maxHeight = Canvas.extent.y - %top - %bottom + 12;
@@ -2101,7 +2106,10 @@ function EditorTree::onRightMouseUp( %this, %itemId, %mouse, %obj )
       %popup.item[ 0 ] = "Delete" TAB "" TAB "EditorMenuEditDelete();";
       %popup.item[ 1 ] = "Group" TAB "" TAB "EWorldEditor.addSimGroup( true );";
       %popup.item[ 2 ] = "-";
-      %popup.item[ 3 ] = "Make selected a Sub-Level" TAB "" TAB "MakeSelectionASublevel();";
+      %popup.item[ 3 ] = "Make selected a Prefab" TAB "" TAB "EditorMakePrefab();";
+      %popup.item[ 4 ] = "Bake selected into Mesh" TAB "" TAB "AssetBrowser.setupCreateNewAsset(\"ShapeAsset\", AssetBrowser.selectedModule, \"makeSelectedAMesh\");";
+      %popup.item[ 5 ] = "-";
+      %popup.item[ 6 ] = "Make selected a Sub-Level" TAB "" TAB "MakeSelectionASublevel();";
    }
    else
    {
@@ -2206,6 +2214,29 @@ function EditorTree::onRightMouseUp( %this, %itemId, %mouse, %obj )
                %popup.item[ 13 ] = "Convert to SubScene" TAB "" TAB "EWorldEditor.createSelectedAsSubScene( " @ %popup.object @ " );";
             }
          }  
+         else if(%obj.getClassName() $= "TSStatic")
+         {
+            if(AssetDatabase.isDeclaredAsset(%obj.shapeAsset))
+            {
+               %assetDef = AssetDatabase.acquireAsset(%obj.shapeAsset);
+               
+               %assetFileName = %assetDef.getFilename();
+               %assetFileBase = strreplace(fileBase(%assetFileName), ".asset", "");
+               %assetFileBase = strreplace(%assetFileBase, ".taml", "");
+               
+               %prefabFile = filePath(%assetFileName) @ "/" @ %assetFileBase @ ".prefab";
+               if(isFile(%prefabFile))
+               {
+                  %popup.item[ 8 ] = "-";
+                  %popup.item[ 9 ] = "Restore to Prefab" TAB "" TAB "EWorldEditor.restoreSelectedToPrefab( " @ %popup.object @ " );";
+                  %popup.item[ 10 ] = "Rebake Mesh" TAB "" TAB "EWorldEditor.rebakeSelectedMesh( " @ %popup.object @ " );";
+               }
+            }
+         }
+         else if( %obj.isMemberOfClass( "Prefab" ) )
+         {
+            %popup.item[ 8 ] = "Explode Prefab" TAB "" TAB "EWorldEditor.explodeSelectedPrefab();";
+         }
       }
    }
 
@@ -2423,7 +2454,6 @@ function Editor::open(%this)
 
    %this.editorEnabled();
    Canvas.setContent(EditorGui);   
-   $isFirstPersonVar = true;
    EditorGui.syncCameraGui();
    
    if(EditorSettings.value("WorldEditor/Layout/LayoutMode", "Classic") $= "Modern")
@@ -2589,8 +2619,8 @@ function EWorldEditor::syncGui( %this )
    ESnapOptions-->SnapSize.setText( EWorldEditor.getSoftSnapSize() );
    ESnapOptions-->GridSize.setText( EWorldEditor.getGridSize() );
    
-   %this.UseGridSnap = EditorSettings.value("WorldEditor/Tools/UseGridSnap");
-   ESnapOptions-->GridSnapButton.setStateOn( %this.UseGridSnap );
+   %this.gridSnap = EditorSettings.value("WorldEditor/Tools/gridSnap");
+   ESnapOptions-->GridSnapButton.setStateOn( %this.gridSnap );
    
    %this.UseGroupCenter = EditorSettings.value("WorldEditor/Tools/UseGroupCenter");
    
@@ -2935,9 +2965,9 @@ function toggleSnappingOptions( %var )
    }
    else if( %var $= "grid" )
    {
- 	   EWorldEditor.UseGridSnap = !EWorldEditor.UseGridSnap;
-	   EditorSettings.setValue("WorldEditor/Tools/UseGridSnap", EWorldEditor.UseGridSnap );
-      EWorldEditor.setGridSnap( EWorldEditor.UseGridSnap );
+ 	   EWorldEditor.gridSnap = !EWorldEditor.gridSnap;
+	   EditorSettings.setValue("WorldEditor/Tools/gridSnap", EWorldEditor.gridSnap );
+      EWorldEditor.setGridSnap( EWorldEditor.gridSnap );
    }
    else if( %var $= "byGroup" )
    {
@@ -3202,6 +3232,8 @@ function EWorldEditorStatusBarCamera::onWake( %this )
    %this.add( "Isometric View" );
    %this.add( "Smooth Camera" );
    %this.add( "Smooth Rot Camera" );
+   
+   callOnModules("onCameraModesListWake", "", %this);
 }
 
 function EWorldEditorStatusBarCamera::onSelect( %this, %id, %text )
@@ -3259,6 +3291,9 @@ function EWorldEditorStatusBarCamera::onSelect( %this, %id, %text )
       case "Smooth Rot Camera":
          commandToServer( 'SetEditorCameraNewtonDamped' );
          EditorGui.setDisplayType( $EditTsCtrl::DisplayTypePerspective );
+         
+      default:
+         callOnModules("onCameraModesListSelect", "", %text);
    }
 }
 
@@ -3333,11 +3368,11 @@ function TerrainSetHeightSliderCtrlContainer::onWake(%this)
 }
 
 //------------------------------------------------------------------------------------
-function CameraSpeedDropdownContainer::onWake(%this)
+function CameraSpeedDropdownCtrlContainer::onWake(%this)
 {
-   %this-->slider.setValue(CameraSpeedDropdownCtrlContainer-->textEdit.getText());
-   %pos = CameraSpeedDropdownCtrlContainer.getGlobalPosition();
-   %this-->slider.setPositionGlobal(%pos.x, %pos.y + 25);
+   %this-->slider.setValue(CameraSpeedDropdownContainer-->textEdit.getText());
+   %pos = CameraSpeedDropdownContainer.getGlobalPosition();
+   %this-->container.setPositionGlobal(%pos.x, %pos.y + 25);
 }
 
 //------------------------------------------------------------------------------------

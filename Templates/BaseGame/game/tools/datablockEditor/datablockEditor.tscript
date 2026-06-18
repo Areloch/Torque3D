@@ -111,6 +111,19 @@ function DatablockEditorPlugin::onExitMission( %this )
 
 function DatablockEditorPlugin::openDatablock( %this, %datablock )
 {
+   //We want to do a special-case catch here for any datablock types that have their own unique editor.
+   //The main culprit is the particle editor, but this could be expanded later
+   if(%datablock.isMemberOfClass("ParticleData") || 
+      %datablock.isMemberOfClass("ParticleEmitterData") ||
+      %datablock.isMemberOfClass("ExplosionData") || 
+      %datablock.isMemberOfClass("RibbonData") ||
+      %datablock.isMemberOfClass("afxZodiacData") ||
+      %datablock.isMemberOfClass("afxChoreographerData"))
+   {
+      EditorGui.setEditor( ParticleEditorPlugin );
+      return;
+   }
+   
    EditorGui.setEditor( DatablockEditorPlugin );
    %this.selectDatablock( %datablock );
    DatablockEditorTreeTabBook.selectedPage = 0;
@@ -631,6 +644,21 @@ function DatablockEditorPlugin::deleteDatablock( %this )
 //---------------------------------------------------------------------------------------------
 function DatablockEditorPlugin::createNewDatablockOfType(%this, %class, %inheritFrom)
 {
+   //We want to do a special-case catch here for any datablock types that have their own unique editor.
+   //The main culprit is the particle editor, but this could be expanded later
+   if(%class.isMemberOfClass("ParticleData") || 
+      %class.isMemberOfClass("ParticleEmitterData") ||
+      %class.isMemberOfClass("ExplosionData") || 
+      %class.isMemberOfClass("RibbonData") ||
+      %class.isMemberOfClass("afxZodiacData") ||
+      %class.isMemberOfClass("afxChoreographerData"))
+   {
+      EditorGui.setEditor( ParticleEditorPlugin );
+      
+      ParticleEditorPlugin::createNewDatablockOfType(%class, %inheritFrom);
+      return;
+   }
+   
    $DATABLOCK_EDITOR_NEWDB_CLASS = %class;
    $DATABLOCK_EDITOR_NEWDB_INHERITFROM = %inheritFrom;
 
@@ -647,8 +675,7 @@ function DatablockEditorPlugin::createDatablock(%this)
    if( %class !$= "" )
    {  
       // Need to prompt for a name.
-      
-      DatablockEditorCreatePrompt-->CreateDatablockName.setText("Name");
+      DatablockEditorCreatePrompt-->CreateDatablockName.setText("");
       DatablockEditorCreatePrompt-->CreateDatablockName.selectAllText();
       
       // Populate the copy source dropdown.
@@ -686,7 +713,7 @@ function DatablockEditorPlugin::createDatablock(%this)
       // Show the dialog.
       
       canvas.pushDialog( DatablockEditorCreatePrompt, 0, true );
-      DatablockEditorCreatePrompt-->promptWindow.text = "Create New Datablock in module: " @ DatablockEditorPlugin.targetCreationModule;
+      DatablockEditorCreatePrompt-->promptWindow.text = "Create New " @ %class @ " Datablock in module: " @ DatablockEditorPlugin.targetCreationModule;
    }
 }
 
@@ -717,7 +744,10 @@ function DatablockEditorPlugin::createPromptNameCheck(%this, %path)
 {
    %name = DatablockEditorCreatePrompt-->CreateDatablockName.getText();
    if( !Editor::validateObjectName( %name, true ) )
-      return;
+   {
+      toolsMessageBoxOK("Error", "Unable to validate new datablock name. Please make sure it's an alphanumeric value and that it is unique!");
+      return;  
+   }
       
    // Fetch the copy source and clear the list.
    
@@ -762,6 +792,8 @@ function DatablockEditorPlugin::createDatablockFinish( %this, %name, %copySource
       %this.submitUndo( %action );
       
       %action.redo();
+      
+      DatablockEditorPlugin.openDatablock(%name);
    }
    
    $DATABLOCK_EDITOR_NEWDB_CLASS = "";

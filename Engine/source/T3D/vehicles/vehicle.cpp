@@ -163,7 +163,7 @@ bool VehicleData::preload(bool server, String &errorStr)
    if (!collisionDetails.size() || collisionDetails[0] == -1)
    {
       Con::errorf("VehicleData::preload failed: Vehicle models must define a collision-1 detail");
-      errorStr = String::ToString("VehicleData: Couldn't load shape asset \"%s\"", mShapeAsset.getAssetId());
+      errorStr = String::ToString("VehicleData: Couldn't load shape asset \"%s\"", shapeAssetRef.assetId);
       return false;
    }
 
@@ -174,7 +174,8 @@ bool VehicleData::preload(bool server, String &errorStr)
       {
          if( !Sim::findObject( damageEmitterIDList[i], damageEmitterList[i] ) )
          {
-            Con::errorf( ConsoleLogEntry::General, "VehicleData::preload Invalid packet, bad datablockId(damageEmitter): 0x%x", damageEmitterIDList[i] );
+            errorStr = String::ToString("VehicleData::preload Invalid packet, bad datablockId(damageEmitter): 0x%x", damageEmitterIDList[i] );
+            return false;
          }
       }
    }
@@ -375,7 +376,7 @@ Vehicle::Vehicle()
 {
    mDataBlock = 0;
    mTypeMask |= VehicleObjectType | DynamicShapeObjectType;
-
+   mPathfindingIgnore = true;
    mDelta.pos = Point3F(0,0,0);
    mDelta.posVec = Point3F(0,0,0);
    mDelta.warpTicks = mDelta.warpCount = 0;
@@ -826,7 +827,7 @@ void Vehicle::updatePos(F32 dt)
       {
          F32 k = mRigid.getKineticEnergy();
          F32 G = mNetGravity* dt * TickMs / mDataBlock->integration;
-         F32 Kg = 0.5 * mRigid.mass * G * G;
+         F32 Kg = mRigid.mass * G * G * TickSec;
          if (k < sRestTol * Kg && ++restCount > sRestCount)
             mRigid.setAtRest();
       }

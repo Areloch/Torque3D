@@ -90,7 +90,8 @@ public:
 
 protected:
 
-   DECLARE_IMAGEASSET_ARRAY(PostEffect, Texture, GFXStaticTextureSRGBProfile, NumTextures);
+   AssetRef<ImageAsset> mTextureAssetRef[NumTextures];
+   GFXTexHandle getTexture(const U32& index, GFXTextureProfile* profile) { return mTextureAssetRef[index].notNull() ? mTextureAssetRef[index].assetPtr->getTexture(profile) : GFXTexHandle(); }
    GFXTextureProfile* mTextureProfile[NumTextures];
    GFXTexHandle mTexture[NumTextures];
 
@@ -133,6 +134,7 @@ protected:
 
    GFXShaderConstHandle *mTexSizeSC[NumTextures];
    GFXShaderConstHandle *mRenderTargetParamsSC[NumTextures];
+   GFXShaderConstHandle* mMipCountSC[NumTextures];
 
    GFXShaderConstHandle *mViewportOffsetSC;
 
@@ -176,6 +178,7 @@ protected:
 
    String mTargetName;
    GFXTexHandle mTargetTex;
+   S32 mMipCap;
 
    String mTargetDepthStencilName;
    GFXTexHandle mTargetDepthStencil;
@@ -437,6 +440,8 @@ public:
    const String& getRenderBin() const { return mRenderBin; }
 
    F32 getPriority() const { return mRenderPriority; }
+
+   StringTableEntry getTextureAssetId(const U32& index) const { return mTextureAssetRef[index].assetId; }
 
    void setTexture( U32 index, const String &filePath );
    void setTexture(U32 index, const GFXTexHandle& texHandle);

@@ -112,6 +112,21 @@ bool AssetManager::onAdd()
 
 void AssetManager::onRemove()
 {
+    // Remove all private assets explicitly before purge.
+    Vector<AssetDefinition*> assetDefinitions;
+    
+    // at this point all module assets should have been unloaded.
+    for (typeDeclaredAssetsHash::iterator assetItr = mDeclaredAssets.begin(); assetItr != mDeclaredAssets.end(); ++assetItr)
+    {
+       assetDefinitions.push_back(assetItr->value);
+    }
+    
+    for (Vector<AssetDefinition*>::iterator assetItr = assetDefinitions.begin(); assetItr != assetDefinitions.end(); ++assetItr)
+    {
+       AssetDefinition* pAssetDefinition = *assetItr;
+       unloadAsset(pAssetDefinition);
+    }
+
     // Do we have an asset tags manifest?
     if ( !mAssetTagsManifest.isNull() )
     {
@@ -326,6 +341,17 @@ bool AssetManager::addDeclaredAsset( ModuleDefinition* pModuleDefinition, const 
 
 //-----------------------------------------------------------------------------
 
+static U32 HashAssetId(const char* str)
+{
+   U32 hash = 2166136261u;
+   while (*str)
+   {
+      hash ^= (U8)*str++;
+      hash *= 16777619u;
+   }
+   return hash;
+}
+
 StringTableEntry AssetManager::addPrivateAsset( AssetBase* pAssetBase )
 {
     // Debug Profiling.
@@ -376,6 +402,22 @@ StringTableEntry AssetManager::addPrivateAsset( AssetBase* pAssetBase )
 
     // Set ownership by asset manager.
     pAssetDefinition->mpAssetBase->setOwned( this, pAssetDefinition );
+
+    U32 netId = HashAssetId(pAssetDefinition->mAssetName);
+
+    // Collision detection 
+    typeNetIdToAssetMap::iterator netIterator = mNetIdToAsset.find(netId);
+    if (netIterator != mNetIdToAsset.end())
+    {
+       Con::warnf(
+          "AssetManager: Hash collision for '%s' and '%s'",
+          pAssetDefinition->mAssetName,
+          mNetIdToAsset.find(netId)->value
+       );
+    }
+
+    mNetIdToAsset.insert(netId, pAssetDefinition->mAssetId);
+    mAssetToNetId.insert(pAssetDefinition->mAssetId, netId);
 
     // Store in declared assets.
     mDeclaredAssets.insert( pAssetDefinition->mAssetId, pAssetDefinition );
@@ -474,6 +516,14 @@ bool AssetManager::removeDeclaredAsset( const char* pAssetId )
 
     // Remove from declared assets.
     mDeclaredAssets.erase( declaredAssetItr );
+
+    typeAssetToNetIdMap::iterator netId = mAssetToNetId.find(pAssetId);
+    typeNetIdToAssetMap::iterator netChar = mNetIdToAsset.find(netId->value);
+    if (netId != mAssetToNetId.end() && netChar != mNetIdToAsset.end())
+    {
+       mNetIdToAsset.erase(netChar);
+       mAssetToNetId.erase(netId);
+    }
 
     // Info.
     if ( mEchoInfo )
@@ -962,6 +1012,197 @@ bool AssetManager::renameReferencedAsset( const char* pAssetIdFrom, const char* 
         Con::printSeparator();
 
     return true;
+}
+
+void AssetManager::packDataAsset(BitStream* stream, const char* pAssetId)
+{
+   if(stream->writeFlag(isDeclaredAsset(pAssetId)))
+   {
+      stream->write(mAssetToNetId.find(pAssetId)->value);
+   }
+}
+
+const char* AssetManager::unpackDataAsset(BitStream* stream)
+{
+   if (stream->readFlag())
+   {
+      typeAssetNetId netId;
+      stream->read(&netId);
+
+      typeNetIdToAssetMap::iterator netChar = mNetIdToAsset.find(netId);
+      if (netChar != mNetIdToAsset.end())
+      {
+         return netChar->value;
+      }
+   }
+
+   return StringTable->EmptyString();
+}
+
+void AssetManager::packUpdateAsset(NetConnection* con, U32 mask, BitStream* stream, const char* pAssetId)
+{
+   if (stream->writeFlag(isDeclaredAsset(pAssetId)))
+   {
+      stream->write(mAssetToNetId.find(pAssetId)->value);
+   }
+}
+
+const char* AssetManager::unpackUpdateAsset(NetConnection* con, BitStream* stream)
+{
+   if (stream->readFlag())
+   {
+      typeAssetNetId netId;
+      stream->read(&netId);
+
+      typeNetIdToAssetMap::iterator netChar = mNetIdToAsset.find(netId);
+      if (netChar != mNetIdToAsset.end())
+      {
+         return netChar->value;
+      }
+   }
+   return StringTable->EmptyString();
+}
+
+bool AssetManager::compileAllAssets(const bool compressed, const bool includeUnloaded)
+{
+   // Debug Profiling.
+   PROFILE_SCOPE(AssetManager_CompileAllAssets);
+
+   // Info.
+   if (mEchoInfo)
+   {
+      Con::printSeparator();
+      Con::printf("Asset Manager: Started compiling ALL assets.");
+   }
+
+   Vector<typeAssetId> assetsToRelease;
+
+   // Are we including unloaded assets?
+   if (includeUnloaded)
+   {
+      // Yes, so prepare a list of assets to release and load them.
+      for (typeDeclaredAssetsHash::iterator assetItr = mDeclaredAssets.begin(); assetItr != mDeclaredAssets.end(); ++assetItr)
+      {
+         // Fetch asset Id.
+         typeAssetId assetId = assetItr->key;
+
+         // Skip if asset is loaded.
+         if (assetItr->value->mpAssetBase != NULL)
+            continue;
+
+         // Note asset as needing a release.
+         assetsToRelease.push_back(assetId);
+
+         // Acquire the asset.
+         acquireAsset<AssetBase>(assetId);
+      }
+   }
+
+   bool oldCompressed = mTaml.getBinaryCompression();
+   mTaml.setBinaryCompression(compressed);
+   bool success = false;
+   // Refresh the current loaded assets.
+   // NOTE: This will result in some assets being refreshed more than once due to asset dependencies.
+   for (typeDeclaredAssetsHash::iterator assetItr = mDeclaredAssets.begin(); assetItr != mDeclaredAssets.end(); ++assetItr)
+   {
+      // Skip private assets.
+      if (assetItr->value->mAssetPrivate)
+         continue;
+
+      // Refresh asset if it's loaded.
+      success = compileAsset(assetItr->key);
+      if (!success)
+      {
+         break;
+      }
+   }
+
+   mTaml.setBinaryCompression(oldCompressed);
+
+   // Are we including unloaded assets?
+   if (includeUnloaded)
+   {
+      // Yes, so release the assets we loaded.
+      for (Vector<typeAssetId>::iterator assetItr = assetsToRelease.begin(); assetItr != assetsToRelease.end(); ++assetItr)
+      {
+         releaseAsset(*assetItr);
+      }
+   }
+
+   // Info.
+   if (mEchoInfo)
+   {
+      Con::printSeparator();
+      Con::printf("Asset Manager: Finished compiling ALL assets.");
+   }
+
+   return success;
+}
+
+bool AssetManager::compileModuleAssets(ModuleDefinition* pModuleDefinition)
+{
+   // Sanity!
+   AssertFatal(pModuleDefinition != NULL, "Cannot remove declared assets using a NULL module definition");
+
+   // Fetch module assets.
+   ModuleDefinition::typeModuleAssetsVector& moduleAssets = pModuleDefinition->getModuleAssets();
+
+   // Remove all module assets.
+   while (moduleAssets.size() > 0)
+   {
+      // Fetch asset definition.
+      AssetDefinition* pAssetDefinition = *moduleAssets.begin();
+      bool success = compileAsset(pAssetDefinition->mAssetId);
+      if (!success)
+         return false;
+   }
+
+   return true;
+}
+
+bool AssetManager::compileAsset(const char* pAssetId)
+{
+   // Sanity!
+   AssertFatal(pAssetId != NULL, "Cannot compile NULL asset");
+
+   AssetDefinition* pAssetDefinition = findAsset(pAssetId);
+
+   // Does the asset exist?
+   if (pAssetDefinition == NULL)
+   {
+      Con::warnf("Asset Manager::compileAsset Failed to compile asset Id '%s' as it does not exist", pAssetId);
+      return false;
+   }
+
+   // Info.
+   if (mEchoInfo)
+   {
+      Con::printSeparator();
+      Con::printf("Asset Manager::compileAsset Started compiling Asset Id '%s'...", pAssetId);
+   }
+
+   AssetBase* pAssetBase = pAssetDefinition->mpAssetBase;
+   if (pAssetBase != NULL)
+   {
+      Torque::Path binaryPath = pAssetDefinition->mAssetBaseFilePath;
+      binaryPath.setExtension(mTaml.getAutoFormatBinaryExtension());
+      // Save asset.
+      mTaml.write(pAssetBase, binaryPath.getFullPath().c_str());
+   }
+   else
+   {
+      Con::warnf("Asset Manager::compileAsset Failed to compile asset Id '%s' as it does not have an assetBase", pAssetId);
+      return false;
+   }
+
+   // Info.
+   if (mEchoInfo)
+   {
+      Con::printSeparator();
+      Con::printf("Asset Manager: Finished compiling Asset Id '%s'.", pAssetId);
+   }
+
+   return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -2550,133 +2791,164 @@ bool AssetManager::scanDeclaredAssets( const char* pPath, const char* pExtension
 
     TamlAssetDeclaredVisitor assetDeclaredVisitor;
 
-    // Iterate files.
-    for (S32 i = 0; i < numAssets; ++i)
-    {
-        Torque::Path assetPath = files[i];
+   // Iterate files.
+   for (S32 i = 0; i < numAssets; ++i)
+   {
+      Torque::Path assetPath = files[i];
+      
+      Torque::Path compiledPath = assetPath;
+      compiledPath.setExtension(mTaml.getAutoFormatBinaryExtension());
 
-        // Clear declared assets.
-        assetDeclaredVisitor.clear();
+      if (Torque::FS::IsFile(compiledPath))
+      {
+         Torque::FS::FileNodeRef assetFile = Torque::FS::GetFileNode(assetPath);
+         Torque::FS::FileNodeRef compiledFile = Torque::FS::GetFileNode(compiledPath);
 
-        // Format full file-path.
-        char assetFileBuffer[1024];
-        dSprintf( assetFileBuffer, sizeof(assetFileBuffer), "%s/%s", assetPath.getPath().c_str(), assetPath.getFullFileName().c_str());
+         if (assetFile != NULL && compiledFile != NULL)
+         {
+            if (compiledFile->getModifiedTime() >= assetFile->getModifiedTime())
+               assetPath = compiledPath;
+         }
+      }
 
-        // Parse the filename.
-        if ( !mTaml.parse( assetFileBuffer, assetDeclaredVisitor ) )
-        {
-            // Warn.
-            Con::warnf( "Asset Manager: Failed to parse file containing asset declaration: '%s'.", assetFileBuffer );
-            continue;
-        }
+      // Clear declared assets.
+      assetDeclaredVisitor.clear();
 
-        // Fetch asset definition.
-        AssetDefinition& foundAssetDefinition = assetDeclaredVisitor.getAssetDefinition();
+      // Format full file-path.
+      char assetFileBuffer[1024];
+      dSprintf( assetFileBuffer, sizeof(assetFileBuffer), "%s/%s", assetPath.getPath().c_str(), assetPath.getFullFileName().c_str());
 
-        // Did we get an asset name?
-        if ( foundAssetDefinition.mAssetName == StringTable->EmptyString() )
-        {
-            // No, so warn.
-            Con::warnf( "Asset Manager: Parsed file '%s' but did not encounter an asset.", assetFileBuffer );
-            continue;
-        }
+      // Parse the filename.
+      if ( !mTaml.parse( assetFileBuffer, assetDeclaredVisitor ) )
+      {
+         // Warn.
+         Con::warnf( "Asset Manager: Failed to parse file containing asset declaration: '%s'.", assetFileBuffer );
+         continue;
+      }
 
-        // Set module definition.
-        foundAssetDefinition.mpModuleDefinition = pModuleDefinition;
+      // Fetch asset definition.
+      AssetDefinition& foundAssetDefinition = assetDeclaredVisitor.getAssetDefinition();
 
-        // Format asset Id.
-        char assetIdBuffer[1024];
-        dSprintf(assetIdBuffer, sizeof(assetIdBuffer), "%s%s%s",
-            pModuleDefinition->getModuleId(),
-            ASSET_SCOPE_TOKEN,
-            foundAssetDefinition.mAssetName );
+      // Did we get an asset name?
+      if ( foundAssetDefinition.mAssetName == StringTable->EmptyString() )
+      {
+         // No, so warn.
+         Con::warnf( "Asset Manager: Parsed file '%s' but did not encounter an asset.", assetFileBuffer );
+         continue;
+      }
 
-        // Set asset Id.
-        foundAssetDefinition.mAssetId = StringTable->insert( assetIdBuffer );
+      // Set module definition.
+      foundAssetDefinition.mpModuleDefinition = pModuleDefinition;
 
-        // Does this asset already exist?
-        if ( mDeclaredAssets.contains( foundAssetDefinition.mAssetId ) )
-        {
-            // Yes, so warn.
-            Con::warnf( "Asset Manager: Encountered asset Id '%s' in asset file '%s' but it conflicts with existing asset Id in asset file '%s'.",
-                foundAssetDefinition.mAssetId,
-                foundAssetDefinition.mAssetBaseFilePath,
-                mDeclaredAssets.find( foundAssetDefinition.mAssetId )->value->mAssetBaseFilePath );
+      // Format asset Id.
+      char assetIdBuffer[1024];
+      dSprintf(assetIdBuffer, sizeof(assetIdBuffer), "%s%s%s",
+         pModuleDefinition->getModuleId(),
+         ASSET_SCOPE_TOKEN,
+         foundAssetDefinition.mAssetName );
 
-            continue;
-        }
+      // Set asset Id.
+      foundAssetDefinition.mAssetId = StringTable->insert( assetIdBuffer );
 
-        // Create new asset definition.
-        AssetDefinition* pAssetDefinition = new AssetDefinition( foundAssetDefinition );
+      // Does this asset already exist?
+      if ( mDeclaredAssets.contains( foundAssetDefinition.mAssetId ) )
+      {
+         // Yes, so warn.
+         Con::warnf( "Asset Manager: Encountered asset Id '%s' in asset file '%s' but it conflicts with existing asset Id in asset file '%s'.",
+               foundAssetDefinition.mAssetId,
+               foundAssetDefinition.mAssetBaseFilePath,
+               mDeclaredAssets.find( foundAssetDefinition.mAssetId )->value->mAssetBaseFilePath );
 
-        // Store in declared assets.
-        mDeclaredAssets.insert( pAssetDefinition->mAssetId, pAssetDefinition );
+         continue;
+      }
 
-        // Store in module assets.
-        moduleAssets.push_back( pAssetDefinition );
+      U32 netId = HashAssetId(assetIdBuffer);
+
+      // Collision detection 
+      typeNetIdToAssetMap::iterator netIterator = mNetIdToAsset.find(netId);
+      if (netIterator != mNetIdToAsset.end())
+      {
+         Con::warnf(
+            "AssetManager: Hash collision for '%s' and '%s'",
+            assetIdBuffer,
+            mNetIdToAsset.find(netId)->value
+         );
+      }
+
+      mNetIdToAsset.insert(netId, foundAssetDefinition.mAssetId);
+      mAssetToNetId.insert(foundAssetDefinition.mAssetId, netId);
+
+      // Create new asset definition.
+      AssetDefinition* pAssetDefinition = new AssetDefinition( foundAssetDefinition );
+
+      // Store in declared assets.
+      mDeclaredAssets.insert( pAssetDefinition->mAssetId, pAssetDefinition );
+
+      // Store in module assets.
+      moduleAssets.push_back( pAssetDefinition );
         
-        // Info.
-        if ( mEchoInfo )
-        {
-            Con::printSeparator();
-            Con::printf( "Asset Manager: Adding Asset Id '%s' of type '%s' in asset file '%s'.",
-                pAssetDefinition->mAssetId,
-                pAssetDefinition->mAssetType,
-                pAssetDefinition->mAssetBaseFilePath );
-        }
+      // Info.
+      if ( mEchoInfo )
+      {
+         Con::printSeparator();
+         Con::printf( "Asset Manager: Adding Asset Id '%s' of type '%s' in asset file '%s'.",
+               pAssetDefinition->mAssetId,
+               pAssetDefinition->mAssetType,
+               pAssetDefinition->mAssetBaseFilePath );
+      }
 
-        // Fetch asset Id.
-        StringTableEntry assetId = pAssetDefinition->mAssetId;
+      // Fetch asset Id.
+      StringTableEntry assetId = pAssetDefinition->mAssetId;
 
-        // Fetch asset dependencies.
-        TamlAssetDeclaredVisitor::typeAssetIdVector& assetDependencies = assetDeclaredVisitor.getAssetDependencies();
+      // Fetch asset dependencies.
+      TamlAssetDeclaredVisitor::typeAssetIdVector& assetDependencies = assetDeclaredVisitor.getAssetDependencies();
 
-        // Are there any asset dependencies?
-        if ( assetDependencies.size() > 0 )
-        {
-            // Yes, so iterate dependencies.
-            for( TamlAssetDeclaredVisitor::typeAssetIdVector::iterator assetDependencyItr = assetDependencies.begin(); assetDependencyItr != assetDependencies.end(); ++assetDependencyItr )
-            {
-                // Fetch asset Ids.
-                StringTableEntry dependencyAssetId = *assetDependencyItr;
+      // Are there any asset dependencies?
+      if ( assetDependencies.size() > 0 )
+      {
+         // Yes, so iterate dependencies.
+         for( TamlAssetDeclaredVisitor::typeAssetIdVector::iterator assetDependencyItr = assetDependencies.begin(); assetDependencyItr != assetDependencies.end(); ++assetDependencyItr )
+         {
+               // Fetch asset Ids.
+               StringTableEntry dependencyAssetId = *assetDependencyItr;
 
-                // Insert depends-on.
-                mAssetDependsOn.insertEqual( assetId, dependencyAssetId );
+               // Insert depends-on.
+               mAssetDependsOn.insertEqual( assetId, dependencyAssetId );
 
-                // Insert is-depended-on.
-                mAssetIsDependedOn.insertEqual( dependencyAssetId, assetId );
+               // Insert is-depended-on.
+               mAssetIsDependedOn.insertEqual( dependencyAssetId, assetId );
 
-                // Info.
-                if ( mEchoInfo )
-                {
-                    Con::printf( "Asset Manager: Asset Id '%s' has dependency of Asset Id '%s'", assetId, dependencyAssetId );
-                }
-            }
-        }
+               // Info.
+               if ( mEchoInfo )
+               {
+                  Con::printf( "Asset Manager: Asset Id '%s' has dependency of Asset Id '%s'", assetId, dependencyAssetId );
+               }
+         }
+      }
 
-        // Fetch asset loose files.
-        TamlAssetDeclaredVisitor::typeLooseFileVector& assetLooseFiles = assetDeclaredVisitor.getAssetLooseFiles();
+      // Fetch asset loose files.
+      TamlAssetDeclaredVisitor::typeLooseFileVector& assetLooseFiles = assetDeclaredVisitor.getAssetLooseFiles();
 
-        // Are there any loose files?
-        if ( assetLooseFiles.size() > 0 )
-        {
-            // Yes, so iterate loose files.
-            for( TamlAssetDeclaredVisitor::typeLooseFileVector::iterator assetLooseFileItr = assetLooseFiles.begin(); assetLooseFileItr != assetLooseFiles.end(); ++assetLooseFileItr )
-            {
-                // Fetch loose file.
-                StringTableEntry looseFile = *assetLooseFileItr;
+      // Are there any loose files?
+      if ( assetLooseFiles.size() > 0 )
+      {
+         // Yes, so iterate loose files.
+         for( TamlAssetDeclaredVisitor::typeLooseFileVector::iterator assetLooseFileItr = assetLooseFiles.begin(); assetLooseFileItr != assetLooseFiles.end(); ++assetLooseFileItr )
+         {
+               // Fetch loose file.
+               StringTableEntry looseFile = *assetLooseFileItr;
 
-                // Info.
-                if ( mEchoInfo )
-                {
-                    Con::printf( "Asset Manager: Asset Id '%s' has loose file '%s'.", assetId, looseFile );
-                }
+               // Info.
+               if ( mEchoInfo )
+               {
+                  Con::printf( "Asset Manager: Asset Id '%s' has loose file '%s'.", assetId, looseFile );
+               }
 
-                // Store loose file.
-                pAssetDefinition->mAssetLooseFiles.push_back( looseFile );
-            }
-        }
-    }
+               // Store loose file.
+               pAssetDefinition->mAssetLooseFiles.push_back( looseFile );
+         }
+      }
+   }
 
     // Info.
     if ( mEchoInfo )

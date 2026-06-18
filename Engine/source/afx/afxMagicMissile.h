@@ -56,7 +56,7 @@ class SFXSource;
 //~~~~~~~~~~~~~~~~~~~~//~~~~~~~~~~~~~~~~~~~~//~~~~~~~~~~~~~~~~~~~~//~~~~~~~~~~~~~~~~~~~~~//
 // afxMagicMissileData
 
-class afxMagicMissileData : public GameBaseData
+class afxMagicMissileData : public GameBaseData, protected AssetPtrCallback
 {
   typedef GameBaseData Parent;
   
@@ -66,16 +66,10 @@ protected:
 public:
   enum { MaxLifetimeTicks = 4095 };
 
-  void onShapeChanged()
-  {
-     reloadOnLocalClient();
-  }
-  
 public:
    // variables set in datablock definition:
    // Shape related
-   DECLARE_SHAPEASSET(afxMagicMissileData, ProjectileShape, onShapeChanged);
-   DECLARE_ASSET_SETGET(afxMagicMissileData, ProjectileShape);
+   AssetRef<ShapeAsset> projectileShapeAssetRef;
   //StringTableEntry      projectileShapeName;
 
   //bool                  hasLight;
@@ -145,7 +139,7 @@ public:
   */
 
    // variables set on preload:
-  Resource<TSShape>     projectileShape;
+  TSShape*     projectileShape;
   /*
   S32 activateSeq;
   S32 maintainSeq;
@@ -228,6 +222,12 @@ public:
   afxMagicMissileData*  cloneAndPerformSubstitutions(const SimObject*, S32 index=0);
   bool          allowSubstitutions() const override { return true; }
   void                  gather_cons_defs(Vector<afxConstraintDef>& defs);
+
+protected:
+   void onAssetRefreshed(AssetPtrBase* pAssetPtrBase) override
+   {
+      reloadOnLocalClient();
+   }
 };
 
 //~~~~~~~~~~~~~~~~~~~~//~~~~~~~~~~~~~~~~~~~~//~~~~~~~~~~~~~~~~~~~~//~~~~~~~~~~~~~~~~~~~~~//

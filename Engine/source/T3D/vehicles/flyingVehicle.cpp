@@ -135,12 +135,15 @@ bool FlyingVehicleData::preload(bool server, String &errorStr)
    if (!Parent::preload(server, errorStr))
       return false;
 
-   TSShapeInstance* si = new TSShapeInstance(mShape, false);
+   Resource<TSShape> shape = shapeAssetRef.assetPtr->getShapeResource();
+
+   TSShapeInstance* si = new TSShapeInstance(shape, false);
 
    // Resolve objects transmitted from server
    if (!server) {
       for (S32 i = 0; i < MaxSounds; i++)
       {
+         _setFlyingSounds(getFlyingSounds(i), i);
          if (!isFlyingSoundsValid(i))
          {
             //return false; -TODO: trigger asset download
@@ -164,7 +167,7 @@ bool FlyingVehicleData::preload(bool server, String &errorStr)
 
    // Resolve jet nodes
    for (S32 j = 0; j < MaxJetNodes; j++)
-      jetNode[j] = mShape->findNode(sJetNode[j]);
+      jetNode[j] = shape->findNode(sJetNode[j]);
 
    //
    maxSpeed = maneuveringForce / minDrag;

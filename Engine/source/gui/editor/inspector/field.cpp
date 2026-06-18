@@ -269,7 +269,7 @@ void GuiInspectorField::setWordData(const S32& wordIndex, const char* data, bool
 
    if (mSpecialEditField)
    {
-      if (mTargetObject != nullptr && mVariableName != StringTable->EmptyString())
+      if (mTargetObject != NULL && mVariableName != StringTable->EmptyString())
       {
          const char* fieldData = mTargetObject->getDataField(mVariableName, NULL);
          const char* wordData = StringUnit::getUnit(fieldData, wordIndex, " \t\n");
@@ -468,7 +468,8 @@ void GuiInspectorField::setWordData(const S32& wordIndex, const char* data, bool
 
          // Fire callback single-object undo.
 
-         if (callbacks && !mField->flag.test(AbstractClassRep::FieldFlags::FIELD_ComponentInspectors))
+         if (callbacks && !mField->flag.test(AbstractClassRep::FieldFlags::FIELD_ComponentInspectors)
+            && (dStrcmp(fieldData, newFieldData.end().c_str()) != 0))
             Con::executef(mInspector, "onInspectorFieldModified",
                target->getIdString(),
                mField->pFieldname,
@@ -494,7 +495,7 @@ void GuiInspectorField::setData( const char* data, bool callbacks )
 {
    if (mSpecialEditField)
    {
-      if (mTargetObject != nullptr && mVariableName != StringTable->EmptyString())
+      if (mTargetObject != NULL && mVariableName != StringTable->EmptyString())
       {
          mTargetObject->setDataField(mVariableName, NULL, data);
 
@@ -603,7 +604,8 @@ void GuiInspectorField::setData( const char* data, bool callbacks )
          
          // Fire callback single-object undo.
          
-         if( callbacks && !mField->flag.test(AbstractClassRep::FieldFlags::FIELD_ComponentInspectors) )
+         if( callbacks && !mField->flag.test(AbstractClassRep::FieldFlags::FIELD_ComponentInspectors)
+            && (dStrcmp(oldValue.c_str(), newValue.c_str()) != 0))
             Con::executef( mInspector, "onInspectorFieldModified", 
                                           target->getIdString(), 
                                           mField->pFieldname, 
@@ -643,7 +645,7 @@ const char* GuiInspectorField::getData( U32 inspectObjectIndex )
    }
    else
    {
-      if (mTargetObject != nullptr && mVariableName != StringTable->EmptyString())
+      if (mTargetObject != NULL && mVariableName != StringTable->EmptyString())
       {
          return mTargetObject->getDataField(mVariableName, NULL);
       }
@@ -833,6 +835,8 @@ void GuiInspectorField::updateValue()
    }
    else
       setValue( getData() );
+
+   mInspector->updateVisibility();
 }
 
 //-----------------------------------------------------------------------------
@@ -909,7 +913,7 @@ void GuiInspectorField::_registerEditControl(GuiControl* ctrl, StringTableEntry 
    ctrl->setInternalName(suffix);
 
    char szName[512];
-   if (mInspector->getInspectObject() != nullptr)
+   if (mInspector->getInspectObject() != NULL)
       dSprintf(szName, 512, "IE_%s_%d_%s_%s_Field", ctrl->getClassName(), mInspector->getInspectObject()->getId(), suffix, mCaption);
    else
       dSprintf(szName, 512, "IE_%s_%s_%s_Field", ctrl->getClassName(), suffix, mCaption);
@@ -1048,6 +1052,15 @@ DefineEngineMethod( GuiInspectorField, reset, void, (), , "() - Reset to default
 DefineEngineMethod(GuiInspectorField, setCaption, void, (String newCaption),, "() - Sets the caption of the field.")
 {
    object->setCaption(StringTable->insert(newCaption.c_str()));
+}
+
+DefineEngineMethod(GuiInspectorField, getFieldName, const char*, (), , "() - Gets the fieldName of the field.")
+{
+   constexpr U32 bufSize = 128;
+   char* retBuffer = Con::getReturnBuffer(bufSize);
+   dSprintf(retBuffer, bufSize, "%s", object->getFieldName());
+
+   return retBuffer;
 }
 
 DefineEngineMethod(GuiInspectorField, setSpecialEditVariableName, void, (String newCaption), , "() - Sets the variable name for special edit fields.")

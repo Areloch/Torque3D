@@ -35,11 +35,20 @@ public:
 
    typedef GuiControl Parent;
 
+   enum BitmapMode
+   {
+      BitmapMode_Stretch,
+      BitmapMode_Tile,
+      BitmapMode_Fit,
+      BitmapMode_Fill,
+      BitmapMode_Center
+   };
+
 protected:
 
    /// Name of the bitmap file.  If this is 'texhandle' the bitmap is not loaded
    /// from a file but rather set explicitly on the control.
-   DECLARE_IMAGEASSET(GuiBitmapCtrl, Bitmap, GFXDefaultGUIProfile)
+   AssetRef<ImageAsset> mBitmapAssetRef;
 
    Point2I mStartPoint;
    ColorI   mColor;
@@ -47,6 +56,8 @@ protected:
 
    /// If true, bitmap tiles inside control.  Otherwise stretches.
    bool mWrap;
+   BitmapMode mDrawMode;
+   GFXTextureFilterType mFilterType;
 
 public:
    GFXTexHandle mBitmap;
@@ -63,6 +74,11 @@ public:
    void setBitmap(const char* name, bool resize = true);
    void setBitmapHandle(GFXTexHandle handle, bool resize = false);
 
+   void _setBitmap(StringTableEntry _in);
+   inline StringTableEntry getBitmapAssetId() const { return mBitmapAssetRef.getAssetId(); }
+   GFXTexHandle getBitmap() { return mBitmapAssetRef.notNull() ? mBitmapAssetRef.assetPtr->getTexture(&GFXDefaultGUIProfile) : NULL; }
+   AssetPtr<ImageAsset> getBitmapAsset() { return mBitmapAssetRef.assetPtr; }
+
    void updateSizing();
 
    void onRender(Point2I offset, const RectI& updateRect) override;
@@ -73,5 +89,8 @@ public:
    DECLARE_DESCRIPTION("A control that displays a single, static image from a file.n"
       "The bitmap can either be tiled or stretched inside the control.");
 };
+
+typedef GuiBitmapCtrl::BitmapMode BitmapDrawMode;
+DefineEnumType(BitmapDrawMode);
 
 #endif

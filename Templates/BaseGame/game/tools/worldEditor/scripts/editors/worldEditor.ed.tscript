@@ -43,7 +43,7 @@ function WorldEditor::onSelect( %this, %obj )
    
    // Used to help the Material Editor( the M.E doesn't utilize its own TS control )
    // so this dirty extension is used to fake it
-   if ( MaterialEditorPreviewWindow.isVisible() )
+   if ( MaterialEditorGui.isAwake() )
       MaterialEditorGui.prepareActiveObject();
    
    // Update the Transform Selection window
@@ -516,6 +516,15 @@ function Inspector::inspect( %this, %obj )
       %name = %obj.getName();   
    else
       FieldInfoControl.setText( "" );
+      
+   %category = getCategoryOfClass(%obj.getClassName());
+   if(getFieldCount(%category > 1) && trim(getField(%category, 1)) $= "Controllable")
+   {
+      %genGroup = %this.findExistentGroup("General");
+      
+      if(isObject(%genGroup))
+         %genGroup.addField("ToggleControlBtn", "ToggleControlButton", "Takes control of the selected controllable object");
+   }
    
    //InspectorNameEdit.setValue( %name );
    Parent::inspect( %this, %obj );  

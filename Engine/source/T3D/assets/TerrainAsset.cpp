@@ -191,8 +191,14 @@ void TerrainAsset::setTerrainFileName(const char* pScriptFile)
 
 U32 TerrainAsset::load()
 {
+   if (mLoadedState == AssetErrCode::Ok)
+      return mLoadedState;
+
    if (!Torque::FS::IsFile(mTerrainFilePath))
-      return BadFileReference;
+   {
+      mLoadedState = BadFileReference;
+      return mLoadedState;
+   }
 
    mTerrMaterialAssets.clear();
    mTerrMaterialAssetIds.clear();
@@ -229,9 +235,15 @@ U32 TerrainAsset::load()
    mTerrainFile = ResourceManager::get().load(mTerrainFilePath);
 
    if (mTerrainFile)
-      return Ok;
+   {
+      mLoadedState = Ok;
+   }
+   else
+   {
+      mLoadedState = BadFileReference;
+   }
 
-   return BadFileReference;
+   return mLoadedState;
 }
 
 //------------------------------------------------------------------------------
@@ -461,10 +473,19 @@ GuiControl* GuiInspectorTypeTerrainAssetPtr::constructEditControl()
    if (retCtrl == NULL)
       return retCtrl;
 
+   StringBuilder varNameStr;
+   varNameStr.append(mCaption);
+   if (mFieldArrayIndex != NULL)
+   {
+      varNameStr.append("[");
+      varNameStr.append(mFieldArrayIndex);
+      varNameStr.append("]");
+   }
+
    // Change filespec
    char szBuffer[512];
-   dSprintf(szBuffer, sizeof(szBuffer), "AssetBrowser.showDialog(\"TerrainAsset\", \"AssetBrowser.changeAsset\", %s, %s);",
-      mInspector->getIdString(), mCaption);
+   dSprintf(szBuffer, sizeof(szBuffer), "AssetBrowser.showDialog(\"TerrainAsset\", \"AssetBrowser.changeAsset\", %s, \"%s\");",
+      mInspector->getIdString(), varNameStr.end().c_str());
    mBrowseButton->setField("Command", szBuffer);
 
    setDataField(StringTable->insert("targetObject"), NULL, mInspector->getInspectObject()->getIdString());

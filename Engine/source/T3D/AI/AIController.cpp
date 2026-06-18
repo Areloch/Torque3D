@@ -70,7 +70,12 @@ bool AIController::setControllerDataProperty(void* obj, const char* index, const
 
 void AIController::setGoal(AIInfo* targ)
 {
-   if (mGoal) { delete(mGoal); mGoal = NULL; }
+   if (mGoal)
+   {
+      if (mGoal->mObj.isValid() && targ->mObj.isValid() && mGoal->mObj == targ->mObj)
+         return;
+      delete(mGoal); mGoal = NULL;
+   }
 
    if (targ->mObj.isValid())
    {
@@ -86,26 +91,58 @@ void AIController::setGoal(AIInfo* targ)
 
 void AIController::setGoal(Point3F loc, F32 rad)
 {
-   if (mGoal) delete(mGoal);
+   if (mGoal)
+   {
+      if (mGoal->mPosSet && mGoal->getPosition() == loc)
+      {
+         mGoal->mRadius = rad;
+         return;
+      }
+      delete(mGoal);
+   }
    mGoal = new AIGoal(this, loc, rad);
 }
 
 void AIController::setGoal(SimObjectPtr<SceneObject> objIn, F32 rad)
 {
-   if (mGoal) delete(mGoal);
+   if (mGoal)
+   {
+      if (mGoal->mObj.isValid() && objIn.isValid() && mGoal->mObj == objIn)
+      {
+         mGoal->mRadius = rad;
+         return;
+      }
+      delete(mGoal);
+   }
    mGoal = new AIGoal(this, objIn, rad);
 }
 
 void AIController::setAim(Point3F loc, F32 rad, Point3F offset)
 {
-   if (mAimTarget) delete(mAimTarget);
+   if (mAimTarget)
+   {
+      if (mAimTarget->mPosSet && mAimTarget->getPosition() == loc)
+         {
+            mAimTarget->mAimOffset = offset;
+            return;
+      }
+      delete(mAimTarget);
+   }
    mAimTarget = new AIAimTarget(this, loc, rad);
    mAimTarget->mAimOffset = offset;
 }
 
 void AIController::setAim(SimObjectPtr<SceneObject> objIn, F32 rad, Point3F offset)
 {
-   if (mAimTarget) delete(mAimTarget);
+   if (mAimTarget)
+   {
+      if (mAimTarget->mObj.isValid() && objIn.isValid() && mAimTarget->mObj == objIn)
+         {
+            mAimTarget->mAimOffset = offset;
+            return;
+      }
+      delete(mAimTarget);
+   }
    mAimTarget = new AIAimTarget(this, objIn, rad);
    mAimTarget->mAimOffset = offset;
 }
@@ -168,11 +205,25 @@ bool AIController::getAIMove(Move* movePtr)
             {
                obj = getAIInfo()->mObj;
             }
+            
+            Point3F start = obj->getPosition();
+            Point3F end = start;
+            start.z = obj->getBoxCenter().z;
+            end.z -= mControllerData->mHeightTolerance;
+
+            obj->disableCollision();
+            // Only repath if not already adjusted and on risky ground
             RayInfo info;
-            if (obj->getContainer()->castRay(obj->getPosition(), obj->getPosition() - Point3F(0, 0, mControllerData->mHeightTolerance), StaticShapeObjectType, &info))
+            if (obj->getContainer()->castRay(start, end, StaticShapeObjectType, &info))
             {
                getNav()->repath();
+               mMovement.mInAir = false;
             }
+            else
+            {
+               mMovement.mInAir = true;
+            }
+            obj->enableCollision();
             getGoal()->mInRange = false;
          }
          if (getGoal()->getDist() < mControllerData->mFollowTolerance )
@@ -298,6 +349,13 @@ void AIController::Movement::onStuck()
 #endif
 }
 
+bool AIController::Movement::isInWater()
+{
+   ShapeBase* sbo = dynamic_cast<ShapeBase*>(getCtrl()->getAIInfo()->mObj.getPointer());
+   if (!sbo) return false;
+   return sbo->getWaterCoverage() > 0.0f;
+}
+
 DefineEngineMethod(AIController, setMoveSpeed, void, (F32 speed), ,
    "@brief Sets the move speed for an AI object.\n\n"
 
@@ -326,6 +384,23 @@ DefineEngineMethod(AIController, stop, void, (), ,
    object->mMovement.stopMove();
 }
 
+DefineEngineMethod(AIController, isStopped, bool, (), ,
+   "@brief is the player moving?.\n\n")
+{
+   return object->mMovement.isStopped();
+}
+
+DefineEngineMethod(AIController, isInAir, bool, (), ,
+   "@brief is the player moving?.\n\n")
+{
+   return object->mMovement.isInAir();
+}
+
+DefineEngineMethod(AIController, isInWater, bool, (), ,
+   "@brief is the player in water?.\n\n")
+{
+   return object->mMovement.isInWater();
+}
 
 /**
  * Set the state of a movement trigger.
@@ -344,6 +419,16 @@ void AIController::TriggerState::setMoveTrigger(U32 slot, const bool isSet)
       mMoveTriggers[slot] = isSet;   // set the trigger
       mControllerRef->getAIInfo()->mObj->setMaskBits(ShapeBase::NoWarpMask);         // force the client to updateMove
    }
+}
+
+DefineEngineMethod(AIController, setMoveTrigger, void, (U32 slot, bool state), (true),
+   "@brief Sets a movement trigger on an AI object.\n\n"
+   "@param slot The trigger slot to set.\n"
+   "@see getMoveTrigger()\n"
+   "@see clearMoveTrigger()\n"
+   "@see clearMoveTriggers()\n")
+{
+   object->mTriggerState.setMoveTrigger(slot, state);
 }
 
 /**
@@ -520,11 +605,15 @@ AIControllerData::AIControllerData()
    mAttackRadius = 2.0f;
    mMoveStuckTolerance = 0.01f;
    mMoveStuckTestDelay = 30;
-   mHeightTolerance = 0.001f;
+   mHeightTolerance = 0.1f;
    mFollowTolerance = 1.0f;
 
 #ifdef TORQUE_NAVIGATION_ENABLED
    mLinkTypes = LinkData(AllFlags);
+   mFilter.setIncludeFlags(mLinkTypes.getFlags());
+   mFilter.setExcludeFlags(0);
+   mAreaCosts.setSize(PolyAreas::NumAreas);
+   mAreaCosts.fill(1.0f);
    mNavSize = AINavigation::Regular;
    mFlocking.mChance = 90;
    mFlocking.mMin = 1.0f;
@@ -550,6 +639,8 @@ AIControllerData::AIControllerData(const AIControllerData& other, bool temp_clon
 
 #ifdef TORQUE_NAVIGATION_ENABLED
    mLinkTypes = other.mLinkTypes;
+   mFilter = other.mFilter;
+   mAreaCosts = other.mAreaCosts;
    mNavSize = other.mNavSize;
    mFlocking.mChance = other.mFlocking.mChance;
    mFlocking.mMin = other.mFlocking.mMin;
@@ -619,6 +710,8 @@ void AIControllerData::initPersistFields()
    addFieldV("FlockSideStep", TypeRangedF32, Offset(mFlocking.mSideStep, AIControllerData), &CommonValidators::PositiveFloat,
       "@brief Distance from destination before we stop moving out of the way.");
 
+   addField("areaCosts", TypeF32Vector, Offset(mAreaCosts, AIControllerData),
+      "Vector of costs for each PolyArea.");
    addField("allowWalk", TypeBool, Offset(mLinkTypes.walk, AIControllerData),
       "Allow the character to walk on dry land.");
    addField("allowJump", TypeBool, Offset(mLinkTypes.jump, AIControllerData),
@@ -652,6 +745,10 @@ void AIControllerData::packData(BitStream* stream)
 
 #ifdef TORQUE_NAVIGATION_ENABLED
    //enums
+   stream->write(mAreaCosts.size());
+   for (U32 i = 0; i < mAreaCosts.size(); i++) {
+      stream->write(mAreaCosts[i]);
+   }
    stream->write(mLinkTypes.getFlags());
    stream->write((U32)mNavSize);
    // end enums
@@ -674,10 +771,23 @@ void AIControllerData::unpackData(BitStream* stream)
    stream->read(&mFollowTolerance);
 
 #ifdef TORQUE_NAVIGATION_ENABLED
+   U32 num;
+   stream->read(&num);
+   mAreaCosts.setSize(num);
+   for (U32 i = 0; i < num; i++)
+   {
+      stream->read(&mAreaCosts[i]);
+   }
    //enums
    U16 linkFlags;
    stream->read(&linkFlags);
    mLinkTypes = LinkData(linkFlags);
+   mFilter.setIncludeFlags(mLinkTypes.getFlags());
+   mFilter.setExcludeFlags(mLinkTypes.getExcludeFlags());
+   for (U32 i = 0; i < PolyAreas::NumAreas; i++)
+   {
+      mFilter.setAreaCost((PolyAreas)i, mAreaCosts[i]);
+   }
    U32 navSize;
    stream->read(&navSize);
    mNavSize = (AINavigation::NavSize)(navSize);   

@@ -276,7 +276,7 @@ bool ConvexShape::protectedSetSurface( void *object, const char *index, const ch
    Point2F offset;
    Point2F scale;
    F32 rot = 0;
-   bool horz = true, vert = true;
+   S32 horz = 1, vert = 1;
 
 	/*
    dSscanf( data, "%g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g", 
@@ -1028,7 +1028,7 @@ bool ConvexShape::buildExportPolyList(ColladaUtils::ExportData* exportData, cons
       ColladaUtils::ExportData::meshLODData* meshData = &exportData->meshData.last();
 
       //Fill out the info we'll need later to actually append our mesh data for the detail levels during the processing phase
-      meshData->shapeInst = nullptr;
+      meshData->shapeInst = NULL;
       meshData->originatingObject = this;
       meshData->meshTransform = mObjToWorld;
       meshData->scale = mObjScale;
@@ -1400,7 +1400,7 @@ void ConvexShape::_updateMaterial()
 
       Material* material = mSurfaceTextures[i].getMaterialResource();
 
-      if (material == nullptr)
+      if (material == NULL)
          continue;
 
       mSurfaceTextures[i].materialInst = material->createMatInstance();
@@ -1425,7 +1425,7 @@ void ConvexShape::_updateMaterial()
 
    Material* material = getMaterialResource();
 
-   if (material == nullptr)
+   if (material == NULL)
       return;
 
    mMaterialInst = material->createMatInstance();
@@ -1804,10 +1804,11 @@ void ConvexShape::_compileGeometry()
                   for (S32 k = 0; k < 3; k++)
                   {
                      pVert->normal = face.normal;
-                     pVert->tangent = face.tangent;
-                     pVert->color = faceColor;
+                     pVert->T = face.tangent;
+                     pVert->B = mCross(face.normal, face.tangent);
                      pVert->point = pointList[facePntMap[triangles[j][k]]];
                      pVert->texCoord = face.texcoords[triangles[j][k]];
+                     pVert->texCoord2 = pVert->texCoord;
 
                      pVert++;
                      vc++;
@@ -2421,10 +2422,12 @@ void ConvexShape::Geometry::generate(const Vector< PlaneF > &planes, const Vecto
 
 		U32 *vertMap = new U32[pntCount];
 
+      Point3F binormal = mCross(newFace.normal, newFace.tangent);
+
       MatrixF quadMat( true );
       quadMat.setPosition( averagePnt );
       quadMat.setColumn( 0, newFace.tangent );
-      quadMat.setColumn( 1, mCross( newFace.normal, newFace.tangent ) );
+      quadMat.setColumn( 1, binormal);
       quadMat.setColumn( 2, newFace.normal );
 		quadMat.inverse();
 
@@ -2510,8 +2513,8 @@ void ConvexShape::Geometry::generate(const Vector< PlaneF > &planes, const Vecto
 
 
 		// Calculate texture coordinates for each point in this face.
+      if (newFace.normal.z < -0.9f) binormal = -binormal;
 
-		const Point3F binormal = mCross( newFace.normal, newFace.tangent );
 		PlaneF planey( newFace.centroid - 0.5f * binormal, binormal );
 		PlaneF planex( newFace.centroid - 0.5f * newFace.tangent, newFace.tangent );
 
@@ -2519,7 +2522,7 @@ void ConvexShape::Geometry::generate(const Vector< PlaneF > &planes, const Vecto
 
 		for ( S32 j = 0; j < newFace.points.size(); j++ )
 		{
-			F32 x = planex.distToPlane( points[ newFace.points[ j ] ] );
+			F32 x = -planex.distToPlane( points[ newFace.points[ j ] ] );
 			F32 y = planey.distToPlane( points[ newFace.points[ j ] ] );
 
 			if (!texOffset.empty())
@@ -2541,7 +2544,7 @@ void ConvexShape::Geometry::generate(const Vector< PlaneF > &planes, const Vecto
 	         if (vertFlip.size() > 0 && vertFlip[i])
 	            y *= -1;
 	
-	         newFace.texcoords[j].set(-x, -y);
+	         newFace.texcoords[j].set(x, y);
 		}
 
       // Data verification tests.

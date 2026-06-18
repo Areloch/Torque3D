@@ -313,6 +313,7 @@ bool HoverVehicleData::preload(bool server, String &errorStr)
 
       for (S32 i = 0; i < MaxSounds; i++)
       {
+         _setHoverSounds(getHoverSounds(i), i);
          if (!isHoverSoundsValid(i))
          {
             //return false; -TODO: trigger asset download
@@ -327,12 +328,16 @@ bool HoverVehicleData::preload(bool server, String &errorStr)
    {
       if( !Sim::findObject( dustTrailID, dustTrailEmitter ) )
       {
-         Con::errorf( ConsoleLogEntry::General, "HoverVehicleData::preload Invalid packet, bad datablockId(dustTrailEmitter): 0x%x", dustTrailID );
+         errorStr = String::ToString("HoverVehicleData::preload Invalid packet, bad datablockId(dustTrailEmitter): 0x%x", dustTrailID );
+         return false;
       }
    }
+
+   Resource<TSShape> shape = shapeAssetRef.assetPtr->getShapeResource();
+
    // Resolve jet nodes
    for (S32 j = 0; j < MaxJetNodes; j++)
-      jetNode[j] = mShape->findNode(sJetNode[j]);
+      jetNode[j] = shape->findNode(sJetNode[j]);
 
    return true;
 }
@@ -725,8 +730,7 @@ void HoverVehicle::updateForces(F32 /*dt*/)
 
    for (j = 0; j < 2; j++) {
       if (getContainer()->castRay(stabPoints[j].wsPoint, stabPoints[j].wsPoint + stabPoints[j].wsExtension * 2.0,
-                                  TerrainObjectType | 
-                                  WaterObjectType, &rinfo)) 
+         sCollisionMoveMask, &rinfo))
       {
          reallyFloating = false;
 

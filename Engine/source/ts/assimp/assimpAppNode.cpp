@@ -84,6 +84,11 @@ MatrixF AssimpAppNode::getTransform(F32 time)
       // no parent (ie. root level) => scale by global shape <unit>
       mLastTransform.identity();
       mLastTransform.scale(ColladaUtils::getOptions().unit * ColladaUtils::getOptions().formatScaleFactor);
+      if (!isBounds())
+      {
+         MatrixF axisFix = ColladaUtils::getOptions().axisCorrectionMat;
+         mLastTransform.mulL(axisFix);
+      }
    }
 
    // If this node is animated in the active sequence, fetch the animated transform
@@ -176,12 +181,16 @@ Point3F AssimpAppNode::interpolateVectorKey(const aiVectorKey* keys, U32 numKeys
    {
       if (frameTime < keys[i].mTime)
       {
+         Assimp::Interpolator<aiVectorKey> interp;
+
+         const aiVectorKey& next = keys[i];
+         const aiVectorKey& prev = keys[i - 1];
+
          const F32 factor = (frameTime - keys[i - 1].mTime) / (keys[i].mTime - keys[i - 1].mTime);
-         Point3F start(keys[i - 1].mValue.x, keys[i - 1].mValue.y, keys[i - 1].mValue.z);
-         Point3F end(keys[i].mValue.x, keys[i].mValue.y, keys[i].mValue.z);
-         Point3F result;
-         result.interpolate(start, end, factor);
-         return result;
+
+         aiVector3D out;
+         interp(out, prev, next, factor);
+         return Point3F(out.x, out.y, out.z);
       }
    }
 
@@ -193,6 +202,16 @@ QuatF AssimpAppNode::interpolateQuaternionKey(const aiQuatKey* keys, U32 numKeys
 {
    if (numKeys == 1) // Single keyframe: use it directly
       return QuatF(keys[0].mValue.x, keys[0].mValue.y, keys[0].mValue.z, keys[0].mValue.w);
+
+   // Clamp frameTime to the bounds of the keyframes
+   if (frameTime <= keys[0].mTime) {
+      // Before the first keyframe, return the first key
+      return QuatF(keys[0].mValue.x, keys[0].mValue.y, keys[0].mValue.z, keys[0].mValue.w);
+   }
+   if (frameTime >= keys[numKeys - 1].mTime) {
+      // After the last keyframe, return the last key
+      return QuatF(keys[numKeys - 1].mValue.x, keys[numKeys - 1].mValue.y, keys[numKeys - 1].mValue.z, keys[numKeys - 1].mValue.w);
+   }
 
    for (U32 i = 1; i < numKeys; ++i)
    {
@@ -231,7 +250,7 @@ MatrixF AssimpAppNode::getNodeTransform(F32 time)
       // Check for inverted node coordinate spaces => can happen when modelers
       // use the 'mirror' tool in their 3d app. Shows up as negative <scale>
       // transforms in the collada model.
-      if (m_matF_determinant(nodeTransform) < 0.0f)
+      if (nodeTransform.determinant() < 0.0f)
       {
          // Mark this node as inverted so we can mirror mesh geometry, then
          // de-invert the transform matrix
@@ -277,7 +296,7 @@ aiNode* AssimpAppNode::findChildNodeByName(const char* nodeName, aiNode* rootNod
       if (retNode)
          return retNode;
    }
-   return nullptr;
+   return NULL;
 }
 
 void AssimpAppNode::addChild(AssimpAppNode* child)
@@ -288,4 +307,24 @@ void AssimpAppNode::addChild(AssimpAppNode* child)
 void AssimpAppNode::addMesh(AssimpAppMesh* child)
 {
    mMeshes.push_back(child);
+}
+
+void AssimpAppNode::buildMeshList()
+{
+   for (U32 i = 0; i < mNode->mNumMeshes; i++)
+   {
+      U32 meshIdx = mNode->mMeshes[i];
+      const aiMesh* mesh = mScene->mMeshes[meshIdx];
+      AssimpAppMesh* curMesh = new AssimpAppMesh(mesh, this);
+      mMeshes.push_back(curMesh);
+   }
+}
+
+void AssimpAppNode::buildChildList()
+{
+   for (U32 i = 0; i < mNode->mNumChildren; i++)
+   {
+      const aiNode* node = mNode->mChildren[i];
+      mChildNodes.push_back(new AssimpAppNode(mScene, node, this));
+   }
 }

@@ -101,7 +101,7 @@ public:
 
 
 /// A simple mesh shape with optional ambient animation.
-class TSStatic : public SceneObject
+class TSStatic : public SceneObject, protected AssetPtrCallback
 {
    typedef SceneObject Parent;
 
@@ -176,22 +176,25 @@ protected:
    void interpolateTick(F32 delta) override;
    void advanceTime(F32 dt) override;
 
-   void onDynamicModified(const char* slotName, const char* newValue) override;
-
    /// Start or stop processing ticks depending on our state.
    void _updateShouldTick();
 
    String cubeDescName;
    U32 cubeDescId;
    ReflectorDesc* reflectorDesc;
-   CubeReflector mCubeReflector;
+   CubeReflector* mCubeReflector;
+
+   void onAssetRefreshed(AssetPtrBase* pAssetPtrBase) override
+   {
+      _createShape();
+      _updateShouldTick();
+   }
 
 protected:
 
    Convex* mConvexList;
 
-   DECLARE_SHAPEASSET(TSStatic, Shape, onShapeChanged);
-   DECLARE_ASSET_NET_SETGET(TSStatic, Shape, AdvancedStaticOptionsMask);
+   AssetRef<ShapeAsset> mShapeAssetRef;
 
    U32               mShapeHash;
    Vector<S32> mCollisionDetails;
@@ -239,7 +242,7 @@ public:
    DECLARE_CATEGORY("Object \t Simple");
    static void initPersistFields();
    /// returns the shape asset used for this object
-   StringTableEntry getTypeHint() const override { return (getShapeAsset()) ? getShapeAsset()->getAssetName(): StringTable->EmptyString(); }
+   StringTableEntry getTypeHint() const override { return (mShapeAssetRef.notNull()) ? mShapeAssetRef.assetPtr->getAssetName(): StringTable->EmptyString(); }
    static void consoleInit();
    static bool _setFieldSkin(void* object, const char* index, const char* data);
    static const char* _getFieldSkin(void* object, const char* data);
@@ -283,6 +286,8 @@ public:
    void getNodeTransform(const char *nodeName, const MatrixF &xfm, MatrixF *outMat);
 
    void getUtilizedAssets(Vector<StringTableEntry>* usedAssetsList) override;
+
+   const AssetPtr<ShapeAsset>& getShapeAsset() const { return mShapeAssetRef.assetPtr; }
 
 private:
    void   onStaticModified(const char* slotName, const char* newValue = NULL) override;

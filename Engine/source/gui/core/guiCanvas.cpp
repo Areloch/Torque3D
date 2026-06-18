@@ -162,8 +162,8 @@ GuiCanvas::GuiCanvas(): GuiControl(),
                         mLastRenderMs(0),
                         mPlatformWindow(NULL),
                         mDisplayWindow(true),
-                        mMenuBarCtrl(nullptr),
-                        mMenuBackground(nullptr),
+                        mMenuBarCtrl(NULL),
+                        mMenuBackground(NULL),
                         mConstrainMouse(false)
 {
    setBounds(0, 0, 640, 480);
@@ -231,6 +231,12 @@ bool GuiCanvas::onAdd()
 {
    // ensure that we have a cursor
    setCursor(dynamic_cast<GuiCursor*>(Sim::findObject("DefaultCursor")));
+
+   SFXSystem::enumerateProviders();
+   SFXProvider* p = SFXSystem::getBestProviderChoice();
+
+   if (p)
+      SFX->createDevice(p);
    
    // Enumerate things for GFX before we have an active device.
    GFXInit::enumerateAdapters();
@@ -359,7 +365,7 @@ void GuiCanvas::setMenuBar(SimObject *obj)
           return;
        }
 
-       if (mMenuBackground == nullptr)
+       if (mMenuBackground == NULL)
        {
            mMenuBackground = new GuiControl();
            mMenuBackground->registerObject();
@@ -393,6 +399,7 @@ void GuiCanvas::setWindowTitle(const char *newTitle)
 }
 
 CanvasSizeChangeSignal GuiCanvas::smCanvasSizeChangeSignal;
+CanvasSetActiveSignal GuiCanvas::smCanvasSetActiveSignal;
 
 void GuiCanvas::handleResize( WindowId did, S32 width, S32 height )
 {
@@ -689,6 +696,15 @@ bool GuiCanvas::processInputEvent(InputEventInfo &inputEvent)
 {
    mConsumeLastInputEvent = true;
    mLastInputDeviceType = inputEvent.deviceType;
+
+   // If we have an active offscreen canvas, give it the input
+   if (GuiOffscreenCanvas::sActiveOffscreenCanvas &&
+      (GuiOffscreenCanvas::sActiveOffscreenCanvas != this) &&
+      GuiOffscreenCanvas::sActiveOffscreenCanvas->processInputEvent(inputEvent))
+   {
+      GuiOffscreenCanvas::sActiveOffscreenCanvas = NULL;
+      return mConsumeLastInputEvent;
+   }
 
    // First call the general input handler (on the extremely off-chance that it will be handled):
    if (mFirstResponder &&  mFirstResponder->onInputEvent(inputEvent))
@@ -2193,6 +2209,13 @@ StringTableEntry GuiCanvas::getLastInputDeviceType()
    return StringTable->EmptyString();
 }
 
+void GuiCanvas::setActive(bool value)
+{
+   Parent::setActive(value);
+
+   GuiCanvas::getCanvasSetActiveSignal().trigger(this, value);
+}
+
 DefineEngineMethod( GuiCanvas, getContent, S32, (),,
                "@brief Get the GuiControl which is being used as the content.\n\n"
 
@@ -3017,4 +3040,12 @@ DefineEngineMethod(GuiCanvas, resetVideoMode, void, (), , "")
 DefineEngineMethod(GuiCanvas, getLastInputDevice, const char*, (), , "Returns the name of the last input device that the GuiCanvas consumed.")
 {
    return object->getLastInputDeviceType();
+}
+
+DefineEngineMethod(GuiCanvas, getActiveOffscreenCanvas, S32, (), , "Returns the SimID of the active offscreen canvas, if one exists. If not, returns 0")
+{
+   if (GuiOffscreenCanvas::sActiveOffscreenCanvas && GuiOffscreenCanvas::sActiveOffscreenCanvas->isActive())
+      return GuiOffscreenCanvas::sActiveOffscreenCanvas->getId();
+
+   return 0;
 }

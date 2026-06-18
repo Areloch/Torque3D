@@ -79,6 +79,7 @@ GuiInspectorGroup::GuiInspectorGroup( const String& groupName,
 
    mChildren.clear();
    mMargin.set(0,0,4,0);
+   VECTOR_SET_ASSOCIATION(mArrayElements);
 }
 
 //-----------------------------------------------------------------------------
@@ -211,7 +212,7 @@ GuiInspectorField *GuiInspectorGroup::findField( const char *fieldName )
 
    for( ; i != mChildren.end(); i++ )
    {
-      if( (*i)->getFieldName() != NULL && dStricmp( (*i)->getFieldName(), fieldName ) == 0 )
+      if( ((*i)->getFieldName() != NULL && dStricmp( (*i)->getFieldName(), fieldName ) == 0) || ((*i)->getCaption() != StringTable->EmptyString() && dStricmp((*i)->getCaption(), fieldName) == 0) )
          return (*i);
    }
 
@@ -229,6 +230,7 @@ void GuiInspectorGroup::clearFields()
    // that we keep for our own convenience.
    mArrayCtrls.clear();
    mChildren.clear();
+   mArrayElements.clear();
 }
 
 //-----------------------------------------------------------------------------
@@ -336,7 +338,7 @@ bool GuiInspectorGroup::inspectGroup()
                   GuiControlProfile* elementRolloutProfile = dynamic_cast<GuiControlProfile*>(Sim::findObject("GuiInspectorRolloutProfile0"));
 
                   char buf[256];
-                  dSprintf(buf, 256, "  [%i]", i);
+                  dSprintf(buf, 256, "  [%i/%i]", i, field->elementCount);
 
                   elementRollout->setControlProfile(elementRolloutProfile);
                   elementRollout->setCaption(buf);
@@ -349,6 +351,8 @@ bool GuiInspectorGroup::inspectGroup()
                   elementRollout->instantCollapse();
 
                   arrayStack->addObject(elementRollout);
+
+                  mArrayElements.push_back({ elementRollout, (S32)i, field });
                }
 
                pArrayRollout = arrayRollout;
@@ -665,7 +669,7 @@ void GuiInspectorGroup::addInspectorField(StringTableEntry name, StringTableEntr
       else if (typeName == StringTable->insert("image"))
          fieldType = TypeImageAssetPtr;
       else if (typeName == StringTable->insert("shape"))
-         fieldType = TypeShapeAssetId;
+         fieldType = TypeShapeAssetPtr;
       else if (typeName == StringTable->insert("sound"))
          fieldType = TypeSoundAssetId;
       else if (typeName == StringTable->insert("bool"))
@@ -696,7 +700,7 @@ void GuiInspectorGroup::addInspectorField(StringTableEntry name, StringTableEntr
    else
       fieldGui = constructField(fieldType);
 
-   if (fieldGui == nullptr)
+   if (fieldGui == NULL)
    {
       //call down into script and see if there's special handling for that type of field
       //this allows us to have completely special-case field types implemented entirely in script
@@ -750,7 +754,7 @@ void GuiInspectorGroup::removeInspectorField(StringTableEntry name)
    {
       GuiInspectorField* field = dynamic_cast<GuiInspectorField*>(mStack->getObject(i));
 
-      if (field == nullptr)
+      if (field == NULL)
          continue;
 
       if (field->getFieldName() == name || field->getSpecialEditVariableName() == name)
@@ -764,7 +768,7 @@ void GuiInspectorGroup::removeInspectorField(StringTableEntry name)
 void GuiInspectorGroup::hideInspectorField(StringTableEntry fieldName, bool setHidden)
 {
    SimObject* inspectObj = mParent->getInspectObject();
-   if (inspectObj == nullptr)
+   if (inspectObj == NULL)
       return;
 
    AbstractClassRep::Field* field = const_cast<AbstractClassRep::Field*>(inspectObj->getClassRep()->findField(fieldName));
@@ -779,6 +783,30 @@ void GuiInspectorGroup::hideInspectorField(StringTableEntry fieldName, bool setH
       field->flag.set(AbstractClassRep::FIELD_HideInInspectors);
    else
       field->flag.clear(AbstractClassRep::FIELD_HideInInspectors);
+}
+
+void GuiInspectorGroup::replaceInspectorField(StringTableEntry fieldName, GuiInspectorField* replacementField)
+{
+   for (U32 i = 0; i < mStack->size(); i++)
+   {
+      GuiInspectorField* field = dynamic_cast<GuiInspectorField*>(mStack->getObject(i));
+
+      if (field == NULL)
+         continue;
+
+      if (field->getFieldName() == fieldName || field->getSpecialEditVariableName() == fieldName)
+      {
+         //ensure we match up to the internals
+         replacementField->mField = field->mField;
+
+         mStack->addObject(replacementField);
+         mStack->reOrder(replacementField, field);
+
+         mStack->removeObject(field);
+
+         return;
+      }
+   }
 }
 
 DefineEngineMethod(GuiInspectorGroup, createInspectorField, GuiInspectorField*, (), , "createInspectorField()")
@@ -828,9 +856,42 @@ DefineEngineMethod(GuiInspectorGroup, hideField, void, (const char* fieldName, b
    object->hideInspectorField(StringTable->insert(fieldName), setHidden);
 }
 
+DefineEngineMethod(GuiInspectorGroup, replaceField, void, (const char* fieldName, GuiInspectorField* field), (nullAsType<GuiInspectorField*>()),
+   "Removes a Inspector field to this group of a given name.\n"
+   "@param fieldName The name of the field to be removed.")
+{
+   if (dStrEqual(fieldName, ""))
+      return;
+
+   object->replaceInspectorField(StringTable->insert(fieldName), field);
+}
+
 DefineEngineMethod(GuiInspectorGroup, setForcedArrayIndex, void, (S32 arrayIndex), (-1),
    "Sets the ForcedArrayIndex for the group. Used to force presentation of arrayed fields to only show a specific field index."
    "@param arrayIndex The specific field index for arrayed fields to show. Use -1 or blank arg to go back to normal behavior.")
 {
    object->setForcedArrayIndex(arrayIndex);
+}
+
+DefineEngineMethod(GuiInspectorGroup, findField, S32, (const char* fieldName),,
+   "Finds an Inspector field in this group of a given name.\n"
+   "@param fieldName The name of the field to be found.\n"
+   "@return Field SimObjectId")
+{
+   if (dStrEqual(fieldName, ""))
+      return 0;
+
+   GuiInspectorField* field = object->findField(StringTable->insert(fieldName));
+   if (field == NULL)
+      return 0;
+
+   return field->getId();
+}
+
+DefineEngineMethod(GuiInspectorGroup, refresh, void, (), ,
+   "Finds an Inspector field in this group of a given name.\n"
+   "@param fieldName The name of the field to be found.\n"
+   "@return Field SimObjectId")
+{
+   object->inspectGroup();
 }

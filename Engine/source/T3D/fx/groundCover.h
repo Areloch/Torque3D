@@ -44,8 +44,12 @@
 #ifndef _SHADERFEATURE_H_
 #include "shaderGen/shaderFeature.h"
 #endif
-
+#ifndef SHAPE_ASSET_H
 #include "T3D/assets/ShapeAsset.h"
+#endif
+#ifndef TERRAINMATERIALASSET_H
+#include "T3D/assets/TerrainMaterialAsset.h"
+#endif
 
 class TerrainBlock;
 class GroundCoverCell;
@@ -111,7 +115,7 @@ public:
 };
 
 
-class GroundCover : public SceneObject
+class GroundCover : public SceneObject, protected AssetPtrCallback
 {
    friend class GroundCoverShaderConstHandles;
    friend class GroundCoverCell;
@@ -315,8 +319,8 @@ protected:
 
    /// Terrain material assetId to limit coverage to, or
    /// left empty to cover entire terrain.
-   StringTableEntry mLayer[MAX_COVERTYPES];
-
+   DECLARE_TERRAINMATERIALASSET_NET_ARRAY(GroundCover, Layer, MAX_COVERTYPES, -1)
+   
    /// Inverts the data layer test making the 
    /// layer an exclusion mask.
    bool mInvertLayer[MAX_COVERTYPES];
@@ -341,8 +345,7 @@ protected:
    RectF mBillboardRects[MAX_COVERTYPES];
 
    /// The cover shape filenames.
-   DECLARE_SHAPEASSET_ARRAY(GroundCover, Shape, MAX_COVERTYPES, onShapeChanged);
-   DECLARE_ASSET_ARRAY_NET_SETGET(GroundCover, Shape, -1);
+   AssetRef<ShapeAsset> mShapeAssetRef[MAX_COVERTYPES];
 
    /// The cover shape instances.
    TSShapeInstance* mShapeInstances[MAX_COVERTYPES];
@@ -410,7 +413,8 @@ protected:
 
    void _debugRender( ObjectRenderInst *ri, SceneRenderState *state, BaseMatInstance *overrideMat );
 
-   void onShapeChanged()
+protected:
+   void onAssetRefreshed(AssetPtrBase* pAssetPtrBase) override
    {
       _initShapes();
       setMaskBits(U32(-1));

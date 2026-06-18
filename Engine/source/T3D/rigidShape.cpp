@@ -281,7 +281,8 @@ RigidShapeData::RigidShapeData()
 
    dustTrailEmitter = NULL;
    dustTrailID = 0;
-   _setShape(ShapeAsset::smNoShapeAssetFallback);
+
+   shapeAssetRef = ShapeAsset::smNoShapeAssetFallback;
 }
 
 RigidShapeData::~RigidShapeData()
@@ -297,6 +298,36 @@ bool RigidShapeData::onAdd()
    if(!Parent::onAdd())
       return false;
 
+   for (S32 i = 0; i < VC_NUM_SPLASH_EMITTERS; i++)
+   {
+      if (!splashEmitterList[i] && splashEmitterIDList[i] != 0)
+      {
+         if (Sim::findObject(splashEmitterIDList[i], splashEmitterList[i]) == false)
+         {
+            Con::errorf(ConsoleLogEntry::General, "ExplosionData::onAdd: Invalid packet, bad datablockId(explosion): 0x%x", splashEmitterIDList[i]);
+            return false;
+         }
+      }
+   }
+
+   if (!dustTrailEmitter && dustTrailID != 0)
+   {
+      if (Sim::findObject(dustID, dustEmitter) == false)
+      {
+         Con::errorf(ConsoleLogEntry::General, "RigidShapeData::onAdd: Invalid packet, bad datablockId(dustEmitter): 0x%x", dustID);
+         return false;
+      }
+   }
+
+   if (!dustTrailEmitter && dustTrailID != 0)
+   {
+      if (Sim::findObject(dustTrailID, dustTrailEmitter) == false)
+      {
+         Con::errorf(ConsoleLogEntry::General, "RigidShapeData::onAdd: Invalid packet, bad datablockId(dustTrailEmitter): 0x%x", dustTrailID);
+         return false;
+      }
+   }
+
    return true;
 }
 
@@ -310,7 +341,7 @@ bool RigidShapeData::preload(bool server, String &errorStr)
    if (!collisionDetails.size() || collisionDetails[0] == -1)
    {
       Con::errorf("RigidShapeData::preload failed: Rigid shapes must define a collision-1 detail");
-      errorStr = String::ToString("RigidShapeData: Couldn't load shape asset \"%s\"", mShapeAsset.getAssetId());
+      errorStr = String::ToString("RigidShapeData: Couldn't load shape asset \"%s\"", shapeAssetRef.assetId);
       return false;
    }
 
@@ -318,6 +349,7 @@ bool RigidShapeData::preload(bool server, String &errorStr)
    if (!server) {
       for (S32 i = 0; i < Body::MaxSounds; i++)
       {
+         _setBodySounds(getBodySounds(i), i);
          if (!isBodySoundsValid(i))
          {
             //return false; -TODO: trigger asset download
@@ -326,6 +358,7 @@ bool RigidShapeData::preload(bool server, String &errorStr)
 
       for (S32 j = 0; j < Sounds::MaxSounds; j++)
       {
+         _setWaterSounds(getWaterSounds(j), j);
          if (!isWaterSoundsValid(j))
          {
             //return false; -TODO: trigger asset download
@@ -338,7 +371,8 @@ bool RigidShapeData::preload(bool server, String &errorStr)
    {
       if( !Sim::findObject( dustID, dustEmitter ) )
       {
-         Con::errorf( ConsoleLogEntry::General, "RigidShapeData::preload Invalid packet, bad datablockId(dustEmitter): 0x%x", dustID );
+         errorStr = String::ToString("RigidShapeData::preload Invalid packet, bad datablockId(dustEmitter): 0x%x", dustID);
+         return false;
       }
    }
 
@@ -349,7 +383,8 @@ bool RigidShapeData::preload(bool server, String &errorStr)
       {
          if( !Sim::findObject( splashEmitterIDList[i], splashEmitterList[i] ) )
          {
-            Con::errorf( ConsoleLogEntry::General, "RigidShapeData::preload Invalid packet, bad datablockId(splashEmitter): 0x%x", splashEmitterIDList[i] );
+            errorStr = String::ToString("RigidShapeData::preload Invalid packet, bad datablockId(splashEmitter): 0x%x", splashEmitterIDList[i] );
+            return false;
          }
       }
    }
@@ -370,7 +405,8 @@ bool RigidShapeData::preload(bool server, String &errorStr)
    {
       if( !Sim::findObject( dustTrailID, dustTrailEmitter ) )
       {
-         Con::errorf( ConsoleLogEntry::General, "RigidShapeData::preload Invalid packet, bad datablockId(dustTrailEmitter): 0x%x", dustTrailID );
+         errorStr = String::ToString("RigidShapeData::preload Invalid packet, bad datablockId(dustTrailEmitter): 0x%x", dustTrailID );
+         return false;
       }
    }
 
@@ -1105,7 +1141,7 @@ void RigidShape::updatePos(F32 dt)
 
    // Update collision information based on our current pos.
    bool collided = false;
-   if (!mDisableMove)
+   if (!mRigid.atRest && !mDisableMove)
    {
       collided = updateCollision(dt);
 
@@ -1118,7 +1154,7 @@ void RigidShape::updatePos(F32 dt)
       {
          F32 k = mRigid.getKineticEnergy();
          F32 G = mNetGravity* dt * TickMs / mDataBlock->integration;
-         F32 Kg = mRigid.mass * G * G;
+         F32 Kg = mRigid.mass * G * G * TickSec;
          if (k < sRestTol * Kg && ++restCount > sRestCount)
             mRigid.setAtRest();
       }
@@ -1253,6 +1289,9 @@ bool RigidShape::updateCollision(F32 dt)
    mRigid.getTransform(&mat);
    cmat = mConvex.getTransform();
 
+   SceneObject* mounted;
+   for (mounted = getMountList(); mounted; mounted = mounted->getMountLink())
+      mounted->disableCollision();
    mCollisionList.clear();
    CollisionState *state = mConvex.findClosestState(cmat, getScale(), mDataBlock->collisionTol);
    if (state && state->mDist <= mDataBlock->collisionTol) 
@@ -1260,9 +1299,12 @@ bool RigidShape::updateCollision(F32 dt)
       //resolveDisplacement(ns,state,dt);
       mConvex.getCollisionInfo(cmat, getScale(), &mCollisionList, mDataBlock->collisionTol);
    }
-
    // Resolve collisions
    bool collided = resolveCollision(mRigid,mCollisionList, dt);
+
+   for (mounted = getMountList(); mounted; mounted = mounted->getMountLink())
+      mounted->enableCollision();
+
    return collided;
 }
 
@@ -1402,13 +1444,20 @@ void RigidShape::updateWorkingCollisionSet(const U32 mask)
 {
    PROFILE_SCOPE( Vehicle_UpdateWorkingCollisionSet );
 
+   if (mDataBlock->shapeAssetRef.isNull())
+      return;
+
+   Resource<TSShape> shape = mDataBlock->shapeAssetRef.assetPtr->getShapeResource();
+   if (!shape)
+      return;
+
    // First, we need to adjust our velocity for possible acceleration.  It is assumed
    // that we will never accelerate more than 20 m/s for gravity, plus 30 m/s for
    // jetting, and an equivalent 10 m/s for vehicle accel.  We also assume that our
    // working list is updated on a Tick basis, which means we only expand our box by
    // the possible movement in that tick, plus some extra for caching purposes
    Box3F convexBox = mConvex.getBoundingBox(getTransform(), getScale());
-   F32 len = (mRigid.linVelocity.len() + 50) * TickSec;
+   F32 len = (mRigid.linVelocity.len() + shape->mRadius) * TickSec;
    F32 l = (len * 1.1) + 0.1;  // fudge factor
    convexBox.minExtents -= Point3F(l, l, l);
    convexBox.maxExtents += Point3F(l, l, l);
@@ -1682,7 +1731,7 @@ void RigidShape::initPersistFields()
    docsURL;
    addField("disableMove", TypeBool, Offset(mDisableMove, RigidShape),
       "When this flag is set, the vehicle will ignore throttle changes.");
-   addField("isAtRest", TypeBool, Offset(mRigid.atRest, RigidShape),
+   addProtectedField("isAtRest", TypeBool, Offset(mRigid.atRest, RigidShape), &defaultProtectedNotSetFn, &defaultProtectedGetFn,
       "Debug read of the rest state. do not set");   
    Parent::initPersistFields();
 }

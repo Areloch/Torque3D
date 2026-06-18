@@ -1,10 +1,18 @@
 AssetBrowser::registerAssetType("MaterialAsset", "Materials"); 
 
-function MaterialAsset::createMaterialAsset(%this)
+function MaterialAsset::setupCreateNew()
 {
-   %assetName = AssetBrowser.newAssetSettings.assetName;
+   NewAssetPropertiesInspector.startGroup("Material");
+   NewAssetPropertiesInspector.addField("InheritFrom", "Inherit From", "MaterialInheritList",  "What material should this new one inherit from.", "", "", $CurrentAssetBrowser.newAssetSettings);
    
-   %moduleName = AssetBrowser.newAssetSettings.moduleName;
+   NewAssetPropertiesInspector.endGroup();
+}
+
+function MaterialAsset::onCreateNew()
+{
+   %assetName = $CurrentAssetBrowser.newAssetSettings.assetName;
+   
+   %moduleName = $CurrentAssetBrowser.newAssetSettings.moduleName;
    %modulePath = "data/" @ %moduleName;
    
    %assetPath = NewAssetTargetAddress.getText() @ "/";   
@@ -18,6 +26,7 @@ function MaterialAsset::createMaterialAsset(%this)
       materialDefinitionName = %assetName;
       
       new Material(%assetName) {
+         inheritFrom = $CurrentAssetBrowser.newAssetSettings.inheritFrom;
          mapTo = %assetName;
       };
    };
@@ -30,7 +39,7 @@ function MaterialAsset::createMaterialAsset(%this)
    %moduleDef = ModuleDatabase.findModule(%moduleName, 1);
 	AssetDatabase.addDeclaredAsset(%moduleDef, %tamlpath);
 
-	AssetBrowser.refresh();
+	$CurrentAssetBrowser.refresh();
    
 	return %tamlpath;
 }
@@ -101,8 +110,7 @@ function MaterialAsset::generatePreviewImage(%this, %previewButton, %forceRegene
    if(%forceRegenerate $= "")
       %forceRegenerate = false;
       
-   %module = $CurrentAssetBrowser.dirHandler.getModuleFromAddress(makeRelativePath(filePath(AssetDatabase.getAssetFilePath(%this.getAssetId()))));
-   %previewPath = "tools/resources/previewCache/" @ %module.moduleId @ "/";
+   %previewPath =  "tools/resources/previewCache/" @ %previewButton.moduleName @ "/";
 
    if(!IsDirectory(%previewPath))
    {
@@ -111,7 +119,8 @@ function MaterialAsset::generatePreviewImage(%this, %previewButton, %forceRegene
 
    %generatePreview = false;
 
-   %previewFilePath = %previewPath @ %this.assetName @ ".png";
+   %previewFilePath = %previewPath @ %this.assetName @ "_Preview.png";
+   
    if(!isFile(%previewFilePath))
    {
       %generatePreview = true;
@@ -120,11 +129,21 @@ function MaterialAsset::generatePreviewImage(%this, %previewButton, %forceRegene
    {
       if(isObject(%this.materialDefinitionName))
       {
-         if(compareFileTimes(%this.materialDefinitionName.getDiffuseMap(0), %previewFilePath) == 1 ||
+         %diffuseMapFile = "";
+         %diffuseMapAssetId = %this.materialDefinitionName.getDiffuseMapAsset(0);
+         if(AssetDatabase.isDeclaredAsset(%diffuseMapAssetId))
+         {
+            %diffuseMapFile = AssetDatabase.acquireAsset(%diffuseMapAssetId).getImagePath();
+            AssetDatabase.releaseAsset(%diffuseMapAssetId);
+         }
+
+         if(compareFileTimes(%diffuseMapFile, %previewFilePath) == 1 ||
             compareFileTimes(%this.materialDefinitionName.getFilename(), %previewFilePath) == 1)
             %generatePreview = true;
       }
    }
+
+   %previewAssetName = "ToolsModule:" @ %this.assetName @ "_Preview";
 
    if(%generatePreview || %forceRegenerate)
    {
@@ -137,22 +156,41 @@ function MaterialAsset::generatePreviewImage(%this, %previewButton, %forceRegene
             %diffuseMapAsset = AssetDatabase.acquireAsset(%diffuseMapAssetId);
             AssetDatabase.releaseAsset(%diffuseMapAssetId);
          }
+
          %previewShapeDef = AssetDatabase.acquireAsset("ToolsModule:previewSphereShape");
          %generatedFilePath = %previewShapeDef.generateCachedPreviewImage(256, %this.materialDefinitionName);
       
          pathCopy(%generatedFilePath, %previewFilePath, false);
          fileDelete(%generatedFilePath);
 
-         if(isFile(%previewFilePath))
+         if(!AssetDatabase.isDeclaredAsset(%previewAssetName))
          {
-            %previewButton.setBitmap(%previewFilePath);
-            return true;
+            %preview_Asset = new ImageAsset()
+            {
+               assetName = %this.assetName @ "_Preview";
+               versionId = 1;
+               imageFile = "@" @ %this.assetName @ "_Preview.png";
+            };
+
+            TamlWrite(%preview_Asset, expandPath("^ToolsModule/resources/previewCache/" @ %previewButton.moduleName @ "/" @ %preview_Asset.AssetName @ ".asset.taml"));
+            %toolsModuleDef = ModuleDatabase.findModule("ToolsModule",1);
+            AssetDatabase.addDeclaredAsset(%toolsModuleDef, expandPath("^ToolsModule/resources/previewCache/" @ %previewButton.moduleName @ "/" @ %preview_Asset.AssetName @ ".asset.taml"));
          }
 
+         %previewButton.bitmapAsset = %previewAssetName;
+         return true;
+      }
+      else
+      {
          return false;
       }
    }
-      
+   else
+   {
+      %previewButton.bitmapAsset = %previewAssetName;
+      return true;
+   }
+   
    return false;
 }
 
@@ -205,4 +243,102 @@ function GuiInspectorTypeMaterialAssetPtr::onControlDropped( %this, %payload, %p
    }
    
    EWorldEditor.isDirty = true;
+}
+
+function GuiInspectorGroup::buildMaterialInheritListField(%this, %fieldName, %fieldLabel, %fieldDesc, %fieldDefaultVal, %fieldDataVals, %callbackName, %ownerObj)
+{
+   %extent = 18;
+   
+   %fieldCtrl = %this.createInspectorField();
+   
+   %extent = %this.stack.getExtent();
+   
+   %width = mRound(%extent/2);
+   %height = 20;
+   %inset = 10;
+      
+   %editControl = new GuiPopUpMenuCtrlEx() {
+      class = "materialInheritListField";
+      maxPopupHeight = "200";
+      sbUsesNAColor = "0";
+      reverseTextList = "0";
+      bitmapBounds = "16 16";
+      maxLength = "1024";
+      Margin = "0 0 0 0";
+      Padding = "0 0 0 0";
+      AnchorTop = "1";
+      AnchorBottom = "0";
+      AnchorLeft = "1";
+      AnchorRight = "0";
+      isContainer = "0";
+      Profile = "ToolsGuiPopUpMenuProfile";
+      HorizSizing = "right";
+      VertSizing = "bottom";
+      Position = %fieldCtrl.edit.position;
+      Extent = %fieldCtrl.edit.extent;
+      MinExtent = "8 2";
+      canSave = "1";
+      Visible = "1";
+      tooltipprofile = "ToolsGuiToolTipProfile";
+      tooltip = ""; //%tooltip;
+      text = %fieldDefaultVal;
+      hovertime = "1000";
+      ownerObject = %ownerObj;
+      fieldName = %fieldName;
+      callbackName = %callbackName;
+      allowTextSearch = true;
+   };
+   
+   //set the field value
+   if(getSubStr(%this.fieldName, 0, 1) $= "$")
+   {
+      if(%fieldName $= "")
+         %editControl.setText(%fieldName);
+   }
+   else if(isObject(%ownerObj))
+   {
+      //regular variable
+      %setCommand = %editControl @ ".setText(" @ %ownerObj @ "." @ %fieldName @ ");";
+      eval(%setCommand);
+   }
+   
+   %listCount = getTokenCount(%fieldDataVals, ",;");
+   
+   for(%i=0; %i < materialSet.getCount(); %i++)
+   {
+      %matObj = materialSet.getObject(%i);
+      %matName = %matObj.getName();
+      
+      if(%matName !$= "")
+         %editControl.add(%matName); 
+   }
+
+   %fieldCtrl.setCaption(%fieldLabel);
+   %fieldCtrl.setEditControl(%editControl);
+   
+   //echo("GuiInspectorListField - " @ %editControl.getID() @ " - " @ %fieldName);
+
+   %this.addInspectorField(%fieldCtrl);
+}
+
+function materialInheritListField::onSelect( %this, %id, %text )
+{   
+   if(getSubStr(%this.fieldName, 0, 1) $= "$")
+   {
+      //ah, a global var, just do it straight, then
+      %setCommand = %this.fieldName @ " = \"" @ %text @ "\";";
+   }
+   else if(isObject(%this.ownerObject))
+   {
+      //regular variable
+      %setCommand = %this.ownerObject @ "." @ %this.fieldName @ " = \"" @ %text @ "\";";
+   }
+   else if(%this.callbackName !$= "")
+   {
+      %setCommand = %this.callbackName @ "(\"" @ %this.fieldName @ "\",\"" @ %text @"\");";
+   }
+   
+   echo("materialInheritListField::onSelect() - command: " @ %setCommand);
+   
+   eval(%setCommand);
 }

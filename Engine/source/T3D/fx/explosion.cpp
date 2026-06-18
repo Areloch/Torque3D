@@ -239,7 +239,7 @@ ExplosionData::ExplosionData()
    explosionScale.set(1.0f, 1.0f, 1.0f);
    playSpeed = 1.0f;
 
-   INIT_ASSET(ExplosionShape);
+   explosionShapeAssetRef.assetPtr.registerRefreshNotify(this);
 
    explosionAnimation = -1;
 
@@ -315,7 +315,7 @@ ExplosionData::ExplosionData(const ExplosionData& other, bool temp_clone) : Game
    particleEmitterId = other.particleEmitterId; // -- for pack/unpack of particleEmitter ptr 
    explosionScale = other.explosionScale;
    playSpeed = other.playSpeed;
-   CLONE_ASSET(ExplosionShape);
+   explosionShapeAssetRef = other.explosionShapeAssetRef;
    explosionAnimation = other.explosionAnimation; // -- from explosionShape sequence "ambient"
    dMemcpy( emitterList, other.emitterList, sizeof( emitterList ) );
    dMemcpy( emitterIDList, other.emitterIDList, sizeof( emitterIDList ) ); // -- for pack/unpack of emitterList ptrs
@@ -393,8 +393,9 @@ void ExplosionData::initPersistFields()
 {
    docsURL;
    addGroup("Shapes");
-      INITPERSISTFIELD_SHAPEASSET(ExplosionShape, ExplosionData, "@brief Optional shape asset to place at the center of the explosion.\n\n"
-         "The <i>ambient</i> animation of this model will be played automatically at the start of the explosion.");
+      ADD_FIELD("explosionShapeAsset", TypeShapeAssetRef, Offset(explosionShapeAssetRef, ExplosionData))
+         .doc("@brief Optional shape asset to place at the center of the explosion.\n\n"
+            "The <i>ambient</i> animation of this model will be played automatically at the start of the explosion.");
    endGroup("Shapes");
 
    addGroup("Sounds");
@@ -635,6 +636,7 @@ bool ExplosionData::onAdd()
          if( !Sim::findObject( debrisIDList[i], debrisList[i] ) )
          {
             Con::errorf( ConsoleLogEntry::General, "ExplosionData::onAdd: Invalid packet, bad datablockId(debris): 0x%x", debrisIDList[i] );
+            return false;
          }
       }
    }
@@ -646,6 +648,7 @@ bool ExplosionData::onAdd()
          if( Sim::findObject( emitterIDList[i], emitterList[i] ) == false)
          {
             Con::errorf( ConsoleLogEntry::General, "ExplosionData::onAdd: Invalid packet, bad datablockId(particle emitter): 0x%x", emitterIDList[i] );
+            return false;
          }
       }
    }
@@ -657,6 +660,7 @@ bool ExplosionData::onAdd()
          if( Sim::findObject( explosionIDList[k], explosionList[k] ) == false)
          {
             Con::errorf( ConsoleLogEntry::General, "ExplosionData::onAdd: Invalid packet, bad datablockId(explosion): 0x%x", explosionIDList[k] );
+            return false;
          }
       }
    }
@@ -668,7 +672,7 @@ void ExplosionData::packData(BitStream* stream)
 {
    Parent::packData(stream);
 
-   PACKDATA_ASSET(ExplosionShape);
+   AssetDatabase.packDataAsset(stream, explosionShapeAssetRef.assetId);
 
    //PACKDATA_SOUNDASSET(Sound);
    PACKDATA_ASSET(Sound);
@@ -773,7 +777,7 @@ void ExplosionData::unpackData(BitStream* stream)
 {
 	Parent::unpackData(stream);
 
-   UNPACKDATA_ASSET(ExplosionShape);
+   explosionShapeAssetRef = AssetDatabase.unpackDataAsset(stream);
 
    UNPACKDATA_ASSET(Sound);
 
@@ -878,33 +882,51 @@ bool ExplosionData::preload(bool server, String &errorStr)
    if (Parent::preload(server, errorStr) == false)
       return false;
 
-   if( !server )
+   if (!server)
    {
 
       if (!isSoundValid())
       {
          //return false; -TODO: trigger asset download
       }
-
       if (!particleEmitter && particleEmitterId != 0)
+      {
          if (Sim::findObject(particleEmitterId, particleEmitter) == false)
          {
-            Con::errorf(ConsoleLogEntry::General, "Error, unable to load particle emitter for explosion datablock");
+            errorStr = String::ToString("Error, unable to load particle emitter for explosion datablock");
             return false;
          }
+      }
+
+      U32 i;
+      for (i = 0; i < EC_NUM_EMITTERS; i++)
+      {
+         if (!emitterList[i] && emitterIDList[i] != 0)
+         {
+            if (Sim::findObject(emitterIDList[i], emitterList[i]) == false)
+            {
+               errorStr = String::ToString("Error, unable to load emitter[%i] for explosion datablock 0x%x", i, emitterIDList[i]);
+               return false;
+            }
+         }
+      }
    }
 
-   if (mExplosionShapeAsset.notNull()) {
-
-      // Resolve animations
-      explosionAnimation = mExplosionShape->findSequence("ambient");
-
-      // Preload textures with a dummy instance...
-      TSShapeInstance* pDummy = new TSShapeInstance(mExplosionShape, !server);
-      delete pDummy;
-
-   } else {
-      explosionAnimation = -1;
+   if (!explosionShapeAssetRef.isNull())
+   {
+      Resource<TSShape> shape = explosionShapeAssetRef.assetPtr->getShapeResource();
+      if (shape)
+      {
+         TSShapeInstance* pDummy = new TSShapeInstance(shape, !server);
+         delete pDummy;
+         if (!server && !explosionShapeAssetRef.assetPtr->preloadMaterialList() && NetConnection::filesWereDownloaded())
+            return false;
+      }
+      else
+      {
+         errorStr = String::ToString("ExplosionData(%s)::preload: Couldn't load shape \"%s\"", getName(), explosionShapeAssetRef.assetId);
+         return false;
+      }
    }
 
    return true;
@@ -1392,8 +1414,12 @@ bool Explosion::explode()
    launchDebris( mInitialNormal );
    spawnSubExplosions();
 
-   if (bool(mDataBlock->mExplosionShape) && mDataBlock->explosionAnimation != -1) {
-      mExplosionInstance = new TSShapeInstance(mDataBlock->mExplosionShape, true);
+   Resource<TSShape> eShape;
+   if (mDataBlock->explosionShapeAssetRef.notNull())
+      eShape = mDataBlock->explosionShapeAssetRef.assetPtr->getShapeResource();
+
+   if (bool(eShape) && mDataBlock->explosionAnimation != -1) {
+      mExplosionInstance = new TSShapeInstance(eShape, true);
 
       mExplosionThread   = mExplosionInstance->addThread();
       mExplosionInstance->setSequence(mExplosionThread, mDataBlock->explosionAnimation, 0);
@@ -1403,7 +1429,7 @@ bool Explosion::explode()
       mEndingMS = U32(mExplosionInstance->getScaledDuration(mExplosionThread) * 1000.0f);
 
       mObjScale.convolve(mDataBlock->explosionScale);
-      mObjBox = mDataBlock->mExplosionShape->mBounds;
+      mObjBox = eShape->mBounds;
       resetWorldBox();
    }
 

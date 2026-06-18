@@ -134,7 +134,7 @@ MaterialAsset::MaterialAsset()
    mScriptFile = StringTable->EmptyString();
    mScriptPath = StringTable->EmptyString();
    mMatDefinitionName = StringTable->EmptyString();
-   mMaterialDefinition = nullptr;
+   mMaterialDefinition = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -419,7 +419,7 @@ SimObjectPtr<Material> MaterialAsset::findMaterialDefinitionByAssetId(StringTabl
       SimObjectPtr<Material> matDef = dynamic_cast<Material*>(matSet->findObjectByInternalName(assetId));
       return matDef;
    }
-   return nullptr;
+   return NULL;
 }
 
 #ifdef TORQUE_TOOLS
@@ -482,15 +482,24 @@ GuiControl* GuiInspectorTypeMaterialAssetPtr::constructEditControl()
 
    const char* previewImage;
 
-   if (mInspector->getInspectObject() != nullptr)
+   if (mInspector->getInspectObject() != NULL)
    {
-      dSprintf(szBuffer, sizeof(szBuffer), "AssetBrowser.showDialog(\"MaterialAsset\", \"AssetBrowser.changeAsset\", %s, %s);",
-         mInspector->getIdString(), mCaption);
+      StringBuilder varNameStr;
+      varNameStr.append(mCaption);
+      if (mFieldArrayIndex != NULL)
+      {
+         varNameStr.append("[");
+         varNameStr.append(mFieldArrayIndex);
+         varNameStr.append("]");
+      }
+
+      dSprintf(szBuffer, sizeof(szBuffer), "AssetBrowser.showDialog(\"MaterialAsset\", \"AssetBrowser.changeAsset\", %s, \"%s\");",
+         mInspector->getIdString(), varNameStr.end().c_str());
       mBrowseButton->setField("Command", szBuffer);
 
       setDataField(StringTable->insert("targetObject"), NULL, mInspector->getInspectObject()->getIdString());
 
-      previewImage = mInspector->getInspectObject()->getDataField(mCaption, NULL);
+      previewImage = mInspector->getInspectObject()->getDataField(varNameStr.end().c_str(), NULL);
    }
    else
    {
@@ -514,7 +523,7 @@ GuiControl* GuiInspectorTypeMaterialAssetPtr::constructEditControl()
    if (Sim::findObject("ToolsGuiTextEditProfile", toolEditProfile))
       editTextCtrl->setControlProfile(toolEditProfile);
 
-   GuiControlProfile* toolDefaultProfile = nullptr;
+   GuiControlProfile* toolDefaultProfile = NULL;
    Sim::findObject("ToolsGuiDefaultProfile", toolDefaultProfile);
 
    //
@@ -599,20 +608,42 @@ void GuiInspectorTypeMaterialAssetPtr::updateValue()
 
 void GuiInspectorTypeMaterialAssetPtr::updatePreviewImage()
 {
-   const char* previewImage;
-   if (mInspector->getInspectObject() != nullptr)
-      previewImage = mInspector->getInspectObject()->getDataField(mCaption, NULL);
+   const char* matAssetId;
+   if (mInspector->getInspectObject() != NULL)
+      matAssetId = mInspector->getInspectObject()->getDataField(mCaption, NULL);
    else
-      previewImage = Con::getVariable(mVariableName);
+      matAssetId = Con::getVariable(mVariableName);
 
    //if what we're working with isn't even a valid asset, don't present like we found a good one
-   if (!AssetDatabase.isDeclaredAsset(previewImage))
+   if (!AssetDatabase.isDeclaredAsset(matAssetId))
    {
-      mPreviewImage->_setBitmap(StringTable->EmptyString());
+      mPreviewImage->_setBitmap(StringTable->insert("Core_Rendering:NoMaterial"));
       return;
    }
 
-   String matPreviewAssetId = String(previewImage) + "_PreviewImage";
+   AssetPtr<MaterialAsset> matAssetDef = matAssetId;
+   if (matAssetDef.isNull() || matAssetDef->getStatus() != AssetBase::AssetErrCode::Ok ||
+      matAssetDef->getMaterialDefinitionName() == StringTable->EmptyString())
+   {
+      mPreviewImage->_setBitmap(StringTable->insert("Core_Rendering:WarningMaterial"));
+      return;
+   }
+
+   Material* matDef;
+   if (!Sim::findObject(matAssetDef->getMaterialDefinitionName(), matDef))
+   {
+      mPreviewImage->_setBitmap(StringTable->insert("Core_Rendering:WarningMaterial"));
+      return;
+   }
+
+   AssetPtr<ImageAsset> difMapAsset = matDef->getDiffuseMapAsset(0);
+   if (difMapAsset.isNull() || difMapAsset->getStatus() != AssetBase::AssetErrCode::Ok)
+   {
+      mPreviewImage->_setBitmap(StringTable->insert("Core_Rendering:WarningMaterial"));
+      return;
+   }
+
+   String matPreviewAssetId = String(difMapAsset->getAssetName()) + "_PreviewImage";
    matPreviewAssetId.replace(":", "_");
    matPreviewAssetId = "ToolsModule:" + matPreviewAssetId;
    if (AssetDatabase.isDeclaredAsset(matPreviewAssetId.c_str()))
@@ -621,18 +652,14 @@ void GuiInspectorTypeMaterialAssetPtr::updatePreviewImage()
    }
    else
    {
-      if (AssetDatabase.isDeclaredAsset(previewImage))
+      if (AssetDatabase.isDeclaredAsset(difMapAsset->getAssetId()))
       {
-         MaterialAsset* matAsset = AssetDatabase.acquireAsset<MaterialAsset>(previewImage);
-         if (matAsset && matAsset->getMaterialDefinition())
-         {
-            mPreviewImage->_setBitmap(matAsset->getMaterialDefinition()->_getDiffuseMap(0));
-         }
+         mPreviewImage->setBitmap(difMapAsset->getAssetId());
       }
    }
 
    if (mPreviewImage->getBitmapAsset().isNull())
-      mPreviewImage->_setBitmap(StringTable->insert("ToolsModule:genericAssetIcon_image"));
+      mPreviewImage->setBitmap(StringTable->insert("ToolsModule:genericAssetIcon_image"));
 }
 
 void GuiInspectorTypeMaterialAssetPtr::setPreviewImage(StringTableEntry assetId)
@@ -658,7 +685,7 @@ void GuiInspectorTypeMaterialAssetPtr::setPreviewImage(StringTableEntry assetId)
          MaterialAsset* matAsset = AssetDatabase.acquireAsset<MaterialAsset>(assetId);
          if (matAsset && matAsset->getMaterialDefinition())
          {
-            mPreviewImage->_setBitmap(matAsset->getMaterialDefinition()->_getDiffuseMap(0));
+            mPreviewImage->_setBitmap(matAsset->getMaterialDefinition()->getDiffuseMapAssetId(0));
          }
       }
    }

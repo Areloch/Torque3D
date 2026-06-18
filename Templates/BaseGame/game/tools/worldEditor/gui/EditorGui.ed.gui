@@ -32,30 +32,11 @@ $guiContent = new GuiContainer(EditorGui,EditorGuiGroup) {
       isDecoy = "1";
    };
    
-   new GuiTabBookCtrl(EditorGuiMainTabBook) {
-      tabHeight = "20";
-      selectedPage = "0";
-      position = "0 5";
-      extent = "800 595";
-      horizSizing = "width";
-      vertSizing = "height";
-      profile = "ToolsGuiTabBookProfile";
-      tooltipProfile = "GuiToolTipProfile";
-
-      new GuiTabPageCtrl(MainSceneEditorTab) {
-         text = "Main Scene";
-         position = 0 SPC 20;
-         extent = 800 SPC 580;
-         horizSizing = "width";
-         vertSizing = "height";
-         profile = "ToolsGuiTabPageProfile";
-         tooltipProfile = "GuiToolTipProfile";
-         
          new GuiContainer(MainSceneTabPanel) {
             HorizSizing = "width";
             VertSizing = "height";
-            Position = "0 0";
-            Extent = "800 580";
+            Position = "0 5";
+            Extent = "800 595";
             
             new WorldEditor(EWorldEditor) {
                canSaveDynamicFields = "0";
@@ -274,7 +255,7 @@ $guiContent = new GuiContainer(EditorGui,EditorGuiGroup) {
             HorizSizing = "width";
             VertSizing = "bottom";
             Position = "0 0";
-            Extent = "800 40";
+            Extent = "800 36";
             MinExtent = "8 8";
             Margin = "0 0 0 0";
             Padding = "0 0 0 0";
@@ -1394,7 +1375,7 @@ $guiContent = new GuiContainer(EditorGui,EditorGuiGroup) {
                         StackingType = "Vertical";
                         HorizStacking = "Left to Right";
                         VertStacking = "Top to Bottom";
-                        Padding = "-2";
+                        Padding = "0";
                         canSaveDynamicFields = "0";
                         internalName = "theVisOptionsList";
                         Enabled = "1";
@@ -1463,7 +1444,7 @@ $guiContent = new GuiContainer(EditorGui,EditorGuiGroup) {
                         StackingType = "Vertical";
                         HorizStacking = "Left to Right";
                         VertStacking = "Top to Bottom";
-                        Padding = "-2";
+                        Padding = "0";
                         canSaveDynamicFields = "0";
                         internalName = "theClassVisList";
                         Enabled = "1";
@@ -1489,7 +1470,7 @@ $guiContent = new GuiContainer(EditorGui,EditorGuiGroup) {
             internalName = "AggregateControl";
             horizSizing = "right";
             vertSizing = "bottom";
-            position = "0 60";
+            position = "0 0";
             extent = "1024 768";
             minExtent = "8 8";
             visible = "0";
@@ -1497,8 +1478,8 @@ $guiContent = new GuiContainer(EditorGui,EditorGuiGroup) {
             class = "EditorDropdownSliderContainer";
             
             new GuiContainer(){
-               position = firstWord(CameraSpeedDropdownContainer.position) + firstWord(EditorGuiToolbar.position) + -6 SPC 
-                     (getWord(CameraSpeedDropdownContainer, 1)) + 31;
+               internalName = "container";
+               position = "0 0";
                extent = "146 39";  
                isContainer = "1";
                Profile = "IconDropdownProfile";
@@ -1569,7 +1550,5 @@ $guiContent = new GuiContainer(EditorGui,EditorGuiGroup) {
                };
             };
          };
-      };
-   };
 };
 //--- OBJECT WRITE END ---

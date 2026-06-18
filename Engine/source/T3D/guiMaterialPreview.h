@@ -28,6 +28,8 @@
 #ifndef _GUIMATERIALPREVIEW_H_
 #define _GUIMATERIALPREVIEW_H_
 
+#include "assets/ShapeAsset.h"
+
 #include "gui/3d/guiTSControl.h"
 #include "ts/tsShapeInstance.h"
 
@@ -50,8 +52,11 @@ protected:
 
    MouseState  mMouseState;
 
-   TSShapeInstance*  mModel;
-   TSShapeInstance*  mMountedModel;
+   AssetRef<ShapeAsset> mShapeAssetRef;
+   AssetRef<ShapeAsset> mMountedShapeAssetRef;
+
+   TSShapeInstance*  mModelInstance;
+   TSShapeInstance*  mMountedModelInstance;
    U32   mSkinTag;
 
    // For Camera Panning.
@@ -105,8 +110,8 @@ public:
    // For changing the ambient light color.
    void setAmbientLightColor( F32 r, F32 g, F32 b );
 
-   void setObjectModel(const char * modelName);
-   void deleteModel();
+   void setObjectShape(const char * assetId);
+   void deleteShape();
    void resetViewport();
    void setOrbitDistance(F32 distance);
 

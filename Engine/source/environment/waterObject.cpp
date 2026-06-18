@@ -45,6 +45,7 @@
 #include "T3D/sfx/sfx3DWorld.h"
 #include "sfx/sfxTypes.h"
 #include "console/typeValidators.h"
+#include "gfx/gfxTransformSaver.h"
 
 GFXImplementVertexFormat( GFXWaterVertex )
 {
@@ -296,7 +297,9 @@ void WaterObject::initPersistFields()
       addFieldV( "overallWaveMagnitude", TypeRangedF32, Offset( mOverallWaveMagnitude, WaterObject ), &CommonValidators::PositiveFloat, "Master variable affecting entire body"
 		  " of water's undulation" );  
 
-      INITPERSISTFIELD_IMAGEASSET(RippleTex, WaterObject, "Normal map used to simulate small surface ripples");
+      ADD_FIELD("rippleTexAsset", TypeImageAssetRef, Offset(mRippleTexAssetRef, WaterObject))
+         .network(TextureMask)
+         .doc("Normal map asset used to simulate small surface ripples");
 
       addArray( "Ripples (texture animation)", MAX_WAVES );
 
@@ -310,7 +313,9 @@ void WaterObject::initPersistFields()
 
       addFieldV( "overallRippleMagnitude", TypeRangedF32, Offset( mOverallRippleMagnitude, WaterObject ), &CommonValidators::PositiveFloat, "Master variable affecting entire surface");
 
-      INITPERSISTFIELD_IMAGEASSET(FoamTex, WaterObject, "Diffuse texture for foam in shallow water (advanced lighting only)");
+      ADD_FIELD("foamTexAsset", TypeImageAssetRef, Offset(mFoamTexAssetRef, WaterObject))
+         .network(TextureMask)
+         .doc("Diffuse texture asset for foam in shallow water");
 
       addArray( "Foam", MAX_FOAM );
 
@@ -362,7 +367,9 @@ void WaterObject::initPersistFields()
 
    addGroup( "Misc" );
 
-      INITPERSISTFIELD_IMAGEASSET(DepthGradientTex, WaterObject, "1D texture defining the base water color by depth");
+      ADD_FIELD("depthGradientTexAsset", TypeImageAssetRef, Offset(mDepthGradientTexAssetRef, WaterObject))
+         .network(TextureMask)
+         .doc("1D texture asset defining the base water color by depth");
 
       addFieldV( "depthGradientMax", TypeRangedF32, Offset( mDepthGradientMax, WaterObject ), &CommonValidators::PositiveFloat, "Depth in world units, the max range of the color gradient texture." );
 
@@ -543,9 +550,9 @@ U32 WaterObject::packUpdate( NetConnection * conn, U32 mask, BitStream *stream )
 
    if ( stream->writeFlag( mask & TextureMask ) )
    {
-      PACK_ASSET_REFACTOR(conn, RippleTex);
-      PACK_ASSET_REFACTOR(conn, DepthGradientTex);
-      PACK_ASSET_REFACTOR(conn, FoamTex);
+      AssetDatabase.packUpdateAsset(conn, mask, stream, mRippleTexAssetRef.assetId);
+      AssetDatabase.packUpdateAsset(conn, mask, stream, mDepthGradientTexAssetRef.assetId);
+      AssetDatabase.packUpdateAsset(conn, mask, stream, mFoamTexAssetRef.assetId);
 
       stream->writeString( mCubemapName );      
    }
@@ -665,9 +672,9 @@ void WaterObject::unpackUpdate( NetConnection * conn, BitStream *stream )
    // TextureMask
    if ( stream->readFlag() )
    {
-      UNPACK_ASSET_REFACTOR(conn, RippleTex);
-      UNPACK_ASSET_REFACTOR(conn, DepthGradientTex);
-      UNPACK_ASSET_REFACTOR(conn, FoamTex);
+      mRippleTexAssetRef = AssetDatabase.unpackUpdateAsset(conn, stream);
+      mDepthGradientTexAssetRef = AssetDatabase.unpackUpdateAsset(conn, stream);
+      mFoamTexAssetRef = AssetDatabase.unpackUpdateAsset(conn, stream);
 
       mCubemapName = stream->readSTString();
 
@@ -698,6 +705,8 @@ void WaterObject::prepRenderImage( SceneRenderState *state )
    // We only render during the normal diffuse render pass.
    if( !state->isDiffusePass() )
       return;
+
+   GFXTransformSaver saver;
 
    // Setup scene transforms
    mMatrixSet->setSceneView(GFX->getWorldMatrix());
@@ -773,9 +782,9 @@ void WaterObject::setCustomTextures( S32 matIdx, U32 pass, const WaterMatParams 
    }
 
    if ( ( matIdx == WaterMat || matIdx == BasicWaterMat ) && mCubemap )   
-      GFX->setCubeTexture( paramHandles.mCubemapSamplerSC->getSamplerRegister(pass), mCubemap->mCubemap );
+      GFX->setTexture( paramHandles.mCubemapSamplerSC->getSamplerRegister(pass), mCubemap->mCubemap );
    else if(paramHandles.mCubemapSamplerSC->getSamplerRegister(pass) != -1 )
-      GFX->setCubeTexture( paramHandles.mCubemapSamplerSC->getSamplerRegister(pass), NULL );
+      GFX->setTexture( paramHandles.mCubemapSamplerSC->getSamplerRegister(pass), NULL );
 }
 
 void WaterObject::drawUnderwaterFilter( SceneRenderState *state )

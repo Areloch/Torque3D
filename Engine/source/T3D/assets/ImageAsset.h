@@ -114,7 +114,10 @@ public:
    };
 
    static StringTableEntry smNoImageAssetFallback;
+   static AssetPtr<ImageAsset> smNoImageAssetFallbackAssetPtr;
+
    static StringTableEntry smNamedTargetAssetFallback;
+   static AssetPtr<ImageAsset> smNamedTargetAssetFallbackAssetPtr;
 
    enum ImageAssetErrCode
    {
@@ -123,7 +126,7 @@ public:
    };
 
    static const String mErrCodeStrings[U32(ImageAssetErrCode::Extended) - U32(Parent::Extended) + 1];
-   static U32 getAssetErrCode(ConcreteAssetPtr checkAsset) { if (checkAsset) return checkAsset->mLoadedState; else return 0; }
+   static U32 getAssetErrCode(ConcreteAssetPtr checkAsset) { if (checkAsset.notNull()) return checkAsset->mLoadedState; else return 0; }
 
    static String getAssetErrstrn(U32 errCode)
    {
@@ -193,10 +196,21 @@ public:
 
    static U32 getAssetByFilename(StringTableEntry fileName, AssetPtr<ImageAsset>* imageAsset);
    static StringTableEntry getAssetIdByFilename(StringTableEntry fileName);
+
+   static StringTableEntry getAssetIdFromFilePath(StringTableEntry filePath);
+
+   /// Returns true if the given value follows the named target naming convention:
+   /// ($backBuffer, #color)
+   static bool isNamedTarget(StringTableEntry name) { return name != NULL && name != StringTable->EmptyString() && (name[0] == '$' || name[0] == '#'); }
+
+   /// Resolves a named render target ($backBuffer, #color) to an asset
+   /// pointer, binding/creating a private ImageAsset if needed.
+   static AssetPtr<ImageAsset> getNamedTargetAssetPtr(StringTableEntry filePath);
+
    static U32 getAssetById(StringTableEntry assetId, AssetPtr<ImageAsset>* imageAsset);
    static U32 getAssetById(String assetId, AssetPtr<ImageAsset>* imageAsset) { return getAssetById(assetId.c_str(), imageAsset); };
 
-
+   void populateImage(void);
    const char* getImageInfo();
 
 protected:
@@ -228,247 +242,8 @@ protected:
 DECLARE_STRUCT(AssetPtr<ImageAsset>)
 DefineConsoleType(TypeImageAssetPtr, AssetPtr<ImageAsset> )
 
+DECLARE_STRUCT(AssetRef<ImageAsset>)
+DefineConsoleType(TypeImageAssetRef, AssetRef<ImageAsset>)
+
 typedef ImageAsset::ImageTypes ImageAssetType;
 DefineEnumType(ImageAssetType);
-
-#pragma region Refactor Asset Macros
-
-#define DECLARE_IMAGEASSET(className, name, profile)                                                                                                                 \
-private:                                                                                                                                                                      \
-   AssetPtr<ImageAsset> m##name##Asset;\
-   String               m##name##File;\
-public:                                                                                                                                                                       \
-   void _set##name(StringTableEntry _in){                                                                                                                                     \
-      if(m##name##Asset.getAssetId() == _in)                                                                                                                                  \
-         return;                                                                                                                                                              \
-      if(_in == NULL || _in == StringTable->EmptyString())                                                                                                                    \
-      {                                                                                                                                                                       \
-         m##name##Asset = NULL;                                                                                                                                               \
-         return;                                                                                                                                                              \
-      }                                                                                                                                                                       \
-      if(!AssetDatabase.isDeclaredAsset(_in))                                                                                                                                 \
-      {                                                                                                                                                                       \
-         StringTableEntry imageAssetId = StringTable->EmptyString();                                                                                                          \
-         AssetQuery query;                                                                                                                                                    \
-         S32 foundAssetcount = AssetDatabase.findAssetLooseFile(&query, _in);                                                                                                 \
-         if (foundAssetcount != 0)                                                                                                                                            \
-         {                                                                                                                                                                    \
-            imageAssetId = query.mAssetList[0];                                                                                                                               \
-         }                                                                                                                                                                    \
-         else if(Torque::FS::IsFile(_in) || (_in[0] == '$' || _in[0] == '#'))                                                                                                 \
-         {                                                                                                                                                                    \
-            imageAssetId = ImageAsset::getAssetIdByFilename(_in);                                                                                                             \
-            if (imageAssetId == ImageAsset::smNoImageAssetFallback)                                                                                                           \
-            {                                                                                                                                                                 \
-               ImageAsset* privateImage = new ImageAsset();                                                                                                                   \
-               privateImage->setImageFile(_in);                                                                                                                               \
-               imageAssetId = AssetDatabase.addPrivateAsset(privateImage);                                                                                                    \
-            }                                                                                                                                                                 \
-         }                                                                                                                                                                    \
-         else                                                                                                                                                                 \
-         {                                                                                                                                                                    \
-            Con::warnf("%s::%s: Could not find asset for: %s using fallback", #className, #name, _in);                                                                        \
-            imageAssetId = ImageAsset::smNoImageAssetFallback;                                                                                                                \
-         }                                                                                                                                                                    \
-         m##name##Asset = imageAssetId;                                                                                                                                       \
-      }                                                                                                                                                                       \
-      else                                                                                                                                                                    \
-      {                                                                                                                                                                       \
-         m##name##Asset = _in;                                                                                                                                                \
-      }                                                                                                                                                                       \
-   };                                                                                                                                                                         \
-                                                                                                                                                                              \
-   inline StringTableEntry _get##name(void) const { return m##name##Asset.getAssetId(); }                                                                                     \
-   GFXTexHandle get##name() { return m##name##Asset.notNull() ? m##name##Asset->getTexture(&profile) : NULL; }                                                                \
-   AssetPtr<ImageAsset> get##name##Asset(void) { return m##name##Asset; }                                                                                                     \
-   static bool _set##name##Data(void* obj, const char* index, const char* data) { static_cast<className*>(obj)->_set##name(_getStringTable()->insert(data)); return false;}   \
-   StringTableEntry get##name##File(){ return m##name##Asset.notNull() ? m##name##Asset->getImageFile() : ""; }
-
-
-#define DECLARE_IMAGEASSET_NET(className, name, profile, mask)                                                                                                       \
-private:                                                                                                                                                                      \
-   AssetPtr<ImageAsset> m##name##Asset;                                                                                                                                       \
-   String               m##name##File;\
-public:                                                                                                                                                                       \
-   void _set##name(StringTableEntry _in){                                                                                                                                     \
-      if(m##name##Asset.getAssetId() == _in)                                                                                                                                  \
-         return;                                                                                                                                                              \
-      if(_in == NULL || _in == StringTable->EmptyString())                                                                                                                    \
-      {                                                                                                                                                                       \
-         m##name##Asset = NULL;                                                                                                                                               \
-         setMaskBits(mask);                                                                                                                                                   \
-         return;                                                                                                                                                              \
-      }                                                                                                                                                                       \
-      if(!AssetDatabase.isDeclaredAsset(_in))                                                                                                                                 \
-      {                                                                                                                                                                       \
-         StringTableEntry imageAssetId = StringTable->EmptyString();                                                                                                          \
-         AssetQuery query;                                                                                                                                                    \
-         S32 foundAssetcount = AssetDatabase.findAssetLooseFile(&query, _in);                                                                                                 \
-         if (foundAssetcount != 0)                                                                                                                                            \
-         {                                                                                                                                                                    \
-            imageAssetId = query.mAssetList[0];                                                                                                                               \
-         }                                                                                                                                                                    \
-         else if(Torque::FS::IsFile(_in) || (_in[0] == '$' || _in[0] == '#'))                                                                                                 \
-         {                                                                                                                                                                    \
-            imageAssetId = ImageAsset::getAssetIdByFilename(_in);                                                                                                             \
-            if (imageAssetId == ImageAsset::smNoImageAssetFallback)                                                                                                           \
-            {                                                                                                                                                                 \
-               ImageAsset* privateImage = new ImageAsset();                                                                                                                   \
-               privateImage->setImageFile(_in);                                                                                                                               \
-               imageAssetId = AssetDatabase.addPrivateAsset(privateImage);                                                                                                    \
-            }                                                                                                                                                                 \
-         }                                                                                                                                                                    \
-         else                                                                                                                                                                 \
-         {                                                                                                                                                                    \
-            Con::warnf("%s::%s: Could not find asset for: %s using fallback", #className, #name, _in);                                                                        \
-            imageAssetId = ImageAsset::smNoImageAssetFallback;                                                                                                                \
-         }                                                                                                                                                                    \
-         m##name##Asset = imageAssetId;                                                                                                                                       \
-      }                                                                                                                                                                       \
-      else                                                                                                                                                                    \
-      {                                                                                                                                                                       \
-         m##name##Asset = _in;                                                                                                                                                \
-      }                                                                                                                                                                       \
-      setMaskBits(mask);                                                                                                                                                      \
-   };                                                                                                                                                                         \
-                                                                                                                                                                              \
-   inline StringTableEntry _get##name(void) const { return m##name##Asset.getAssetId(); }                                                                                     \
-   GFXTexHandle get##name() { return m##name##Asset.notNull() ? m##name##Asset->getTexture(&profile) : NULL; }                                                                \
-   AssetPtr<ImageAsset> get##name##Asset(void) { return m##name##Asset; }                                                                                                     \
-   static bool _set##name##Data(void* obj, const char* index, const char* data) { static_cast<className*>(obj)->_set##name(_getStringTable()->insert(data)); return false;}   \
-   StringTableEntry get##name##File(){ return m##name##Asset.notNull() ? m##name##Asset->getImageFile() : ""; }
-
-
-#define INITPERSISTFIELD_IMAGEASSET(name, consoleClass, docs)                                                                                                        \
-   addProtectedField(assetText(name, Asset), TypeImageAssetPtr, Offset(m##name##Asset, consoleClass), _set##name##Data, &defaultProtectedGetFn, assetDoc(name, asset docs.)); \
-   addProtectedField(assetText(name, File), TypeFilename, Offset(m##name##File, consoleClass), _set##name##Data, &defaultProtectedGetFn, assetDoc(name, file docs.));
-
-
-#define DECLARE_IMAGEASSET_ARRAY(className, name, profile, max)                                                                                                      \
-private:                                                                                                                                                                      \
-   AssetPtr<ImageAsset> m##name##Asset[max];                                                                                                                                  \
-   String               m##name##File[max];\
-public:                                                                                                                                                                       \
-   void _set##name(StringTableEntry _in, const U32& index){                                                                                                                   \
-      if(m##name##Asset[index].getAssetId() == _in)                                                                                                                           \
-         return;                                                                                                                                                              \
-      if(_in == NULL || _in == StringTable->EmptyString())                                                                                                                    \
-      {                                                                                                                                                                       \
-         m##name##Asset[index] = NULL;                                                                                                                                        \
-         return;                                                                                                                                                              \
-      }                                                                                                                                                                       \
-      if(!AssetDatabase.isDeclaredAsset(_in))                                                                                                                                 \
-      {                                                                                                                                                                       \
-         StringTableEntry imageAssetId = StringTable->EmptyString();                                                                                                          \
-         AssetQuery query;                                                                                                                                                    \
-         S32 foundAssetcount = AssetDatabase.findAssetLooseFile(&query, _in);                                                                                                 \
-         if (foundAssetcount != 0)                                                                                                                                            \
-         {                                                                                                                                                                    \
-            imageAssetId = query.mAssetList[0];                                                                                                                               \
-         }                                                                                                                                                                    \
-         else if(Torque::FS::IsFile(_in) || (_in[0] == '$' || _in[0] == '#'))                                                                                                 \
-         {                                                                                                                                                                    \
-            imageAssetId = ImageAsset::getAssetIdByFilename(_in);                                                                                                             \
-            if (imageAssetId == ImageAsset::smNoImageAssetFallback)                                                                                                           \
-            {                                                                                                                                                                 \
-               ImageAsset* privateImage = new ImageAsset();                                                                                                                   \
-               privateImage->setImageFile(_in);                                                                                                                               \
-               imageAssetId = AssetDatabase.addPrivateAsset(privateImage);                                                                                                    \
-            }                                                                                                                                                                 \
-         }                                                                                                                                                                    \
-         else                                                                                                                                                                 \
-         {                                                                                                                                                                    \
-            Con::warnf("%s::%s: Could not find asset for: %s using fallback", #className, #name, _in);                                                                        \
-            imageAssetId = ImageAsset::smNoImageAssetFallback;                                                                                                                \
-         }                                                                                                                                                                    \
-         m##name##Asset[index] = imageAssetId;                                                                                                                                \
-      }                                                                                                                                                                       \
-      else                                                                                                                                                                    \
-      {                                                                                                                                                                       \
-         m##name##Asset[index] = _in;                                                                                                                                         \
-      }                                                                                                                                                                       \
-   };                                                                                                                                                                         \
-                                                                                                                                                                              \
-   inline StringTableEntry _get##name(const U32& index) const { return m##name##Asset[index].getAssetId(); }                                                                  \
-   GFXTexHandle get##name(const U32& index) { return get##name(&profile, index); }                                                                                            \
-   GFXTexHandle get##name(GFXTextureProfile* requestedProfile, const U32& index) { return m##name##Asset[index].notNull() ? m##name##Asset[index]->getTexture(requestedProfile) : NULL; }\
-   AssetPtr<ImageAsset> get##name##Asset(const U32& index) { return m##name##Asset[index]; }                                                                                  \
-   static bool _set##name##Data(void* obj, const char* index, const char* data) { static_cast<className*>(obj)->_set##name(_getStringTable()->insert(data), dAtoi(index)); return false;}\
-   StringTableEntry get##name##File(const U32& idx){ return m##name##Asset[idx].notNull() ? m##name##Asset[idx]->getImageFile() : ""; }
-
-
-#define DECLARE_IMAGEASSET_ARRAY_NET(className, name, profile, max, mask)                                                                                            \
-private:                                                                                                                                                                      \
-   AssetPtr<ImageAsset> m##name##Asset[max];                                                                                                                                  \
-   String               m##name##File[max];\
-public:                                                                                                                                                                       \
-   void _set##name(StringTableEntry _in, const U32& index){                                                                                                                   \
-      if(m##name##Asset[index].getAssetId() == _in)                                                                                                                           \
-         return;                                                                                                                                                              \
-      if(_in == NULL || _in == StringTable->EmptyString())                                                                                                                    \
-      {                                                                                                                                                                       \
-         m##name##Asset[index] = NULL;                                                                                                                                        \
-         setMaskBits(mask);                                                                                                                                                   \
-         return;                                                                                                                                                              \
-      }                                                                                                                                                                       \
-      if(!AssetDatabase.isDeclaredAsset(_in))                                                                                                                                 \
-      {                                                                                                                                                                       \
-         StringTableEntry imageAssetId = StringTable->EmptyString();                                                                                                          \
-         AssetQuery query;                                                                                                                                                    \
-         S32 foundAssetcount = AssetDatabase.findAssetLooseFile(&query, _in);                                                                                                 \
-         if (foundAssetcount != 0)                                                                                                                                            \
-         {                                                                                                                                                                    \
-            imageAssetId = query.mAssetList[0];                                                                                                                               \
-         }                                                                                                                                                                    \
-         else if(Torque::FS::IsFile(_in) || (_in[0] == '$' || _in[0] == '#'))                                                                                                 \
-         {                                                                                                                                                                    \
-            imageAssetId = ImageAsset::getAssetIdByFilename(_in);                                                                                                             \
-            if (imageAssetId == ImageAsset::smNoImageAssetFallback)                                                                                                           \
-            {                                                                                                                                                                 \
-               ImageAsset* privateImage = new ImageAsset();                                                                                                                   \
-               privateImage->setImageFile(_in);                                                                                                                               \
-               imageAssetId = AssetDatabase.addPrivateAsset(privateImage);                                                                                                    \
-            }                                                                                                                                                                 \
-         }                                                                                                                                                                    \
-         else                                                                                                                                                                 \
-         {                                                                                                                                                                    \
-            Con::warnf("%s::%s: Could not find asset for: %s using fallback", #className, #name, _in);                                                                        \
-            imageAssetId = ImageAsset::smNoImageAssetFallback;                                                                                                                \
-         }                                                                                                                                                                    \
-         m##name##Asset[index] = imageAssetId;                                                                                                                                \
-      }                                                                                                                                                                       \
-      else                                                                                                                                                                    \
-      {                                                                                                                                                                       \
-         m##name##Asset[index] = _in;                                                                                                                                         \
-      }                                                                                                                                                                       \
-      setMaskBits(mask);                                                                                                                                                      \
-   };                                                                                                                                                                         \
-                                                                                                                                                                              \
-   inline StringTableEntry _get##name(const U32& index) const { return m##name##Asset[index].getAssetId(); }                                                                  \
-   GFXTexHandle get##name(const U32& index) { return m##name##Asset[index].notNull() ? m##name##Asset[index]->getTexture(&profile) : NULL; }                                  \
-   GFXTexHandle get##name(GFXTextureProfile* requestedProfile, const U32& index) { return m##name##Asset[index].notNull() ? m##name##Asset[index]->getTexture(requestedProfile) : NULL; }\
-   AssetPtr<ImageAsset> get##name##Asset(const U32& index) { return m##name##Asset[index]; }                                                                                  \
-   static bool _set##name##Data(void* obj, const char* index, const char* data) { static_cast<className*>(obj)->_set##name(_getStringTable()->insert(data), dAtoi(index)); return false;}\
-   StringTableEntry get##name##File(const U32& idx){ return m##name##Asset[idx].notNull() ? m##name##Asset[idx]->getImageFile() : ""; }
-
-
-#define INITPERSISTFIELD_IMAGEASSET_ARRAY(name, arraySize, consoleClass, docs)                                                                                       \
-   addProtectedField(assetText(name, Asset), TypeImageAssetPtr, Offset(m##name##Asset, consoleClass), _set##name##Data, &defaultProtectedGetFn, arraySize, assetDoc(name, asset docs.));
-
-#define DEF_IMAGEASSET_ARRAY_BINDS(className,name, max)\
-DefineEngineMethod(className, get##name, const char*, (S32 index), , "get name")\
-{\
-   return object->get##name##Asset(index).notNull() ? object->get##name##Asset(index)->getImageFile() : ""; \
-}\
-DefineEngineMethod(className, get##name##Asset, const char*, (S32 index), , assetText(name, asset reference))\
-{\
-   if(index >= max || index < 0)\
-      return "";\
-   return object->_get##name(index); \
-}\
-DefineEngineMethod(className, set##name, void, (const char* map, S32 index), , assetText(name,assignment. first tries asset then flat file.))\
-{\
-    object->_set##name(StringTable->insert(map), index);\
-}
-
-#pragma endregion

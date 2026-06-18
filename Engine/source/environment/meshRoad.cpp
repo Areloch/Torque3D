@@ -1326,7 +1326,7 @@ void MeshRoad::_initMaterial()
       {
          SAFE_DELETE(mMatInst[Top]);
 
-         Material* tMat = nullptr;
+         Material* tMat = NULL;
          if (!Sim::findObject(mTopMaterialAsset->getMaterialDefinitionName(), tMat))
             Con::errorf("MeshRoad::_initMaterial - Material %s was not found.", mTopMaterialAsset->getMaterialDefinitionName());
 
@@ -1348,7 +1348,7 @@ void MeshRoad::_initMaterial()
 
          SAFE_DELETE(mMatInst[Bottom]);
 
-         Material* tMat = nullptr;
+         Material* tMat = NULL;
          if (!Sim::findObject(mBottomMaterialAsset->getMaterialDefinitionName(), tMat))
             Con::errorf("MeshRoad::_initMaterial - Material %s was not found.", mBottomMaterialAsset->getMaterialDefinitionName());
 
@@ -1369,7 +1369,7 @@ void MeshRoad::_initMaterial()
       {
          SAFE_DELETE(mMatInst[Side]);
 
-         Material* tMat = nullptr;
+         Material* tMat = NULL;
          if (!Sim::findObject(mSideMaterialAsset->getMaterialDefinitionName(), tMat))
             Con::errorf("MeshRoad::_initMaterial - Material %s was not found.", mSideMaterialAsset->getMaterialDefinitionName());
 
@@ -3406,7 +3406,7 @@ MatrixF MeshRoad::getNodeTransform( U32 idx )
    mat.setColumn( 2, node.normal );
    mat.setColumn( 3, node.point );
 
-   AssertFatal( m_matF_determinant( mat ) != 0.0f, "no inverse!");
+   AssertFatal(mat.determinant() != 0.0f, "no inverse!");
 
    return mat; 
 }
@@ -3456,7 +3456,7 @@ void MeshRoad::calcSliceTransform( U32 idx, MatrixF &mat )
    mat.setColumn( 2, slice.normal );
    mat.setColumn( 3, slice.p1 );
 
-   AssertFatal( m_matF_determinant( mat ) != 0.0f, "no inverse!");
+   AssertFatal(mat.determinant() != 0.0f, "no inverse!");
 }
 
 F32 MeshRoad::getRoadLength() const

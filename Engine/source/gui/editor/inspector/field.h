@@ -132,6 +132,8 @@ class GuiInspectorField : public GuiControl
       /// this is exposed in case someone wants to override the normal caption.
       virtual void setCaption( StringTableEntry caption ) { mCaption = caption; }
 
+      virtual StringTableEntry getCaption() { return mCaption; }
+
       void setEditControl(GuiControl* editCtrl);
 
       void setHeightOverride(bool useOverride, U32 heightOverride);
@@ -162,6 +164,7 @@ class GuiInspectorField : public GuiControl
       
       ///
       StringTableEntry getArrayIndex() const { return mFieldArrayIndex; }
+      AbstractClassRep::Field* getField() const { return mField; }
 
       /// Called from within setData to allow child classes
       /// to perform their own verification.

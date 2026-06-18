@@ -50,14 +50,23 @@
 #include "core/util/zip/zipVolume.h"
 #include "gfx/bitmap/gBitmap.h"
 
-MODULE_BEGIN( ColladaShapeLoader )
-   MODULE_INIT_AFTER( ShapeLoader )
-   MODULE_INIT
+static bool sReadCollada(const Torque::Path& path, TSShape*& shape);
+
+static struct _privateRegisterCollada
+{
+   _privateRegisterCollada()
    {
-      TSShapeLoader::addFormat("Collada", "dae");
-      TSShapeLoader::addFormat("Google Earth", "kmz");
+      TSShape::ShapeRegistration reg;
+      reg.extensions.push_back({ "Collada", "dae" });
+      reg.export_extensions.push_back({ "Collada", "dae" });
+      reg.extensions.push_back({ "Google Earth", "kmz" });
+
+      reg.readFunc = sReadCollada;
+      reg.writeFunc = NULL;
+
+      TSShape::sRegisterFormat(reg);
    }
-MODULE_END;
+} sStaticRegisterCollada;
 
 // 
 static DAE sDAE;                 // Collada model database (holds the last loaded file)
@@ -398,9 +407,9 @@ void ColladaShapeLoader::computeBounds(Box3F& bounds)
 String findTextureExtension(const Torque::Path &texPath)
 {
    Torque::Path path(texPath);
-   for(S32 i = 0;i < GBitmap::sRegistrations.size();++i)
+   for(S32 i = 0;i < GBitmap::getRegistrations().size();++i)
    {
-      GBitmap::Registration &reg = GBitmap::sRegistrations[i];
+      GBitmap::Registration &reg = GBitmap::getRegistrations()[i];
       for(S32 j = 0;j < reg.extensions.size();++j)
       {
          path.setExtension(reg.extensions[j]);
@@ -548,7 +557,6 @@ bool ColladaShapeLoader::canLoadCachedDTS(const Torque::Path& path)
      
    return false;
 }
-
 bool ColladaShapeLoader::checkAndMountSketchup(const Torque::Path& path, String& mountPoint, Torque::Path& daePath)
 {
    bool isSketchup = path.getExtension().equal("kmz", String::NoCase);
@@ -650,40 +658,8 @@ domCOLLADA* ColladaShapeLoader::readColladaFile(const String& path)
 
 //-----------------------------------------------------------------------------
 /// This function is invoked by the resource manager based on file extension.
-TSShape* loadColladaShape(const Torque::Path &path)
+static bool sReadCollada(const Torque::Path& path, TSShape*& res_shape)
 {
-#ifndef DAE2DTS_TOOL
-   // Generate the cached filename
-   Torque::Path cachedPath(path);
-   cachedPath.setExtension("cached.dts");
-
-   // Check if an up-to-date cached DTS version of this file exists, and
-   // if so, use that instead.
-   if (ColladaShapeLoader::canLoadCachedDTS(path))
-   {
-      FileStream cachedStream;
-      cachedStream.open(cachedPath.getFullPath(), Torque::FS::File::Read);
-      if (cachedStream.getStatus() == Stream::Ok)
-      {
-         TSShape *shape = new TSShape;
-         bool readSuccess = shape->read(&cachedStream);
-         cachedStream.close();
-
-         if (readSuccess)
-         {
-         #ifdef TORQUE_DEBUG
-            Con::printf("Loaded cached Collada shape from %s", cachedPath.getFullPath().c_str());
-         #endif
-            return shape;
-         }
-         else
-            delete shape;
-      }
-
-      Con::warnf("Failed to load cached COLLADA shape from %s", cachedPath.getFullPath().c_str());
-   }
-#endif // DAE2DTS_TOOL
-
    if (!Torque::FS::IsFile(path))
    {
       // DAE file does not exist, bail.
@@ -723,29 +699,58 @@ TSShape* loadColladaShape(const Torque::Path &path)
       tss = loader.generateShape(daePath);
       if (tss)
       {
-#ifndef DAE2DTS_TOOL
-         // Cache the Collada model to a DTS file for faster loading next time.
-         FileStream dtsStream;
-         
+         TSShapeLoader::updateProgress(TSShapeLoader::Load_Complete, "Import complete");
+
+         bool realMesh = false;
+         for (U32 i = 0; i < tss->meshes.size(); ++i)
+         {
+            if (tss->meshes[i] && tss->meshes[i]->getMeshType() != TSMesh::NullMeshType)
+            {
+               realMesh = true;
+               break;
+            }
+         }
+
+         if(realMesh)
+            Con::printf("[COLLADA] Shape created successfully.");
+         else
+            Con::printf("[COLLADA] Animation created successfully.");
+
+         Torque::Path cachedPath(path);
+         // Cache the model to a DTS file for faster loading next time.
+         cachedPath.setExtension("cached.dts");
+         // Cache the model to a DTS file for faster loading next time.
+         FileStream dtsStream(FileStream::AsyncMode::Background);
          if (dtsStream.open(cachedPath.getFullPath(), Torque::FS::File::Write))
          {
-            Torque::FS::FileSystemRef ref = Torque::FS::GetFileSystem(daePath);
-            if (ref && !String::compare("Zip", ref->getTypeStr().c_str()))
-               Con::errorf("No cached dts file found in archive for %s. Forcing cache to disk.", daePath.getFullFileName().c_str());
-
-            Con::printf("Writing cached COLLADA shape to %s", cachedPath.getFullPath().c_str());
+            Con::printf("Writing cached shape to %s", cachedPath.getFullPath().c_str());
             tss->write(&dtsStream);
          }
 
-#endif // DAE2DTS_TOOL
-
          // Add collada materials to materials.tscript
          updateMaterialsScript(path, isSketchup);
+
+         if (tss->sequences.size() > 0 && realMesh)
+         {
+            Torque::Path dsqPath(cachedPath);
+            dsqPath.setExtension("dsq");
+            FileStream animOutStream;
+
+            for (S32 i = 0; i < tss->sequences.size(); i++)
+            {
+               const String& seqName = tss->getName(tss->sequences[i].nameIndex);
+               Con::printf("Writing DSQ Animation File for sequence '%s'", seqName.c_str());
+
+               dsqPath.setFileName(cachedPath.getFileName() + "_" + seqName);
+               if (animOutStream.open(dsqPath.getFullPath(), Torque::FS::File::Write))
+               {
+                  tss->exportSequence(&animOutStream, tss->sequences[i], false);
+                  animOutStream.close();
+               }
+            }
+         }
       }
    }
-
-   // Close progress dialog
-   TSShapeLoader::updateProgress(TSShapeLoader::Load_Complete, "Import complete");
 
    if (isSketchup)
    {
@@ -753,5 +758,6 @@ TSShape* loadColladaShape(const Torque::Path &path)
       Torque::FS::Unmount(mountPoint);
    }
 
-   return tss;
+   res_shape = tss;
+   return true;
 }

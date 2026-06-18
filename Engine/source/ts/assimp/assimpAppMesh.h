@@ -46,9 +46,6 @@ protected:
    static S32 fixedSize;                             ///< The fixed detail size value for all geometry
 
 public:
-   void computeBounds(Box3F& bounds) override;
-   TSMesh* constructTSMesh() override;
-
    AssimpAppMesh(const struct aiMesh* mesh, AssimpAppNode* node);
    ~AssimpAppMesh()
    {
@@ -122,6 +119,8 @@ public:
    /// @return The mesh transform at the specified time
    MatrixF getMeshTransform(F32 time) override;
    F32 getVisValue(F32 t) override;
+
+   static Vector<S32> sMaterialRemap;
 };
 
 #endif // _COLLADA_APPMESH_H_

@@ -58,7 +58,7 @@ class OpenVRTrackedObject;
 
 //----------------------------------------------------------------------------
 
-struct PlayerData: public ShapeBaseData {
+struct PlayerData: public ShapeBaseData /*protected AssetPtrCallback < already in shapebasedata. */ {
    typedef ShapeBaseData Parent;
    enum Constants {
       RecoverDelayBits = 7,
@@ -82,8 +82,7 @@ struct PlayerData: public ShapeBaseData {
                                                                   ///  that we don't create a TSThread on the player if we don't
                                                                   ///  need to.
 
-   DECLARE_SHAPEASSET_ARRAY(PlayerData, ShapeFP, ShapeBase::MaxMountedImages, onShapeChanged); ///< Used to render with mounted images in first person [optional]
-   DECLARE_ASSET_ARRAY_SETGET(PlayerData, ShapeFP);
+   AssetRef<ShapeAsset> shapeFPAssetRef[ShapeBase::MaxMountedImages];
 
    StringTableEntry  imageAnimPrefixFP;                           ///< Passed along to mounted images to modify
                                                                   ///  animation sequences played in first person. [optional]
@@ -97,6 +96,10 @@ struct PlayerData: public ShapeBaseData {
    F32 minLookAngle;          ///< Lowest angle (radians) the player can look
    F32 maxLookAngle;          ///< Highest angle (radians) the player can look
    F32 maxFreelookAngle;      ///< Max left/right angle the player can look
+
+   F32 minProneLookAngle;   /// Skurps
+   F32 maxProneLookAngle;   /// Skurps
+
 
    /// @name Physics constants
    /// @{
@@ -184,10 +187,11 @@ struct PlayerData: public ShapeBaseData {
    F32 boxHeadPercentage;
    F32 boxTorsoPercentage;
 
-   F32 boxHeadLeftPercentage;
-   F32 boxHeadRightPercentage;
-   F32 boxHeadBackPercentage;
-   F32 boxHeadFrontPercentage;
+   //Skurps changed from Head to Torso
+   F32 boxTorsoLeftPercentage;
+   F32 boxTorsoRightPercentage;
+   F32 boxTorsoBackPercentage;
+   F32 boxTorsoFrontPercentage;
    /// @}
 
    F32 minImpactSpeed;        ///< Minimum impact speed required to apply fall damage
@@ -223,6 +227,7 @@ struct PlayerData: public ShapeBaseData {
       ImpactWaterMedium,
       ImpactWaterHard,
       ExitWater,
+	   Crawl,//Skurps
       MaxSounds
    };
 
@@ -274,6 +279,8 @@ struct PlayerData: public ShapeBaseData {
       ProneRootAnim,
       ProneForwardAnim,
       ProneBackwardAnim,
+	  ProneLeftAnim, //Skurps
+      ProneRightAnim, //Skurps
 
       SwimRootAnim,
       SwimForwardAnim,
@@ -296,7 +303,7 @@ struct PlayerData: public ShapeBaseData {
       ActionAnimBits = 9,
       NullAnimation = (1 << ActionAnimBits) - 1
    };
-
+   int mDynamicAnimsStart;
    static ActionAnimationDef ActionAnimationList[NumTableActionAnims];
    ActionAnimation actionList[NumActionAnims];
    U32 actionCount;
@@ -391,6 +398,11 @@ struct PlayerData: public ShapeBaseData {
    DECLARE_CALLBACK( void, onEnterMissionArea, ( Player* obj ) );
    DECLARE_CALLBACK( void, onLeaveMissionArea, ( Player* obj ) );
    /// @}
+protected:
+   void onAssetRefreshed(AssetPtrBase* pAssetPtrBase) override
+   {
+      reloadOnLocalClient();
+   }
 };
 
 
@@ -398,9 +410,9 @@ struct PlayerData: public ShapeBaseData {
 
 class Player: public ShapeBase
 {
+public:
    typedef ShapeBase Parent;
 
-public:
    enum Pose {
       StandPose = 0,
       SprintPose,
@@ -513,6 +525,7 @@ protected:
       bool animateOnServer;
       bool atEnd;
       bool callbackTripped;
+      bool useSynchedPos;
    } mActionAnimation;
 
    struct ArmAnimation {
@@ -610,7 +623,6 @@ protected:
 #endif
 
   protected:
-   void reSkin() override;
 
    void setState(ActionState state, U32 ticks=0);
    void updateState();
@@ -629,7 +641,7 @@ protected:
    virtual bool updatePos(const F32 travelTime = TickSec);
 
    // PATHSHAPE
-   void updateAttachment();
+   virtual void updateAttachment();
    // PATHSHAPE END
    ///Update head animation
    void updateLookAnimation(F32 dT = 0.f);
@@ -684,6 +696,8 @@ protected:
    /// @param contactMaterial Material onto which the player stepped; may be NULL.
    /// @param contactObject Object onto which the player stepped; may be NULL.
    void playFootstepSound( bool triggeredLeft, Material* contactMaterial, SceneObject* contactObject );
+   /// Skurps prone crawl sound
+   void playCrawlSound();
    
    /// Play an impact sound.
    void playImpactSound();
@@ -802,7 +816,7 @@ public:
    void prepRenderImage( SceneRenderState* state ) override;
    virtual void renderConvex( ObjectRenderInst *ri, SceneRenderState *state, BaseMatInstance *overrideMat );   
    void renderMountedImage( U32 imageSlot, TSRenderState &rstate, SceneRenderState *state ) override;
-private:
+protected:
    static void  afx_consoleInit();
    void         afx_init();
    U32          afx_packUpdate(NetConnection*, U32 mask, BitStream*, U32 retMask);
@@ -832,7 +846,7 @@ public:
 public:
    bool ignore_updates;
    void resetContactTimer() { mContactTimer = 0; }
-private:
+protected:
    U8     move_trigger_states;
    U32    fx_s_triggers;
    U32    mark_fx_c_triggers;
@@ -865,7 +879,7 @@ public:
    };
    U32  getClientEventTriggers() const { return fx_c_triggers; }
    U32  getServerEventTriggers() const { return fx_s_triggers; }
-private:
+protected:
    F32      speed_bias;
    F32      speed_bias_goal;
    bool     override_movement;
@@ -877,7 +891,7 @@ public:
    void     setMovementSpeedBias(F32 bias);
    U32      setMovementOverride(F32 bias, const Point3F* mov=0, U32 op=1);
    void     restoreMovement(U32 tag);
-private:
+protected:
    S32      footfallDecalOverride;
    S32      footfallSoundOverride;
    S32      footfallDustOverride;

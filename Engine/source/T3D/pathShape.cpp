@@ -27,6 +27,11 @@
 
 IMPLEMENT_CO_DATABLOCK_V1(PathShapeData);
 
+PathShapeData::PathShapeData()
+{
+   mUseEase = false;
+}
+
 void PathShapeData::consoleInit()
 {
 }
@@ -46,16 +51,20 @@ void PathShapeData::initPersistFields()
 {
    docsURL;
    Parent::initPersistFields();
+   addField("useEase", TypeBool, Offset(mUseEase, PathShapeData), "Whether to use ease in and out when moving along the path.\n");
+
 }
 
 void PathShapeData::packData(BitStream* stream)
 {
    Parent::packData(stream);
+   stream->writeFlag(mUseEase);
 }
 
 void PathShapeData::unpackData(BitStream* stream)
 {
    Parent::unpackData(stream);
+   mUseEase = stream->readFlag();
 }
 
 
@@ -109,7 +118,7 @@ bool PathShape::onAdd()
          CameraSpline::Knot::NORMAL, CameraSpline::Knot::SPLINE));
       mNodeCount = 1;
    }
-
+   mSpline.useEase(mDataBlock->mUseEase);
    if (isServerObject()) scriptOnAdd();
    return true;
 
@@ -135,12 +144,8 @@ bool PathShape::onNewDataBlock(GameBaseData* dptr, bool reload)
       return false;
 
    scriptOnNewDataBlock(reload);
+   mSpline.useEase(mDataBlock->mUseEase);
    return true;
-}
-
-PathShapeData::PathShapeData()
-{
-
 }
 
 //----------------------------------------------------------------------------
@@ -152,9 +157,7 @@ void PathShape::initPersistFields()
    addField( "Path", TYPEID< SimObjectRef<SimPath::Path> >(), Offset( mSimPath, PathShape ),
          "@brief Name of a Path to follow." );
 
-   addField("Controler", TypeString, Offset(mControl, PathShape), 4, "controlers");
-
-   Parent::initPersistFields();
+   addField("Controler", TypeString, Offset(mControl, PathShape), 4, "controlers");   Parent::initPersistFields();
 
 }
 
@@ -226,7 +229,9 @@ void PathShape::advancePosition(S32 ms)
       }
 
    // Script callbacks
-   if (int(mPosition) != int(delta.timeVec))
+   if ((mState == Backward) && (int(mPosition) == 0) && (mSpline.advanceTime(delta.timeVec - mNodeBase, -ms) < TickSec))
+      onNode(0);
+   else if (int(mPosition)>0 && int(mPosition) != int(delta.timeVec))
       onNode(int(mPosition));
 
    // Set frame interpolation

@@ -24,6 +24,7 @@
 #include "console/consoleTypes.h"
 #include "core/color.h"
 #include "console/engineAPI.h"
+#include "console/script.h"
 
 extern bool gEditingMission;
 IMPLEMENT_CO_DATABLOCK_V1(MissionMarkerData);
@@ -350,11 +351,39 @@ SpawnSphere::SpawnSphere()
    mSphereWeight = 100.f;
    mIndoorWeight = 100.f;
    mOutdoorWeight = 100.f;
+   mSpawnIf.clear();
 }
 
 IMPLEMENT_CALLBACK( SpawnSphere, onAdd, void, ( U32 objectId ), ( objectId ),
    "Called when the SpawnSphere is being created.\n"
    "@param objectId The unique SimObjectId generated when SpawnSphere is created (%%this in script)\n" );
+
+bool SpawnSphere::testCondition()
+{
+   if (mSpawnIf.isEmpty())
+      return true; //we've got no tests to run so just do it
+
+   //test the mapper plugged in condition line
+   String resVar = getIdString() + String(".result");
+   Con::setBoolVariable(resVar.c_str(), false);
+   String command = resVar + "=" + mSpawnIf + ";";
+
+   StringTableEntry objectName = getName();
+   if (objectName != NULL)
+      objectName = getIdString();
+
+   StringTableEntry groupName = getGroup() ? getGroup()->getName() : NULL;
+   if (groupName != NULL)
+      groupName = getGroup()->getIdString();
+
+   String context = String::ToString("%s\nGroup: %s, Object: %s", getFilename(), groupName, objectName);
+   Con::evaluate(command.c_str(), false, context.c_str());
+   if (Con::getBoolVariable(resVar.c_str()) == 1)
+   {
+      return true;
+   }
+   return false;
+}
 
 bool SpawnSphere::onAdd()
 {
@@ -368,7 +397,7 @@ bool SpawnSphere::onAdd()
    {
       onAdd_callback( getId());
 
-      if (mAutoSpawn)
+      if (mAutoSpawn && testCondition())
          spawnObject();
    }
 
@@ -442,16 +471,25 @@ void SpawnSphere::unpackUpdate(NetConnection * con, BitStream * stream)
       stream->read(&mSpawnDataBlock);
       if (oldSDB != mSpawnDataBlock)
       {
-         delete mShapeInstance;
+         SAFE_DELETE(mShapeInstance);
          ShapeBaseData *spawnedDatablock = dynamic_cast<ShapeBaseData *>(Sim::findObject(mSpawnDataBlock.c_str()));
-         if (spawnedDatablock && spawnedDatablock->mShape)
+         if (spawnedDatablock)
          {
-               mShapeInstance = new TSShapeInstance(spawnedDatablock->mShape);
+            if (spawnedDatablock->shapeAssetRef.notNull())
+            {
+               Resource<TSShape> shape = spawnedDatablock->shapeAssetRef.assetPtr->getShapeResource();
+               if (shape)
+                  mShapeInstance = new TSShapeInstance(shape);
+            }
          }
          else if (mDataBlock)
          {
-            if (mDataBlock->mShape)
-               mShapeInstance = new TSShapeInstance(mDataBlock->mShape);
+            if (mDataBlock->shapeAssetRef.notNull())
+            {
+               Resource<TSShape> shape = mDataBlock->shapeAssetRef.assetPtr->getShapeResource();
+               if (shape)
+                  mShapeInstance = new TSShapeInstance(shape);
+            }
          }
       }
       stream->read(&mSpawnName);
@@ -484,6 +522,7 @@ void SpawnSphere::initPersistFields()
       "Command to execute immediately after spawning an object. New object id is stored in $SpawnObject.  Max 255 characters." );
    addField( "autoSpawn", TypeBool, Offset(mAutoSpawn, SpawnSphere),
       "Flag to spawn object as soon as SpawnSphere is created, true to enable or false to disable." );
+   addField("spawnIf", TypeRealString, Offset(mSpawnIf, SpawnSphere), "evaluation condition to spawn (true/false)");
    addField( "spawnTransform", TypeBool, Offset(mSpawnTransform, SpawnSphere),
       "Flag to set the spawned object's transform to the SpawnSphere's transform." );
    endGroup( "Spawn" );

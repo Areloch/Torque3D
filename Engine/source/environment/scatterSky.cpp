@@ -1090,11 +1090,11 @@ void ScatterSky::_render( ObjectRenderInst *ri, SceneRenderState *state, BaseMat
       if ( !mNightCubemap->mCubemap )
          mNightCubemap->createMap();
 
-      GFX->setCubeTexture( 0, mNightCubemap->mCubemap );
+      GFX->setTexture( 0, mNightCubemap->mCubemap );
    }
    else
    {
-      GFX->setCubeTexture( 0, NULL );
+      GFX->setTexture( 0, NULL );
       mShaderConsts->setSafe( mUseCubemapSC, 0.0f );
    }
 

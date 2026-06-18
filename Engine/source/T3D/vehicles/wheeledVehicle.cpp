@@ -75,8 +75,6 @@ ConsoleDocClass( WheeledVehicleTire,
 
 WheeledVehicleTire::WheeledVehicleTire()
 {
-   INIT_ASSET(Shape);
-
    staticFriction = 1;
    kineticFriction = 0.5f;
    restitution = 1;
@@ -88,23 +86,28 @@ WheeledVehicleTire::WheeledVehicleTire()
    longitudinalDamping = 1;
    longitudinalRelaxation = 1;
    mass = 1.f;
+   shapeAssetRef.assetPtr.registerRefreshNotify(this);
 }
 
 bool WheeledVehicleTire::preload(bool server, String &errorStr)
 {
    // Load up the tire shape.  ShapeBase has an option to force a
    // CRC check, this is left out here, but could be easily added.
-   if (!mShape)
+   if (!shapeAssetRef.isNull())
    {
-      errorStr = String::ToString("WheeledVehicleTire: Couldn't load shape \"%s\"", mShapeAssetId);
-      return false;
-   }
-   else
-   {
-      // Determinw wheel radius from the shape's bounding box.
+      Resource<TSShape> shape = shapeAssetRef.assetPtr->getShapeResource();
+      if (shape)
+      {
+         // Determinw wheel radius from the shape's bounding box.
       // The tire should be built with it's hub axis along the
       // object's Y axis.
-      radius = mShape->mBounds.len_z() / 2;
+         radius = shape->mBounds.len_z() / 2;
+      }
+      else
+      {
+         errorStr = String::ToString("WheeledVehicleTire::preload Couldn't load shape \"%s\"", shapeAssetRef.assetId);
+         return false;
+      }
    }
 
    return true;
@@ -113,7 +116,8 @@ bool WheeledVehicleTire::preload(bool server, String &errorStr)
 void WheeledVehicleTire::initPersistFields()
 {
    docsURL;
-   INITPERSISTFIELD_SHAPEASSET(Shape, WheeledVehicleTire, "The shape to use for the wheel.");
+   ADD_FIELD("shapeAsset", TypeShapeAssetRef, Offset(shapeAssetRef, WheeledVehicleTire))
+      .doc("The shape to use for the wheel.");
 
    addFieldV( "mass", TypeRangedF32, Offset(mass, WheeledVehicleTire), &CommonValidators::PositiveFloat,
       "The mass of the wheel.\nCurrently unused." );
@@ -178,7 +182,7 @@ void WheeledVehicleTire::packData(BitStream* stream)
 {
    Parent::packData(stream);
 
-   PACKDATA_ASSET(Shape);
+   AssetDatabase.packDataAsset(stream, shapeAssetRef.assetId);
 
    stream->write(mass);
    stream->write(staticFriction);
@@ -197,7 +201,7 @@ void WheeledVehicleTire::unpackData(BitStream* stream)
 {
    Parent::unpackData(stream);
 
-   UNPACKDATA_ASSET(Shape);
+   shapeAssetRef = AssetDatabase.unpackDataAsset(stream);
 
    stream->read(&mass);
    stream->read(&staticFriction);
@@ -341,14 +345,17 @@ bool WheeledVehicleData::preload(bool server, String &errorStr)
    if (!Parent::preload(server, errorStr))
       return false;
 
+   Resource<TSShape> shape = shapeAssetRef.assetPtr->getShapeResource();
+
    // A temporary shape instance is created so that we can
    // animate the shape and extract wheel information.
-   TSShapeInstance* si = new TSShapeInstance(mShape, false);
+   TSShapeInstance* si = new TSShapeInstance(shape, false);
 
    // Resolve objects transmitted from server
    if (!server) {
       for (S32 i = 0; i < MaxSounds; i++)
       {
+         _setWheeledVehicleSounds(getWheeledVehicleSounds(i), i);
          if (!isWheeledVehicleSoundsValid(i))
          {
             //return false; -TODO: trigger asset download
@@ -367,14 +374,14 @@ bool WheeledVehicleData::preload(bool server, String &errorStr)
 
       // The wheel must have a hub node to operate at all.
       dSprintf(buff,sizeof(buff),"hub%d",i);
-      wp->springNode = mShape->findNode(buff);
+      wp->springNode = shape->findNode(buff);
       if (wp->springNode != -1) {
 
          // Check for spring animation.. If there is none we just grab
          // the current position of the hub. Otherwise we'll animate
          // and get the position at time 0.
          dSprintf(buff,sizeof(buff),"spring%d",i);
-         wp->springSequence = mShape->findSequence(buff);
+         wp->springSequence = shape->findSequence(buff);
          if (wp->springSequence == -1)
             si->mNodeTransforms[wp->springNode].getColumn(3, &wp->pos);
          else {
@@ -403,17 +410,17 @@ bool WheeledVehicleData::preload(bool server, String &errorStr)
    // Check for steering. Should think about normalizing the
    // steering animation the way the suspension is, but I don't
    // think it's as critical.
-   steeringSequence = mShape->findSequence("steering");
+   steeringSequence = shape->findSequence("steering");
 
    // Brakes
-   brakeLightSequence = mShape->findSequence("brakelight");
+   brakeLightSequence = shape->findSequence("brakelight");
 
    // Extract collision planes from shape collision detail level
    if (collisionDetails[0] != -1) {
       MatrixF imat(1);
       SphereF sphere;
-      sphere.center = mShape->center;
-      sphere.radius = mShape->mRadius;
+      sphere.center = shape->center;
+      sphere.radius = shape->mRadius;
       PlaneExtractorPolyList polyList;
       polyList.mPlaneList = &rigidBody.mPlaneList;
       polyList.setTransform(&imat, Point3F(1,1,1));
@@ -822,7 +829,7 @@ void WheeledVehicle::advanceTime(F32 dt)
 
    // Stick the wheels to the ground.  This is purely so they look
    // good while the vehicle is being interpolated.
-   //extendWheels();
+   extendWheels(isClientObject());
 
    // Update wheel angular position and slip, this is a client visual
    // feature only, it has no affect on the physics.
@@ -1202,6 +1209,7 @@ void WheeledVehicle::extendWheels(bool clientHack)
             wheel->surface.pos      = rInfo.point;
             wheel->surface.material = rInfo.material;
             wheel->surface.object   = rInfo.object;
+            wheel->slipping = false;
          }
          else 
          {
@@ -1476,35 +1484,36 @@ void WheeledVehicle::writePacketData(GameConnection *connection, BitStream *stre
 {
    Parent::writePacketData(connection, stream);
    stream->writeFlag(mBraking);
-
-   Wheel* wend = &mWheel[mDataBlock->wheelCount];
-   for (Wheel* wheel = mWheel; wheel < wend; wheel++) 
-   {
-      stream->write(wheel->avel);
-      stream->write(wheel->Dy);
-      stream->write(wheel->Dx);
-      stream->writeFlag(wheel->slipping);
-   }
+   
 }
 
 void WheeledVehicle::readPacketData(GameConnection *connection, BitStream *stream)
 {
    Parent::readPacketData(connection, stream);
    mBraking = stream->readFlag();
-
+   
    Wheel* wend = &mWheel[mDataBlock->wheelCount];
+
    for (Wheel* wheel = mWheel; wheel < wend; wheel++) 
    {
-      stream->read(&wheel->avel);
-      stream->read(&wheel->Dy);
-      stream->read(&wheel->Dx);
-      wheel->slipping = stream->readFlag();
+      if (wheel->tire && wheel->spring) {
+         // Update angular position
+         wheel->apos += (wheel->avel) / M_2PI;
+         wheel->apos -= mFloor(wheel->apos);
+         if (wheel->apos < 0)
+            wheel->apos = 1 - wheel->apos;
+      }
    }
 
    // Rigid state is transmitted by the parent...
    setPosition(mRigid.linPosition,mRigid.angPosition);
    mDelta.pos = mRigid.linPosition;
    mDelta.rot[1] = mRigid.angPosition;
+
+   // Stick the wheels to the ground.  This is purely so they look
+   // good while the vehicle is being interpolated.
+   extendWheels(isClientObject());
+   updateWheelThreads();
 }
 
 
@@ -1579,8 +1588,15 @@ void WheeledVehicle::unpackUpdate(NetConnection *con, BitStream *stream)
 
             // Create an instance of the tire for rendering
             delete wheel->shapeInstance;
-            wheel->shapeInstance = (wheel->tire->mShape == NULL) ? 0:
-               new TSShapeInstance(wheel->tire->mShape);
+
+            if (wheel->tire->shapeAssetRef.notNull())
+            {
+               Resource<TSShape> shape = wheel->tire->shapeAssetRef.assetPtr->getShapeResource();
+               if (shape)
+               {
+                  wheel->shapeInstance = new TSShapeInstance(shape);
+               }
+            }
          }
       }
    }

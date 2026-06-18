@@ -37,7 +37,7 @@ class LightInfo;
 
 
 /// A control that displays a TSShape in its view.
-class GuiObjectView : public GuiTSCtrl
+class GuiObjectView : public GuiTSCtrl, protected AssetPtrCallback
 {
    public:
    
@@ -66,19 +66,13 @@ class GuiObjectView : public GuiTSCtrl
 
       /// @}
       
-      /// @name Model
+      /// @name Shape
       /// @{
       
-      ///Model loaded for display.
-      DECLARE_SHAPEASSET(GuiObjectView, Model, onModelChanged);
-      static bool _setModelData(void* obj, const char* index, const char* data)\
-      {
-         bool ret = false;
-         GuiObjectView* object = static_cast<GuiObjectView*>(obj);
-         ret = object->setObjectModel(StringTable->insert(data));
-         return ret;
-      }
-      void onModelChanged();
+      ///Shape loaded for display.
+      ///
+      AssetRef<ShapeAsset> mShapeAssetRef;
+
       TSShapeInstance* mModelInstance;
       /// Name of skin to use on model.
       String mSkinName;
@@ -109,15 +103,7 @@ class GuiObjectView : public GuiTSCtrl
       /// @{
       
       ///Model to mount to the primary model.
-      DECLARE_SHAPEASSET(GuiObjectView, MountedModel, onMountedModelChanged);
-      static bool _setMountedModelData(void* obj, const char* index, const char* data)\
-      {
-         bool ret = false;
-         GuiObjectView* object = static_cast<GuiObjectView*>(obj);
-         ret = object->setMountedObject(StringTable->insert(data));
-         return ret;
-      }
-      void onMountedModelChanged();
+      AssetRef<ShapeAsset> mMountedShapeAssetRef;
       TSShapeInstance* mMountedModelInstance;
       
       ///
@@ -191,8 +177,11 @@ class GuiObjectView : public GuiTSCtrl
       /// Set the skin to use on the primary model.
       void setSkin( const String& name );
 
-      /// Set the model to show in this view.
-      bool setObjectModel( const String& modelName );
+      /// Set the shape to show in this view.
+      bool setObjectShape( const String& assetId );
+   
+      /// Get the shape currently shown in this view.
+      StringTableEntry getObjectShapeId() const { return mShapeAssetRef.assetId; }
       
       /// @}
       
@@ -225,7 +214,8 @@ class GuiObjectView : public GuiTSCtrl
       void setMountNode( const String& nodeName );
       
       ///
-      bool setMountedObject( const String& modelName );
+      bool setMountedShape( const String& assetId );
+      StringTableEntry getMountedShapeId() const { return mMountedShapeAssetRef.assetId; }
             
       /// @}
       
@@ -284,7 +274,17 @@ class GuiObjectView : public GuiTSCtrl
       static void initPersistFields();
 
       DECLARE_CONOBJECT( GuiObjectView );
-      DECLARE_DESCRIPTION( "A control that shows a TSShape model." );   
+      DECLARE_DESCRIPTION( "A control that shows a TSShape model." );
+
+protected:
+   void onAssetRefreshed(AssetPtrBase* pAssetPtrBase) override
+   {
+      if (mShapeAssetRef.notNull())
+         setObjectShape(mShapeAssetRef.assetId);
+
+      if (mMountedShapeAssetRef.notNull())
+         setMountedShape(mMountedShapeAssetRef.assetId);
+   }
 };
 
 #endif // !_GUIOBJECTVIEW_H_

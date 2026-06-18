@@ -135,8 +135,6 @@ VolumetricFog::VolumetricFog()
    mTexTiles = 1.0f;
    mSpeed1.set(0.5f, 0.0f);
    mSpeed2.set(0.1f, 0.1f);
-
-   INIT_ASSET(Shape);
 }
 
 VolumetricFog::~VolumetricFog()
@@ -164,7 +162,9 @@ void VolumetricFog::initPersistFields()
    docsURL;
    Parent::initPersistFields();
    addGroup("Shapes");
-      INITPERSISTFIELD_SHAPEASSET(Shape, VolumetricFog, "The source shape asset.");
+   ADD_FIELD("shapeAsset", TypeShapeAssetRef, Offset(mShapeAssetRef, VolumetricFog))
+      .doc("The source shape asset.")
+      .network(FogShapeMask);
    endGroup("Shapes");
 
    addGroup("VolumetricFogData");
@@ -181,7 +181,9 @@ void VolumetricFog::initPersistFields()
    endGroup("VolumetricFogData");
 
    addGroup("VolumetricFogModulation");
-   INITPERSISTFIELD_IMAGEASSET(Texture, VolumetricFog, "A texture which contains Fogdensity modulator in the red channel and color with 1-green channel. No texture disables modulation.");
+   ADD_FIELD("textureAsset", TypeImageAssetRef, Offset(mTextureAssetRef, VolumetricFog))
+      .network(FogModulationMask)
+      .doc("A texture which contains Fogdensity modulator in the red channel and color with 1-green channel. No texture disables modulation.");
 
    addFieldV("tiles", TypeRangedF32, Offset(mTexTiles, VolumetricFog), &CommonValidators::PositiveFloat,
       "How many times the texture is mapped to the object.");
@@ -329,8 +331,8 @@ void VolumetricFog::handleResize(VolumetricFogRTManager *RTM, bool resize)
 
       // load texture.
       getTexture();
-      mTexScale.x = 2.0f - ((F32)mTextureAsset->getTextureBitmapWidth() / width);
-      mTexScale.y = 2.0f - ((F32)mTextureAsset->getTextureBitmapHeight() / height);
+      mTexScale.x = 2.0f - ((F32)mTextureAssetRef.assetPtr->getTextureBitmapWidth() / width);
+      mTexScale.y = 2.0f - ((F32)mTextureAssetRef.assetPtr->getTextureBitmapHeight() / height);
    }
 
    UpdateBuffers(0,true);
@@ -342,7 +344,7 @@ void VolumetricFog::handleResize(VolumetricFogRTManager *RTM, bool resize)
 
 bool VolumetricFog::setShapeAsset(const StringTableEntry shapeAssetId)
 {
-   mShapeAssetId = shapeAssetId;
+   mShapeAssetRef = shapeAssetId;
 
    LoadShape();
    return true;
@@ -351,27 +353,28 @@ bool VolumetricFog::setShapeAsset(const StringTableEntry shapeAssetId)
 bool VolumetricFog::LoadShape()
 {
    GFXPrimitiveType GFXdrawTypes[] = { GFXTriangleList, GFXTriangleStrip };
-   U32 assetStatus = ShapeAsset::getAssetErrCode(mShapeAsset);
+   U32 assetStatus = ShapeAsset::getAssetErrCode(mShapeAssetRef.assetPtr);
    if (assetStatus != AssetBase::Ok && assetStatus != AssetBase::UsingFallback)
    {
       Con::errorf("[VolumetricFog] Failed to load shape asset.");
       return false;
    }
 
-   if (!mShape)
+   Resource<TSShape> shape = mShapeAssetRef.assetPtr->getShapeResource();
+   if (!shape)
    {
       Con::errorf("VolumetricFog::_createShape() - Shape Asset had no valid shape!");
       return false;
    }
 
-   mObjBox = mShape->mBounds;
-   mRadius = mShape->mRadius;
+   mObjBox = shape->mBounds;
+   mRadius = shape->mRadius;
    resetWorldBox();
 
    if (!isClientObject())
       return false;
 
-   TSShapeInstance *mShapeInstance = new TSShapeInstance(mShape, false);
+   TSShapeInstance *mShapeInstance = new TSShapeInstance(shape, false);
    meshes mesh_detail;
 
    for (S32 i = 0; i < det_size.size(); i++)
@@ -387,9 +390,9 @@ bool VolumetricFog::LoadShape()
 
    // browsing model for detail levels
 
-   for (U32 i = 0; i < mShape->details.size(); i++)
+   for (U32 i = 0; i < shape->details.size(); i++)
    {
-      const TSDetail *detail = &mShape->details[i];
+      const TSDetail *detail = &shape->details[i];
       mesh_detail.det_size = detail->size;
       mesh_detail.sub_shape = detail->subShapeNum;
       mesh_detail.obj_det = detail->objectDetailNum;
@@ -405,8 +408,8 @@ bool VolumetricFog::LoadShape()
       const S32 ss = det_size[i].sub_shape;
       if (ss >= 0)
       {
-         const S32 start = mShape->subShapeFirstObject[ss];
-         const S32 end = start + mShape->subShapeNumObjects[ss];
+         const S32 start = shape->subShapeFirstObject[ss];
+         const S32 end = start + shape->subShapeNumObjects[ss];
          for (S32 j = start; j < end; j++)
          {
             // Loading shape, only the first mesh for each detail will be used!
@@ -544,7 +547,7 @@ U32 VolumetricFog::packUpdate(NetConnection *con, U32 mask, BitStream *stream)
       stream->write(mFogDensity);
    if (stream->writeFlag(mask & FogModulationMask))
    {
-      PACK_ASSET_REFACTOR(con, Texture);
+      AssetDatabase.packUpdateAsset(con, mask, stream, mTextureAssetRef.assetId);
       mTexTiles = mFabs(mTexTiles);
       stream->write(mTexTiles);
       stream->write(mStrength);
@@ -568,14 +571,17 @@ U32 VolumetricFog::packUpdate(NetConnection *con, U32 mask, BitStream *stream)
    }
    if (stream->writeFlag(mask & FogShapeMask))
    {
-      PACK_ASSET(con, Shape);
+      AssetDatabase.packUpdateAsset(conn, mask, stream, mShapeAssetRef.assetId);
+
       mathWrite(*stream, getTransform());
       mathWrite(*stream, getScale());
 
-      if (mShapeAsset.notNull())
+      if (mShapeAssetRef.isValid())
       {
-         mObjBox = mShapeAsset->getShapeResource()->mBounds;
-         mRadius = mShapeAsset->getShapeResource()->mRadius;
+         Resource<TSShape> shape = mShapeAssetRef.assetPtr->getShapeResource();
+
+         mObjBox = shape->mBounds;
+         mRadius = shape->mRadius;
       }
       else
       {
@@ -596,9 +602,9 @@ void VolumetricFog::unpackUpdate(NetConnection *con, BitStream *stream)
    MatrixF mat;
    VectorF scale;
    VectorF mOldScale = getScale();
-   StringTableEntry oldTextureName = mTextureAsset.getAssetId();
-   StringTableEntry oldShapeAsset = mShapeAssetId;
-   StringTableEntry oldShape = mShapeName;
+   StringTableEntry oldTextureName = mTextureAssetRef.getAssetId();
+   StringTableEntry oldShapeAsset = mShapeAssetRef.assetId;
+   StringTableEntry oldShape = mShapeAssetRef.notNull() ? mShapeAssetRef.assetPtr->getShapeFile() : StringTable->EmptyString();
 
    if (stream->readFlag())// Fog color
       stream->read(&mFogColor);
@@ -614,7 +620,7 @@ void VolumetricFog::unpackUpdate(NetConnection *con, BitStream *stream)
    }
    if (stream->readFlag())// Fog Modulation
    {
-      UNPACK_ASSET_REFACTOR(con, Texture);
+      mTextureAssetRef = AssetDatabase.unpackUpdateAsset(con, stream);
       stream->read(&mTexTiles);
       mTexTiles = mFabs(mTexTiles);
       stream->read(&mStrength);
@@ -624,9 +630,9 @@ void VolumetricFog::unpackUpdate(NetConnection *con, BitStream *stream)
 
       if (isProperlyAdded())
       {
-         if (oldTextureName != mTextureAsset.getAssetId())
+         if (oldTextureName != mTextureAssetRef.getAssetId())
             InitTexture();
-         if (oldTextureName != StringTable->EmptyString() && mTextureAsset.isNull())
+         if (oldTextureName != StringTable->EmptyString() && mTextureAssetRef.isNull())
          {
             mIsTextured = false;
          }
@@ -667,11 +673,11 @@ void VolumetricFog::unpackUpdate(NetConnection *con, BitStream *stream)
    }
    if (stream->readFlag())//Fog shape
    {
-      UNPACK_ASSET(con, Shape);
+      mShapeAssetRef = AssetDatabase.unpackUpdateAsset(conn, stream);
 
       mathRead(*stream, &mat);
       mathRead(*stream, &scale);
-      if (strcmp(oldShapeAsset, mShapeAssetId) != 0 || strcmp(oldShape, mShapeName) != 0)
+      if (strcmp(oldShapeAsset, mShapeAssetRef.assetId) != 0 || strcmp(oldShape, mShapeAssetRef.assetPtr->getShapeFile()) != 0)
       {
          mIsVBDirty = true;
          mShapeLoaded = LoadShape();
@@ -1215,21 +1221,24 @@ void VolumetricFog::InitTexture()
 {
    mIsTextured = false;
 
-   U32 assetStatus = ImageAsset::getAssetErrCode(mTextureAsset);
-   if (assetStatus != AssetBase::Ok && assetStatus != AssetBase::UsingFallback)
+   if (!mTextureAssetRef.isNull())
    {
-      return;
-   }
-   if (!mTextureAsset.isNull())
-   {
+      mTextureAssetRef.assetPtr->load();
+   	  
+      U32 assetStatus = ImageAsset::getAssetErrCode(mTextureAssetRef.assetPtr);
+      if (assetStatus != AssetBase::Ok && assetStatus != AssetBase::UsingFallback)
+      {
+         return;
+      }
+   
       mIsTextured = true;
       // load asset.
       getTexture();
       F32 width = (F32)mPlatformWindow->getClientExtent().x;
       F32 height = (F32)mPlatformWindow->getClientExtent().y;
 
-      mTexScale.x = 2.0f - ((F32)mTextureAsset->getTextureBitmapWidth() / width);
-      mTexScale.y = 2.0f - ((F32)mTextureAsset->getTextureBitmapHeight() / height);
+      mTexScale.x = 2.0f - ((F32)mTextureAssetRef.assetPtr->getTextureBitmapWidth() / width);
+      mTexScale.y = 2.0f - ((F32)mTextureAssetRef.assetPtr->getTextureBitmapHeight() / height);
    }
 }
 

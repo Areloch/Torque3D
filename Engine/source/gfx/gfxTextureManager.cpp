@@ -361,7 +361,7 @@ GFXTextureObject *GFXTextureManager::_createTexture(  GBitmap *bmp,
       if (  inObj->getWidth() != realWidth ||
             inObj->getHeight() != realHeight ||
             inObj->getFormat() != realFmt )
-         ret = _createTextureObject( realHeight, realWidth, 0, realFmt, profile, numMips, false, 0, inObj );
+         ret = _createTextureObject( realHeight, realWidth, 0, realFmt, profile, numMips, false, 0, 1, inObj );
       else
          ret = inObj;
    }
@@ -569,7 +569,7 @@ GFXTextureObject *GFXTextureManager::_createTexture(  DDSFile *dds,
             inObj->getMipLevels() != numMips )
          ret = _createTextureObject(   dds->getHeight(), dds->getWidth(), 0, 
                                        fmt, profile, numMips, 
-                                       true, 0, inObj );
+                                       true, 0, 1, inObj );
       else
          ret = inObj;
    }
@@ -744,7 +744,7 @@ GFXTextureObject *GFXTextureManager::createTexture(  U32 width, U32 height, void
    return createTexture( bmp, String::EmptyString, profile, true );
 }
 
-GFXTextureObject *GFXTextureManager::createTexture( U32 width, U32 height, GFXFormat format, GFXTextureProfile *profile, U32 numMipLevels, S32 antialiasLevel )
+GFXTextureObject *GFXTextureManager::createTexture( U32 width, U32 height, GFXFormat format, GFXTextureProfile *profile, U32 numMipLevels, S32 antialiasLevel, U32 arraySize)
 {
    // Deal with sizing issues...
    U32 localWidth = width;
@@ -783,7 +783,7 @@ GFXTextureObject *GFXTextureManager::createTexture( U32 width, U32 height, GFXFo
    // Create the texture if we didn't get one from the pool.
    if ( !outTex )
    {
-      outTex = _createTextureObject( localHeight, localWidth, 0, format, profile, numMips, false, antialiasLevel );
+      outTex = _createTextureObject( localHeight, localWidth, 0, format, profile, numMips, false, antialiasLevel, arraySize );
 
       // Make sure we add it to the pool.
       if ( outTex && profile->isPooled() )
@@ -814,12 +814,13 @@ GFXTextureObject *GFXTextureManager::createTexture(   U32 width,
                                                       U32 depth,
                                                       GFXFormat format,
                                                       GFXTextureProfile *profile,
-                                                      U32 numMipLevels)
+                                                      U32 numMipLevels,
+                                                      U32 arraySize)
 {
    PROFILE_SCOPE( GFXTextureManager_CreateTexture_3D );
 
    // Create texture...
-   GFXTextureObject *ret = _createTextureObject( height, width, depth, format, profile, numMipLevels );
+   GFXTextureObject *ret = _createTextureObject( height, width, depth, format, profile, numMipLevels, arraySize );
 
    if(!ret)
    {
@@ -857,14 +858,14 @@ Torque::Path GFXTextureManager::validatePath(const Torque::Path &path)
 
    // Now loop through the rest of the GBitmap extensions
    // to see if we have any matches
-   for (U32 i = 0; i < GBitmap::sRegistrations.size(); i++)
+   for (U32 i = 0; i < GBitmap::getRegistrations().size(); i++)
    {
       // If we have gotten a match (either in this loop or before)
       // then we can exit
       if (textureExt)
          break;
 
-      const GBitmap::Registration   &reg = GBitmap::sRegistrations[i];
+      const GBitmap::Registration   &reg = GBitmap::getRegistrations()[i];
       const Vector<String>          &extensions = reg.extensions;
 
       for (U32 j = 0; j < extensions.size(); ++j)
@@ -1410,17 +1411,28 @@ void GFXTextureManager::_validateTexParams( const U32 width, const U32 height,
                                           U32 &inOutNumMips, GFXFormat &inOutFormat  )
 {
    // Validate mipmap parameter. If this profile requests no mips, set mips to 1.
-   if( profile->noMip() )
+   if( profile->noMip()|| inOutNumMips == 1)
    {
       inOutNumMips = 1;
    }
-   else if( !isPow2( width ) || !isPow2( height ) )
+   else if (!isPow2(width) || !isPow2(height))
    {
       // If a texture is not power-of-2 in size for both dimensions, it must
       // have only 1 mip level.
-      inOutNumMips = 1;
+      if (profile->isRenderTarget() && !profile->noMip())
+      {
+         if (inOutNumMips == 0) //auto
+            inOutNumMips = mFloor(mLog2(mMax(width, height))) + 1;
+         else if (inOutNumMips > 1) //capped
+            inOutNumMips = mMin(inOutNumMips,mFloor(mLog2(mMax(width, height))) + 1);
+         inOutNumMips = mClampF(inOutNumMips, 1, 13);
+      }
+      else
+      {
+         inOutNumMips = 1;
+      }
    }
-   
+
    // Check format, and compatibility with texture profile requirements
    bool autoGenSupp = ( inOutNumMips == 0 );
 

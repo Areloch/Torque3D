@@ -103,11 +103,17 @@ void GFXGLDevice::enumerateAdapters( Vector<GFXAdapter*> &adapterList )
    }
 
    SDL_ClearError();
-   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+   U32 debugFlag = 0;
+#ifdef TORQUE_DEBUG
+   debugFlag |= SDL_GL_CONTEXT_DEBUG_FLAG;
+#endif
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, debugFlag);
    SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
-
+   SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+#ifdef TORQUE_GL_SOFTWARE
+   SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 0);
+#endif
    SDL_GLContext tempContext = SDL_GL_CreateContext( tempWindow );
    if( !tempContext )
    {
@@ -140,6 +146,10 @@ void GFXGLDevice::enumerateAdapters( Vector<GFXAdapter*> &adapterList )
       return;
    }
 
+   // Set our sdl attribute to use this version.
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major);
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor);
+
    //check for required extensions
    if (!gglHasExtension(ARB_texture_cube_map_array))
    {
@@ -168,7 +178,24 @@ void GFXGLDevice::enumerateAdapters( Vector<GFXAdapter*> &adapterList )
       dStrcpy(toAdd->mName, "OpenGL", GFXAdapter::MaxAdapterNameLen);
 
    toAdd->mType = OpenGL;
-   toAdd->mShaderModel = 0.f;
+   F32 shaderModel = 3.3f;
+   if (major == 4)
+   {
+      if (minor == 0)
+         shaderModel = 4.00f;  // GLSL 4.00
+      else if (minor == 1)
+         shaderModel = 4.10f;  // GLSL 4.10
+      else if (minor == 2)
+         shaderModel = 4.20f;  // GLSL 4.20
+      else if (minor == 3)
+         shaderModel = 4.30f;  // GLSL 4.30
+      else if (minor == 4)
+         shaderModel = 4.40f;  // GLSL 4.40
+      else if (minor == 5)
+         shaderModel = 4.50f;  // GLSL 4.50
+      else if (minor == 6)
+         shaderModel = 4.60f;  // GLSL 4.60
+   }
    toAdd->mCreateDeviceInstanceDelegate = mCreateDeviceInstance;
 
    // Enumerate all available resolutions:

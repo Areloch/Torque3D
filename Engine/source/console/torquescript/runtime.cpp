@@ -38,8 +38,10 @@ namespace TorqueScript
       if (fileName)
          fileName = StringTable->insert(fileName);
 
+      bool fileExec = Torque::FS::IsFile(fileName);
+
       CodeBlock* newCodeBlock = new CodeBlock();
-      return (newCodeBlock->compileExec(fileName, string, false, fileName ? -1 : 0));
+      return (newCodeBlock->compileExec(fileName, string, false, fileExec ? -1 : 0));
    }
 
    Con::EvalResult TorqueScriptRuntime::evaluate(const char* script, S32 frame, bool echo, const char* fileName)
@@ -402,6 +404,8 @@ namespace TorqueScript
 #ifdef TORQUE_DEBUG
          Con::printf("Executing %s.", scriptFileName);
 #endif
+         if (Con::gTraceOn)
+            Con::printf("Executing %s.", scriptFileName);
 
          CodeBlock *newCodeBlock = new CodeBlock();
          StringTableEntry name = StringTable->insert(scriptFileName);

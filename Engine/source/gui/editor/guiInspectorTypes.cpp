@@ -42,6 +42,7 @@
 #include "math/mathTypes.h"
 #include "sim/actionMap.h"
 #include "console/typeValidators.h"
+#include "console/script.h"
 
 //-----------------------------------------------------------------------------
 // GuiInspectorTypeMenuBase
@@ -1173,7 +1174,7 @@ GuiControl* GuiInspectorTypeColor::constructEditControl()
    if( inspector->isMethod( "onInspectorPreFieldModification" ) )
    {
       dSprintf( szBuffer, sizeof( szBuffer ),
-         "%d.onInspectorPreFieldModification(\"%s\",\"%s\"); %s(%s, \"%d.onInspectorPostFieldModification(); %d.applyWithoutUndo\", %d.getRoot(), \"%d.applyWithoutUndo\", \"%d.onInspectorDiscardFieldModification(); %%unused=\");",
+         "%d.onInspectorPreFieldModification(\"%s\",\"%s\"); %s(%s, \"%d.onInspectorPostFieldModification(); %d.applyWithoutUndo\", %d.getRoot(), \"%d.applyWithoutUndo\", \"%d.onInspectorDiscardFieldModification(); %$unused=\");",
          inspector->getId(), getRawFieldName(), getArrayIndex(),
          mColorFunction, szColor, inspector->getId(), getId(),
          getId(),
@@ -1448,7 +1449,7 @@ GuiControl* GuiInspectorTypeRangedS32::constructEditControl()
       if (scaledValidator)
       {
          retCtrl->setField("range", String::ToString("%d %d", scaledValidator->getMin(), scaledValidator->getMax()));
-         if (validator->getFidelity() > 1)
+         if (scaledValidator->getScaleFactor() > 1)
             retCtrl->setField("increment", String::ToString("%d", scaledValidator->getScaleFactor()));
       }
    }
@@ -1983,6 +1984,16 @@ void GuiInspectorType2DValue::constructEditControlChildren(GuiControl* retCtrl, 
 
    retCtrl->addObject(mContainerX);
    retCtrl->addObject(mContainerY);
+
+   mCtrlX->setDataField(StringTable->insert("tabComplete"), NULL, "true");
+   String tabCmdX = String::ToString("function %s::onTabComplete(){ %s.setFirstResponder(); %s.selectAllText(); }",
+      mCtrlX->getName(), mCtrlY->getName(), mCtrlY->getName());
+   Con::evaluatef(tabCmdX);
+
+   mCtrlY->setDataField(StringTable->insert("tabComplete"), NULL, "true");
+   String tabCmdY = String::ToString("function %s::onTabComplete(){ %s.setFirstResponder(); %s.selectAllText(); }",
+      mCtrlY->getName(), mCtrlX->getName(), mCtrlX->getName());
+   Con::evaluatef(tabCmdY);
    //retCtrl->addObject(mScriptValue);
 }
 
@@ -2107,6 +2118,16 @@ void GuiInspectorType3DValue::constructEditControlChildren(GuiControl* retCtrl, 
    mContainerZ->addObject(mLabelZ);
    mContainerZ->addObject(mCtrlZ);
    _registerEditControl(mContainerZ, "cz");
+
+   mCtrlY->setDataField(StringTable->insert("tabComplete"), NULL, "true");
+   String tabCmdY = String::ToString("function %s::onTabComplete(){ %s.setFirstResponder(); %s.selectAllText(); }",
+      mCtrlY->getName(), mCtrlZ->getName(), mCtrlZ->getName());
+   Con::evaluatef(tabCmdY);
+
+   mCtrlZ->setDataField(StringTable->insert("tabComplete"), NULL, "true");
+   String tabCmdZ = String::ToString("function %s::onTabComplete(){ %s.setFirstResponder(); %s.selectAllText(); }",
+      mCtrlZ->getName(), mCtrlX->getName(), mCtrlX->getName());
+   Con::evaluatef(tabCmdZ);
 
    retCtrl->addObject(mContainerZ);
 }

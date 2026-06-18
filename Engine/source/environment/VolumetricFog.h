@@ -52,7 +52,8 @@
 #endif 
 #ifndef SHAPEASSET_H
 #include "T3D/assets/ShapeAsset.h"
-#endif 
+#endif
+#include "T3D/assets/ImageAsset.h"
    
 class VolumetricFogRTManager;
    
@@ -84,8 +85,7 @@ class VolumetricFog : public SceneObject
       Vector <U32> *indices;
    };
 
-   DECLARE_SHAPEASSET(VolumetricFog, Shape, onShapeChanged);
-   DECLARE_ASSET_NET_SETGET(VolumetricFog, Shape, FogShapeMask);
+   AssetRef<ShapeAsset> mShapeAssetRef;
    
    protected:
       // Rendertargets;
@@ -162,7 +162,9 @@ class VolumetricFog : public SceneObject
       F32 mInvScale;
    
       // Fog Modulation data
-      DECLARE_IMAGEASSET_NET(VolumetricFog, Texture, GFXStaticTextureSRGBProfile, FogModulationMask)
+      AssetRef<ImageAsset> mTextureAssetRef;
+
+      GFXTexHandle getTexture() { return mTextureAssetRef.notNull() ? mTextureAssetRef.assetPtr->getTexture(&GFXStaticTextureSRGBProfile) : NULL; }
 
       bool mIsTextured;
       F32 mTexTiles;
@@ -203,6 +205,7 @@ class VolumetricFog : public SceneObject
       void ResizeRT(PlatformWindow *win, bool resize);
    
    protected:
+
       // Protected methods
       bool onAdd() override;
       void onRemove() override;
@@ -246,8 +249,6 @@ class VolumetricFog : public SceneObject
       bool isInsideFog();
 
       bool setShapeAsset(const StringTableEntry shapeAssetId);
-
-      void onShapeChanged() {}
    
       DECLARE_CONOBJECT(VolumetricFog);
       DECLARE_CATEGORY("Environment \t Weather");

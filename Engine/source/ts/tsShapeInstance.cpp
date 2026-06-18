@@ -75,6 +75,10 @@ MODULE_BEGIN( TSShapeInstance )
          "@brief Enables mesh instancing on non-skin meshes that have less that this count of verts.\n"
          "The default value is 2000.  Higher values can degrade performance.\n"
          "@ingroup Rendering\n" );
+
+      Con::addVariable("$MaxSkinBones", TypeS32, &TSShape::smMaxSkinBones,
+         "@brief Max number of bones allowed by a given shape for hardwar skinning. Default 70\n"
+         "@ingroup Rendering\n");
    }
 
 MODULE_END;
@@ -235,8 +239,11 @@ void TSShapeInstance::initMeshObjects()
 void TSShapeInstance::setMaterialList( TSMaterialList *matList )
 {
    // get rid of old list
-   if ( mOwnMaterialList )
+   if (mOwnMaterialList)
+   {
       delete mMaterialList;
+      mMaterialList = NULL;
+   }
 
    mMaterialList = matList;
    mOwnMaterialList = false;
@@ -887,11 +894,14 @@ void TSShapeInstance::prepCollision()
 // Returns true is the shape contains any materials with accumulation enabled.
 bool TSShapeInstance::hasAccumulation()
 {
+   if (!mOwnMaterialList || mMaterialList == NULL)
+      return false;
+
    bool result = false;
    for ( U32 i = 0; i < mMaterialList->size(); ++i )
    {
       BaseMatInstance* mat = mMaterialList->getMaterialInst(i);
-      if (mat != nullptr && mat->hasAccumulation() )
+      if (mat != NULL && mat->hasAccumulation() )
          result = true;
    }
    return result;

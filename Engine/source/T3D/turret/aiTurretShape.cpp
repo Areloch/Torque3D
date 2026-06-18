@@ -245,9 +245,11 @@ bool AITurretShapeData::preload(bool server, String &errorStr)
    if (!Parent::preload(server, errorStr))
       return false;
 
+   Resource<TSShape> shape = shapeAssetRef.assetPtr->getShapeResource();
+
    // We have mShape at this point.  Resolve nodes.
-   scanNode = mShape->findNode("scanPoint");
-   aimNode = mShape->findNode("aimPoint");
+   scanNode = shape->findNode("scanPoint");
+   aimNode = shape->findNode("aimPoint");
 
    if (scanNode == -1) scanNode = pitchNode;
    if (scanNode == -1) scanNode = headingNode;
@@ -259,7 +261,7 @@ bool AITurretShapeData::preload(bool server, String &errorStr)
    for (U32 j = 0; j < MaxStates; j++) {
       StateData& s = state[j];
       if (stateSequence[j] && stateSequence[j][0])
-         s.sequence = mShape->findSequence(stateSequence[j]);
+         s.sequence = shape->findSequence(stateSequence[j]);
       if (s.sequence != -1)
       {
          // This state has an animation sequence

@@ -72,7 +72,7 @@ function AssetBrowser::callAssetTypeFunc(%this, %type, %function, %param0, %para
    {
       %group = ABAssetTypesList.getKey(%i);
       %typeData = ABAssetTypesList.getValue(%i);
-      
+
       if(getField(%typeData, 0) $= %type)
       {
          %typeGroup = %group;
@@ -80,7 +80,7 @@ function AssetBrowser::callAssetTypeFunc(%this, %type, %function, %param0, %para
          break;
       }
    }
-
+   
    %paramOffset = 0;
    %isStaticCall = false;
    %command = "";
@@ -246,6 +246,26 @@ function AssetBrowser::callAssetTypeFunc(%this, %type, %function, %param0, %para
    return %return;
 }
 
+function AssetBrowser::getAssetTypeGroup(%typeName)
+{
+   %typeGroup = "";
+   %typeData = "";
+   for(%i=0; %i < ABAssetTypesList.count(); %i++)
+   {
+      %group = ABAssetTypesList.getKey(%i);
+      %typeData = ABAssetTypesList.getValue(%i);
+
+      if(getField(%typeData, 0) $= %typeName)
+      {
+         %typeGroup = %group;
+         %typeData = %typeData;
+         break;
+      }
+   }
+   
+   return %typeGroup;
+}
+
 //
 function AssetBrowser::initialize(%this)
 {
@@ -258,7 +278,7 @@ function AssetBrowser::initialize(%this)
       
    if(!isObject(%this.dirHandler))
    {
-      %this.dirHandler = makedirectoryHandler(%this-->filterTree, "cache,shaderCache", ""); 
+      %this.dirHandler = makedirectoryHandler(%this-->filterTree, "cache,shaderCache,previewCache", ""); 
       %this.dirHandler.currentAddress = "data/";
    }
       
@@ -666,22 +686,7 @@ function AssetBrowser::buildAssetPreview( %this, %asset, %moduleName )
    %tooltip = %assetName;
    
    %textBottomPad = 20;
-   
-   %previewButton = new GuiIconButtonCtrl()
-   {
-      class = "AssetBrowserPreviewButton";
-      useMouseEvents = true;
-      iconLocation = "Center";
-      sizeIconToButton = true;
-      makeIconSquare = true;
-      textLocation = "Bottom";
-      extent = %previewSize.x SPC %previewSize.y + %textBottomPad;
-      buttonType = "RadioButton";
-      buttonMargin = "0 -10";
-      profile = ToolsGuiDefaultIconBtnProfile;
-      assetBrowser = %this;
-   };
-   
+
    %previewScaleSize = %this-->previewSlider.getValue();
    
    if(%previewScaleSize $= "")
@@ -689,29 +694,6 @@ function AssetBrowser::buildAssetPreview( %this, %asset, %moduleName )
       %previewScaleSize = 1;
       %this-->previewSlider.setValue(1);
    }
-   
-   if(%previewScaleSize == 0 || startsWith(%this.dirHandler.currentAddress, "Creator"))
-   {
-      %previewButton.iconLocation = "Left";
-      %previewButton.textLocation = "Right";
-      %previewButton.setextent(160,34);
-      %previewButton.buttonMargin = "8 8";
-      %previewButton.textMargin = "6";
-      
-      %this.previewListMode = true;
-   }
-   else
-   {
-      %size = %previewSize.x * %previewScaleSize;
-      %previewButton.setextent(%size,%size + %textBottomPad);
-      
-      %this.previewListMode = false;
-   }
-   
-   //%previewButton.extent = %previewSize.x + %previewBounds SPC %previewSize.y + %previewBounds + 24;
-   %previewButton.assetName = %assetName;
-   %previewButton.moduleName = %moduleName;
-   %previewButton.assetType = %assetType;
    
    if(%this.selectMode)
    {
@@ -734,22 +716,49 @@ function AssetBrowser::buildAssetPreview( %this, %asset, %moduleName )
    
    if(%this.previewData.doubleClickCommand !$= "")
       %doubleClickCommand = %this.previewData.doubleClickCommand;
+      
+   %previewButton = new GuiIconButtonCtrl()
+   {
+      class = "AssetBrowserPreviewButton";
+      useMouseEvents = true;
+      iconLocation = "Center";
+      sizeIconToButton = true;
+      makeIconSquare = true;
+      textLocation = "Bottom";
+      extent = %previewSize.x SPC %previewSize.y + %textBottomPad;
+      buttonType = "RadioButton";
+      buttonMargin = "0 -10";
+      profile = ToolsGuiDefaultIconBtnProfile;
+      tooltip =  %this.previewData.tooltip;
+      assetBrowser = %this;
+      assetName = %assetName;
+      moduleName = %moduleName;
+      assetType = %assetType;
+      bitmapAsset = %this.previewData.previewImage;
+      Command = %this @ ".updateSelection( $ThisControl.assetName, $ThisControl.moduleName );";
+      altCommand = %doubleClickCommand;
+      text = %this.previewData.assetName;
+      originalAssetName = %this.previewData.assetName;
+   };
    
-   %previewButton.assetName = %assetName;
-   %previewButton.moduleName = %moduleName;
-   %previewButton.assetType = %assetType;
-   %previewButton.assetBrowser = %this;
+   if(%previewScaleSize == 0 || startsWith(%this.dirHandler.currentAddress, "Creator"))
+   {
+      %previewButton.iconLocation = "Left";
+      %previewButton.textLocation = "Right";
+      %previewButton.setextent(160,34);
+      %previewButton.buttonMargin = "8 8";
+      %previewButton.textMargin = "6";
+      
+      %this.previewListMode = true;
+   }
+   else
+   {
+      %size = %previewSize.x * %previewScaleSize;
+      %previewButton.setextent(%size,%size + %textBottomPad);
+      
+      %this.previewListMode = false;
+   }
    
-   %previewButton.setBitmap(%this.previewData.previewImage);
-   
-   %previewButton.profile = "AssetBrowserPreview" @ %previewButton.assetType;
-   %previewButton.tooltip = %this.previewData.tooltip;
-   %previewButton.Command = %this @ ".updateSelection( $ThisControl.assetName, $ThisControl.moduleName );";
-   %previewButton.altCommand = %doubleClickCommand;
-   
-   %previewButton.text = %this.previewData.assetName;
-   %previewButton.text.originalAssetName = %this.previewData.assetName;
-
    // add to the gui control array
    %this-->assetList.add(%previewButton);
    
@@ -758,9 +767,12 @@ function AssetBrowser::buildAssetPreview( %this, %asset, %moduleName )
       AssetPreviewArray.add( %previewButton );
 }
 
-function AssetBrowser::refresh(%this)
+function AssetBrowser::refresh(%this, %regenPreviews)
 {
-   if(!%this.dirty)
+   if(%regenPreviews $= "")
+      %regenPreviews = true;
+      
+   if(!%this.dirty && %regenPreviews)
    {
       %this.dirty = true;
       
@@ -819,7 +831,7 @@ function AssetPreviewButton::onDoubleClick(%this)
 function assetBrowserPreviewSlider::onMouseDragged(%this)
 {
    EditorSettings.setValue("Assets/Browser/previewTileSize", %this.getValue());
-   AssetBrowser.refresh();  
+   AssetBrowser.refresh(false);  
 }
 
 function AssetBrowser::loadDirectories( %this )
@@ -1160,7 +1172,7 @@ function AssetBrowser::changeAsset(%this)
       if(%inspectorObject.getNumInspectObjects() != 0)
       {
          %targetObject = %inspectorObject.getInspectObject();
-         %inspectorObject.setObjectField(%this.fieldTargetName, %this.selectedAsset);
+         %cmd = %targetObject @ "." @ %this.fieldTargetName @ "=\"" @ %this.selectedAsset @ "\";";
       }
       else if(startsWith(%this.fieldTargetName, "$"))
       {
@@ -1201,13 +1213,16 @@ function AssetBrowser::changeAsset(%this)
 function AssetBrowser::reImportAsset(%this)
 {
    //Find out what type it is
-   %assetDef = AssetDatabase.acquireAsset(EditAssetPopup.assetId);
-   %assetType = AssetDatabase.getAssetType(EditAssetPopup.assetId);
+   %assetDef = AssetDatabase.acquireAsset(%this.popupMenu.objectData);
+   %assetType = %this.popupMenu.objectType;
       
    if(%assetType $= "ShapeAsset" || %assetType $= "ImageAsset" || %assetType $= "SoundAsset")
    {
-      AssetBrowser.isAssetReImport = true;
-      AssetBrowser.reImportingAssetId = EditAssetPopup.assetId;
+      %this.isAssetReImport = true;
+      %this.reImportingAssetId = %assetDef.getAssetId();
+      
+      //just to force it to be fully loaded and prepped on the off chance the asset isn't yet
+      %assetDef.load();
       
       %reimportingPath = %assetDef.originalFilePath;
       
@@ -1250,14 +1265,15 @@ function AssetBrowser::reImportAsset(%this)
          %dlg.delete();
       }
       
-      AssetBrowser.onBeginDropFiles();
-      AssetBrowser.onDropFile(%reimportingPath);
-      AssetBrowser.onEndDropFiles();
+      ImportAssetWindow.importer.isReimport = true;
+      %this.onBeginDropFiles();
+      %this.onDropFile(%reimportingPath);
+      %this.onEndDropFiles();
       
-      %module = AssetDatabase.getAssetModule(EditAssetPopup.assetId);
+      %module = AssetDatabase.getAssetModule(%this.reImportingAssetId);
       
       //get the selected module data
-      ImportAssetModuleList.setText(%module.ModuleId);
+      AssetImportTargetModule.setText(%module.ModuleId);
    }
 }
 
@@ -1613,7 +1629,7 @@ function AssetBrowser::doRebuildAssetArray(%this)
             else
             {
                //got it.	
-               if(%folderName $= "shaderCache" || %folderName $= "cache" || %folderName $= ".git")
+               if(%folderName $= "shaderCache" || %folderName $= "cache" || %folderName $= ".git" || %folderName $= "previewCache")
                   continue;
                   
                if(!%this.coreModulesFilter && %folderName $= "core" && %breadcrumbPath $= "")
@@ -2120,6 +2136,9 @@ function AssetBrowser::navigateTo(%this, %address, %historyNav)
    if(startsWith(%address, "/"))
       %address = strreplace(%address, "/", "");
       
+   // Safety
+   %address = strreplace(%address, "//", "/");
+      
    //Don't bother navigating if it's to the place we already are
    if(%this.dirHandler.currentAddress !$= %address)
    {
@@ -2394,7 +2413,7 @@ function AssetBrowserPreviewButton::onMouseDragged(%this)
    Canvas.repaint();
 }
 
-function AssetBrowserPreviewButton::onControlDragCancelled(%this)
+function AssetPreviewControlType_AssetDrop::onControlDragCancelled(%this)
 {
    Canvas.popDialog(EditorDragAndDropLayer);
 }
@@ -2829,8 +2848,15 @@ function AssetBrowserWindow::releasePanel(%this)
 function AssetBrowserWindow::onResize(%this, %posX, %posY, %width, %height)
 {
     if (%width>%height)
+    {
         AssetBrowser-->assetList.fillRowFirst = true;
+        AssetBrowser-->assetList.extent.x = AssetListPanel.extent.x;
+    }
     else
+    {
         AssetBrowser-->assetList.fillRowFirst = false;
-    AssetBrowser.rebuildAssetArray();
+        AssetBrowser-->assetList.extent.y = AssetListPanel.extent.y;
+    }
+        
+    //AssetBrowser.rebuildAssetArray();
 }

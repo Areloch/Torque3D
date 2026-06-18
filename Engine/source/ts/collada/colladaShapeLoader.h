@@ -34,8 +34,6 @@ struct AnimChannels;
 //-----------------------------------------------------------------------------
 class ColladaShapeLoader : public TSShapeLoader
 {
-   friend TSShape* loadColladaShape(const Torque::Path &path);
-
    domCOLLADA*             root;
    Vector<AnimChannels*>   animations;       ///< Holds all animation channels for deletion after loading
 

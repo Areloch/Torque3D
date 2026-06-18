@@ -70,8 +70,24 @@ public:
 private:
    AICover* mCover;
 public:
-   void setCover(Point3F loc, F32 rad = 0.0f) { delete(mCover); mCover = new AICover(this, loc, rad); }
-   void setCover(SimObjectPtr<SceneObject> objIn, F32 rad = 0.0f) { delete(mCover); mCover = new AICover(this, objIn, rad); }
+   void setCover(Point3F loc, F32 rad = 0.0f)
+   {
+      if (mCover && mCover->mPosSet && mCover->getPosition() == loc)
+      {
+         mCover->mRadius = rad;
+         return;
+      }
+      delete(mCover); mCover = new AICover(this, loc, rad);
+   }
+   void setCover(SimObjectPtr<SceneObject> objIn, F32 rad = 0.0f)
+   {
+      if (mCover && mCover->mObj == objIn)
+      {
+         mCover->mRadius = rad;
+         return;
+      }
+      delete(mCover); mCover = new AICover(this, objIn, rad);
+   }
    AICover* getCover() { return mCover; }
    bool findCover(const Point3F& from, F32 radius);
    void clearCover();
@@ -85,10 +101,11 @@ public:
       AIController* mControllerRef;
       AIController* getCtrl() { return mControllerRef; };
       MoveState mMoveState;
+      bool mInAir = false;
       F32 mMoveSpeed = 1.0;
       void setMoveSpeed(F32 speed) { mMoveSpeed = speed; };
       F32 getMoveSpeed() { return mMoveSpeed; };
-      bool mMoveSlowdown;                 // Slowdown as we near the destination
+      bool mMoveSlowdown = false;                 // Slowdown as we near the destination
       Point3F mLastLocation;              // For stuck check
       S32 mMoveStuckTestCountdown;        // The current countdown until at AI starts to check if it is stuck
       Point3F mAimLocation;
@@ -96,6 +113,9 @@ public:
       bool mMoveTriggers[MaxTriggerKeys];
       void stopMove();
       void onStuck();
+      bool isStopped() { return mMoveState == ModeStop; };
+      bool isInAir() { return mInAir; };
+      bool isInWater();
    } mMovement;
 
    struct TriggerState
@@ -168,6 +188,8 @@ public:
 
    /// Types of link we can use.
    LinkData mLinkTypes;
+   dtQueryFilter mFilter;
+   Vector<F32> mAreaCosts;
    AINavigation::NavSize mNavSize;
 #endif
    Delegate<void(AIController* obj, Point3F location, Move* movePtr)> resolveYawPtr;

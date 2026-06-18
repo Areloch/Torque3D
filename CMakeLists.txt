@@ -2,6 +2,20 @@ cmake_minimum_required (VERSION 3.21.0)
 set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_CONFIGURATION_TYPES "Debug;RelWithDebInfo;Release" CACHE STRING "" FORCE)
 
+find_program(GIT_EXECUTABLE git)
+if(GIT_EXECUTABLE)
+    option(GIT_IN_USE "use Git" ON)
+else()
+    option(GIT_IN_USE "use Git" OFF)
+endif()
+
+# An application name must be set first
+set(TORQUE_APP_NAME "" CACHE STRING "the app name")
+if("${TORQUE_APP_NAME}" STREQUAL "")
+	message(FATAL_ERROR "Please set TORQUE_APP_NAME first")
+endif()
+
+
 include("${CMAKE_SOURCE_DIR}/Tools/CMake/torque_macros.cmake")
 include("${CMAKE_SOURCE_DIR}/Tools/CMake/torque_configs.cmake")
 
@@ -9,12 +23,6 @@ include("${CMAKE_SOURCE_DIR}/Tools/CMake/torque_configs.cmake")
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
 
 project(${TORQUE_APP_NAME})
-
-# An application name must be set first
-set(TORQUE_APP_NAME "" CACHE STRING "the app name")
-if("${TORQUE_APP_NAME}" STREQUAL "")
-	message(FATAL_ERROR "Please set TORQUE_APP_NAME first")
-endif()
 
 # Once an app name is determined, we know what our project pathing structure should look like
 set(TORQUE_APP_ROOT_DIRECTORY "${CMAKE_SOURCE_DIR}/My Projects/${TORQUE_APP_NAME}")
@@ -29,6 +37,7 @@ set(TORQUE_SOURCE_DIRECTROY "${CMAKE_SOURCE_DIR}/Engine/source")
 set(CMAKE_INSTALL_PREFIX "${TORQUE_APP_ROOT_DIRECTORY}" CACHE STRING "" FORCE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${TORQUE_APP_GAME_DIRECTORY}")
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Tools/CMake/finders")
+
 foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
     string( TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG )
     set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${TORQUE_APP_GAME_DIRECTORY}" )

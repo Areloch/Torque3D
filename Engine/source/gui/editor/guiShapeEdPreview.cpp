@@ -256,7 +256,7 @@ bool GuiShapeEdPreview::setFieldSunAngleZ( void *object, const char *index, cons
 bool GuiShapeEdPreview::setFieldThreadPos( void *object, const char *index, const char *data )
 {
    GuiShapeEdPreview* gui = static_cast<GuiShapeEdPreview*>( object );
-   if ( gui && ( gui->mActiveThread >= 0 ) && gui->mThreads[gui->mActiveThread].key )
+   if ( gui && (gui->mThreads.size() && gui->mActiveThread >= 0 ) && gui->mThreads[gui->mActiveThread].key )
       gui->mModel->setPos( gui->mThreads[gui->mActiveThread].key, dAtof( data ) );
    return false;
 }
@@ -264,7 +264,7 @@ bool GuiShapeEdPreview::setFieldThreadPos( void *object, const char *index, cons
 const char *GuiShapeEdPreview::getFieldThreadPos( void *object, const char *data )
 {
    GuiShapeEdPreview* gui = static_cast<GuiShapeEdPreview*>( object );
-   if ( gui && ( gui->mActiveThread >= 0 ) && gui->mThreads[gui->mActiveThread].key )
+   if ( gui && (gui->mThreads.size() && gui->mActiveThread >= 0 ) && gui->mThreads[gui->mActiveThread].key )
       return Con::getFloatArg( gui->mModel->getPos( gui->mThreads[gui->mActiveThread].key ) );
    else
       return "0";
@@ -273,7 +273,7 @@ const char *GuiShapeEdPreview::getFieldThreadPos( void *object, const char *data
 bool GuiShapeEdPreview::setFieldThreadDir( void *object, const char *index, const char *data )
 {
    GuiShapeEdPreview* gui = static_cast<GuiShapeEdPreview*>( object );
-   if ( gui && ( gui->mActiveThread >= 0 ) )
+   if ( gui && (gui->mThreads.size() && gui->mActiveThread >= 0 ) )
    {
       Thread& thread = gui->mThreads[gui->mActiveThread];
       Con::setData( TypeS32, &(thread.direction), 0, 1, &data );
@@ -286,7 +286,7 @@ bool GuiShapeEdPreview::setFieldThreadDir( void *object, const char *index, cons
 const char *GuiShapeEdPreview::getFieldThreadDir( void *object, const char *data )
 {
    GuiShapeEdPreview* gui = static_cast<GuiShapeEdPreview*>( object );
-   if ( gui && ( gui->mActiveThread >= 0 ) )
+   if ( gui && (gui->mThreads.size() && gui->mActiveThread >= 0 ) )
       return Con::getIntArg( gui->mThreads[gui->mActiveThread].direction );
    else
       return "0";
@@ -295,7 +295,7 @@ const char *GuiShapeEdPreview::getFieldThreadDir( void *object, const char *data
 bool GuiShapeEdPreview::setFieldThreadPingPong( void *object, const char *index, const char *data )
 {
    GuiShapeEdPreview* gui = static_cast<GuiShapeEdPreview*>( object );
-   if ( gui && ( gui->mActiveThread >= 0 ) )
+   if ( gui && (gui->mThreads.size() && gui->mActiveThread >= 0 ) )
       Con::setData( TypeBool, &(gui->mThreads[gui->mActiveThread].pingpong), 0, 1, &data );
    return false;
 }
@@ -303,7 +303,7 @@ bool GuiShapeEdPreview::setFieldThreadPingPong( void *object, const char *index,
 const char *GuiShapeEdPreview::getFieldThreadPingPong( void *object, const char *data )
 {
    GuiShapeEdPreview* gui = static_cast<GuiShapeEdPreview*>( object );
-   if ( gui && ( gui->mActiveThread >= 0 ) )
+   if ( gui && (gui->mThreads.size() && gui->mActiveThread >= 0 ) )
       return Con::getIntArg( gui->mThreads[gui->mActiveThread].pingpong );
    else
       return "0";
@@ -405,6 +405,53 @@ bool GuiShapeEdPreview::setObjectModel(const char* modelName)
    return true;
 }
 
+bool GuiShapeEdPreview::findCompanionShape(const Torque::Path& dsqPath, Torque::Path& outShapePath)
+{
+   // AssimpLoader and ColladaLoader exports as "modelname_sequencename.dsq" alongside "modelname.cached.dts"
+   // so strip everything from the last underscore to find the base name
+   String fileName = dsqPath.getFileName();
+   String::SizeType sep = fileName.find('_',0, String::Right);
+
+   if (sep != String::NPos)
+   {
+      Torque::Path candidate(dsqPath);
+      candidate.setFileName(fileName.substr(0, sep));
+
+      candidate.setExtension("cached.dts");
+      if (Torque::FS::IsFile(candidate.getFullPath()))
+      {
+         outShapePath = candidate;
+         return true;
+      }
+
+      candidate.setExtension("dts");
+      if (Torque::FS::IsFile(candidate.getFullPath()))
+      {
+         outShapePath = candidate;
+         return true;
+      }
+   }
+
+   // fallback: same filename, just swap extension
+   Torque::Path direct(dsqPath);
+
+   direct.setExtension("cached.dts");
+   if (Torque::FS::IsFile(direct.getFullPath()))
+   {
+      outShapePath = direct;
+      return true;
+   }
+
+   direct.setExtension("dts");
+   if (Torque::FS::IsFile(direct.getFullPath()))
+   {
+      outShapePath = direct;
+      return true;
+   }
+
+   return false;
+}
+
 bool GuiShapeEdPreview::setObjectShapeAsset(const char* assetId)
 {
    SAFE_DELETE(mModel);
@@ -420,18 +467,76 @@ bool GuiShapeEdPreview::setObjectShapeAsset(const char* assetId)
       if (assetType == StringTable->insert("ShapeAsset"))
       {
          ShapeAsset* asset = AssetDatabase.acquireAsset<ShapeAsset>(id);
-         modelName = asset->getShapeFilePath();
+         modelName = asset->getShapeFile();
          AssetDatabase.releaseAsset(id);
+         return setObjectModel(modelName);
       }
       else if (assetType == StringTable->insert("ShapeAnimationAsset"))
       {
          ShapeAnimationAsset* asset = AssetDatabase.acquireAsset<ShapeAnimationAsset>(id);
-         modelName = asset->getAnimationPath();
+         StringTableEntry animPath = asset->getAnimationPath();
          AssetDatabase.releaseAsset(id);
+         Torque::Path dsqPath(animPath);
+         String fileExt = String::ToLower(dsqPath.getExtension());
+
+         if (fileExt != String("dsq"))
+         {
+            return setObjectModel(animPath);
+         }
+
+         Torque::Path shapePath;
+         if (!findCompanionShape(dsqPath, shapePath))
+         {
+            Con::warnf("GuiShapeEdPreview::setObjectShapeAsset - "
+               "No companion shape found for '%s'", animPath);
+            return false;
+         }
+
+         if (!setObjectModel(shapePath.getFullPath()))
+         {
+            Con::warnf("GuiShapeEdPreview::setObjectShapeAsset - "
+               "Could not load companion shape for '%s'", animPath);
+            return false;
+         }
+
+         FileStream dsqStream;
+         if (!dsqStream.open(animPath, Torque::FS::File::Read))
+         {
+            Con::warnf("GuiShapeEdPreview::setObjectShapeAsset - "
+               "Could not open '%s'", animPath);
+            SAFE_DELETE(mModel);
+            return false;
+         }
+
+         TSShape* shape = mModel->getShape();
+
+         bool ok = shape->importSequences(&dsqStream, String(animPath));
+         dsqStream.close();
+
+         if (!ok)
+         {
+            Con::warnf("GuiShapeEdPreview::setObjectShapeAsset - "
+               "importSequences failed for '%s'", animPath);
+            SAFE_DELETE(mModel);
+            return false;
+         }
+
+         setAllMeshesHidden(true);
+         mRenderNodes = true;
+         if (shape->sequences.size() > 0)
+         {
+            // importSequences appends, so the new one is always last
+            const String& seqName = shape->getSequenceName(shape->sequences.size() - 1);
+            addThread();
+            mActiveThread = 0;
+            setActiveThreadSequence(seqName.c_str(), 0.0f, 0.0f, true);
+         }
+
+         return true;
       }
    }
 
-   return setObjectModel(modelName);
+   return false;
 }
 
 void GuiShapeEdPreview::_onResourceChanged(const Torque::Path& path)
@@ -478,7 +583,7 @@ void GuiShapeEdPreview::setTimeScale( F32 scale )
 
 void GuiShapeEdPreview::setActiveThreadSequence(const char* seqName, F32 duration, F32 pos, bool play)
 {
-   if ( mActiveThread == -1 )
+   if ( mActiveThread == -1 || mThreads.empty())
       return;
 
    setThreadSequence(mThreads[mActiveThread], mModel, seqName, duration, pos, play);
@@ -533,7 +638,7 @@ void GuiShapeEdPreview::setThreadSequence(GuiShapeEdPreview::Thread& thread, TSS
 
 const char* GuiShapeEdPreview::getThreadSequence() const
 {
-   return ( mActiveThread >= 0 ) ? mThreads[mActiveThread].seqName.c_str() : "";
+   return ( mActiveThread >= 0 && mThreads.size()) ? mThreads[mActiveThread].seqName.c_str() : "";
 }
 
 void GuiShapeEdPreview::refreshThreadSequences()
@@ -570,7 +675,7 @@ bool GuiShapeEdPreview::mountShape(const char* shapeAssetId, const char* nodeNam
 
    ShapeAsset* model = AssetDatabase.acquireAsset<ShapeAsset>(shapeAssetId);
 
-   if (model == nullptr || !model->getShapeResource())
+   if (model == NULL || !model->getShapeResource())
       return false;
 
    TSShapeInstance* tsi = new TSShapeInstance(model->getShapeResource(), true );

@@ -671,10 +671,15 @@ Namespace::Entry::Entry()
    mNext = NULL;
    mPackage = StringTable->EmptyString();
    mToolOnly = false;
+   VECTOR_SET_ASSOCIATION(mArgFlags);
+   VECTOR_SET_ASSOCIATION(mDefaultOffsets);
 }
 
 void Namespace::Entry::clear()
 {
+   mArgFlags.clear();
+   mDefaultOffsets.clear();
+
    if (mModule)
    {
       mModule->decRefCount();
@@ -927,8 +932,8 @@ void Namespace::shutdown()
 
    gNamespaceCache.clear();
 
-   mNamespaceList = nullptr;
-   mGlobalNamespace = nullptr;
+   mNamespaceList = NULL;
+   mGlobalNamespace = NULL;
    mAllocator.freeBlocks();
 }
 
@@ -1743,6 +1748,28 @@ void Namespace::relinkPackages()
       activatePackage(mActivePackages[i]);
 }
 
+bool Namespace::isPackageActive(StringTableEntry name)
+{
+   S32 x;
+
+   for (x = 0; x < mNumActivePackages; x++)
+   {
+      if (mActivePackages[x] == name)
+      {
+         return true;
+      }
+   }
+
+   return false;
+}
+
+DefineEngineFunction(isPackageActive, bool, (String identifier), ,
+   "@brief Returns true if the identifier is a package and is active, otherwise false.\n\n"
+   "@ingroup Packages\n")
+{
+   StringTableEntry name = StringTable->insert(identifier.c_str());
+   return Namespace::isPackageActive(name);
+}
 
 DefineEngineFunction(isPackage, bool, (String identifier), ,
    "@brief Returns true if the identifier is the name of a declared package.\n\n"

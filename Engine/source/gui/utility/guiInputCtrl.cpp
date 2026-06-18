@@ -23,6 +23,7 @@
 #include "gui/utility/guiInputCtrl.h"
 #include "sim/actionMap.h"
 #include "console/engineAPI.h"
+#include "gui/core/guiCanvas.h"
 
 IMPLEMENT_CONOBJECT(GuiInputCtrl);
 
@@ -64,7 +65,7 @@ GuiInputCtrl::GuiInputCtrl()
    mSendModifierEvents(false),
    mIgnoreMouseEvents(false)
 {
-   mActionmap = nullptr;
+   mActionmap = NULL;
 }
 
 //------------------------------------------------------------------------------
@@ -88,6 +89,22 @@ void GuiInputCtrl::initPersistFields()
 }
 
 //------------------------------------------------------------------------------
+bool GuiInputCtrl::onAdd()
+{
+   if (!Parent::onAdd())
+      return false;
+
+   GuiCanvas::getCanvasSetActiveSignal().notify(this, &GuiInputCtrl::handleCanvasSetActive);
+
+   return true;
+}
+
+void GuiInputCtrl::onRemove()
+{
+   GuiCanvas::getCanvasSetActiveSignal().remove(this, &GuiInputCtrl::handleCanvasSetActive);
+
+   Parent::onRemove();
+}
 
 bool GuiInputCtrl::onWake()
 {
@@ -106,10 +123,13 @@ bool GuiInputCtrl::onWake()
    if( !smDesignTime && !mIgnoreMouseEvents)
       mouseLock();
 
-   if(mActionmap != nullptr)
+   if(mActionmap != NULL)
    {
-      SimSet* actionMapSet = Sim::getActiveActionMapSet();
-      actionMapSet->pushObject(mActionmap);
+      if (getRoot()->isActive())
+      {
+         SimSet* actionMapSet = Sim::getActiveActionMapSet();
+         actionMapSet->pushObject(mActionmap);
+      }
    }
       
    setFirstResponder();
@@ -124,7 +144,7 @@ void GuiInputCtrl::onSleep()
    Parent::onSleep();
    mouseUnlock();
 
-   if (mActionmap != nullptr)
+   if (mActionmap != NULL)
    {
       SimSet* actionMapSet = Sim::getActiveActionMapSet();
       actionMapSet->removeObject(mActionmap);
@@ -152,6 +172,25 @@ void GuiInputCtrl::setActive(bool value)
 
 }
 
+void GuiInputCtrl::handleCanvasSetActive(GuiCanvas* canvas, bool isActive)
+{
+   if (mActionmap == NULL)
+      return;
+
+   if (getRoot() == canvas)
+   {
+      if (isActive)
+      {
+         SimSet* actionMapSet = Sim::getActiveActionMapSet();
+         actionMapSet->pushObject(mActionmap);
+      }
+      else
+      {
+         SimSet* actionMapSet = Sim::getActiveActionMapSet();
+         actionMapSet->removeObject(mActionmap);
+      }
+   }
+}
 
 //------------------------------------------------------------------------------
 static bool isModifierKey( U16 keyCode )
@@ -192,7 +231,7 @@ bool GuiInputCtrl::onInputEvent( const InputEventInfo &event )
    if (mIgnoreMouseEvents && event.deviceType == MouseDeviceType)
       return false;
 
-   if (mActionmap != nullptr)
+   if (mActionmap != NULL)
          return false;
 
    char deviceString[32];

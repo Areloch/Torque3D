@@ -142,25 +142,23 @@ IMPLEMENT_CONOBJECT(PostEffect);
 
 GFX_ImplementTextureProfile( PostFxTextureProfile,
                             GFXTextureProfile::DiffuseMap,
-                            GFXTextureProfile::Static | GFXTextureProfile::PreserveSize | GFXTextureProfile::NoMipmap,
+                            GFXTextureProfile::Static | GFXTextureProfile::PreserveSize,
                             GFXTextureProfile::NONE );
 
 GFX_ImplementTextureProfile( PostFxTextureSRGBProfile,
                              GFXTextureProfile::DiffuseMap,
-                             GFXTextureProfile::Static | GFXTextureProfile::PreserveSize | GFXTextureProfile::NoMipmap | GFXTextureProfile::SRGB,
+                             GFXTextureProfile::Static | GFXTextureProfile::PreserveSize | GFXTextureProfile::SRGB,
                              GFXTextureProfile::NONE);
 
 GFX_ImplementTextureProfile( VRTextureProfile,
                             GFXTextureProfile::DiffuseMap,
                             GFXTextureProfile::PreserveSize |
-                            GFXTextureProfile::RenderTarget |
-                            GFXTextureProfile::NoMipmap,
+                            GFXTextureProfile::RenderTarget,
                             GFXTextureProfile::NONE );
 
 GFX_ImplementTextureProfile( VRDepthProfile,
                             GFXTextureProfile::DiffuseMap,
                             GFXTextureProfile::PreserveSize |
-                            GFXTextureProfile::NoMipmap |
                             GFXTextureProfile::ZTarget,
                             GFXTextureProfile::NONE );
 
@@ -501,7 +499,8 @@ PostEffect::PostEffect()
       mInvCameraTransSC(NULL),
       mMatCameraToScreenSC(NULL),
       mMatScreenToCameraSC(NULL),
-      mIsCapturingSC(NULL)
+      mIsCapturingSC(NULL),
+      mMipCap(1)
 {
    dMemset( mTexSRGB, 0, sizeof(bool) * NumTextures);
    dMemset( mActiveTextures, 0, sizeof( GFXTextureObject* ) * NumTextures );
@@ -509,7 +508,7 @@ PostEffect::PostEffect()
    dMemset( mActiveTextureViewport, 0, sizeof( RectI ) * NumTextures );
    dMemset( mTexSizeSC, 0, sizeof( GFXShaderConstHandle* ) * NumTextures );
    dMemset( mRenderTargetParamsSC, 0, sizeof( GFXShaderConstHandle* ) * NumTextures );
-
+   dMemset(mMipCountSC, 0, sizeof(GFXShaderConstHandle*) * NumTextures);
 }
 
 PostEffect::~PostEffect()
@@ -538,6 +537,9 @@ void PostEffect::initPersistFields()
 
    addField( "targetScale", TypePoint2F, Offset( mTargetScale, PostEffect ),
        "If targetSize is zero this is used to set a relative size from the current target." );
+
+   addField("mipCap", TypeS32, Offset(mMipCap, PostEffect),
+      "generate up to this many mips. 0 = all, 1 = none, >1 = as specified max."); //todo: de-stupid
        
    addField( "targetSize", TypePoint2I, Offset( mTargetSize, PostEffect ), 
       "If non-zero this is used as the absolute target size." );   
@@ -554,8 +556,15 @@ void PostEffect::initPersistFields()
    addField( "targetViewport", TYPEID< PFXTargetViewport >(), Offset( mTargetViewport, PostEffect ),
       "Specifies how the viewport should be set up for a target texture." );
 
-   addProtectedField("Texture", TypeImageFilename, Offset(mTextureAsset, PostEffect), _setTextureData, &defaultProtectedGetFn, NumTextures, "Input textures to this effect(samplers).\n", AbstractClassRep::FIELD_HideInInspectors);
-   INITPERSISTFIELD_IMAGEASSET_ARRAY(Texture, NumTextures, PostEffect, "Input textures to this effect ( samplers ).\n"
+   ADD_FIELD("texture", TypeImageAssetRef, Offset(mTextureAssetRef, PostEffect))
+      .elements(NumTextures)
+      .withFlags(AbstractClassRep::FIELD_HideInInspectors | AbstractClassRep::FIELD_DontWriteToFile)
+      .doc("Input textures to this effect ( samplers ).\n"
+      "@see PFXTextureIdentifiers");
+
+   ADD_FIELD("textureAsset", TypeImageAssetRef, Offset(mTextureAssetRef, PostEffect))
+      .elements(NumTextures)
+      .doc("Input textures to this effect ( samplers ).\n"
       "@see PFXTextureIdentifiers");
 
    addField("textureSRGB", TypeBool, Offset(mTexSRGB, PostEffect), NumTextures,
@@ -607,18 +616,16 @@ bool PostEffect::onAdd()
    for (S32 i = 0; i < NumTextures; i++)
    {
       mTextureType[i] = NormalTextureType;
-      if (mTextureAsset[i].notNull()) {
-         String texFilename = mTextureAsset[i]->getImageFile();
 
-         // Skip empty stages or ones with variable or target names.
-         if (texFilename.isEmpty() ||
-            texFilename[0] == '$' ||
-            texFilename[0] == '#')
-            continue;
+      StringTableEntry texAssetId = mTextureAssetRef[i].assetId;
 
-         mTextureProfile[i] = (mTexSRGB[i]) ? &PostFxTextureSRGBProfile : &PostFxTextureProfile;
-         _setTexture(texFilename, i);
-      }
+      // Skip empty stages or ones with variable or target names.
+      if (dStrIsEmpty(texAssetId) ||
+         texAssetId[0] == '$' ||
+         texAssetId[0] == '#')
+         continue;
+
+      mTextureProfile[i] = (mTexSRGB[i]) ? &PostFxTextureSRGBProfile : &PostFxTextureProfile;
    }
 
    // Is the target a named target?
@@ -760,6 +767,7 @@ void PostEffect::_setupConstants( const SceneRenderState *state )
       {
          mTexSizeSC[i] = mShader->getShaderConstHandle(String::ToString("$texSize%d", i));
          mRenderTargetParamsSC[i] = mShader->getShaderConstHandle(String::ToString("$rtParams%d",i));
+         mMipCountSC[i] = mShader->getShaderConstHandle(String::ToString("$mipCount%d", i));
       }
 
       mTargetViewportSC = mShader->getShaderConstHandle( "$targetViewport" );
@@ -842,6 +850,11 @@ void PostEffect::_setupConstants( const SceneRenderState *state )
          texSizeConst.x = (F32)mActiveTextures[i]->getWidth();
          texSizeConst.y = (F32)mActiveTextures[i]->getHeight();
          mShaderConsts->set( mTexSizeSC[i], texSizeConst );
+      }
+
+      if (mMipCountSC[i]->isValid())
+      {
+         mShaderConsts->set(mMipCountSC[i], (S32)mActiveTextures[i]->getMipLevels());
       }
    }
 
@@ -1141,7 +1154,7 @@ void PostEffect::_setupConstants( const SceneRenderState *state )
 
 void PostEffect::_setupTexture( U32 stage, GFXTexHandle &inputTex, const RectI *inTexViewport )
 {
-   const String &texFilename = mTextureAsset[stage].notNull() ? mTextureAsset[stage]->getImageFile() : "";
+   const String texFilename = mTextureAssetRef[stage].assetId;
 
    GFXTexHandle theTex;
    NamedTexTarget *namedTarget = NULL;
@@ -1180,8 +1193,8 @@ void PostEffect::_setupTexture( U32 stage, GFXTexHandle &inputTex, const RectI *
    {
       theTex = mTexture[stage];
 
-      if (!theTex && mTextureAsset[stage].notNull())
-         theTex = mTextureAsset[stage]->getTexture(mTextureProfile[stage]);
+      if (!theTex)
+         theTex = getTexture(stage, mTextureProfile[stage]);
 
       if ( theTex )
          viewport.set( 0, 0, theTex->getWidth(), theTex->getHeight() );
@@ -1199,8 +1212,8 @@ void PostEffect::_setupCubemapTexture(U32 stage, GFXCubemapHandle &inputTex)
 {
    RectI viewport = GFX->getViewport();
 
-   mActiveTextures[stage] = nullptr;
-   mActiveNamedTarget[stage] = nullptr;
+   mActiveTextures[stage] = NULL;
+   mActiveNamedTarget[stage] = NULL;
    mActiveTextureViewport[stage] = viewport;
 
    if (inputTex.isValid())
@@ -1211,8 +1224,8 @@ void PostEffect::_setupCubemapArrayTexture(U32 stage, GFXCubemapArrayHandle &inp
 {
    RectI viewport = GFX->getViewport();
 
-   mActiveTextures[stage] = nullptr;
-   mActiveNamedTarget[stage] = nullptr;
+   mActiveTextures[stage] = NULL;
+   mActiveNamedTarget[stage] = NULL;
    mActiveTextureViewport[stage] = viewport;
 
    if (inputTex.isValid())
@@ -1265,7 +1278,7 @@ void PostEffect::_setupTarget( const SceneRenderState *state, bool *outClearTarg
             mTargetTex.getWidthHeight() != targetSize )
       {
          mTargetTex.set( targetSize.x, targetSize.y, mTargetFormat,
-            &PostFxTargetProfile, "PostEffect::_setupTarget" );
+            &PostFxTargetProfile, "PostEffect::_setupTarget", mMipCap);
 
          if ( mTargetClear == PFXTargetClear_OnCreate )
             *outClearTarget = true;
@@ -1662,8 +1675,8 @@ void PostEffect::setTexture( U32 index, const String &texFilePath )
 		return;
 
     mTextureProfile[index] = (mTexSRGB[index])? &PostFxTextureSRGBProfile : &PostFxTextureProfile;
-    _setTexture(texFilePath, index);
-    mTexture[index] = mTextureAsset[index]->getTexture(mTextureProfile[index]);
+    mTextureAssetRef[index] = texFilePath.c_str();
+    mTexture[index] = getTexture(index, mTextureProfile[index]);
     mTextureType[index] = NormalTextureType;
 }
 
@@ -1858,21 +1871,18 @@ void PostEffect::_checkRequirements()
    {
       if (mTextureType[i] == NormalTextureType)
       {
-         if (mTextureAsset[i].notNull())
+         StringTableEntry texAssetId = mTextureAssetRef[i].assetId;
+
+         if (!dStrIsEmpty(texAssetId) && texAssetId[0] == '#')
          {
-            const String& texFilename = mTextureAsset[i]->getImageFile();
-
-            if (texFilename.isNotEmpty() && texFilename[0] == '#')
+            NamedTexTarget* namedTarget = NamedTexTarget::find(texAssetId + 1);
+            if (!namedTarget)
             {
-               NamedTexTarget* namedTarget = NamedTexTarget::find(texFilename.c_str() + 1);
-               if (!namedTarget)
-               {
-                  return;
-               }
-
-               // Grab the macros for shader initialization.
-               namedTarget->getShaderMacros(&macros);
+               return;
             }
+
+            // Grab the macros for shader initialization.
+            namedTarget->getShaderMacros(&macros);
          }
       }
    }

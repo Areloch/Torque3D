@@ -516,11 +516,12 @@ void GuiDecalEditorCtrl::renderScene(const RectI & updateRect)
       if ( gDecalManager->clipDecal( mSELDecal, &mSELEdgeVerts ) )
          _renderDecalEdge( mSELEdgeVerts, ColorI( 255, 255, 255, 255 ) );
 
-      const F32 &decalSize = mSELDecal->mSize;
+      const F32 &decalSize = mSELDecal->mSize * 0.5;
       Point3F boxSize( decalSize, decalSize, decalSize );
-
       MatrixF worldMat( true );
-      mSELDecal->getWorldMatrix( &worldMat, true );   
+      mSELDecal->getWorldMatrix( &worldMat, true );
+      RectF rect = mSELDecal->mDataBlock->texRect[mSELDecal->mTextureRectIdx];
+      worldMat.scale(Point3F(rect.extent.x, rect.extent.y, 0.25f));
 
       drawUtil->drawObjectBox( desc, boxSize, mSELDecal->mPosition, worldMat, ColorI( 255, 255, 255, 255 ) );
    }
@@ -531,11 +532,13 @@ void GuiDecalEditorCtrl::renderScene(const RectI & updateRect)
       if ( gDecalManager->clipDecal( mHLDecal, &mHLEdgeVerts ) )
          _renderDecalEdge( mHLEdgeVerts, ColorI( 255, 255, 255, 255 ) );
 
-      const F32 &decalSize = mHLDecal->mSize;
+      const F32 &decalSize = mHLDecal->mSize * 0.5;
       Point3F boxSize( decalSize, decalSize, decalSize );
 
       MatrixF worldMat( true );
       mHLDecal->getWorldMatrix( &worldMat, true );  
+      RectF rect = mHLDecal->mDataBlock->texRect[mHLDecal->mTextureRectIdx];
+      worldMat.scale(Point3F(rect.extent.x, rect.extent.y, 0.25f));
 
       drawUtil->drawObjectBox( desc, boxSize, mHLDecal->mPosition, worldMat, ColorI( 255, 255, 255, 255 ) );
    }
@@ -854,7 +857,7 @@ DefineEngineMethod( GuiDecalEditorCtrl, selectDecal, void, ( U32 id ), , "select
 	object->selectDecal( decalInstance );
 }
 
-DefineEngineMethod( GuiDecalEditorCtrl, editDecalDetails, void, ( U32 id, Point3F pos, Point3F tan,F32 size ), , "editDecalDetails( S32 )()" )
+DefineEngineMethod( GuiDecalEditorCtrl, editDecalDetails, void, ( U32 id, Point3F pos, Point3F tan, F32 size, S32 uvID), , "editDecalDetails( S32,Point3F,Point3F,F32,S32 )()" )
 {
 	DecalInstance *decalInstance = gDecalManager->mDecalInstanceVec[id];
 	if( decalInstance == NULL )
@@ -864,13 +867,19 @@ DefineEngineMethod( GuiDecalEditorCtrl, editDecalDetails, void, ( U32 id, Point3
    decalInstance->mPosition = pos;
 	decalInstance->mTangent = tan;
 	decalInstance->mSize = size;
-	
+   decalInstance->mTextureRectIdx = uvID;
+
 	if ( decalInstance == object->mSELDecal )
 		object->setGizmoFocus( decalInstance );
 
 	object->forceRedraw( decalInstance );
 
 	gDecalManager->notifyDecalModified( decalInstance );
+}
+
+DefineEngineMethod(GuiDecalEditorCtrl, getDecalFrame, S32, (U32 id), , "")
+{
+   return gDecalManager->mDecalInstanceVec[id]->mTextureRectIdx;
 }
 
 DefineEngineMethod( GuiDecalEditorCtrl, getSelectionCount, S32, (), , "" )

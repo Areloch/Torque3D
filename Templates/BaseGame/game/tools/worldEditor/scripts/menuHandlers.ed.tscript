@@ -361,19 +361,33 @@ function EditorSaveMission()
          %obj.onSaveMission( $Server::MissionFile );      
    } 
    
-   //We'll sanity check that we have a valid file association to our level asset first
+   //Force a refresh of the associated paths if they're valid files when we save out the assetDef
    %presetFile = $Server::LevelAsset.getPostFXPresetPath();
-   
-   if(!isFile(%presetFile))
+   if(isFile(%presetFile))
    {
-      //if it isn't valid, we'll fabricate a new one just to be sure
-      $Server::LevelAsset.PostFXPresetFile = fileBase($Server::LevelAsset.getLevelPath()) @ $PostFXManager::fileExtension;
-    
-      $Server::LevelAsset.saveAsset();
-      $Server::LevelAsset.refresh(); 
-      
-      %presetFile = $Server::LevelAsset.getPostFXPresetPath();
+      $Server::LevelAsset.postFXPresetFile = fileName(%presetFile);
    }
+   
+   %decalsFile = $Server::LevelAsset.getDecalsPath();
+   if(isFile(%decalsFile))
+   {
+      $Server::LevelAsset.decalsFile = fileName(%decalsFile);
+   }
+   
+   %forestFile = $Server::LevelAsset.getForestPath();
+   if(isFile(%forestFile))
+   {
+      $Server::LevelAsset.forestFile = fileName(%forestFile);
+   }
+   
+   %navMeshFile = $Server::LevelAsset.getNavmeshPath();
+   if(isFile(%navMeshFile))
+   {
+      $Server::LevelAsset.navmeshFile = fileName(%navMeshFile);
+   }
+   
+   $Server::LevelAsset.saveAsset();
+   $Server::LevelAsset.refresh(); 
    
    //Save out the PostFX config
    PostFXManager::savePresetHandler( %presetFile );
@@ -455,8 +469,8 @@ function EditorAutoSaveMission()
    
    AssetBackupListArray.empty();
    
-   %scenePath = makeFullPath(getRootScene().getFileName());
-   if(startsWith(%scenePath, "tools/levels/")
+   %scenePath = getRootScene().getFileName();
+   if(startsWith(%scenePath, "tools/levels/"))
       return false;
    
    //Next, we figure out what all we're planning to save
@@ -793,7 +807,7 @@ function EditorExplodePrefab()
    EditorTree.buildVisibleTree( true );
 }
 
-function makeSelectedAMesh(%assetId)
+function makeSelectedAMesh(%assetId, %createPrefab, %spawnNewStatic)
 {      
    %selectedCount = EWorldEditor.getSelectionSize();
    
@@ -802,6 +816,12 @@ function makeSelectedAMesh(%assetId)
       error("You need to select at least one object to turn it into a mesh!");
       return;  
    }
+   
+   if(%createPrefab $= "")
+      %createPrefab = true;
+      
+   if(%spawnNewStatic $= "")
+      %spawnNewStatic = true;
    
    %assetDef = AssetDatabase.acquireAsset(%assetId);
    
@@ -836,29 +856,46 @@ function makeSelectedAMesh(%assetId)
          }
       }
       
-      %prefabPath = %assetPath @ "/" @ %assetDef.AssetName @ ".prefab";
-      EWorldEditor.makeSelectionPrefab(%prefabPath, false);
-      %selectionPos = EWorldEditor.getSelectedObject(0).getPosition();
-      //Next, nuke 'em
-      EditorMenuEditDelete();
-      
-      //now make a new static  
-      %newStatic = new TSStatic()
+      if(%createPrefab)
       {
-         shapeAsset = %assetId;
-         position = %selectionPos;
-      };
-
-      if(%sameParent)
-         %firstParent.add(%newStatic);
-      else
-         getRootScene().add(%newStatic);
+         %prefabPath = %assetPath @ "/" @ %assetDef.AssetName @ ".prefab";
+         EWorldEditor.makeSelectionPrefab(%prefabPath, false);
+      }
+      
+      if(%spawnNewStatic)
+      {
+         %selectionPos = EWorldEditor.getSelectedObject(0).getPosition();
          
-      EWorldEditor.clearSelection();
-      EWorldEditor.selectObject(%newStatic);
+         //Next, nuke 'em
+         EditorMenuEditDelete();
+         
+         //now make a new static  
+         %newStatic = new TSStatic()
+         {
+            shapeAsset = %assetId;
+            position = %selectionPos;
+         };
+
+         if(%sameParent)
+            %firstParent.add(%newStatic);
+         else
+            getRootScene().add(%newStatic);
+            
+         EWorldEditor.clearSelection();
+         EWorldEditor.selectObject(%newStatic);
+      }
    }
    
    EditorTree.buildVisibleTree( true );  
+}
+
+function EditorToggleControlOfEntity()
+{
+   %object = EWorldEditor.getSelectedObject(0);
+   if(%object == localClientConnection.getControlObject())
+      EditorReleaseControlOfEntity();
+   else
+      EditorTakeControlOfEntity();
 }
 
 function EditorTakeControlOfEntity()
@@ -868,8 +905,9 @@ function EditorTakeControlOfEntity()
    {
       $Editor::previousControlObject = localClientConnection.getControlObject(); 
       localClientConnection.setControlObject(%object);
-
    }
+   
+   Inspector.refresh();
 }
 
 function EditorReleaseControlOfEntity()
@@ -878,6 +916,8 @@ function EditorReleaseControlOfEntity()
    {
       localClientConnection.setControlObject($Editor::previousControlObject);
    }
+   
+   Inspector.refresh();
 }
 
 function EditorMount()

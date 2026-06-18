@@ -562,6 +562,7 @@ Con::EvalResult CodeBlock::exec(U32 ip, const char* functionName, Namespace* thi
 
    U32 iterDepth = 0;
    ConsoleValue returnValue;
+   const bool isCodelet = (!argv && setFrame == -2);
 
    incRefCount();
    F64* curFloatTable;
@@ -614,10 +615,103 @@ Con::EvalResult CodeBlock::exec(U32 ip, const char* functionName, Namespace* thi
          ConsoleValue& value = argv[i + 1];
          Script::gEvalState.moveConsoleValue(reg, (value));
       }
-      ip = ip + fnArgc + (2 + 6 + 1 + 1);
+
+      // -----------------------------------------------------------------------
+      // Handle missing arguments.
+      //
+      // For each absent arg that carries a default (argFlags bit 0x1), we
+      // execute its codelet — a small bytecode expression compiled after the
+      // function body that ends with OP_DEFAULT_END.
+      //
+      // The codelet is run in its own minimal frame via a nested exec() call.
+      //
+      // If the default offset is 0, the argument had no default expression and
+      // the register keeps its zero-initialised value.
+      // -----------------------------------------------------------------------
+      if (wantedArgc < S32(fnArgc))
+      {
+         Namespace::Entry* temp = thisNamespace->lookup(thisFunctionName);
+
+         // Offset into the header where arg flags begin.
+         const U32 flagBase = ip + 10 + fnArgc;
+         // Offset into the header where default codelet IPs begin.
+         const U32 offsetBase = ip + 10 + 2 * fnArgc;
+
+         for (; i < S32(fnArgc); i++)
+         {
+            const S32 reg = code[ip + 10 + i];
+            const U32 argFlags = code[flagBase + i];
+
+            if (argFlags & 0x1)   // argument has a default expression
+            {
+               const U32 codeletIp = (temp != NULL)
+                  ? temp->mDefaultOffsets[i]
+                  : code[offsetBase + i];
+
+               if (codeletIp != 0)
+               {
+                  // Execute the default codelet.
+                  //   argv=NULL   → uses globalStrings / globalFloats (correct,
+                  //                  since codelets are compiled into those tables).
+                  //   argc=0      → pushes a frame with 0 locals.
+                  //   setFrame=-2  → reference to the codelet frame.
+                  Con::EvalResult result = exec(
+                     codeletIp,
+                     NULL,       // functionName
+                     NULL,       // thisNamespace
+                     0,          // argc
+                     NULL,       // argv  ← signals non-function (codelet) call
+                     false,      // noCalls
+                     NULL,       // packageName
+                     -2          // setFrame
+                  );
+
+                  Script::gEvalState.moveConsoleValue(reg, result.value);
+               }
+               // codeletIp == 0: no default; register stays at its zero value.
+            }
+         }
+      }
+
+      // -----------------------------------------------------------------------
+      // Advance ip to the start of the function BODY.
+      //
+      // The header now contains 3*fnArgc words after the fixed 10-word prefix:
+      //   fnArgc words for register mappings
+      //   fnArgc words for arg flags
+      //   fnArgc words for default codelet IPs   ← new
+      //
+      // Old: ip + 10 + 2*fnArgc
+      // New: ip + 10 + 3*fnArgc
+      // -----------------------------------------------------------------------
+      ip = ip + 10 + 3 * fnArgc;
+
       curFloatTable = functionFloats;
       curStringTable = functionStrings;
       curStringTableLen = functionStringsMaxLen;
+   }
+    else if (isCodelet)
+    {
+       // ---- Codelet path ----------------------------------------------------
+       //
+       // The codelet was compiled into functionStrings/functionFloats (see
+       // compileStmt).
+       //
+       // functionStrings lives for the lifetime of the CodeBlock, which is
+       // always at least as long as any call to a function it contains.
+       curStringTable = functionStrings;
+       curFloatTable = functionFloats;
+       curStringTableLen = functionStringsMaxLen;
+
+       // Push a minimal empty frame.  The codelet contains only an expression;
+       // it has no local variables of its own.
+       Script::gEvalState.pushFrame(NULL, NULL, 0);
+       popFrame = true;
+
+       // setFrame has served its purpose as a mode signal.  Reset it so the
+       // telnet debugger guard `if (telDebuggerOn && setFrame < 0)` fires
+       // correctly (codelets should not push a telnet stack frame).
+       setFrame = -1;
    }
    else
    {
@@ -712,6 +806,7 @@ Con::EvalResult CodeBlock::exec(U32 ip, const char* functionName, Namespace* thi
       switch (instruction)
       {
       case OP_FUNC_DECL:
+      {
          if (!noCalls)
          {
             fnName = CodeToSTE(code, ip);
@@ -724,7 +819,9 @@ Con::EvalResult CodeBlock::exec(U32 ip, const char* functionName, Namespace* thi
                ns = Namespace::global();
             else
                ns = Namespace::find(fnNamespace, fnPackage);
-            ns->addFunction(fnName, this, hasBody ? ip : 0);// if no body, set the IP to 0
+
+            ns->addFunction(fnName, this, hasBody ? ip : 0);
+
             if (curNSDocBlock)
             {
                if (fnNamespace == StringTable->lookup(nsDocBlockClass))
@@ -736,15 +833,49 @@ Con::EvalResult CodeBlock::exec(U32 ip, const char* functionName, Namespace* thi
                   curNSDocBlock = NULL;
                }
             }
+
+            const U32 fnArgc = code[ip + 8];
+
+            Namespace::Entry* temp = ns->lookup(fnName);
+            temp->mArgFlags.setSize(fnArgc);
+            temp->mDefaultOffsets.setSize(fnArgc);
+
+            // Arg flags: ip + 10 + fnArgc
+            // Codelet IPs: ip + 10 + 2*fnArgc
+            const U32 flagBase = ip + 10 + fnArgc;
+            const U32 offsetBase = ip + 10 + 2 * fnArgc;
+
+            for (U32 fa = 0; fa < fnArgc; ++fa)
+            {
+               temp->mArgFlags[fa] = code[flagBase + fa];
+               temp->mDefaultOffsets[fa] = code[offsetBase + fa];
+            }
+
+            // No stack pops: mDefaultValues is gone.
+
             Namespace::relinkPackages();
-
-            // If we had a docblock, it's definitely not valid anymore, so clear it out.
             curFNDocBlock = NULL;
-
-            //Con::printf("Adding function %s::%s (%d)", fnNamespace, fnName, ip);
          }
+
+         // Jump past header + body + codelets.  endIp is at code[ip + 7].
          ip = code[ip + 7];
          break;
+      }
+
+      case OP_DEFAULT_END:
+      {
+         returnValue = stack[_STK];
+         _STK--;
+
+         while (iterDepth > 0)
+         {
+            iterStack[--_ITER].mIsStringIter = false;
+            --iterDepth;
+            _STK--;
+         }
+
+         goto execFinished;
+      }
 
       case OP_CREATE_OBJECT:
       {
@@ -917,8 +1048,7 @@ Con::EvalResult CodeBlock::exec(U32 ip, const char* functionName, Namespace* thi
                {
                   if (Con::gObjectCopyFailures == -1)
                      Con::errorf(ConsoleLogEntry::General, "%s: Unable to find parent object %s for %s.", getFileLine(ip - 1), objParent, callArgv[1].getString());
-                  else
-                     ++Con::gObjectCopyFailures;
+                  ++Con::gObjectCopyFailures;
 
                   delete object;
                   currentNewObject = NULL;
@@ -1033,6 +1163,7 @@ Con::EvalResult CodeBlock::exec(U32 ip, const char* functionName, Namespace* thi
             {
                // This error is usually caused by failing to call Parent::initPersistFields in the class' initPersistFields().
                Con::warnf(ConsoleLogEntry::General, "%s: Register object failed for object %s of class %s.", getFileLine(ip - 2), currentNewObject->getName(), currentNewObject->getClassName());
+               ++Con::gObjectCopyFailures;
                delete currentNewObject;
                currentNewObject = NULL;
                ip = failJump;
@@ -1049,6 +1180,7 @@ Con::EvalResult CodeBlock::exec(U32 ip, const char* functionName, Namespace* thi
          {
             Con::errorf(ConsoleLogEntry::General, "%s: preload failed for %s: %s.", getFileLine(ip - 2),
                currentNewObject->getName(), errorStr.c_str());
+            ++Con::gObjectCopyFailures;
             dataBlock->deleteObject();
             currentNewObject = NULL;
             ip = failJump;
@@ -1849,10 +1981,22 @@ Con::EvalResult CodeBlock::exec(U32 ip, const char* functionName, Namespace* thi
          }
          else // it's a ParentCall
          {
-            ConsoleValue& simObjectLookupValue = callArgv[1];
-            thisObject = getThisObject(simObjectLookupValue);
+            if (callArgc > 1)
+            {
+               ConsoleValue& simObjectLookupValue = callArgv[1];
+               thisObject = getThisObject(simObjectLookupValue);
+            }
 
-            if (thisObject == NULL)
+            //   The grammar does NOT prepend anything. callArgv[1] is either
+            //   a plain script argument (Parent::func(%arg)) or an explicitly
+            //   passed %this (Parent::method(%this, %arg)) — the programmer's
+            //   choice. For plain function parent calls callArgv[1] is never
+            //   an object, so getThisObject returning NULL is expected and
+            //   correct, not an error condition. The old guard was aborting
+            //   these calls with a misleading "unable to find object" error
+            //   using the value of %arg as the object name.
+
+            /*if (thisObject == NULL)
             {
                Con::warnf(
                   ConsoleLogEntry::General,
@@ -1866,7 +2010,7 @@ Con::EvalResult CodeBlock::exec(U32 ip, const char* functionName, Namespace* thi
                stack[_STK + 1].setEmptyString();
                _STK++;
                break;
-            }
+            }*/
 
             if (thisNamespace)
             {
@@ -2284,10 +2428,13 @@ execFinished:
    }
    else
    {
-      delete[] const_cast<char*>(globalStrings);
-      delete[] globalFloats;
-      globalStrings = NULL;
-      globalFloats = NULL;
+      if (!isCodelet)
+      {
+         delete[] const_cast<char*>(globalStrings);
+         delete[] globalFloats;
+         globalStrings = NULL;
+         globalFloats = NULL;
+      }
    }
 
    if (Con::getCurrentScriptModuleName())

@@ -109,7 +109,8 @@ F32 TSStatic::smStaticObjectUnfadeableSize = 75;
 TSStatic::TSStatic()
    :
    cubeDescId(0),
-   reflectorDesc(NULL)
+   reflectorDesc(NULL),
+   mCubeReflector(NULL)
 {
    mNetFlags.set(Ghostable | ScopeAlways);
 
@@ -151,13 +152,19 @@ TSStatic::TSStatic()
    mAnimOffset = 0.0f;
    mAnimSpeed = 1.0f;
 
-   INIT_ASSET(Shape);
+   mShapeAssetRef.assetPtr.registerRefreshNotify(this);
 }
 
 TSStatic::~TSStatic()
 {
    delete mConvexList;
    mConvexList = NULL;
+
+   if (mCubeReflector)
+   {
+      mCubeReflector->unregisterReflector();
+      SAFE_DELETE(mCubeReflector);
+   }
 }
 
 ImplementEnumType(TSMeshType,
@@ -180,11 +187,9 @@ void TSStatic::initPersistFields()
    docsURL;
    addGroup("Shape");
 
-   INITPERSISTFIELD_SHAPEASSET(Shape, TSStatic, "Model to use for this TSStatic");
-
-   addProtectedField("shapeName", TypeShapeFilename, Offset(mShapeName, TSStatic),
-      &TSStatic::_setShapeData, &defaultProtectedGetFn,
-      "%Path and filename of the model file (.DTS, .DAE) to use for this TSStatic. Legacy field. Any loose files assigned here will attempt to be auto-imported in as an asset.", AbstractClassRep::FIELD_HideInInspectors);
+   ADD_FIELD("shapeAsset", TypeShapeAssetRef, Offset(mShapeAssetRef, TSStatic))
+      .doc("Model to use for this TSStatic")
+      .network(AdvancedStaticOptionsMask);
 
    endGroup("Shape");
 
@@ -364,10 +369,17 @@ bool TSStatic::onAdd()
 
    if (isClientObject())
    {
-      mCubeReflector.unregisterReflector();
+      if (mCubeReflector)
+      {
+         mCubeReflector->unregisterReflector();
+         SAFE_DELETE(mCubeReflector);
+      }
 
       if (reflectorDesc)
-         mCubeReflector.registerReflector(this, reflectorDesc);
+      {
+         mCubeReflector = new CubeReflector();
+         mCubeReflector->registerReflector(this, reflectorDesc);
+      }
    }
 
    _updateShouldTick();
@@ -393,126 +405,67 @@ bool TSStatic::_createShape()
    mAmbientThread = NULL;
    //mShape = NULL;
 
-   U32 assetStatus = ShapeAsset::getAssetErrCode(mShapeAsset);
-   if (assetStatus == AssetBase::Ok || assetStatus == AssetBase::UsingFallback)
+   Resource<TSShape> shape;
+   if (mShapeAssetRef.assetPtr.isNull())
    {
-      //Special-case handling, usually because we set noShape
-      mShape = mShapeAsset->getShapeResource();
+      shape = ShapeAsset::smNoShapeAssetFallbackAssetPtr->getShapeResource();
+   }
+   else
+   {
+      shape = mShapeAssetRef.assetPtr->getShapeResource();
+
+      if (isClientObject() &&
+         !mShapeAssetRef.assetPtr->preloadMaterialList() &&
+         NetConnection::filesWereDownloaded())
+         return false;
    }
 
-   if (!mShape)
+   if (shape)
    {
-      Con::errorf("TSStatic::_createShape() - Shape Asset %s had no valid shape!", mShapeAsset.getAssetId());
-      return false;
-   }
+      mObjBox = shape->mBounds;
+      resetWorldBox();
 
-   if (isClientObject() &&
-      !mShape->preloadMaterialList(mShape.getPath()) &&
-      NetConnection::filesWereDownloaded())
-      return false;
+      mShapeInstance = new TSShapeInstance(shape, true);
+      mShapeInstance->resetMaterialList();
+      mShapeInstance->cloneMaterialList();
 
-   mObjBox = mShape->mBounds;
-   resetWorldBox();
-
-   mShapeInstance = new TSShapeInstance(mShape, isClientObject());
-   mShapeInstance->resetMaterialList();
-   mShapeInstance->cloneMaterialList();
-
-   if (isGhost())
-   {
-      // Reapply the current skin
-      mAppliedSkinName = "";
-      reSkin();
-
-      updateMaterials();
-   }
-
-   prepCollision();
-
-   // Find the "ambient" animation if it exists
-   S32 ambientSeq = mShape->findSequence("ambient");
-
-   if (ambientSeq > -1 && !mAmbientThread)
-      mAmbientThread = mShapeInstance->addThread();
-
-   if ( mAmbientThread )
-      mShapeInstance->setSequence(mAmbientThread, ambientSeq, mAnimOffset);
-
-   // Resolve CubeReflectorDesc.
-   if (cubeDescName.isNotEmpty())
-   {
-      Sim::findObject(cubeDescName, reflectorDesc);
-   }
-   else if (cubeDescId > 0)
-   {
-      Sim::findObject(cubeDescId, reflectorDesc);
-   }
-
-   //Set up the material slot vars for easy manipulation
-   /*S32 materialCount = mShape->materialList->getMaterialNameList().size(); //mMeshAsset->getMaterialCount();
-
-   //Temporarily disabled until fixup of materialName->assetId lookup logic is sorted for easy persistance
-   if (isServerObject())
-   {
-      char matFieldName[128];
-
-      for (U32 i = 0; i < materialCount; i++)
+      if (isGhost())
       {
-         StringTableEntry materialname = StringTable->insert(mShape->materialList->getMaterialName(i).c_str());
+         // Reapply the current skin
+         mAppliedSkinName = "";
+         reSkin();
 
-         dSprintf(matFieldName, 128, "MaterialSlot%d", i);
-         StringTableEntry matFld = StringTable->insert(matFieldName);
-
-         setDataField(matFld, NULL, materialname);
+         updateMaterials();
       }
-   }*/
+
+      prepCollision();
+
+      // Find the "ambient" animation if it exists
+      S32 ambientSeq = shape->findSequence("ambient");
+
+      if (ambientSeq > -1 && !mAmbientThread)
+         mAmbientThread = mShapeInstance->addThread();
+
+      if ( mAmbientThread )
+         mShapeInstance->setSequence(mAmbientThread, ambientSeq, mAnimOffset);
+
+      // Resolve CubeReflectorDesc.
+      if (cubeDescName.isNotEmpty())
+      {
+         Sim::findObject(cubeDescName, reflectorDesc);
+      }
+      else if (cubeDescId > 0)
+      {
+         Sim::findObject(cubeDescId, reflectorDesc);
+      }
+   }
+   else
+   {
+      Con::errorf("TSStatic::_createShape() - Shape Asset %s had no valid shape!", mShapeAssetRef.assetId);
+      return false;
+   }
 
    return true;
-}
-
-void TSStatic::onDynamicModified(const char* slotName, const char* newValue)
-{
-   if (FindMatch::isMatch("materialslot*", slotName, false))
-   {
-      if (!getShape())
-         return;
-
-      S32 slot = -1;
-      String outStr(String::GetTrailingNumber(slotName, slot));
-
-      if (slot == -1)
-         return;
-
-      //Safe to assume the inbound value for the material will be a MaterialAsset, so lets do a lookup on the name
-      MaterialAsset* matAsset = AssetDatabase.acquireAsset<MaterialAsset>(newValue);
-      if (!matAsset)
-         return;
-
-      bool found = false;
-      for (U32 i = 0; i < mChangingMaterials.size(); i++)
-      {
-         if (mChangingMaterials[i].slot == slot)
-         {
-            mChangingMaterials[i].matAsset = matAsset;
-            mChangingMaterials[i].assetId = newValue;
-            found = true;
-         }
-      }
-
-      if (!found)
-      {
-         matMap newMatMap;
-         newMatMap.slot = slot;
-         newMatMap.matAsset = matAsset;
-         newMatMap.assetId = newValue;
-
-         mChangingMaterials.push_back(newMatMap);
-      }
-
-      setMaskBits(MaterialMask);
-   }
-
-   Parent::onDynamicModified(slotName, newValue);
 }
 
 void TSStatic::prepCollision()
@@ -531,22 +484,24 @@ void TSStatic::prepCollision()
    mLOSDetails.clear();
    mConvexList->nukeList();
 
+   TSShape* shape = mShapeInstance->getShape();
+
    if (mCollisionType == CollisionMesh || mCollisionType == VisibleMesh)
    {
-      mShape->findColDetails(mCollisionType == VisibleMesh, &mCollisionDetails, &mLOSDetails, mCollisionLOD);
+      shape->findColDetails(mCollisionType == VisibleMesh, &mCollisionDetails, &mLOSDetails, mCollisionLOD);
       if (mDecalType == mCollisionType)
       {
          mDecalDetailsPtr = &mCollisionDetails;
       }
       else if (mDecalType == CollisionMesh || mDecalType == VisibleMesh)
       {
-         mShape->findColDetails(mDecalType == VisibleMesh, &mDecalDetails, 0, mCollisionLOD);
+         shape->findColDetails(mDecalType == VisibleMesh, &mDecalDetails, 0, mCollisionLOD);
          mDecalDetailsPtr = &mDecalDetails;
       }
    }
    else if (mDecalType == CollisionMesh || mDecalType == VisibleMesh)
    {
-      mShape->findColDetails(mDecalType == VisibleMesh, &mDecalDetails, 0, mCollisionLOD);
+      shape->findColDetails(mDecalType == VisibleMesh, &mDecalDetails, 0, mCollisionLOD);
       mDecalDetailsPtr = &mDecalDetails;
    }
 
@@ -560,16 +515,18 @@ void TSStatic::_updatePhysics()
    if (!PHYSICSMGR || mCollisionType == None)
       return;
 
+   TSShape* shape = mShapeInstance->getShape();
+
    PhysicsCollision* colShape = NULL;
    if (mCollisionType == Bounds)
    {
       MatrixF offset(true);
-      offset.setPosition(mShape->center);
+      offset.setPosition(shape->center);
       colShape = PHYSICSMGR->createCollision();
       colShape->addBox(getObjBox().getExtents() * 0.5f * mObjScale, offset);
    }
    else
-      colShape = mShape->buildColShape(mCollisionType == VisibleMesh, getScale());
+      colShape = shape->buildColShape(mCollisionType == VisibleMesh, getScale());
 
    if (colShape)
    {
@@ -602,8 +559,11 @@ void TSStatic::onRemove()
    mShapeInstance = NULL;
 
    mAmbientThread = NULL;
-   if (isClientObject())
-      mCubeReflector.unregisterReflector();
+   if (isClientObject() && mCubeReflector)
+   {
+      mCubeReflector->unregisterReflector();
+      SAFE_DELETE(mCubeReflector);
+   }
 
    Parent::onRemove();
 }
@@ -719,7 +679,7 @@ void TSStatic::_updateShouldTick()
 
 void TSStatic::prepRenderImage(SceneRenderState* state)
 {
-   if (!mShapeInstance)
+   if (!mShapeAssetRef.isValid() || !mShapeInstance)
       return;
 
    Point3F cameraOffset;
@@ -788,7 +748,7 @@ void TSStatic::prepRenderImage(SceneRenderState* state)
 
    // If we're currently rendering our own reflection we
    // don't want to render ourselves into it.
-   if (mCubeReflector.isRendering())
+   if (mCubeReflector && mCubeReflector->isRendering())
       return;
 
 
@@ -808,8 +768,8 @@ void TSStatic::prepRenderImage(SceneRenderState* state)
    rdata.setFadeOverride(1.0f);
    rdata.setOriginSort(mUseOriginSort);
 
-   if (mCubeReflector.isEnabled())
-      rdata.setCubemap(mCubeReflector.getCubemap());
+   if (mCubeReflector && mCubeReflector->isEnabled())
+      rdata.setCubemap(mCubeReflector->getCubemap());
 
    // Acculumation
    rdata.setAccuTex(mAccuTex);
@@ -838,13 +798,13 @@ void TSStatic::prepRenderImage(SceneRenderState* state)
    mat.scale(mObjScale);
    GFX->setWorldMatrix(mat);
 
-   if (state->isDiffusePass() && mCubeReflector.isEnabled() && mCubeReflector.getOcclusionQuery())
+   if (state->isDiffusePass() && mCubeReflector && mCubeReflector->isEnabled() && mCubeReflector->getOcclusionQuery())
    {
       RenderPassManager* pass = state->getRenderPass();
       OccluderRenderInst* ri = pass->allocInst<OccluderRenderInst>();
 
       ri->type = RenderPassManager::RIT_Occluder;
-      ri->query = mCubeReflector.getOcclusionQuery();
+      ri->query = mCubeReflector->getOcclusionQuery();
       mObjToWorld.mulP(mObjBox.getCenter(), &ri->position);
       ri->scale.set(mObjBox.getExtents());
       ri->orientation = pass->allocUniqueXform(mObjToWorld);
@@ -950,17 +910,18 @@ U32 TSStatic::packUpdate(NetConnection* con, U32 mask, BitStream* stream)
 
    if (stream->writeFlag(mask & UpdateCollisionMask))
    {
-      stream->write(mCollisionLOD);
-      stream->write((U32)mCollisionType);
+      if (stream->writeFlag(mCollisionLOD>0))
+         stream->writeInt(mCollisionLOD,12);
+      stream->writeInt(mCollisionType,4);
    }
    if (stream->writeFlag(mask & SkinMask))
       con->packNetStringHandleU(stream, mSkinNameHandle);
 
    if (stream->writeFlag(mask & AdvancedStaticOptionsMask))
    {
-      PACK_ASSET(con, Shape);
+      AssetDatabase.packUpdateAsset(con, mask, stream, mShapeAssetRef.assetId);
 
-      stream->write((U32)mDecalType);
+      stream->writeInt(mDecalType,4);
 
       stream->writeFlag(mAllowPlayerStep);
       stream->writeFlag(mMeshCulling);
@@ -970,13 +931,14 @@ U32 TSStatic::packUpdate(NetConnection* con, U32 mask, BitStream* stream)
 
       stream->write(mForceDetail);
 
-   if (stream->writeFlag(mAnimOffset != 0.0f))
-      stream->writeFloat(mAnimOffset, 7);
+      if (stream->writeFlag(mPlayAmbient && hasAnim()))
+      {
+         if (stream->writeFlag(mAnimOffset != 0.0f))
+            stream->writeFloat(mAnimOffset, 7);
 
-   if (stream->writeFlag(mAnimSpeed != 1.0f))
-      stream->writeSignedFloat(mAnimSpeed / AnimSpeedMax, 7);
-
-      stream->writeFlag(mPlayAmbient);
+            if (stream->writeFlag(mAnimSpeed != 1.0f))
+               stream->writeSignedFloat(mAnimSpeed / AnimSpeedMax, 7);
+      }
    }
 
    if (stream->writeFlag(mUseAlphaFade))
@@ -1005,17 +967,18 @@ U32 TSStatic::packUpdate(NetConnection* con, U32 mask, BitStream* stream)
 
    if (stream->writeFlag(mask & MaterialMask))
    {
-      stream->writeInt(mChangingMaterials.size(), 16);
-
-      for (U32 i = 0; i < mChangingMaterials.size(); i++)
+      if (stream->writeFlag(mChangingMaterials.size() > 0))
       {
-         stream->writeInt(mChangingMaterials[i].slot, 16);
+         stream->writeInt(mChangingMaterials.size(), 16);
 
-         NetStringHandle matNameStr = mChangingMaterials[i].assetId.c_str();
-         con->packNetStringHandleU(stream, matNameStr);
+         for (U32 i = 0; i < mChangingMaterials.size(); i++)
+         {
+            stream->writeInt(mChangingMaterials[i].slot, 16);
+
+            NetStringHandle matNameStr = mChangingMaterials[i].assetId.c_str();
+            con->packNetStringHandleU(stream, matNameStr);
+         }
       }
-
-      //mChangingMaterials.clear();
    }
 
    return retMask;
@@ -1049,8 +1012,9 @@ void TSStatic::unpackUpdate(NetConnection* con, BitStream* stream)
    {
       U32 collisionType = CollisionMesh;
 
-      stream->read(&mCollisionLOD);
-      stream->read(&collisionType);
+      if (stream->readFlag())
+         mCollisionLOD = stream->readInt(12);
+      collisionType = stream->readInt(4);
 
       // Handle it if we have changed CollisionType's
       if ((MeshType)collisionType != mCollisionType)
@@ -1074,9 +1038,9 @@ void TSStatic::unpackUpdate(NetConnection* con, BitStream* stream)
 
    if (stream->readFlag()) // AdvancedStaticOptionsMask
    {
-      UNPACK_ASSET(con, Shape);
+      mShapeAssetRef = AssetDatabase.unpackUpdateAsset(con, stream);
 
-      stream->read((U32*)&mDecalType);
+      mDecalType = (MeshType)stream->readInt(4);
 
       mAllowPlayerStep = stream->readFlag();
       mMeshCulling = stream->readFlag();
@@ -1086,13 +1050,15 @@ void TSStatic::unpackUpdate(NetConnection* con, BitStream* stream)
 
       stream->read(&mForceDetail);
 
-      if (stream->readFlag())
-         mAnimOffset = stream->readFloat(7);
-
-      if (stream->readFlag())
-         mAnimSpeed = stream->readSignedFloat(7) * AnimSpeedMax;
-
       mPlayAmbient = stream->readFlag();
+      if (mPlayAmbient)
+      {
+         if (stream->readFlag())
+            mAnimOffset = stream->readFloat(7);
+
+         if (stream->readFlag())
+            mAnimSpeed = stream->readSignedFloat(7) * AnimSpeedMax;
+      }
 
       //update our shape, figuring that it likely changed
       _createShape();
@@ -1129,20 +1095,22 @@ void TSStatic::unpackUpdate(NetConnection* con, BitStream* stream)
    if (stream->readFlag())
    {
       mChangingMaterials.clear();
-      U32 materialCount = stream->readInt(16);
-
-      for (U32 i = 0; i < materialCount; i++)
+      if (stream->readFlag())
       {
-         matMap newMatMap;
-         newMatMap.slot = stream->readInt(16);
-         newMatMap.assetId = String(con->unpackNetStringHandleU(stream).getString());
+         U32 materialCount = stream->readInt(16);
 
-         //do the lookup, now
-         newMatMap.matAsset = AssetDatabase.acquireAsset<MaterialAsset>(newMatMap.assetId);
+         for (U32 i = 0; i < materialCount; i++)
+         {
+            matMap newMatMap;
+            newMatMap.slot = stream->readInt(16);
+            newMatMap.assetId = String(con->unpackNetStringHandleU(stream).getString());
 
-         mChangingMaterials.push_back(newMatMap);
+            //do the lookup, now
+            newMatMap.matAsset = AssetDatabase.acquireAsset<MaterialAsset>(newMatMap.assetId);
+
+            mChangingMaterials.push_back(newMatMap);
+         }
       }
-
       updateMaterials();
    }
 
@@ -1172,6 +1140,10 @@ bool TSStatic::castRay(const Point3F& start, const Point3F& end, RayInfo* info)
       info->material = NULL;
       return true;
    }
+   else if (mDecalType == VisibleMesh) //if we want decals at high fidelity, probly want the same for sounds, projectles, ect
+   { 
+     return castRayRendered(start, end, info);
+   }  
    else
    {
       RayInfo shortest = *info;
@@ -1331,27 +1303,25 @@ bool TSStatic::buildExportPolyList(ColladaUtils::ExportData* exportData, const B
    }
 
    //Next, process the LOD levels and materials.
-   if (isServerObject() && getClientObject())
+   if (isServerObject())
    {
-      TSStatic* clientShape = dynamic_cast<TSStatic*>(getClientObject());
-
       exportData->meshData.increment();
 
       //Prep a meshData for this shape in particular
       ColladaUtils::ExportData::meshLODData* meshData = &exportData->meshData.last();
 
       //Fill out the info we'll need later to actually append our mesh data for the detail levels during the processing phase
-      meshData->shapeInst = clientShape->mShapeInstance;
+      meshData->shapeInst = mShapeInstance;
       meshData->originatingObject = this;
       meshData->meshTransform = mObjToWorld;
       meshData->scale = mObjScale;
 
       //Iterate over all our detail levels
-      for (U32 i = 0; i < clientShape->mShapeInstance->getNumDetails(); i++)
+      for (U32 i = 0; i < mShapeInstance->getNumDetails(); i++)
       {
-         TSShape::Detail detail = clientShape->mShapeInstance->getShape()->details[i];
+         TSShape::Detail detail = mShapeInstance->getShape()->details[i];
 
-         String detailName = String::ToLower(clientShape->mShapeInstance->getShape()->getName(detail.nameIndex));
+         String detailName = String::ToLower(mShapeInstance->getShape()->getName(detail.nameIndex));
 
          //Skip it if it's a collision or line of sight element
          if (detailName.startsWith("col") || detailName.startsWith("los"))
@@ -1593,10 +1563,10 @@ void TSStatic::updateMaterials()
    TSMaterialList* pMatList = mShapeInstance->getMaterialList();
 
    String path;
-   if (mShapeAsset->isAssetValid())
-      path = mShapeAsset->getShapeFileName();
+   if (mShapeAssetRef.assetPtr->isAssetValid())
+      path = mShapeAssetRef.assetPtr->getShapeFile();
    else
-      path = mShapeName;
+      return; 
 
    pMatList->setTextureLookupPath(path);
 
@@ -1625,10 +1595,10 @@ void TSStatic::updateMaterials()
 
 void TSStatic::getUtilizedAssets(Vector<StringTableEntry>* usedAssetsList)
 {
-   U32 assetStatus = ShapeAsset::getAssetErrCode(mShapeAsset);
+   U32 assetStatus = ShapeAsset::getAssetErrCode(mShapeAssetRef.assetPtr);
    if (assetStatus == AssetBase::Ok)
    {
-      usedAssetsList->push_back_unique(mShapeAsset->getAssetId());
+      usedAssetsList->push_back_unique(mShapeAssetRef.assetId);
    }
 }
 
@@ -1778,7 +1748,16 @@ DefineEngineMethod(TSStatic, changeMaterial, void, (const char* mapTo, Material*
       return;
    }
 
-   TSMaterialList* shapeMaterialList = object->getShapeResource()->materialList;
+   const AssetPtr<ShapeAsset> shapeAsset = object->getShapeAsset();
+
+   if (shapeAsset.isNull())
+      return;
+
+   Resource<TSShape> shape = shapeAsset->getShapeResource();
+   if (!shape)
+      return;
+
+   TSMaterialList* shapeMaterialList = shape->materialList;
 
    // Check the mapTo name exists for this shape
    S32 matIndex = shapeMaterialList->getMaterialNameList().find_next(String(mapTo));
@@ -1818,7 +1797,11 @@ DefineEngineMethod(TSStatic, getModelFile, const char*, (), ,
    "@endtsexample\n"
 )
 {
-   return object->getShape();
+   const AssetPtr<ShapeAsset> shapeAsset = object->getShapeAsset();
+   if (shapeAsset.isNull())
+      return "";
+
+   return shapeAsset->getShapeFile();
 }
 
 void TSStatic::set_special_typing()
@@ -1862,15 +1845,27 @@ void TSStatic::setSelectionFlags(U8 flags)
 
 bool TSStatic::hasNode(const char* nodeName)
 {
+   if (mShapeAssetRef.isNull())
+      return false;
 
-   S32 nodeIDx = getShapeResource()->findNode(nodeName);
+   Resource<TSShape> shape = mShapeAssetRef.assetPtr->getShapeResource();
+   if (!shape)
+      return false;
+
+   S32 nodeIDx = shape->findNode(nodeName);
    return nodeIDx >= 0;
 }
 
 void TSStatic::getNodeTransform(const char *nodeName, const MatrixF &xfm, MatrixF *outMat)
 {
+   if (mShapeAssetRef.isNull())
+      return;
 
-    S32 nodeIDx = getShapeResource()->findNode(nodeName);
+   Resource<TSShape> shape = mShapeAssetRef.assetPtr->getShapeResource();
+   if (!shape)
+      return;
+
+    S32 nodeIDx = shape->findNode(nodeName);
 
     MatrixF nodeTransform(xfm);
     const Point3F& scale = getScale();

@@ -58,12 +58,13 @@ protected:
    };
 
    SimObjectPtr<MissionArea>  mMissionArea;
-   SimObjectPtr<TerrainBlock> mTerrainBlock;
 
    GFXStateBlockRef  mBlendStateBlock;
    GFXStateBlockRef  mSolidStateBlock;
+   GFXTextureTargetRef mLevelTexture;
+   Box3F mLevelBounds;
 
-   DECLARE_IMAGEASSET(GuiMissionAreaCtrl, HandleBitmap, GFXDefaultGUIProfile)
+   AssetRef<ImageAsset> mHandleBitmapAssetRef;
 
    Point2I           mHandleTextureSize;
    Point2F           mHandleTextureHalfSize;
@@ -81,10 +82,6 @@ protected:
    bool     mSavedDrag;
 
    void submitUndo( const UTF8 *name = "Action" );
-
-   TerrainBlock * getTerrainObj();
-   GBitmap * createTerrainBitmap();
-   void updateTerrainBitmap();
 
    //void onUpdate();
 
@@ -115,6 +112,9 @@ public:
 
    DECLARE_CONOBJECT(GuiMissionAreaCtrl);
 
+   GFXTexHandle getHandleBitmap() { return mHandleBitmapAssetRef.notNull() ? mHandleBitmapAssetRef.assetPtr->getTexture(&GFXDefaultGUIProfile) : NULL; }
+   StringTableEntry getHandleBitmapFile() { return mHandleBitmapAssetRef.notNull() ? mHandleBitmapAssetRef.assetPtr->getImageFile() : ""; }
+
    // SimObject
    bool onAdd() override;
    static void initPersistFields();
@@ -132,7 +132,7 @@ public:
    void onMouseLeave(const GuiEvent & event) override;
 
    void setMissionArea( MissionArea* area );
-   void updateTerrain();
+   void updateLevelBitmap();
 
    const RectI & getArea();
    void setArea(const RectI & area);

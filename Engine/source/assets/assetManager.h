@@ -59,6 +59,10 @@
 #include "assets/assetFieldTypes.h"
 #endif
 
+#ifndef _NETCONNECTION_H_
+#include "sim/netConnection.h"
+#endif
+
 // Debug Profiling.
 #include "platform/profiler.h"
 
@@ -84,12 +88,22 @@ public:
    typedef HashTable<typeAssetId, typeAssetId> typeAssetIsDependedOnHash;
    typedef HashMap<AssetPtrBase*, AssetPtrCallback*> typeAssetPtrRefreshHash;
 
+   // ASSET NETWORK PACK
+   typedef U32 typeAssetNetId;
+   typedef HashMap<typeAssetNetId, typeAssetId> typeNetIdToAssetMap;
+   typedef HashMap<typeAssetId, typeAssetNetId> typeAssetToNetIdMap;
+   // ASSET NETWORK PACK END
 private:
     /// Declared assets.
     typeDeclaredAssetsHash              mDeclaredAssets;
 
     /// Referenced assets.
     typeReferencedAssetsHash            mReferencedAssets;
+
+    // ASSET NETWORK PACK
+    typeNetIdToAssetMap  mNetIdToAsset;
+    typeAssetToNetIdMap  mAssetToNetId;
+    // ASSET NETWORK PACK END
 
     /// Asset dependencies.
     typeAssetDependsOnHash              mAssetDependsOn;
@@ -150,6 +164,36 @@ public:
     bool compileReferencedAssets( ModuleDefinition* pModuleDefinition );
     bool isReferencedAsset( const char* pAssetId );
     bool renameReferencedAsset( const char* pAssetIdFrom, const char* pAssetIdTo );
+
+    // ASSET NETWORK PACK
+    void packDataAsset(BitStream* stream, const char* pAssetId);
+    const char* unpackDataAsset(BitStream* stream);
+
+    void packUpdateAsset(NetConnection* con, U32 mask, BitStream* stream, const char* pAssetId);
+    const char* unpackUpdateAsset(NetConnection* con, BitStream* stream);
+    // ASSET NETWORK PACK END
+
+    /// <summary>
+    /// Compile all assets.
+    /// </summary>
+    /// <param name="compressed">Do we want binary compression?</param>
+    /// <param name="includeUnloaded">Do we want to include unloaded assets?</param>
+    /// <returns>True if successful, otherwise false.</returns>
+    bool compileAllAssets(const bool compressed = false, const bool includeUnloaded = false);
+
+    /// <summary>
+    /// Compile all assets for a module.
+    /// </summary>
+    /// <param name="pModuleDefinition">The module definition to compile.</param>
+    /// <returns></returns>
+    bool compileModuleAssets(ModuleDefinition* pModuleDefinition);
+
+    /// <summary>
+    /// Compile a single asset to binary.
+    /// </summary>
+    /// <param name="pAssetId">The asset id to be compiled.</param>
+    /// <returns>True if successful, otherwise false.</returns>
+    bool compileAsset(const char* pAssetId);
 
     /// Public asset acquisition.
     template<typename T> T* acquireAsset( const char* pAssetId )

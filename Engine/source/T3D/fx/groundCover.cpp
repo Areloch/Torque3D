@@ -510,8 +510,10 @@ GroundCover::GroundCover()
       mMinElevation[i] = -99999.0f;
       mMaxElevation[i] = 99999.0f;
 
-      mLayer[i] = StringTable->EmptyString();
-      mInvertLayer[i] = false;
+      mLayerAsset[i] = NULL;
+      mLayerFile[i] = StringTable->EmptyString();
+
+      mInvertLayer[i] = NULL;
 
       mMinClumpCount[i] = 1;
       mMaxClumpCount[i] = 1;
@@ -521,7 +523,7 @@ GroundCover::GroundCover()
       mBillboardRects[i].point.set( 0.0f, 0.0f );
       mBillboardRects[i].extent.set( 1.0f, 1.0f );
 
-      INIT_ASSET_ARRAY(Shape, i);
+      mShapeAssetRef[i].assetPtr.registerRefreshNotify(this);
 
       mShapeInstances[i] = NULL;
 
@@ -563,10 +565,15 @@ void GroundCover::initPersistFields()
 
          addField( "billboardUVs",  TypeRectUV,    Offset( mBillboardRects, GroundCover ), MAX_COVERTYPES,  "Subset material UV coordinates for this cover billboard." );
 
-         addField("shapeFilename", TypeFilename, Offset(mShapeName, GroundCover), MAX_COVERTYPES, "The cover shape filename. [Optional]", AbstractClassRep::FIELD_HideInInspectors);
-         INITPERSISTFIELD_SHAPEASSET_ARRAY(Shape, MAX_COVERTYPES, GroundCover, "The cover shape. [Optional]");
+         ADD_FIELD("shapeAsset", TypeShapeAssetRef, Offset(mShapeAssetRef, GroundCover))
+            .elements(MAX_COVERTYPES)
+            .doc("The cover shape. [Optional]")
+            .network(-1);
 
-         addField( "layer",         TypeTerrainMaterialAssetId, Offset( mLayer, GroundCover ), MAX_COVERTYPES,      "Terrain material assetId to limit coverage to, or blank to not limit." );
+         INITPERSISTFIELD_TERRAINMATERIALASSET_ARRAY(Layer, MAX_COVERTYPES, GroundCover, "Terrain material assetId to limit coverage to, or blank to not limit.");
+
+         //Legacy field
+         addProtectedField("layer", TypeTerrainMaterialAssetPtr, Offset(mLayerAsset, GroundCover), &_setLayerData, &defaultProtectedGetFn, MAX_COVERTYPES, "Terrain material assetId to limit coverage to, or blank to not limit.", AbstractClassRep::FIELD_HideInInspectors); 
 
          addField( "invertLayer",   TypeBool,      Offset( mInvertLayer, GroundCover ), MAX_COVERTYPES,     "Indicates that the terrain material index given in 'layer' is an exclusion mask." );
 
@@ -755,7 +762,6 @@ U32 GroundCover::packUpdate( NetConnection *connection, U32 mask, BitStream *str
          stream->write( mMinElevation[i] );
          stream->write( mMaxElevation[i] );     
 
-         stream->writeString( mLayer[i] );
          stream->writeFlag( mInvertLayer[i] );      
 
          stream->write( mMinClumpCount[i] );
@@ -768,8 +774,10 @@ U32 GroundCover::packUpdate( NetConnection *connection, U32 mask, BitStream *str
          stream->write( mBillboardRects[i].extent.x );
          stream->write( mBillboardRects[i].extent.y );
 
-         PACK_ASSET_ARRAY(connection, Shape, i);
+         AssetDatabase.packUpdateAsset(connection, mask, stream, mShapeAssetRef[i].assetId);
       }
+
+      PACK_ASSET_ARRAY_REFACTOR(connection, Layer, MAX_COVERTYPES)
 
       stream->writeFlag( mDebugRenderCells );
       stream->writeFlag( mDebugNoBillboards );
@@ -826,7 +834,6 @@ void GroundCover::unpackUpdate( NetConnection *connection, BitStream *stream )
          stream->read( &mMinElevation[i] );
          stream->read( &mMaxElevation[i] );     
 
-         mLayer[i] = stream->readSTString();
          mInvertLayer[i] = stream->readFlag();
 
          stream->read( &mMinClumpCount[i] );
@@ -839,8 +846,10 @@ void GroundCover::unpackUpdate( NetConnection *connection, BitStream *stream )
          stream->read( &mBillboardRects[i].extent.x );
          stream->read( &mBillboardRects[i].extent.y );
 
-         UNPACK_ASSET_ARRAY(connection, Shape, i);
+         mShapeAssetRef[i] = AssetDatabase.unpackUpdateAsset(connection, stream);
       }
+
+      UNPACK_ASSET_ARRAY_REFACTOR(connection, Layer, MAX_COVERTYPES)
 
       mDebugRenderCells    = stream->readFlag();
       mDebugNoBillboards   = stream->readFlag();
@@ -887,17 +896,21 @@ void GroundCover::_initShapes()
 
    for ( S32 i=0; i < MAX_COVERTYPES; i++ )
    {
-      if ( mShapeAsset[i].isNull() || mShape[i] == nullptr)
+      if ( mShapeAssetRef[i].isNull())
          continue;
 
-      if ( isClientObject() && !mShape[i]->preloadMaterialList(mShape[i].getPath()) && NetConnection::filesWereDownloaded() )
+      Resource<TSShape> shape = mShapeAssetRef[i].assetPtr->getShapeResource();
+      if (!shape)
+         continue;
+
+      if ( isClientObject() && !mShapeAssetRef[i].assetPtr->preloadMaterialList() && NetConnection::filesWereDownloaded() )
       {
-         Con::warnf( "GroundCover::_initShapes() material preload failed for shape: %s", mShapeAssetId[i] );
+         Con::warnf( "GroundCover::_initShapes() material preload failed for shape: %s", mShapeAssetRef[i].assetId);
          continue;
       }
 
       // Create the shape instance.
-      mShapeInstances[i] = new TSShapeInstance(mShape[i], isClientObject() );
+      mShapeInstances[i] = new TSShapeInstance(shape, isClientObject() );
    }
 }
 
@@ -1182,7 +1195,9 @@ GroundCoverCell* GroundCover::_generateCell( const Point2I& index,
       const Box3F typeShapeBounds = typeIsShape ? mShapeInstances[ type ]->getShape()->mBounds : Box3F();
       const F32 typeWindScale = mWindScale[type];
 
-      StringTableEntry typeLayer = mLayer[type];
+      StringTableEntry typeLayer = StringTable->EmptyString();
+      if (mLayerAsset[type].notNull())
+         typeLayer = mLayerAsset[type]->getAssetId();
       const bool typeInvertLayer = mInvertLayer[type];
 
       // We can set this once here... all the placements for this are the same.
@@ -1563,7 +1578,7 @@ void GroundCover::_updateCoverGrid( const Frustum &culler )
 void GroundCover::prepRenderImage( SceneRenderState *state )
 {
    // Reset stats each time we hit the diffuse pass.
-   if (mMaterialInst == nullptr)
+   if (mMaterialInst == NULL)
       return;
 
    if( state->isDiffusePass() )

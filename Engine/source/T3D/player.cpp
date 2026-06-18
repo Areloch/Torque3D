@@ -120,9 +120,9 @@ static U32 sCollisionMoveMask =  TerrainObjectType       |
                                  PlayerObjectType        |
                                  StaticShapeObjectType   | 
                                  VehicleObjectType       |
-								 PhysicalZoneObjectType  |
+                                 PhysicalZoneObjectType  |
 // PATHSHAPE
-								 PathShapeObjectType;
+                                 PathShapeObjectType;
 // PATHSHAPE END
 
 static U32 sServerCollisionContactMask = sCollisionMoveMask |
@@ -170,6 +170,8 @@ PlayerData::ActionAnimationDef PlayerData::ActionAnimationList[NumTableActionAni
    { "prone_root" },
    { "prone_forward",   { 0.0f, 1.0f, 0.0f } },
    { "prone_backward",  { 0.0f,-1.0f, 0.0f } },
+   { "prone_side",     {-1.0f, 0.0f, 0.0f } }, //Skurps
+   { "prone_right",    { 1.0f, 0.0f, 0.0f } }, //Skurps
 
    { "swim_root" },
    { "swim_forward",    { 0.0f, 1.0f, 0.0f } },
@@ -184,7 +186,6 @@ PlayerData::ActionAnimationDef PlayerData::ActionAnimationList[NumTableActionAni
    { "land" },       // LandAnim
    { "jet" },        // JetAnim
 };
-
 
 //----------------------------------------------------------------------------
 
@@ -211,6 +212,7 @@ ImplementEnumType(playerSoundsEnum, "enum types.\n"
    { playerSoundsEnum::ImpactWaterMedium,   "ImpactWaterMedium","..." },
    { playerSoundsEnum::ImpactWaterHard,     "ImpactWaterHard","..." },
    { playerSoundsEnum::ExitWater,           "ExitWater","..." },
+   { playerSoundsEnum::Crawl,           "Crawl","..." }, //Skurps
 EndImplementEnumType;
 
 //----------------------------------------------------------------------------
@@ -264,7 +266,7 @@ IMPLEMENT_CALLBACK( PlayerData, onLeaveLiquid, void, ( Player* obj, const char* 
    "@param obj The Player object\n"
    "@param type The type of liquid the player has left\n" );
 
-IMPLEMENT_CALLBACK( PlayerData, animationDone, void, ( Player* obj, const char * animName), ( obj, animName),
+IMPLEMENT_CALLBACK( PlayerData, animationDone, void, ( Player* obj,const char * animName), ( obj, animName),
    "@brief Called on the server when a scripted animation completes.\n\n"
    "@param obj The Player object\n"
    "@see Player::setActionThread() for setting a scripted animation and its 'hold' parameter to "
@@ -297,7 +299,7 @@ PlayerData::PlayerData()
    imageAnimPrefixFP = StringTable->EmptyString();
    for (U32 i=0; i<ShapeBase::MaxMountedImages; ++i)
    {
-      INIT_ASSET_ARRAY(ShapeFP, i);
+      shapeFPAssetRef[i].assetPtr.registerRefreshNotify(this);
       mCRCFP[i] = 0;
       mValidShapeFP[i] = false;
    }
@@ -305,6 +307,8 @@ PlayerData::PlayerData()
    pickupRadius = 0.0f;
    minLookAngle = -1.4f;
    maxLookAngle = 1.4f;
+   minProneLookAngle = -.3491f; // Skurps
+   maxProneLookAngle = .3491f; // Skurps
    maxFreelookAngle = 3.0f;
    maxTimeScale = 1.5f;
 
@@ -416,10 +420,10 @@ PlayerData::PlayerData()
    boxTorsoPercentage = 0.55f;
 
    // damage locations
-   boxHeadLeftPercentage  = 0;
-   boxHeadRightPercentage = 1;
-   boxHeadBackPercentage  = 0;
-   boxHeadFrontPercentage = 1;
+   boxTorsoLeftPercentage  = 0; //Skurps replaced left/right/front/back head percentages
+   boxTorsoRightPercentage = 1; //Skurps
+   boxTorsoBackPercentage  = 0; //Skurps
+   boxTorsoFrontPercentage = 1; //Skurps 
 
    for (S32 i = 0; i < MaxSounds; i++)
       INIT_SOUNDASSET_ARRAY(PlayerSound, i);
@@ -461,6 +465,7 @@ PlayerData::PlayerData()
 
    physicsPlayerType = StringTable->EmptyString();
    mControlMap = StringTable->EmptyString();
+   mDynamicAnimsStart = NumTableActionAnims;
    dMemset( actionList, 0, sizeof(actionList) );
 }
 
@@ -471,6 +476,7 @@ bool PlayerData::preload(bool server, String &errorStr)
    if (!server) {
       for (U32 i = 0; i < MaxSounds; ++i)
       {
+         _setPlayerSound(getPlayerSound(i), i);
          if (!isPlayerSoundValid(i))
          {
             //return false; -TODO: trigger asset download
@@ -500,23 +506,27 @@ bool PlayerData::preload(bool server, String &errorStr)
       Con::printf("PlayerData:: Jump delay exceeds range (0-%d)",jumpDelay);
    }
 
+   Resource<TSShape> shape;
+   if (shapeAssetRef.notNull())
+      shape = shapeAssetRef.assetPtr->getShapeResource();
+
    // If we don't have a shape don't crash out trying to
    // setup animations and sequences.
-   if ( mShape )
+   if (shape)
    {
       // Go ahead a pre-load the player shape
-      TSShapeInstance* si = new TSShapeInstance(mShape, false);
+      TSShapeInstance* si = new TSShapeInstance(shape, false);
       TSThread* thread = si->addThread();
 
       // Extract ground transform velocity from animations
       // Get the named ones first so they can be indexed directly.
       ActionAnimation *dp = &actionList[0];
-      for (S32 i = 0; i < NumTableActionAnims; i++,dp++)
+      for (S32 i = 0; i < mDynamicAnimsStart; i++,dp++)
       {
          ActionAnimationDef *sp = &ActionAnimationList[i];
          dp->name          = sp->name;
          dp->dir.set(sp->dir.x,sp->dir.y,sp->dir.z);
-         dp->sequence      = mShape->findSequence(sp->name);
+         dp->sequence      = shape->findSequence(sp->name);
 
          // If this is a sprint action and is missing a sequence, attempt to use
          // the standard run ones.
@@ -524,7 +534,7 @@ bool PlayerData::preload(bool server, String &errorStr)
          {
             S32 offset = i-SprintRootAnim;
             ActionAnimationDef *standDef = &ActionAnimationList[RootAnim+offset];
-            dp->sequence = mShape->findSequence(standDef->name);
+            dp->sequence = shape->findSequence(standDef->name);
          }
 
          dp->velocityScale = true;
@@ -532,12 +542,12 @@ bool PlayerData::preload(bool server, String &errorStr)
          if (dp->sequence != -1)
             getGroundInfo(si,thread,dp);
       }
-      for (S32 b = 0; b < mShape->sequences.size(); b++)
+      for (S32 b = 0; b < shape->sequences.size(); b++)
       {
          if (!isTableSequence(b))
          {
             dp->sequence      = b;
-            dp->name          = mShape->getName(mShape->sequences[b].nameIndex);
+            dp->name          = shape->getName(shape->sequences[b].nameIndex);
             dp->velocityScale = false;
             getGroundInfo(si,thread,dp++);
          }
@@ -554,17 +564,17 @@ bool PlayerData::preload(bool server, String &errorStr)
             lookAction = c;
 
       // Resolve spine
-      spineNode[0] = mShape->findNode("Bip01 Pelvis");
-      spineNode[1] = mShape->findNode("Bip01 Spine");
-      spineNode[2] = mShape->findNode("Bip01 Spine1");
-      spineNode[3] = mShape->findNode("Bip01 Spine2");
-      spineNode[4] = mShape->findNode("Bip01 Neck");
-      spineNode[5] = mShape->findNode("Bip01 Head");
+      spineNode[0] = shape->findNode("Bip01 Pelvis");
+      spineNode[1] = shape->findNode("Bip01 Spine");
+      spineNode[2] = shape->findNode("Bip01 Spine1");
+      spineNode[3] = shape->findNode("Bip01 Spine2");
+      spineNode[4] = shape->findNode("Bip01 Neck");
+      spineNode[5] = shape->findNode("Bip01 Head");
 
       // Recoil animations
-      recoilSequence[0] = mShape->findSequence("light_recoil");
-      recoilSequence[1] = mShape->findSequence("medium_recoil");
-      recoilSequence[2] = mShape->findSequence("heavy_recoil");
+      recoilSequence[0] = shape->findSequence("light_recoil");
+      recoilSequence[1] = shape->findSequence("medium_recoil");
+      recoilSequence[2] = shape->findSequence("heavy_recoil");
    }
 
    // Convert pickupRadius to a delta of boundingBox
@@ -607,40 +617,44 @@ bool PlayerData::preload(bool server, String &errorStr)
    {
       bool shapeError = false;
 
-      if (mShapeFPAssetId[i] != StringTable->EmptyString())
+      if (shapeFPAssetRef[i].isNull())
+         continue;
+
+      Resource<TSShape> shapeFP = shapeFPAssetRef[i].assetPtr->getShapeResource();
+
+      if (!shapeFP)
       {
-         if (!mShapeFP[i])
+         errorStr = String::ToString("PlayerData: Couldn't load mounted image %d shape \"%s\"", i, shapeFPAssetRef[i].assetId);
+         return false;
+      }
+
+      if (!server && !shapeFPAssetRef[i].assetPtr->preloadMaterialList() && NetConnection::filesWereDownloaded())
+         shapeError = true;
+
+      if (computeCRC)
+      {
+         Con::printf("Validation required for mounted image %d shape: %s", i, shapeFPAssetRef[i].assetId);
+
+         Torque::Path shapeFPFilePath = shapeFPAssetRef[i].assetPtr->getShapeFile();
+
+         Torque::FS::FileNodeRef    fileRef = Torque::FS::GetFileNode(shapeFPFilePath);
+
+         if (!fileRef)
          {
-            errorStr = String::ToString("PlayerData: Couldn't load mounted image %d shape \"%s\"", i, mShapeFPAssetId[i]);
+            errorStr = String::ToString("PlayerData: Mounted image %d loading failed, shape \"%s\" is not found.", i, shapeFPFilePath.getFullPath().c_str());
             return false;
          }
 
-         if (!server && !mShapeFP[i]->preloadMaterialList(mShapeFP[i].getPath()) && NetConnection::filesWereDownloaded())
-            shapeError = true;
-
-         if (computeCRC)
+         if (server)
+            mCRCFP[i] = fileRef->getChecksum();
+         else if (mCRCFP[i] != fileRef->getChecksum())
          {
-            Con::printf("Validation required for mounted image %d shape: %s", i, mShapeFPAssetId[i]);
-
-            Torque::FS::FileNodeRef    fileRef = Torque::FS::GetFileNode(mShapeFP[i].getPath());
-
-            if (!fileRef)
-            {
-               errorStr = String::ToString("PlayerData: Mounted image %d loading failed, shape \"%s\" is not found.", i, mShapeFP[i].getPath().getFullPath().c_str());
-               return false;
-            }
-
-            if (server)
-               mCRCFP[i] = fileRef->getChecksum();
-            else if (mCRCFP[i] != fileRef->getChecksum())
-            {
-               errorStr = String::ToString("PlayerData: Mounted image %d shape \"%s\" does not match version on server.", i, mShapeFPAssetId[i]);
-               return false;
-            }
+            errorStr = String::ToString("PlayerData: Mounted image %d shape \"%s\" does not match version on server.", i, shapeFPAssetRef[i].assetId);
+            return false;
          }
-
-         mValidShapeFP[i] = true;
       }
+
+      mValidShapeFP[i] = true;
    }
 
    return true;
@@ -689,7 +703,7 @@ bool PlayerData::isTableSequence(S32 seq)
 {
    // The sequences from the table must already have
    // been loaded for this to work.
-   for (S32 i = 0; i < NumTableActionAnims; i++)
+   for (S32 i = 0; i < mDynamicAnimsStart; i++)
       if (actionList[i].sequence == seq)
          return true;
    return false;
@@ -735,6 +749,14 @@ void PlayerData::initPersistFields()
       addFieldV( "maxFreelookAngle", TypeRangedF32, Offset(maxFreelookAngle, PlayerData), &CommonValidators::PositiveFloat,
          "@brief Defines the maximum left and right angles (in radians) the player can "
          "look in freelook mode.\n\n" );
+      addFieldV( "minProneLookAngle", TypeF32, Offset(minProneLookAngle, PlayerData), &CommonValidators::DirFloatPi,
+         "@brief Lowest angle (in radians) the player can look when Prone.\n\n"
+         "@note An angle of zero is straight ahead, with positive up and negative down." ); //Skurps
+      addFieldV( "maxProneLookAngle", TypeF32, Offset(maxProneLookAngle, PlayerData), &CommonValidators::DirFloatPi,
+         "@brief Highest angle (in radians) the player can look when Prone.\n\n"
+         "@note An angle of zero is straight ahead, with positive up and negative down." ); //Skurps
+
+       
 
    endGroup( "Camera" );
 
@@ -991,6 +1013,7 @@ void PlayerData::initPersistFields()
          "@brief Collision bounding box used when the player is swimming.\n\n"
          "@see boundingBox" );
 
+     // Damage collision boxes changed by Skurps
       addFieldV( "boxHeadPercentage", TypeRangedF32, Offset(boxHeadPercentage, PlayerData), &CommonValidators::NormalizedFloat,
          "@brief Percentage of the player's bounding box height that represents the head.\n\n"
          "Used when computing the damage location.\n"
@@ -999,20 +1022,20 @@ void PlayerData::initPersistFields()
          "@brief Percentage of the player's bounding box height that represents the torso.\n\n"
          "Used when computing the damage location.\n"
          "@see Player::getDamageLocation" );
-      addFieldV( "boxHeadLeftPercentage", TypeRangedF32, Offset(boxHeadLeftPercentage, PlayerData), &CommonValidators::NormalizedFloat,
-         "@brief Percentage of the player's bounding box width that represents the left side of the head.\n\n"
+      addFieldV( "boxTorsoLeftPercentage", TypeRangedF32, Offset(boxTorsoLeftPercentage, PlayerData), &CommonValidators::NormalizedFloat,
+         "@brief Percentage of the player's bounding box width from center that represents the left side of the torso.\n\n"
          "Used when computing the damage location.\n"
          "@see Player::getDamageLocation" );
-      addFieldV( "boxHeadRightPercentage", TypeRangedF32, Offset(boxHeadRightPercentage, PlayerData), &CommonValidators::NormalizedFloat,
-         "@brief Percentage of the player's bounding box width that represents the right side of the head.\n\n"
+      addFieldV( "boxTorsoRightPercentage", TypeRangedF32, Offset(boxTorsoRightPercentage, PlayerData), &CommonValidators::NormalizedFloat,
+         "@brief Percentage of the player's bounding box width from center that represents the right side of the torso.\n\n"
          "Used when computing the damage location.\n"
          "@see Player::getDamageLocation" );
-      addFieldV( "boxHeadBackPercentage", TypeRangedF32, Offset(boxHeadBackPercentage, PlayerData), &CommonValidators::NormalizedFloat,
-         "@brief Percentage of the player's bounding box depth that represents the back side of the head.\n\n"
+      addFieldV( "boxTorsoBackPercentage", TypeRangedF32, Offset(boxTorsoBackPercentage, PlayerData), &CommonValidators::NormalizedFloat,
+         "@brief Percentage of the player's bounding box depth from center that represents the back side of the torso.\n\n"
          "Used when computing the damage location.\n"
          "@see Player::getDamageLocation" );
-      addFieldV( "boxHeadFrontPercentage", TypeRangedF32, Offset(boxHeadFrontPercentage, PlayerData), &CommonValidators::NormalizedFloat,
-         "@brief Percentage of the player's bounding box depth that represents the front side of the head.\n\n"
+      addFieldV( "boxTorsoFrontPercentage", TypeRangedF32, Offset(boxTorsoFrontPercentage, PlayerData), &CommonValidators::NormalizedFloat,
+         "@brief Percentage of the player's bounding box depth from center that represents the front side of the torso.\n\n"
          "Used when computing the damage location.\n"
          "@see Player::getDamageLocation" );
 
@@ -1134,13 +1157,10 @@ void PlayerData::initPersistFields()
 
       // Mounted images arrays
       addArray( "Mounted Images", ShapeBase::MaxMountedImages );
-         addProtectedField("shapeNameFP", TypeShapeFilename, Offset(mShapeFPName, PlayerData), &_setShapeFPData, &defaultProtectedGetFn, ShapeBase::MaxMountedImages,
-            "@brief File name of this player's shape that will be used in conjunction with the corresponding mounted image.\n\n"
-            "These optional parameters correspond to each mounted image slot to indicate a shape that is rendered "
-            "in addition to the mounted image shape.  Typically these are a player's arms (or arm) that is "
-            "animated along with the mounted image's state animation sequences.\n", AbstractClassRep::FIELD_HideInInspectors);
 
-         INITPERSISTFIELD_SHAPEASSET_ARRAY(ShapeFP, ShapeBase::MaxMountedImages, PlayerData, "@brief File name of this player's shape that will be used in conjunction with the corresponding mounted image.\n\n"
+      ADD_FIELD("shapeFPAsset", TypeShapeAssetRef, Offset(shapeFPAssetRef, PlayerData))
+         .elements(ShapeBase::MaxMountedImages)
+         .doc("@brief File name of this player's shape that will be used in conjunction with the corresponding mounted image.\n\n"
             "These optional parameters correspond to each mounted image slot to indicate a shape that is rendered "
             "in addition to the mounted image shape.  Typically these are a player's arms (or arm) that is "
             "animated along with the mounted image's state animation sequences.\n");
@@ -1178,6 +1198,8 @@ void PlayerData::packData(BitStream* stream)
    stream->write(minLookAngle);
    stream->write(maxLookAngle);
    stream->write(maxFreelookAngle);
+   stream->write(minProneLookAngle);//Skurps
+   stream->write(maxProneLookAngle);//Skurps
    stream->write(maxTimeScale);
 
    stream->write(mass);
@@ -1340,13 +1362,13 @@ void PlayerData::packData(BitStream* stream)
    stream->writeString(imageAnimPrefixFP);
    for (U32 i=0; i<ShapeBase::MaxMountedImages; ++i)
    {
-      PACKDATA_ASSET_ARRAY(ShapeFP, i);
-
       // computeCRC is handled in ShapeBaseData
       if (computeCRC)
       {
          stream->write(mCRCFP[i]);
       }
+
+      AssetDatabase.packDataAsset(stream, shapeFPAssetRef[i].assetId);
    }
 }
 
@@ -1360,6 +1382,8 @@ void PlayerData::unpackData(BitStream* stream)
    stream->read(&minLookAngle);
    stream->read(&maxLookAngle);
    stream->read(&maxFreelookAngle);
+   stream->read(&minProneLookAngle); // Skurps
+   stream->read(&maxProneLookAngle); // Skurps
    stream->read(&maxTimeScale);
 
    stream->read(&mass);
@@ -1520,14 +1544,15 @@ void PlayerData::unpackData(BitStream* stream)
    imageAnimPrefixFP = stream->readSTString();
    for (U32 i=0; i<ShapeBase::MaxMountedImages; ++i)
    {
-      UNPACKDATA_ASSET_ARRAY(ShapeFP, i);
-
       // computeCRC is handled in ShapeBaseData
       if (computeCRC)
       {
          stream->read(&(mCRCFP[i]));
       }
+
+      shapeFPAssetRef[i] = AssetDatabase.unpackDataAsset(stream);
    }
+
 }
 
 
@@ -1557,7 +1582,7 @@ ConsoleDocClass( Player,
 Player::Player()
 {
    mTypeMask |= PlayerObjectType | DynamicShapeObjectType;
-
+   mPathfindingIgnore = true;
    mDelta.pos = mAnchorPoint = Point3F(0,0,100);
    mDelta.rot = mDelta.head = Point3F(0,0,0);
    mDelta.rotOffset.set(0.0f,0.0f,0.0f);
@@ -1587,6 +1612,7 @@ Player::Player()
    mActionAnimation.holdAtEnd = false;
    mActionAnimation.animateOnServer = false;
    mActionAnimation.atEnd = false;
+   mActionAnimation.useSynchedPos = true;
    mActionAnimation.callbackTripped = false;
    mState = MoveState;
    mJetting = false;
@@ -1863,9 +1889,13 @@ bool Player::onNewDataBlock( GameBaseData *dptr, bool reload )
    {
       for (U32 i=0; i<ShapeBase::MaxMountedImages; ++i)
       {
-         if (bool(mDataBlock->mShapeFP[i]))
+         if (mDataBlock->shapeFPAssetRef[i].isNull())
+            continue;
+
+         Resource<TSShape> shapeFP = mDataBlock->shapeFPAssetRef[i].assetPtr->getShapeResource();
+         if (bool(shapeFP))
          {
-            mShapeFPInstance[i] = new TSShapeInstance(mDataBlock->mShapeFP[i], isClientObject());
+            mShapeFPInstance[i] = new TSShapeInstance(shapeFP, isClientObject());
 
             mShapeFPInstance[i]->cloneMaterialList();
 
@@ -1925,44 +1955,6 @@ bool Player::onNewDataBlock( GameBaseData *dptr, bool reload )
 
    scriptOnNewDataBlock(reload);
    return true;
-}
-
-//----------------------------------------------------------------------------
-
-void Player::reSkin()
-{
-   if ( isGhost() && mShapeInstance && mSkinNameHandle.isValidString() )
-   {
-	  mShapeInstance->resetMaterialList();
-      Vector<String> skins;
-      String(mSkinNameHandle.getString()).split( ";", skins );
-
-      for ( S32 i = 0; i < skins.size(); i++ )
-      {
-         String oldSkin( mAppliedSkinName.c_str() );
-         String newSkin( skins[i] );
-
-         // Check if the skin handle contains an explicit "old" base string. This
-         // allows all models to support skinning, even if they don't follow the 
-         // "base_xxx" material naming convention.
-         S32 split = newSkin.find( '=' );    // "old=new" format skin?
-         if ( split != String::NPos )
-         {
-            oldSkin = newSkin.substr( 0, split );
-            newSkin = newSkin.erase( 0, split+1 );
-         }
-
-         // Apply skin to both 3rd person and 1st person shape instances
-         mShapeInstance->reSkin( newSkin, oldSkin );
-         for ( S32 j = 0; j < ShapeBase::MaxMountedImages; j++ )
-         {
-            if (mShapeFPInstance[j])
-               mShapeFPInstance[j]->reSkin( newSkin, oldSkin );
-         }
-
-         mAppliedSkinName = newSkin;
-      }
-   }
 }
 
 //----------------------------------------------------------------------------
@@ -2085,18 +2077,18 @@ void Player::processTick(const Move* move)
    }
    // Warp to catch up to server
    if (mDelta.warpTicks > 0) {
-	   mDelta.warpTicks--;
+      mDelta.warpTicks--;
 
       // Set new pos
       getTransform().getColumn(3, &mDelta.pos);
-	  mDelta.pos += mDelta.warpOffset;
-	  mDelta.rot += mDelta.rotOffset;
+     mDelta.pos += mDelta.warpOffset;
+     mDelta.rot += mDelta.rotOffset;
 
       // Wrap yaw to +/-PI
       if (mDelta.rot.z < - M_PI_F)
-		  mDelta.rot.z += M_2PI_F;
+        mDelta.rot.z += M_2PI_F;
       else if (mDelta.rot.z > M_PI_F)
-		  mDelta.rot.z -= M_2PI_F;
+        mDelta.rot.z -= M_2PI_F;
 
       if (!ignore_updates)
       {
@@ -2106,8 +2098,8 @@ void Player::processTick(const Move* move)
       updateLookAnimation();
 
       // Backstepping
-	  mDelta.posVec = -mDelta.warpOffset;
-	  mDelta.rotVec = -mDelta.rotOffset;
+     mDelta.posVec = -mDelta.warpOffset;
+     mDelta.rotVec = -mDelta.rotOffset;
    }
    else {
       // If there is no move, the player is either an
@@ -2360,29 +2352,44 @@ const char* Player::getStateName()
    return "Move";
 }
 
+//Skurps - overhaul
 void Player::getDamageLocation(const Point3F& in_rPos, const char *&out_rpVert, const char *&out_rpQuad)
 {
-   // TODO: This will be WRONG when player is prone or swimming!
-
    Point3F newPoint;
    mWorldToObj.mulP(in_rPos, &newPoint);
 
    Point3F boxSize = mObjBox.getExtents();
    F32 zHeight = boxSize.z;
-   F32 zTorso  = mDataBlock->boxTorsoPercentage;
-   F32 zHead   = mDataBlock->boxHeadPercentage;
+   F32 yLength = boxSize.y;
+   F32 torsoLimit  = mDataBlock->boxTorsoPercentage;
+   F32 headLimit   = mDataBlock->boxHeadPercentage;
 
-   zTorso *= zHeight;
-   zHead  *= zHeight;
+   if(mPose == PronePose)
+   {
+        torsoLimit = (torsoLimit * yLength) - (yLength / 2);
+        headLimit  = (headLimit * yLength) - (yLength / 2);
 
-   if (newPoint.z <= zTorso)
-      out_rpVert = "legs";
-   else if (newPoint.z <= zHead)
-      out_rpVert = "torso";
-   else
-      out_rpVert = "head";
+        if(newPoint.y <= torsoLimit)
+            out_rpVert = "legs";
+        else if(newPoint.y <= headLimit)
+            out_rpVert = "torso";
+        else
+            out_rpVert = "head";
+    }
+    else
+    {
+        torsoLimit *= zHeight;
+        headLimit  *= zHeight;
 
-   if(String::compare(out_rpVert, "head") != 0)
+        if (newPoint.z <= torsoLimit)
+            out_rpVert = "legs";
+        else if (newPoint.z <= headLimit)
+            out_rpVert = "torso";
+        else
+            out_rpVert = "head";
+    }
+
+   if(dStrcmp(out_rpVert, "torso") != 0)
    {
       if (newPoint.y >= 0.0f)
       {
@@ -2401,40 +2408,36 @@ void Player::getDamageLocation(const Point3F& in_rPos, const char *&out_rpVert, 
    }
    else
    {
-      F32 backToFront = boxSize.x;
-      F32 leftToRight = boxSize.y;
+      F32 xWidth = boxSize.x;
 
-      F32 backPoint  = backToFront * mDataBlock->boxHeadBackPercentage;
-      F32 frontPoint = backToFront * mDataBlock->boxHeadFrontPercentage;
-      F32 leftPoint  = leftToRight * mDataBlock->boxHeadLeftPercentage;
-      F32 rightPoint = leftToRight * mDataBlock->boxHeadRightPercentage;
+      //boxTorsoBackPercentage and boxTorsoLeftPercentage need to be flipped negative
+      F32 backPoint  = (yLength * mDataBlock->boxTorsoBackPercentage) * -1.0f;
+      F32 frontPoint = yLength * mDataBlock->boxTorsoFrontPercentage;
+      F32 leftPoint  = (xWidth * mDataBlock->boxTorsoLeftPercentage) * -1.0f;
+      F32 rightPoint = xWidth * mDataBlock->boxTorsoRightPercentage;
 
-      S32 index = 0;
-      if (newPoint.y < backPoint)
-         index += 0;
-      else if (newPoint.y >= frontPoint)
+      S32 index = 0;                    //Middle hits are cases 0-2
+      if (newPoint.y < backPoint)       //Back hits are cases 3-5
          index += 3;
-      else
+      else if (newPoint.y >= frontPoint)  //Front hits are cases 6-8
          index += 6;
 
-      if (newPoint.x < leftPoint)
-         index += 0;
-      else if (newPoint.x >= rightPoint)
+      if (newPoint.x < leftPoint)       //Base number + 1 is left side
          index += 1;
-      else
+      else if (newPoint.x >= rightPoint) //Base number + 2 is right side
          index += 2;
 
       switch (index)
       {
-         case 0: out_rpQuad = "left_back";      break;
-         case 1: out_rpQuad = "middle_back";    break;
-         case 2: out_rpQuad = "right_back";     break;
-         case 3: out_rpQuad = "left_middle";    break;
-         case 4: out_rpQuad = "middle_middle";  break;
-         case 5: out_rpQuad = "right_middle";   break;
-         case 6: out_rpQuad = "left_front";     break;
-         case 7: out_rpQuad = "middle_front";   break;
-         case 8: out_rpQuad = "right_front";    break;
+         case 0: out_rpQuad = "middle_middle";      break;   // "Middle middle" sounds confusing but it is the case that occurs when shot in the back when prone
+         case 1: out_rpQuad = "middle_left";    break;
+         case 2: out_rpQuad = "middle_right";     break;
+         case 3: out_rpQuad = "back_middle";    break;
+         case 4: out_rpQuad = "back_left";  break;
+         case 5: out_rpQuad = "back_right";   break;
+         case 6: out_rpQuad = "front_middle";     break;
+         case 7: out_rpQuad = "front_left";   break;
+         case 8: out_rpQuad = "front_right";    break;
 
          default:
             AssertFatal(0, "Bad non-tant index");
@@ -2596,7 +2599,7 @@ void Player::updateMove(const Move* move)
    // Update current orientation
    if (mDamageState == Enabled) {
       F32 prevZRot = mRot.z;
-	  mDelta.headVec = mHead;
+     mDelta.headVec = mHead;
 
       bool doStandardMove = true;
       bool absoluteDelta = false;
@@ -2727,8 +2730,13 @@ void Player::updateMove(const Move* move)
          F32 p = move->pitch * (mPose == SprintPose ? mDataBlock->sprintPitchScale : 1.0f);
          if (p > M_PI_F) 
             p -= M_2PI_F;
-         mHead.x = mClampF(mHead.x + p,mDataBlock->minLookAngle,
-                           mDataBlock->maxLookAngle);
+       
+       //Skurps - use different min/max if prone
+         F32 curMinLookAngle  = mPose == PronePose ? mDataBlock->minProneLookAngle : mDataBlock->minLookAngle;
+         F32 curMaxLookAngle  = mPose == PronePose ? mDataBlock->maxProneLookAngle : mDataBlock->maxLookAngle;
+
+         mHead.x = mClampF(mHead.x + p,curMinLookAngle,
+                           curMaxLookAngle); // Skurps
 
          F32 y = move->yaw * (mPose == SprintPose ? mDataBlock->sprintYawScale : 1.0f);
          if (y > M_PI_F)
@@ -2757,21 +2765,21 @@ void Player::updateMove(const Move* move)
             mRot.z -= M_2PI_F;
       }
 
-	  mDelta.rot = mRot;
-	  mDelta.rotVec.x = mDelta.rotVec.y = 0.0f;
-	  mDelta.rotVec.z = prevZRot - mRot.z;
+     mDelta.rot = mRot;
+     mDelta.rotVec.x = mDelta.rotVec.y = 0.0f;
+     mDelta.rotVec.z = prevZRot - mRot.z;
       if (mDelta.rotVec.z > M_PI_F)
-		  mDelta.rotVec.z -= M_2PI_F;
+        mDelta.rotVec.z -= M_2PI_F;
       else if (mDelta.rotVec.z < -M_PI_F)
-		  mDelta.rotVec.z += M_2PI_F;
+        mDelta.rotVec.z += M_2PI_F;
 
-	  mDelta.head = mHead;
-	  mDelta.headVec -= mHead;
+     mDelta.head = mHead;
+     mDelta.headVec -= mHead;
 
       if (absoluteDelta)
       {
          mDelta.headVec = Point3F(0, 0, 0);
-		 mDelta.rotVec = Point3F(0, 0, 0);
+       mDelta.rotVec = Point3F(0, 0, 0);
       }
 
       for(U32 i=0; i<3; ++i)
@@ -2842,7 +2850,7 @@ void Player::updateMove(const Move* move)
 
       // Cancel any script driven animations if we are going to move.
       if (moveVec.x + moveVec.y + moveVec.z != 0.0f &&
-          (mActionAnimation.action >= PlayerData::NumTableActionAnims
+          (mActionAnimation.action >= mDataBlock->mDynamicAnimsStart
                || mActionAnimation.action == PlayerData::LandAnim))
          mActionAnimation.action = PlayerData::NullAnimation;
    }
@@ -2858,7 +2866,7 @@ void Player::updateMove(const Move* move)
    // Acceleration due to gravity
    VectorF acc(0.0f, 0.0f, mNetGravity/(1.0 - mBuoyancy) * TickSec);
    if (getParent() !=NULL)
-	   acc = VectorF::Zero;
+      acc = VectorF::Zero;
 
    // Determine ground contact normal. Only look for contacts if
    // we can move and aren't mounted.
@@ -3275,11 +3283,11 @@ void Player::updateMove(const Move* move)
    if ( !mIsAiControlled )
    {
       if ( mSwimming )
-         desiredPose = SwimPose; 
-      else if ( runSurface && move->trigger[sCrouchTrigger] && canCrouch() )     
-         desiredPose = CrouchPose;
-      else if ( runSurface && move->trigger[sProneTrigger] && canProne() )
+         desiredPose = SwimPose;
+      else if ( runSurface && move->trigger[sProneTrigger] && canProne() ) //Skurps swapped with crouch so crouch does not need to be released in order to go prone
          desiredPose = PronePose;
+      else if ( runSurface && move->trigger[sCrouchTrigger] && canCrouch() )
+         desiredPose = CrouchPose;
       else if ( move->trigger[sSprintTrigger] && canSprint() )
          desiredPose = SprintPose;
       else if ( canStand() )
@@ -3352,27 +3360,27 @@ bool Player::canJetJump()
 }
 
 bool Player::canSwim()
-{  
-   // Not used!
-   //return mState == MoveState && mDamageState == Enabled && !isMounted() && mEnergy >= mDataBlock->minSwimEnergy && mWaterCoverage >= 0.8f;
-   return mAllowSwimming;
+{
+   // Make sure swim bounding box would be submerged enough go to swim pose, necessary when crouched or prone in shallow water - Skurps
+   return mAllowSwimming  && ((getPosition().z + mDataBlock->swimBoxSize.z) < mLiquidHeight);
 }
 
+//Fixed to work with small boxsize.z values - Skurps
 bool Player::canCrouch()
 {
    if (!mAllowCrouching)
       return false;
 
-   if ( mState != MoveState || 
-        mDamageState != Enabled || 
-        isMounted() || 
+   if ( mState != MoveState ||
+        mDamageState != Enabled ||
+        isMounted() ||
         mSwimming ||
         mFalling )
       return false;
 
    // Can't crouch if no crouch animation!
    if ( mDataBlock->actionList[PlayerData::CrouchRootAnim].sequence == -1 )
-      return false;       
+      return false;
 
    // We are already in this pose, so don't test it again...
    if ( mPose == CrouchPose )
@@ -3381,22 +3389,13 @@ bool Player::canCrouch()
    // Do standard Torque physics test here!
    if ( !mPhysicsRep )
    {
-      F32 radius;
-
-      if ( mPose == PronePose )
-         radius = mDataBlock->proneBoxSize.z;
-      else
-         return true;
-
-      // use our X and Y dimentions on our boxsize as the radii for our search, and the difference between a standing position
-      // and the position we currently are in.
-      Point3F extent( mDataBlock->crouchBoxSize.x / 2, mDataBlock->crouchBoxSize.y / 2, mDataBlock->crouchBoxSize.z - radius );
+       //Changed from stock because math does not work with small z values -Skurps
+      Point3F extent( mDataBlock->crouchBoxSize.x / 2, mDataBlock->crouchBoxSize.y / 2, mDataBlock->crouchBoxSize.z / 2);
 
       Point3F position = getPosition();
-      position.z += radius;
+      position.z += (mDataBlock->crouchBoxSize.z / 2); //gets a position at the center of proposed crouch box.
 
-      // Use these radii to create a box that represents the difference between a standing position and the position
-      // we want to move into.
+      // Box shaped like new desired pose
       Box3F B(position - extent, position + extent, true);
 
       EarlyOutPolyList polyList;
@@ -3417,39 +3416,27 @@ bool Player::canCrouch()
    return mPhysicsRep->testSpacials( getPosition(), mDataBlock->crouchBoxSize );
 }
 
-bool Player::canStand()
-{   
-   if ( mState != MoveState || 
-        mDamageState != Enabled || 
-        isMounted() || 
+bool Player::canStand()  //Fixed to work with small boxsize.z values - Skurps
+{
+   if ( mState != MoveState ||
+        mDamageState != Enabled ||
+        isMounted() ||
         mSwimming )
       return false;
 
    // We are already in this pose, so don't test it again...
-   if ( mPose == StandPose )
+   if ( mPose == StandPose || mPose == SprintPose || mPose == SwimPose )
       return true;
 
    // Do standard Torque physics test here!
    if ( !mPhysicsRep )
    {
-      F32 radius;
-
-      if (mPose == CrouchPose)
-         radius = mDataBlock->crouchBoxSize.z;
-      else if (mPose == PronePose)
-         radius = mDataBlock->proneBoxSize.z;
-      else
-         return true;
-
-      // use our X and Y dimentions on our boxsize as the radii for our search, and the difference between a standing position
-      // and the position we currently are in.
-      Point3F extent( mDataBlock->boxSize.x / 2, mDataBlock->boxSize.y / 2, mDataBlock->boxSize.z - radius );
+      Point3F extent( mDataBlock->boxSize.x / 2, mDataBlock->boxSize.y / 2, mDataBlock->boxSize.z /2 );
 
       Point3F position = getPosition();
-      position.z += radius;
+      position.z += (mDataBlock->boxSize.z / 2);  //gets a position at the center of proposed stand box.
 
-      // Use these radii to create a box that represents the difference between a standing position and the position
-      // we want to move into.
+      // Box shaped like new desired pose
       Box3F B(position - extent, position + extent, true);
 
       EarlyOutPolyList polyList;
@@ -3475,9 +3462,9 @@ bool Player::canProne()
    if (!mAllowProne)
       return false;
 
-   if ( mState != MoveState || 
-        mDamageState != Enabled || 
-        isMounted() || 
+   if ( mState != MoveState ||
+        mDamageState != Enabled ||
+        isMounted() ||
         mSwimming ||
         mFalling )
       return false;
@@ -3499,7 +3486,8 @@ bool Player::canProne()
 
 bool Player::canSprint()
 {
-   return mAllowSprinting && mState == MoveState && mDamageState == Enabled && !isMounted() && mEnergy >= mDataBlock->minSprintEnergy && !mSwimming;
+   //Incorporate wading in deep water check -Skurps
+   return mAllowSprinting && mState == MoveState && mDamageState == Enabled && !isMounted() && mEnergy >= mDataBlock->minSprintEnergy && !mSwimming && mWaterCoverage < 0.5f;
 }
 
 //----------------------------------------------------------------------------
@@ -3552,14 +3540,19 @@ void Player::updateLookAnimation(F32 dt)
    // the min and max look angles provided in the datablock.
    if (mArmAnimation.thread) 
    {
+     // Skurps
+     F32 curMinLookAngle  = mPose == PronePose ? mDataBlock->minProneLookAngle : mDataBlock->minLookAngle;
+     F32 curMaxLookAngle  = mPose == PronePose ? mDataBlock->maxProneLookAngle : mDataBlock->maxLookAngle;
+      
       if(mControlObject)
       {
          mShapeInstance->setPos(mArmAnimation.thread,0.5f);
       }
       else
       {
-         F32 d = mDataBlock->maxLookAngle - mDataBlock->minLookAngle;
-         F32 tp = (renderHead.x - mDataBlock->minLookAngle) / d;
+         F32 d = curMaxLookAngle - curMinLookAngle; //Skurps
+         F32 tp = (renderHead.x - curMinLookAngle) / d; //Skurps
+
          mShapeInstance->setPos(mArmAnimation.thread,mClampF(tp,0,1));
       }
    }
@@ -3752,7 +3745,7 @@ bool Player::inSittingAnim()
    U32   action = mActionAnimation.action;
    if (mActionAnimation.thread && action < mDataBlock->actionCount) {
       const char * name = mDataBlock->actionList[action].name;
-      if (!dStricmp(name, "Sitting") || !dStricmp(name, "Scoutroot"))
+      if (name && (!dStricmp(name, "Sitting") || !dStricmp(name, "Scoutroot")))
          return true;
    }
    return false;
@@ -3953,7 +3946,7 @@ void Player::updateActionThread()
 
             if (!footfallDustOverride && rInfo.t <= 0.5f && mWaterCoverage == 0.0f
                                          && material && material->mShowDust
-                                         && mDataBlock->footPuffEmitter != nullptr)
+                                         && mDataBlock->footPuffEmitter != NULL)
             {
                // New emitter every time for visibility reasons
                ParticleEmitter * emitter = new ParticleEmitter;
@@ -3990,6 +3983,11 @@ void Player::updateActionThread()
             playFootstepSound( triggeredLeft, material, rInfo.object );
          }
       }
+     //Prone crawl sound - Skurps
+      if( mShapeInstance->getTriggerState( 3 ) )
+      {
+        playCrawlSound();
+      }
    }
 
    // Mount pending variable puts a hold on the delayTicks below so players don't
@@ -3997,7 +3995,7 @@ void Player::updateActionThread()
    if (mMountPending)
       mMountPending = (isMounted() ? 0 : (mMountPending - 1));
 
-   if (isServerObject() && (mActionAnimation.action >= PlayerData::NumTableActionAnims) && mActionAnimation.atEnd)
+   if (isServerObject() && (mActionAnimation.action >= mDataBlock->mDynamicAnimsStart) && mActionAnimation.atEnd)
    {
       //The scripting language will get a call back when a script animation has finished...
       //  example: When the chat menu animations are done playing...
@@ -4098,7 +4096,7 @@ void Player::pickActionAnimation()
       // Go into root position unless something was set explicitly
       // from a script.
       if (mActionAnimation.action != PlayerData::RootAnim &&
-          mActionAnimation.action < PlayerData::NumTableActionAnims)
+          mActionAnimation.action < mDataBlock->mDynamicAnimsStart)
          setActionThread(PlayerData::RootAnim,true,false,false);
       return;
    }
@@ -4141,7 +4139,7 @@ void Player::pickActionAnimation()
    }
    else if ( mPose == PronePose )
    {
-      pickBestMoveAction(PlayerData::ProneRootAnim, PlayerData::ProneBackwardAnim, &action, &forward);
+      pickBestMoveAction(PlayerData::ProneRootAnim, PlayerData::ProneRightAnim, &action, &forward); //Skurps
    }
    else if ( mPose == SprintPose )
    {
@@ -4370,7 +4368,6 @@ void Player::onImageStateAnimation(U32 imageSlot, const char* seqName, bool dire
    if (mDataBlock->allowImageStateAnimation && isGhost())
    {
       MountedImage& image = mMountedImageList[imageSlot];
-
       // Just as with onImageAnimThreadChange we're going to apply various prefixes to determine the final sequence to use.
       // Here is the order:
       // imageBasePrefix_scriptPrefix_baseAnimName
@@ -4490,7 +4487,7 @@ void Player::onImageAnimThreadChange(U32 imageSlot, S32 imageShapeIndex, ShapeBa
       return;
    }
 
-   // Just as with ShapeBase::udpateAnimThread we're going to apply various prefixes to determine the final sequence to use.
+   // Just as with ShapeBase::updateAnimThread we're going to apply various prefixes to determine the final sequence to use.
    // Here is the order:
    // imageBasePrefix_scriptPrefix_baseAnimName
    // imageBasePrefix_baseAnimName
@@ -4609,10 +4606,12 @@ void Player::onUnmount( SceneObject *obj, S32 node )
 
 void Player::unmount()
 {
+
    // Reset back to root position during dismount.  This copies what is
    // done on the server and corrects the fact that the RootAnim change
    // is not sent across to the client using the standard ActionMask.
-   setActionThread(PlayerData::RootAnim,true,false,false);
+   if (!isRemoved())
+      setActionThread(PlayerData::RootAnim,true,false,false);
 
    Parent::unmount();
 }
@@ -4759,6 +4758,8 @@ bool Player::step(Point3F *pos,F32 *maxStep,F32 time)
 // If so, it will attempt to attach to it.
 void Player::updateAttachment()
 {
+   if (getDamageState() != Enabled && mVelocity.z > mDataBlock->fallingSpeedThreshold) return;
+
    Point3F rot, pos;
     RayInfo rInfo;
     MatrixF mat = getTransform();
@@ -4766,10 +4767,13 @@ void Player::updateAttachment()
     disableCollision();
     if (gServerContainer.castRay(Point3F(pos.x, pos.y, pos.z + 0.1f),
         Point3F(pos.x, pos.y, pos.z - 1.0f ),
-       sCollisionMoveMask, &rInfo))
+       PathShapeObjectType | StaticShapeObjectType | TerrainObjectType, &rInfo))
     {
+       Point3F setPos = rInfo.point;
+       setPos.z = mMax(setPos.z + sMinFaceDistance, pos.z);
+
        if ((mJumpSurfaceLastContact < JumpSkipContactsMax) && !mSwimming)
-          setPosition(rInfo.point, getRotation());
+          setPosition(setPos, getRotation());
 
        if( rInfo.object->getTypeMask() & PathShapeObjectType) //Ramen
        {
@@ -4789,7 +4793,7 @@ void Player::updateAttachment()
        }
     }
     else
-    {	 
+    {  
        if (getParent() != NULL)
        {
           clearProcessAfter();
@@ -4840,7 +4844,7 @@ Point3F Player::_move( const F32 travelTime, Collision *outCol )
    static Polyhedron sBoxPolyhedron;
    static ExtrudedPolyList sExtrudedPolyList;
    static ExtrudedPolyList sPhysZonePolyList;
-
+   Vector<VectorF> norms;
    for (; count < sMoveRetryCount; count++) {
       F32 speed = mVelocity.len();
       if (!speed && !mDeath.haveVelocity())
@@ -4966,7 +4970,7 @@ Point3F Player::_move( const F32 travelTime, Collision *outCol )
          mFalling = false;
 
          // Back off...
-         if ( velLen > 0.f ) {
+         if ( velLen > POINT_EPSILON) {
             F32 newT = getMin(0.01f / velLen, dt);
             start -= mVelocity * newT;
             totalMotion -= velLen * newT;
@@ -5018,30 +5022,82 @@ Point3F Player::_move( const F32 travelTime, Collision *outCol )
          // Subtract out velocity
          VectorF dv = collision->normal * (bd + sNormalElasticity);
          mVelocity += dv;
+
+         bool blocked = false;
          if (count == 0)
          {
             firstNormal = collision->normal;
          }
          else
          {
-            if (count == 1)
+            bool uniqueNorm = true;
+            for (U32 norm = 0; norm < norms.size(); norm++)
             {
-               // Re-orient velocity along the crease.
-               if (mDot(dv,firstNormal) < 0.0f &&
-                   mDot(collision->normal,firstNormal) < 0.0f)
+               if (mFabs(mDot(collision->normal, norms[norm])) > (1.0f - POINT_EPSILON))
                {
-                  VectorF nv;
-                  mCross(collision->normal,firstNormal,&nv);
-                  F32 nvl = nv.len();
-                  if (nvl)
-                  {
-                     if (mDot(nv,mVelocity) < 0.0f)
-                        nvl = -nvl;
-                     nv *= mVelocity.len() / nvl;
-                     mVelocity = nv;
-                  }
+                  uniqueNorm = false;
+                  break;
                }
             }
+            if (uniqueNorm)
+            {
+               VectorF n = collision->normal;
+               n.normalizeSafe();
+               norms.push_back(n);
+            }
+            // Use the number of unique normals to determine how to project velocity
+            if (norms.size() == 1)
+            {
+               VectorF n = norms[0];
+               mVelocity -= mDot(mVelocity, n) * n;
+               if (mVelocity.lenSquared() < POINT_EPSILON)
+                  blocked = true;
+            }
+            else if (norms.size() == 2)
+            {
+               VectorF nv;
+               mCross(norms[0], norms[1], &nv);
+               F32 nvl = nv.len();
+               if (nvl > POINT_EPSILON)
+               {
+                  nv /= nvl;
+                  F32 vel = mClampF(mDot(mVelocity, nv), -speed, speed);
+                  mVelocity = nv * vel;
+                  if (mVelocity.lenSquared() < POINT_EPSILON)
+                     blocked = true;
+               }
+               else blocked = true;
+            }
+            else // 3 or more unique normals: project off all using a Gram-Schmidt variant
+            {
+               Vector<VectorF> orthoNorms;
+               for (U32 i = 0; i < norms.size(); ++i)
+               {
+                  VectorF n = norms[i];
+                  for (U32 j = 0; j < orthoNorms.size(); ++j)
+                     n -= mDot(n, orthoNorms[j]) * orthoNorms[j];
+                  if (n.lenSquared() > POINT_EPSILON)
+                  {
+                     n.normalize();
+                     orthoNorms.push_back(n);
+                  }
+               }
+               for (U32 i = 0; i < orthoNorms.size(); ++i)
+                  mVelocity -= mDot(mVelocity, orthoNorms[i]) * orthoNorms[i];
+               if (mVelocity.lenSquared() < POINT_EPSILON)
+                  blocked = true;
+            }
+         }
+         if (blocked)
+         {
+            mVelocity.zero();
+            return start;
+         }
+         F32 newSpeed = mVelocity.len();
+         if (newSpeed > speed)
+         {
+            mVelocity.normalize();
+            mVelocity *= speed;
          }
       }
       else
@@ -5052,7 +5108,7 @@ Point3F Player::_move( const F32 travelTime, Collision *outCol )
       }
    }
 
-   if (count == sMoveRetryCount)
+   if (count == sMoveRetryCount || mVelocity.lenSquared() < POINT_EPSILON)
    {
       // Failed to move
       start = initialPosition;
@@ -5204,7 +5260,7 @@ bool Player::updatePos(const F32 travelTime)
             Collision& colCheck = collisionList[i];
             if (colCheck.object)
             {
-               SceneObject* obj = static_cast<SceneObject*>(col.object);
+               SceneObject* obj = static_cast<SceneObject*>(colCheck.object);
                if (obj->getTypeMask() & PlayerObjectType)
                {
                   _handleCollision( colCheck );
@@ -5240,8 +5296,8 @@ bool Player::updatePos(const F32 travelTime)
    if (isClientObject())
    {
       mDelta.pos = newPos;
-	  mDelta.posVec = mDelta.posVec - mDelta.pos;
-	  mDelta.dt = 1.0f;
+     mDelta.posVec = mDelta.posVec - mDelta.pos;
+     mDelta.dt = 1.0f;
    }
 
    setPosition( newPos, mRot );
@@ -5938,7 +5994,7 @@ void Player::getMuzzlePointAI(U32 imageSlot, Point3F* point)
 
    // If we are in one of the standard player animations, adjust the
    // muzzle to point in the direction we are looking.
-   if (mActionAnimation.action < PlayerData::NumTableActionAnims)
+   if (mActionAnimation.action < mDataBlock->mDynamicAnimsStart)
    {
       MatrixF xmat;
       xmat.set(EulerF(mHead.x, 0, 0));
@@ -6125,6 +6181,13 @@ void Player::buildConvex(const Box3F& box, Convex* convex)
 
 void Player::updateWorkingCollisionSet()
 {
+   if (mDataBlock->shapeAssetRef.isNull())
+      return;
+
+   Resource<TSShape> shape = mDataBlock->shapeAssetRef.assetPtr->getShapeResource();
+   if (!shape)
+      return;
+
    // First, we need to adjust our velocity for possible acceleration.  It is assumed
    // that we will never accelerate more than 20 m/s for gravity, plus 10 m/s for
    // jetting, and an equivalent 10 m/s for jumping.  We also assume that the
@@ -6132,7 +6195,7 @@ void Player::updateWorkingCollisionSet()
    // box by the possible movement in that tick.
    Point3F scaledVelocity = mVelocity * TickSec;
    F32 len    = scaledVelocity.len();
-   F32 newLen = len + (10.0f * TickSec);
+   F32 newLen = len + (shape->mRadius * TickSec);
 
    // Check to see if it is actually necessary to construct the new working list,
    // or if we can use the cached version from the last query.  We use the x
@@ -6265,7 +6328,7 @@ void Player::readPacketData(GameConnection *connection, BitStream *stream)
       stream->read(&mVelocity.y);
       stream->read(&mVelocity.z);
       stream->setCompressionPoint(pos);
-	  mDelta.pos = pos;
+     mDelta.pos = pos;
       mJumpSurfaceLastContact = stream->readInt(4);
 
       if (stream->readFlag())
@@ -6322,7 +6385,7 @@ U32 Player::packUpdate(NetConnection *con, U32 mask, BitStream *stream)
 
    if (stream->writeFlag(mask & ActionMask &&
          mActionAnimation.action != PlayerData::NullAnimation &&
-         mActionAnimation.action >= PlayerData::NumTableActionAnims)) {
+         mActionAnimation.action >= mDataBlock->mDynamicAnimsStart)) {
       stream->writeInt(mActionAnimation.action,PlayerData::ActionAnimBits);
       stream->writeFlag(mActionAnimation.holdAtEnd);
       stream->writeFlag(mActionAnimation.atEnd);
@@ -6381,9 +6444,12 @@ U32 Player::packUpdate(NetConnection *con, U32 mask, BitStream *stream)
       mRot.z = mWrapF(mRot.z, 0.0f, M_2PI_F);
 
       stream->writeFloat(mRot.z / M_2PI_F, 7);
-      stream->writeSignedFloat(mHead.x / (mDataBlock->maxLookAngle - mDataBlock->minLookAngle), 6);
+     //Skurps - use different min/max if prone
+      F32 curMinLookAngle  = mPose == PronePose ? mDataBlock->minProneLookAngle : mDataBlock->minLookAngle;
+      F32 curMaxLookAngle  = mPose == PronePose ? mDataBlock->maxProneLookAngle : mDataBlock->maxLookAngle;
+      stream->writeSignedFloat(mHead.x / ( curMaxLookAngle - curMinLookAngle), 6); //Skurps
       stream->writeSignedFloat(mHead.z / mDataBlock->maxFreelookAngle, 6);
-	  mDelta.move.pack(stream);
+     mDelta.move.pack(stream);
       stream->writeFlag(!(mask & NoWarpMask));
    }
    // Ghost need energy to predict reliably
@@ -6487,30 +6553,33 @@ void Player::unpackUpdate(NetConnection *con, BitStream *stream)
       
       rot.y = rot.x = 0.0f;
       rot.z = stream->readFloat(7) * M_2PI_F;
-      mHead.x = stream->readSignedFloat(6) * (mDataBlock->maxLookAngle - mDataBlock->minLookAngle);
+     //Skurps - use different min/max if prone
+      F32 curMinLookAngle  = mPose == PronePose ? mDataBlock->minProneLookAngle : mDataBlock->minLookAngle; //Skurps
+      F32 curMaxLookAngle  = mPose == PronePose ? mDataBlock->maxProneLookAngle : mDataBlock->maxLookAngle; //Skurps
+      mHead.x = stream->readSignedFloat(6) * (curMaxLookAngle - curMinLookAngle); //Skurps
       mHead.z = stream->readSignedFloat(6) * mDataBlock->maxFreelookAngle;
-	  mDelta.move.unpack(stream);
+     mDelta.move.unpack(stream);
 
-	  mDelta.head = mHead;
-	  mDelta.headVec.set(0.0f, 0.0f, 0.0f);
+     mDelta.head = mHead;
+     mDelta.headVec.set(0.0f, 0.0f, 0.0f);
 
       if (stream->readFlag() && isProperlyAdded())
       {
          // Determine number of ticks to warp based on the average
          // of the client and server velocities.
-		  mDelta.warpOffset = pos - mDelta.pos;
+        mDelta.warpOffset = pos - mDelta.pos;
          F32 as = (speed + mVelocity.len()) * 0.5f * TickSec;
          F32 dt = (as > 0.00001f) ? mDelta.warpOffset.len() / as: sMaxWarpTicks;
-		 mDelta.warpTicks = (S32)((dt > sMinWarpTicks) ? getMax(mFloor(dt + 0.5f), 1.0f) : 0.0f);
+       mDelta.warpTicks = (S32)((dt > sMinWarpTicks) ? getMax(mFloor(dt + 0.5f), 1.0f) : 0.0f);
 
          if (mDelta.warpTicks)
          {
             // Setup the warp to start on the next tick.
             if (mDelta.warpTicks > sMaxWarpTicks)
-				mDelta.warpTicks = sMaxWarpTicks;
-			mDelta.warpOffset /= (F32)mDelta.warpTicks;
+            mDelta.warpTicks = sMaxWarpTicks;
+         mDelta.warpOffset /= (F32)mDelta.warpTicks;
 
-			mDelta.rotOffset = rot - mDelta.rot;
+         mDelta.rotOffset = rot - mDelta.rot;
 
             // Ignore small rotation differences
             if (mFabs(mDelta.rotOffset.z) < 0.001f)
@@ -6518,11 +6587,11 @@ void Player::unpackUpdate(NetConnection *con, BitStream *stream)
 
             // Wrap rotation to +/-PI
             if(mDelta.rotOffset.z < - M_PI_F)
-				mDelta.rotOffset.z += M_2PI_F;
+            mDelta.rotOffset.z += M_2PI_F;
             else if(mDelta.rotOffset.z > M_PI_F)
-				mDelta.rotOffset.z -= M_2PI_F;
+            mDelta.rotOffset.z -= M_2PI_F;
 
-			mDelta.rotOffset /= (F32)mDelta.warpTicks;
+         mDelta.rotOffset /= (F32)mDelta.warpTicks;
          }
          else
          {
@@ -6538,18 +6607,18 @@ void Player::unpackUpdate(NetConnection *con, BitStream *stream)
             else
             {
                F32 dti = 1.0f / mDelta.dt;
-			   mDelta.posVec = (cp - pos) * dti;
-			   mDelta.rotVec.z = mRot.z - rot.z;
+            mDelta.posVec = (cp - pos) * dti;
+            mDelta.rotVec.z = mRot.z - rot.z;
 
                if(mDelta.rotVec.z > M_PI_F)
                   mDelta.rotVec.z -= M_2PI_F;
                else if(mDelta.rotVec.z < -M_PI_F)
                   mDelta.rotVec.z += M_2PI_F;
 
-			   mDelta.rotVec.z *= dti;
+            mDelta.rotVec.z *= dti;
             }
-			mDelta.pos = pos;
-			mDelta.rot = rot;
+         mDelta.pos = pos;
+         mDelta.rot = rot;
             if (!ignore_updates)
                setPosition(pos,rot);
          }
@@ -6559,10 +6628,10 @@ void Player::unpackUpdate(NetConnection *con, BitStream *stream)
          // Set the player to the server position
          mDelta.pos = pos;
          mDelta.rot = rot;
-		 mDelta.posVec.set(0.0f, 0.0f, 0.0f);
-		 mDelta.rotVec.set(0.0f, 0.0f, 0.0f);
-		 mDelta.warpTicks = 0;
-		 mDelta.dt = 0.0f;
+       mDelta.posVec.set(0.0f, 0.0f, 0.0f);
+       mDelta.rotVec.set(0.0f, 0.0f, 0.0f);
+       mDelta.warpTicks = 0;
+       mDelta.dt = 0.0f;
          if (!ignore_updates)
             setPosition(pos,rot);
       }
@@ -6900,6 +6969,13 @@ DefineEngineMethod( Player, checkDismountPoint, bool, ( Point3F oldPos, Point3F 
    return object->checkDismountPosition(oldPosMat, posMat);
 }
 
+//Skurps
+DefineEngineMethod( Player, canProne, bool, ( ),,
+    "@brief checks if the engine would allow prone.\n")
+{
+    return object->canProne();
+}
+
 DefineEngineMethod( Player, getNumDeathAnimations, S32, ( ),,
    "@brief Get the number of death animations available to this player.\n\n"
    "Death animations are assumed to be named death1-N using consecutive indices." )
@@ -7067,6 +7143,13 @@ void Player::playFootstepSound( bool triggeredLeft, Material* contactMaterial, S
       if (sound>=0)
          SFX->playOnce(mDataBlock->getPlayerSoundProfile(sound), &footMat);
    }
+}
+
+//Skurps
+void Player:: playCrawlSound()
+{
+    MatrixF crawlMat = getTransform();
+    SFX->playOnce(mDataBlock->getPlayerSoundProfile( PlayerData::Crawl ), &crawlMat);
 }
 
 void Player:: playImpactSound()
@@ -7510,9 +7593,17 @@ F32 Player::getAnimationDurationByID(U32 anim_id)
 {
    if (anim_id == BAD_ANIM_ID)
       return 0.0f;
+
+   if (mDataBlock->shapeAssetRef.isNull())
+      return 0.0f;
+
+   Resource<TSShape> shape = mDataBlock->shapeAssetRef.assetPtr->getShapeResource();
+   if (!shape)
+      return 0.0f;
+
    S32 seq_id = mDataBlock->actionList[anim_id].sequence;
-   if (seq_id >= 0 && seq_id < mDataBlock->mShape->sequences.size())
-      return mDataBlock->mShape->sequences[seq_id].duration;
+   if (seq_id >= 0 && seq_id < shape->sequences.size())
+      return shape->sequences[seq_id].duration;
 
    return 0.0f;
 }
@@ -7523,10 +7614,16 @@ bool Player::isBlendAnimation(const char* name)
    if (anim_id == BAD_ANIM_ID)
       return false;
 
-   S32 seq_id = mDataBlock->actionList[anim_id].sequence;
-   if (seq_id >= 0 && seq_id < mDataBlock->mShape->sequences.size())
-      return mDataBlock->mShape->sequences[seq_id].isBlend();
+   if (mDataBlock->shapeAssetRef.isNull())
+      return false;
 
+   Resource<TSShape> shape = mDataBlock->shapeAssetRef.assetPtr->getShapeResource();
+   if (!shape)
+      return false;
+
+   S32 seq_id = mDataBlock->actionList[anim_id].sequence;
+   if (seq_id >= 0 && seq_id < shape->sequences.size())
+      return shape->sequences[seq_id].isBlend();
    return false;
 }
 

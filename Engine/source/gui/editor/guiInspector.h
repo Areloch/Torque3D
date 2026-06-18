@@ -87,8 +87,10 @@ public:
       if (!mTargets.empty())
          return mTargets[index];
       else
-         return nullptr;
+         return NULL;
    }
+
+   void updateVisibility();
 
    S32 getComponentGroupTargetId() { return mComponentGroupTargetId; }
    void setComponentGroupTargetId(S32 compId) { mComponentGroupTargetId = compId; }

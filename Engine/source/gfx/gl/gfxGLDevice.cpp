@@ -57,6 +57,24 @@
 #include "gfx/gl/tGL/tXGL.h"
 #endif
 
+#pragma region GL WARNINGS
+
+// #131204 - Texture state usage warning: The texture object (0) bound to texture image unit 0
+#define GL_LOW_WARN_TEXTURE_STATE 131204
+
+// #131169 - Framebuffer detailed info: The driver allocated storage for renderbuffer 2. (severity: low)
+#define GL_LOW_WARN_FRAMEBUFFER 131169
+
+// #131185 - Buffer detailed info: Buffer object 1 (bound to GL_ELEMENT_ARRAY_BUFFER_ARB, usage hint is GL_ENUM_88e4)
+//           will use VIDEO memory as the source for buffer object operations. (severity: low)
+#define GL_LOW_WARN_VIDEO_MEMORY 131185
+
+// #131218 - Program/shader state performance warning: Vertex shader in program #
+//           is being recompiled based on GL state. (severity: medium)
+#define GL_MED_WARN_PERFORMANCE_RECOMPILE 131218
+
+#pragma endregion
+
 GFXAdapter::CreateDeviceInstanceDelegate GFXGLDevice::mCreateDeviceInstance(GFXGLDevice::createInstance);
 
 GFXDevice *GFXGLDevice::createInstance( U32 adapterIndex )
@@ -91,19 +109,78 @@ void loadGLExtensions(void *context)
    GL::gglPerformExtensionBinds(context);
 }
 
-void STDCALL glDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
-	const GLchar *message, const void *userParam)
+void APIENTRY glDebugCallback(
+    GLenum source,
+    GLenum type,
+    GLuint id,
+    GLenum severity,
+    GLsizei length,
+    const GLchar* message,
+    const void* userParam)
 {
-    // JTH [11/24/2016]: This is a temporary fix so that we do not get spammed for redundant fbo changes.
-    // This only happens on Intel cards. This should be looked into sometime in the near future.
-    if (dStrStartsWith(message, "API_ID_REDUNDANT_FBO"))
+    // Ignore non-significant notifications (optional)
+    if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
         return;
+
+    // Silence: Texture state usage warning: The texture object (0) bound to texture image unit 0
+    if (id == GL_LOW_WARN_TEXTURE_STATE)
+       return;
+
+    const char* srcStr = "UNKNOWN";
+    const char* typeStr = "UNKNOWN";
+    const char* sevStr = "UNKNOWN";
+
+    switch (source)
+    {
+        case GL_DEBUG_SOURCE_API:             srcStr = "API"; break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   srcStr = "WINDOW"; break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER: srcStr = "SHADER"; break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY:     srcStr = "THIRD_PARTY"; break;
+        case GL_DEBUG_SOURCE_APPLICATION:     srcStr = "APP"; break;
+        case GL_DEBUG_SOURCE_OTHER:           srcStr = "OTHER"; break;
+    }
+
+    switch (type)
+    {
+        case GL_DEBUG_TYPE_ERROR:               typeStr = "ERROR"; break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: typeStr = "DEPRECATED"; break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  typeStr = "UNDEFINED"; break;
+        case GL_DEBUG_TYPE_PORTABILITY:         typeStr = "PORTABILITY"; break;
+        case GL_DEBUG_TYPE_PERFORMANCE:         typeStr = "PERFORMANCE"; break;
+        case GL_DEBUG_TYPE_MARKER:              typeStr = "MARKER"; break;
+        case GL_DEBUG_TYPE_PUSH_GROUP:          typeStr = "PUSH"; break;
+        case GL_DEBUG_TYPE_POP_GROUP:           typeStr = "POP"; break;
+        case GL_DEBUG_TYPE_OTHER:               typeStr = "OTHER"; break;
+    }
+
+    switch (severity)
+    {
+        case GL_DEBUG_SEVERITY_HIGH:         sevStr = "HIGH"; break;
+        case GL_DEBUG_SEVERITY_MEDIUM:       sevStr = "MEDIUM"; break;
+        case GL_DEBUG_SEVERITY_LOW:          sevStr = "LOW"; break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION: sevStr = "NOTIFY"; break;
+    }
+
+    // Filter known noisy IDs here if needed
+    // Example:
+    // if (id == 131185) return;
+
     if (severity == GL_DEBUG_SEVERITY_HIGH)
-        Con::errorf("OPENGL: %s", message);
+    {
+        Con::errorf("OPENGL [%s][%s][%s][%u]: %s",
+            sevStr, srcStr, typeStr, id, message);
+        AssertFatal(false, "OpenGL HIGH severity error.");
+    }
     else if (severity == GL_DEBUG_SEVERITY_MEDIUM)
-        Con::warnf("OPENGL: %s", message);
-    else if (severity == GL_DEBUG_SEVERITY_LOW)
-        Con::printf("OPENGL: %s", message);
+    {
+        Con::warnf("OPENGL [%s][%s][%s][%u]: %s",
+            sevStr, srcStr, typeStr, id, message);
+    }
+    else
+    {
+        Con::printf("OPENGL [%s][%s][%s][%u]: %s",
+            sevStr, srcStr, typeStr, id, message);
+    }
 }
 
 void STDCALL glAmdDebugCallback(GLuint id, GLenum category, GLenum severity, GLsizei length,
@@ -157,27 +234,34 @@ void GFXGLDevice::initGLState()
 #endif
 
 #if TORQUE_DEBUG
-   if( gglHasExtension(ARB_debug_output) )
-   {
-      glEnable(GL_DEBUG_OUTPUT);
-      glDebugMessageCallbackARB(glDebugCallback, NULL);
-      glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-      GLuint unusedIds = 0;
-      glDebugMessageControlARB(GL_DONT_CARE,
-            GL_DONT_CARE,
-            GL_DONT_CARE,
-            0,
-            &unusedIds,
-            GL_TRUE);
-   }
-   else if(gglHasExtension(AMD_debug_output))
-   {
-      glEnable(GL_DEBUG_OUTPUT);
-      glDebugMessageCallbackAMD(glAmdDebugCallback, NULL);
-      //glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-      GLuint unusedIds = 0;
-      glDebugMessageEnableAMD(GL_DONT_CARE, GL_DONT_CARE, 0,&unusedIds, GL_TRUE);
-   }
+
+bool debugInitialized = false;
+int flags;
+glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+{
+   glEnable(GL_DEBUG_OUTPUT);
+   glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+
+   glDebugMessageCallback(glDebugCallback, nullptr);
+
+   glDebugMessageControl(
+       GL_DONT_CARE,
+       GL_DONT_CARE,
+       GL_DONT_CARE,
+       0,
+       nullptr,
+       GL_TRUE);
+
+   Con::printf("OpenGL debug output enabled.");
+   debugInitialized = true;
+}
+   
+if (!debugInitialized)
+{
+    Con::warnf("OpenGL debug output NOT available.");
+}
+   
 #endif
 
    PlatformGL::setVSync(smEnableVSync);
@@ -451,20 +535,15 @@ GFXPrimitiveBuffer *GFXGLDevice::allocPrimitiveBuffer( U32 numIndices, U32 numPr
 
 void GFXGLDevice::setVertexStream( U32 stream, GFXVertexBuffer *buffer )
 {
-   AssertFatal(stream <= 1, "GFXGLDevice::setVertexStream only support 2 stream (0: data, 1: instancing)");
-
-   //if(mCurrentVB[stream] != buffer)
+   // Reset the state the old VB required, then set the state the new VB requires.
+   if (mCurrentVB[stream])
    {
-      // Reset the state the old VB required, then set the state the new VB requires.
-      if( mCurrentVB[stream] )
-      {
-         mCurrentVB[stream]->finish();
-      }
-
-      mCurrentVB[stream] = static_cast<GFXGLVertexBuffer*>( buffer );
-
-      mNeedUpdateVertexAttrib = true;
+      mCurrentVB[stream]->finish();
    }
+
+   mCurrentVB[stream] = static_cast<GFXGLVertexBuffer*>(buffer);
+
+   mNeedUpdateVertexAttrib = true;
 }
 
 void GFXGLDevice::setVertexStreamFrequency( U32 stream, U32 frequency )
@@ -511,6 +590,8 @@ void GFXGLDevice::endSceneInternal()
 {
    // nothing to do for opengl
    mCanCurrentlyRender = false;
+   mVolatileVBs.clear();
+   mVolatilePBs.clear();
 }
 
 void GFXGLDevice::copyResource(GFXTextureObject* pDst, GFXCubemap* pSrc, const U32 face)

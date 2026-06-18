@@ -338,7 +338,7 @@ GuiPopUpMenuCtrlEx::GuiPopUpMenuCtrlEx(void)
    mSc = NULL;
    mReplaceText = false;
    mTextSearchItems = false;
-   mSearchEdit = nullptr;
+   mSearchEdit = NULL;
 }
 
 //------------------------------------------------------------------------------
@@ -354,7 +354,10 @@ void GuiPopUpMenuCtrlEx::initPersistFields(void)
    addField("sbUsesNAColor",            TypeBool,         Offset(mRenderScrollInNA, GuiPopUpMenuCtrlEx), "Deprecated" "@internal");
    addField("reverseTextList",          TypeBool,         Offset(mReverseTextList, GuiPopUpMenuCtrlEx), "Reverses text list if popup extends up, instead of down");
 
-   addProtectedField("BitmapAsset", TypeImageAssetPtr, Offset(mBitmapAsset, GuiPopUpMenuCtrlEx), _setBitmaps, &defaultProtectedGetFn, "@brief ""Bitmap"" ""asset \"Name of bitmap asset to use\".");
+   ADD_FIELD("bitmapAsset", TypeImageAssetRef, Offset(mBitmapAssetRef, GuiPopUpMenuCtrlEx))
+      .elements(NumBitmapModes)
+      .onSet(_setBitmaps)
+      .doc("@brief ""Bitmap"" ""asset \"Name of bitmap asset to use\".");
 
    addField("bitmapBounds",             TypePoint2I,      Offset(mBitmapBounds, GuiPopUpMenuCtrlEx), "Boundaries of bitmap displayed");
    addField("hotTrackCallback",         TypeBool,         Offset(mHotTrackItems, GuiPopUpMenuCtrlEx),
@@ -807,18 +810,18 @@ void GuiPopUpMenuCtrlEx::setBitmap(const char *name)
 
       dStrcpy(p, "_n", pLen);
 
-      _setBitmap((StringTableEntry)buffer, Normal);
+      setBitmap((StringTableEntry)buffer, Normal);
 
       dStrcpy(p, "_d", pLen);
-      _setBitmap((StringTableEntry)buffer, Depressed);
+      setBitmap((StringTableEntry)buffer, Depressed);
 
-      if (mBitmapAsset[Depressed].isNull())
-         mBitmapAsset[Depressed] = mBitmapAsset[Normal];
+      if (mBitmapAssetRef[Depressed].isNull())
+         mBitmapAssetRef[Depressed] = mBitmapAssetRef[Normal];
    }
    else
    {
-      _setBitmap(StringTable->EmptyString(), Normal);
-      _setBitmap(StringTable->EmptyString(), Depressed);
+      setBitmap(StringTable->EmptyString(), Normal);
+      setBitmap(StringTable->EmptyString(), Depressed);
    }
    setUpdate();
 }   
@@ -1317,21 +1320,35 @@ void GuiPopUpMenuCtrlEx::closePopUp()
       return;
 
    // Get the selection from the text list:
-   mSelIndex = mTl->getSelectedCell().y;
+   if (mSearchText.isEmpty())
+   {
+      mSelIndex = mTl->getSelectedCell().y;
+   }
+   else
+   {
+      S32 filteredEntryCount = 0;
+      for (U32 i=0; i < mEntries.size(); i++)
+      {
+         String entryText = String::ToLower(mEntries[i].buf);
+         if (entryText.find(mSearchText) != -1 && mEntries[i].id != -2)
+         {
+            if (filteredEntryCount == mTl->getSelectedCell().y)
+            {
+               mSelIndex = i;
+               break;
+            }
+
+            filteredEntryCount++;
+         }
+      }
+   }
    mSelIndex = ( mRevNum >= mSelIndex && mSelIndex != -1 ) ? mRevNum - mSelIndex : mSelIndex;
    if ( mSelIndex != -1 )
    {
       if (mReplaceText)
          setText(mEntries[mSelIndex].buf);
 
-      for(U32 i=0; i < mEntries.size(); i++)
-      {
-        if(dStrcmp(mEntries[i].buf,mTl->mList[mSelIndex].text) == 0)
-        {
-           setIntVariable(mEntries[i].id);
-            break;
-         }
-      }
+      setIntVariable(mEntries[mSelIndex].id);
    }
 
    // Release the mouse:
@@ -1413,7 +1430,7 @@ bool GuiPopUpMenuCtrlEx::onKeyDown(const GuiEvent &event)
 //------------------------------------------------------------------------------
 void GuiPopUpMenuCtrlEx::onAction()
 {
-   if (!mActive)
+   if (!mActive || dynamic_cast<GuiPopupTextListCtrlEx*>(mTl) == NULL )
       return;
 
    GuiControl *canCtrl = getParent();
@@ -1637,10 +1654,17 @@ void GuiPopUpMenuCtrlEx::addChildren()
 
 void GuiPopUpMenuCtrlEx::removeChildren()
 {
-   mTl->deleteObject();
-   mSc->deleteObject();
-   mSearchEdit->deleteObject();
-   mBackground->deleteObject();
+   if (mTl && !mTl->isDeleted())
+      mTl->deleteObject();
+
+   if (mSc && !mSc->isDeleted())
+      mSc->deleteObject();
+
+   if (mSearchEdit && !mSearchEdit->isDeleted())
+      mSearchEdit->deleteObject();
+
+   if (mBackground && !mBackground->isDeleted())
+      mBackground->deleteObject();
 }
 
 //------------------------------------------------------------------------------

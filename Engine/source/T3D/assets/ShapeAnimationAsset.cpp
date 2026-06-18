@@ -159,7 +159,7 @@ void ShapeAnimationAsset::initializeAsset(void)
 
       mSourceShape = ResourceManager::get().load(mFilePath);
 
-      if (!mSourceShape || !mSourceShape->addSequence("ambient", "", mAnimationName, mStartFrame, mEndFrame, mPadRotation, mPadTransforms))
+      if (!mSourceShape || !mSourceShape->addSequence("ambient", "", "", mAnimationName, mStartFrame, mEndFrame, mPadRotation, mPadTransforms))
       {
          Con::errorf("ShapeAnimationAsset::initializeAsset - Unable to do initial setup of the animation clip named %s for asset %s", mAnimationName, getAssetName());
          return;
@@ -200,7 +200,7 @@ void ShapeAnimationAsset::setAnimationFile(const char* pAnimationFile)
 
 S32 ShapeAnimationAsset::getAnimationCount()
 { 
-   if (mSourceShape == nullptr)
+   if (mSourceShape == NULL)
       return 0;
 
    return mSourceShape->sequences.size(); 

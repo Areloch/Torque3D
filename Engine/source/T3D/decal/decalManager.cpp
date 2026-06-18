@@ -294,12 +294,12 @@ bool DecalManager::clipDecal( DecalInstance *decal, Vector<Point3F> *edgeVerts, 
    // Free old verts and indices.
    _freeBuffers( decal );
 
-   F32 halfSize = decal->mSize * 0.5f;
-   
+   const Point2F& halfSize = decal->mSize * 0.5f * decal->mDataBlock->texRect[decal->mTextureRectIdx].extent;
+
    // Ugly hack for ProjectedShadow!
-   F32 halfSizeZ = clipDepth ? clipDepth->x : halfSize;
-   F32 negHalfSize = clipDepth ? clipDepth->y : halfSize;
-   Point3F decalHalfSize( halfSize, halfSize, halfSize );
+   F32 halfSizeZ = clipDepth ? clipDepth->x : halfSize.x;
+   F32 negHalfSize = clipDepth ? clipDepth->y : halfSize.y;
+   Point3F decalHalfSize( halfSize.x, halfSize.y, halfSize.x );
    Point3F decalHalfSizeZ( halfSizeZ, halfSizeZ, halfSizeZ );
 
    MatrixF projMat( true );
@@ -319,11 +319,11 @@ bool DecalManager::clipDecal( DecalInstance *decal, Vector<Point3F> *edgeVerts, 
    // See above re: decalHalfSizeZ hack.
    mClipper.clear();
    mClipper.mPlaneList.setSize(6);
-   mClipper.mPlaneList[0].set( ( decalPos + ( -newRight * halfSize ) ), -newRight );
-   mClipper.mPlaneList[1].set( ( decalPos + ( -newFwd * halfSize ) ), -newFwd );
+   mClipper.mPlaneList[0].set( ( decalPos + ( -newRight * halfSize.x ) ), -newRight );
+   mClipper.mPlaneList[1].set( ( decalPos + ( -newFwd * halfSize.y ) ), -newFwd );
    mClipper.mPlaneList[2].set( ( decalPos + ( -crossVec * decalHalfSizeZ ) ), -crossVec );
-   mClipper.mPlaneList[3].set( ( decalPos + ( newRight * halfSize ) ), newRight );
-   mClipper.mPlaneList[4].set( ( decalPos + ( newFwd * halfSize ) ), newFwd );
+   mClipper.mPlaneList[3].set( ( decalPos + ( newRight * halfSize.x ) ), newRight );
+   mClipper.mPlaneList[4].set( ( decalPos + ( newFwd * halfSize.y ) ), newFwd );
    mClipper.mPlaneList[5].set( ( decalPos + ( crossVec * negHalfSize ) ), crossVec );
 
    mClipper.mNormal = decal->mNormal;
@@ -660,12 +660,14 @@ DecalInstance* DecalManager::raycast( const Point3F &start, const Point3F &end, 
          RayInfo ri;
          bool containsPoint = false;
          if ( gServerContainer.castRayRendered( start, end, STATIC_COLLISION_TYPEMASK, &ri ) )
-         {        
+         {
+            RectF rect = inst->mDataBlock->texRect[inst->mTextureRectIdx];
+            rect.extent *= inst->mSize * 0.5f;
             Point2F poly[4];
-            poly[0].set( inst->mPosition.x - (inst->mSize / 2), inst->mPosition.y + (inst->mSize / 2));
-            poly[1].set( inst->mPosition.x - (inst->mSize / 2), inst->mPosition.y - (inst->mSize / 2));
-            poly[2].set( inst->mPosition.x + (inst->mSize / 2), inst->mPosition.y - (inst->mSize / 2));
-            poly[3].set( inst->mPosition.x + (inst->mSize / 2), inst->mPosition.y + (inst->mSize / 2));
+            poly[0].set(inst->mPosition.x - rect.extent.x, inst->mPosition.y + rect.extent.y);
+            poly[1].set( inst->mPosition.x - rect.extent.x, inst->mPosition.y - rect.extent.y);
+            poly[2].set( inst->mPosition.x + rect.extent.x, inst->mPosition.y - rect.extent.y);
+            poly[3].set( inst->mPosition.x + rect.extent.x, inst->mPosition.y + rect.extent.y);
             
             if ( MathUtils::pointInPolygon( poly, 4, Point2F(ri.point.x, ri.point.y) ) )
                containsPoint = true;
@@ -1455,7 +1457,7 @@ bool DecalManager::_createDataFile()
    if(dot)
       *dot = '\0';
    
-   dSprintf( fileName, sizeof(fileName), "%s.mis.decals", missionName );
+   dSprintf( fileName, sizeof(fileName), "%s.decals", missionName );
 
    mDataFileName = StringTable->insert( fileName );
 
@@ -1570,8 +1572,8 @@ DefineEngineFunction( decalManagerSave, void, ( String decalSaveFile ), ( "" ),
    "@param decalSaveFile Filename to save the decals to.\n"
    "@tsexample\n"
    "// Set the filename to save the decals in. If no filename is set, then the\n"
-   "// decals will default to <activeMissionName>.mis.decals\n"
-   "%fileName = \"./missionDecals.mis.decals\";\n"
+   "// decals will default to <activeMissionName>.decals\n"
+   "%fileName = \"./missionDecals.decals\";\n"
    "// Inform the decal manager to save the decals for the active mission.\n"
    "decalManagerSave( %fileName );\n"
    "@endtsexample\n"
@@ -1601,7 +1603,7 @@ DefineEngineFunction( decalManagerLoad, bool, ( const char* fileName ),,
    "false if it could not.\n"
    "@tsexample\n"
    "// Set the filename to load the decals from.\n"
-   "%fileName = \"./missionDecals.mis.decals\";\n"
+   "%fileName = \"./missionDecals.decals\";\n"
    "// Inform the decal manager to load the decals from the entered filename.\n"
    "decalManagerLoad( %fileName );\n"
    "@endtsexample\n"
